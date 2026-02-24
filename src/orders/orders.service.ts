@@ -38,7 +38,9 @@ export class OrdersService {
       phone: dto.location.phone,
     });
     await this.locationRepo.save(location);
-    return this.findOne(saved.id);
+    const fullOrder = await this.findOne(saved.id);
+    this.orderEventsGateway.emitNewOrder(fullOrder as unknown as Record<string, unknown>);
+    return fullOrder;
   }
 
   async findOne(id: string): Promise<Order> {
