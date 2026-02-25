@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -6,7 +6,22 @@ import { OrderStatus } from './entities/order-status.enum';
 import { OrderLocation } from './entities/order-location.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { RateOrderDto } from './dto/rate-order.dto';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
+import { PushNotificationsService } from '../realtime/push-notifications.service';
+import { WebPushService } from '../realtime/web-push.service';
+import { MedicsService } from '../medics/medics.service';
+import { UsersService } from '../users/users.service';
+
+const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
+  ASSIGNED:        { title: '👤 Медик назначен',      body: 'Медик принял ваш заказ и скоро выедет' },
+  ACCEPTED:        { title: '✅ Медик подтвердил',     body: 'Медик подтвердил выезд к вам' },
+  ON_THE_WAY:      { title: '🚗 Медик едет',           body: 'Медик едет к вам' },
+  ARRIVED:         { title: '📍 Медик прибыл!',        body: 'Откройте дверь — медик у вашего дома' },
+  SERVICE_STARTED: { title: '💉 Услуга начата',        body: 'Медик начал оказание услуги' },
+  DONE:            { title: '✅ Заказ выполнен',       body: 'Спасибо, что выбрали HamshiraGo!' },
+  CANCELED:        { title: '❌ Заказ отменён',        body: 'Ваш заказ был отменён' },
+};
 
 @Injectable()
 export class OrdersService {
@@ -16,7 +31,38 @@ export class OrdersService {
     @InjectRepository(OrderLocation)
     private locationRepo: Repository<OrderLocation>,
     private orderEventsGateway: OrderEventsGateway,
+    private pushService: PushNotificationsService,
+    private webPushService: WebPushService,
+    private medicsService: MedicsService,
+    private usersService: UsersService,
   ) {}
+
+  /** Send Expo + Web Push notifications to the client of a given order */
+  private async notifyClient(order: Order, status: string): Promise<void> {
+    const msg = CLIENT_PUSH_MESSAGES[status];
+    if (!msg || !order.clientId) return;
+
+    // Expo push (mobile app)
+    const expoToken = await this.usersService.getPushToken(order.clientId);
+    if (expoToken) {
+      this.pushService.send([expoToken], {
+        title: msg.title,
+        body: msg.body,
+        sound: 'default',
+        data: { orderId: order.id, status },
+        channelId: 'order_updates',
+        priority: 'high',
+      });
+    }
+
+    // Web push (browser)
+    this.webPushService.sendToSubscriber('client', order.clientId, {
+      title: msg.title,
+      body: msg.body,
+      data: { orderId: order.id, status },
+      url: `/orders/${order.id}`,
+    });
+  }
 
   async create(clientId: string, dto: CreateOrderDto): Promise<Order> {
     const order = this.orderRepo.create({
@@ -39,7 +85,32 @@ export class OrdersService {
     });
     await this.locationRepo.save(location);
     const fullOrder = await this.findOne(saved.id);
+
+    // WebSocket — for medics with the app open
     this.orderEventsGateway.emitNewOrder(fullOrder as unknown as Record<string, unknown>);
+
+    // Expo push — for medics with the app in background/closed (mobile)
+    const price = (dto.priceAmount - (dto.discountAmount ?? 0)).toLocaleString('ru-RU');
+    this.medicsService.getOnlinePushTokens().then((tokens) => {
+      if (!tokens.length) return;
+      this.pushService.send(tokens, {
+        title: '🚨 Новый заказ!',
+        body: `${dto.serviceTitle} — ${price} UZS`,
+        sound: 'default',
+        data: { orderId: saved.id },
+        channelId: 'new_orders',
+        priority: 'high',
+      });
+    });
+
+    // Web push — for medics using the web dashboard in any browser state
+    this.webPushService.broadcast('medic', {
+      title: '🚨 Новый заказ!',
+      body: `${dto.serviceTitle} — ${price} UZS`,
+      data: { orderId: saved.id },
+      url: `/orders/${saved.id}`,
+    });
+
     return fullOrder;
   }
 
@@ -50,6 +121,47 @@ export class OrdersService {
     });
     if (!order) throw new NotFoundException('Order not found');
     return order;
+  }
+
+  /** Client cancels their own order — only allowed while CREATED or ASSIGNED */
+  async cancelOrder(orderId: string, clientId: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
+    const cancellable: OrderStatus[] = [OrderStatus.CREATED, OrderStatus.ASSIGNED];
+    if (!cancellable.includes(order.status)) {
+      throw new BadRequestException(
+        `Cannot cancel an order with status "${order.status}". Only CREATED or ASSIGNED orders can be cancelled.`,
+      );
+    }
+    await this.orderRepo.update(orderId, { status: OrderStatus.CANCELED });
+    this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
+    const updated = await this.findOne(orderId);
+    this.notifyClient(updated, OrderStatus.CANCELED);
+    return updated;
+  }
+
+  /** Client rates the medic after order is DONE */
+  async rateOrder(orderId: string, clientId: string, dto: RateOrderDto): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
+    if (order.status !== OrderStatus.DONE) throw new BadRequestException('Can only rate a completed order');
+    if (order.clientRating !== null) throw new BadRequestException('Order already rated');
+    if (!order.medicId) throw new BadRequestException('No medic assigned to this order');
+
+    // Save rating on the order
+    await this.orderRepo.update(orderId, { clientRating: dto.rating });
+
+    // Recalculate medic's weighted average rating
+    const medic = await this.medicsService.findById(order.medicId);
+    if (medic) {
+      const currentCount = medic.reviewCount ?? 0;
+      const currentRating = Number(medic.rating ?? 0);
+      const newCount = currentCount + 1;
+      const newRating = Number(((currentRating * currentCount + dto.rating) / newCount).toFixed(2));
+      await this.medicsService.updateRating(order.medicId, newRating, newCount);
+    }
+
+    return this.findOne(orderId);
   }
 
   async updateStatus(id: string, dto: UpdateOrderStatusDto): Promise<Order> {
@@ -90,7 +202,9 @@ export class OrdersService {
       status: OrderStatus.ASSIGNED,
     });
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
-    return this.findOne(orderId);
+    const updated = await this.findOne(orderId);
+    this.notifyClient(updated, OrderStatus.ASSIGNED);
+    return updated;
   }
 
   /** Medic updates status of their own order */
@@ -100,13 +214,35 @@ export class OrdersService {
     status: OrderStatus,
   ): Promise<Order> {
     const order = await this.findOne(orderId);
-    if (order.medicId !== medicId) {
-      throw new Error('Order not assigned to you');
+    if (order.medicId !== medicId) throw new ForbiddenException('Order not assigned to you');
+
+    const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.ASSIGNED]:        [OrderStatus.ACCEPTED, OrderStatus.CANCELED],
+      [OrderStatus.ACCEPTED]:        [OrderStatus.ON_THE_WAY],
+      [OrderStatus.ON_THE_WAY]:      [OrderStatus.ARRIVED],
+      [OrderStatus.ARRIVED]:         [OrderStatus.SERVICE_STARTED],
+      [OrderStatus.SERVICE_STARTED]: [OrderStatus.DONE],
+    };
+    const allowed = allowedTransitions[order.status] ?? [];
+    if (!allowed.includes(status)) {
+      throw new BadRequestException(
+        `Cannot transition from "${order.status}" to "${status}"`,
+      );
     }
+
     order.status = status;
     await this.orderRepo.save(order);
     this.orderEventsGateway.emitOrderStatus(orderId, status);
-    return this.findOne(orderId);
+
+    // Credit medic balance when order is completed
+    if (status === OrderStatus.DONE) {
+      const earned = order.priceAmount - (order.discountAmount ?? 0);
+      await this.medicsService.addBalance(medicId, earned);
+    }
+
+    const updated = await this.findOne(orderId);
+    this.notifyClient(updated, status);
+    return updated;
   }
 
   /** All orders assigned to a medic */

@@ -87,6 +87,28 @@ export class MedicsService {
     });
   }
 
+  async savePushToken(id: string, token: string): Promise<void> {
+    await this.medicRepo.update(id, { pushToken: token });
+  }
+
+  async updateRating(id: string, rating: number, reviewCount: number): Promise<void> {
+    await this.medicRepo.update(id, { rating, reviewCount });
+  }
+
+  async addBalance(id: string, amount: number): Promise<void> {
+    await this.medicRepo.increment({ id }, 'balance', amount);
+  }
+
+  async getOnlinePushTokens(): Promise<string[]> {
+    const medics = await this.medicRepo.find({
+      where: { isOnline: true },
+      select: ['pushToken'],
+    });
+    return medics
+      .map((m) => m.pushToken)
+      .filter((t): t is string => !!t);
+  }
+
   // ── Nearby (used by client app) ───────────────────────────────────────────
 
   private distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
