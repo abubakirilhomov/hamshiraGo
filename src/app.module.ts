@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
@@ -11,6 +14,13 @@ import { RealtimeModule } from './realtime/realtime.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000,   // 1 minute window
+        limit: 120,    // 120 requests/min globally
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'postgres',
@@ -23,6 +33,7 @@ import { RealtimeModule } from './realtime/realtime.module';
         synchronize: process.env.NODE_ENV !== 'production',
       }),
     }),
+    CommonModule,
     AuthModule,
     UsersModule,
     OrdersModule,
@@ -30,5 +41,9 @@ import { RealtimeModule } from './realtime/realtime.module';
     RealtimeModule,
   ],
   controllers: [AppController],
+  providers: [
+    // Apply global throttle guard
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
