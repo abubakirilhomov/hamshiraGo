@@ -86,7 +86,8 @@ export const medicApi = {
 
   orders: {
     available: () => request<Order[]>("/orders/medic/available"),
-    my: ()        => request<Order[]>("/orders/medic/my"),
+    my: ()        => request<{ data: Order[] }>("/orders/medic/my").then(r => r.data),
+    get: (id: string) => request<Order>(`/orders/${id}`),
     accept: (id: string) =>
       request<Order>(`/orders/${id}/accept`, { method: "POST" }),
     updateStatus: (id: string, status: OrderStatus) =>
@@ -137,6 +138,7 @@ export interface Medic {
   facePhotoUrl: string | null;
   licensePhotoUrl: string | null;
   verificationRejectedReason: string | null;
+  onlineDisabledReason?: 'INACTIVE_5H' | null;
 }
 
 export interface OrderLocation {
