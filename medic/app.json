@@ -19,6 +19,9 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "HamshiraGo Medic geolokatsiyadan buyurtmalarni yaqinlik bo'yicha ko'rsatish uchun foydalanadi.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "HamshiraGo Medic geolokatsiyani fon rejimida yuboradi, shunda mijoz sizning dolzarb joylashuvingizni ko'radi.",
+        "NSLocationAlwaysUsageDescription": "HamshiraGo Medic geolokatsiyani fon rejimida yuboradi, shunda mijoz sizning dolzarb joylashuvingizni ko'radi.",
         "UIBackgroundModes": [
           "location"
         ]

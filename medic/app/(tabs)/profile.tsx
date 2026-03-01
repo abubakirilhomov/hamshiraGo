@@ -93,7 +93,15 @@ export default function ProfileScreen() {
         longitude = loc.coords.longitude;
 
         setBackgroundLocationToken(token ?? null);
-        await startBackgroundLocationUpdates();
+        try {
+          await startBackgroundLocationUpdates();
+        } catch {
+          // Do not block online mode if background tracking isn't available on this runtime/build.
+          Alert.alert(
+            'Фоновая геолокация недоступна',
+            'Онлайн-режим включён, но фоновое отслеживание пока неактивно. Откройте настройки и разрешите доступ "Всегда".',
+          );
+        }
       } else {
         shouldStopBgAfterSuccess = true;
       }
