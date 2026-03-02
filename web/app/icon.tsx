@@ -8,20 +8,20 @@ export default function Icon() {
     (
       <div
         style={{
-          background: 'linear-gradient(145deg, #0d9488 0%, #065f46 100%)',
+          background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 40,
+          borderRadius: 38,
+          color: '#fff',
+          fontSize: 108,
+          fontWeight: 700,
+          fontFamily: 'Arial, sans-serif',
         }}
       >
-        {/* Просто большой белый крест */}
-        <svg width="130" height="130" viewBox="0 0 24 24" fill="none">
-          <rect x="9" y="1" width="6" height="22" rx="3" fill="white" />
-          <rect x="1" y="9" width="22" height="6" rx="3" fill="white" />
-        </svg>
+        H
       </div>
     ),
     { ...size },
