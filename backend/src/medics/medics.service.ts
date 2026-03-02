@@ -335,6 +335,25 @@ export class MedicsService {
       .filter((t): t is string => !!t);
   }
 
+  // ── Dispatch (used by DispatchService) ────────────────────────────────────
+
+  /** Returns online, approved, unblocked medics with location, excluding already-attempted ones */
+  async findCandidatesForDispatch(excludedIds: string[]): Promise<Medic[]> {
+    const qb = this.medicRepo
+      .createQueryBuilder('medic')
+      .where('medic.isOnline = true')
+      .andWhere('medic.verificationStatus = :status', { status: 'APPROVED' })
+      .andWhere('medic.isBlocked = false')
+      .andWhere('medic.latitude IS NOT NULL')
+      .andWhere('medic.longitude IS NOT NULL');
+
+    if (excludedIds.length > 0) {
+      qb.andWhere('medic.id NOT IN (:...excluded)', { excluded: excludedIds });
+    }
+
+    return qb.getMany();
+  }
+
   // ── Nearby (used by client app) ───────────────────────────────────────────
 
   private distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {

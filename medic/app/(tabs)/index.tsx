@@ -19,6 +19,7 @@ import { io, Socket } from 'socket.io-client';
 import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { OrderInviteModal, type DispatchInvitePayload } from '@/components/OrderInviteModal';
 
 interface OrderLocation {
   house: string;
@@ -113,14 +114,18 @@ export default function AvailableOrdersScreen() {
   const [bannerOrder, setBannerOrder] = useState<AvailableOrder | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [invite, setInvite] = useState<DispatchInvitePayload | null>(null);
+
   const fetchOrders = useCallback(async () => {
     try {
       const data = await apiFetch<AvailableOrder[]>('/orders/medic/available', {
         token: token ?? undefined,
       });
       setOrders(data);
-    } catch {
-      // ignore
+      setFetchError(null);
+    } catch (e: unknown) {
+      setFetchError(e instanceof Error ? e.message : 'Ошибка загрузки заказов');
     }
   }, [token]);
 
@@ -179,6 +184,16 @@ export default function AvailableOrdersScreen() {
         },
         trigger: null,
       }).catch(() => {}); // silently fail in Expo Go
+    });
+
+    // ── Dispatch invite (push-based assignment) ──────────────────────────────
+    socket.on('dispatch_invite', (payload: DispatchInvitePayload) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      setInvite(payload);
+    });
+
+    socket.on('dispatch_invite_expired', (payload: { orderId: string }) => {
+      setInvite((prev) => (prev?.orderId === payload.orderId ? null : prev));
     });
 
     return () => {
@@ -292,6 +307,16 @@ export default function AvailableOrdersScreen() {
         />
       )}
 
+      {/* Fetch error */}
+      {fetchError && (
+        <View style={styles.fetchErrorBox}>
+          <Text style={styles.fetchErrorText}>{fetchError}</Text>
+          <Pressable onPress={() => fetchOrders()} style={styles.fetchRetryBtn}>
+            <Text style={styles.fetchRetryText}>Повторить</Text>
+          </Pressable>
+        </View>
+      )}
+
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id}
@@ -314,6 +339,9 @@ export default function AvailableOrdersScreen() {
           />
         )}
       />
+
+      {/* Fullscreen dispatch invite modal */}
+      <OrderInviteModal invite={invite} onDismiss={() => setInvite(null)} />
     </View>
   );
 }
@@ -538,4 +566,32 @@ const styles = StyleSheet.create({
   acceptBtnPressed: { opacity: 0.9 },
   acceptBtnDisabled: { opacity: 0.7 },
   acceptBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+
+  fetchErrorBox: {
+    margin: 12,
+    padding: 14,
+    backgroundColor: '#fee2e220',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ef444440',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fetchErrorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#ef4444',
+  },
+  fetchRetryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+  },
+  fetchRetryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });

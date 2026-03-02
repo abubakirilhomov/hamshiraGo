@@ -64,6 +64,19 @@ type MedicLocationPayload = {
   source?: 'socket' | 'rest';
 };
 
+type DispatchStatus = 'searching' | 'contacting' | 'no_medics';
+
+type DispatchUpdatePayload = {
+  orderId: string;
+  status: DispatchStatus;
+  medic?: {
+    name: string;
+    latitude: number | null;
+    longitude: number | null;
+    rating: number | null;
+  } | null;
+};
+
 const TrackMapComponent =
   Platform.OS === 'web'
     ? null
@@ -97,6 +110,12 @@ export default function TrackOrderScreen() {
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [dispatchState, setDispatchState] = useState<{
+    status: DispatchStatus;
+    candidateName?: string;
+    candidateLat?: number | null;
+    candidateLng?: number | null;
+  } | null>(null);
   const [medicLocation, setMedicLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -152,8 +171,32 @@ export default function TrackOrderScreen() {
     socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
       if (payload.orderId !== orderId) return;
       setOrder((prev) => (prev ? { ...prev, status: payload.status } : prev));
+      if (payload.status === 'ASSIGNED') {
+        // Medic accepted — clear dispatch overlay
+        setDispatchState(null);
+      }
       if (payload.status === 'DONE' || payload.status === 'CANCELED') {
-        socket.disconnect();
+        // Refetch full order so medic field is populated for the rating block
+        fetchOrder().finally(() => socket.disconnect());
+      }
+    });
+
+    socket.on('dispatch_update', (payload: DispatchUpdatePayload) => {
+      if (payload.orderId !== orderId) return;
+      setDispatchState({
+        status: payload.status,
+        candidateName: payload.medic?.name,
+        candidateLat: payload.medic?.latitude,
+        candidateLng: payload.medic?.longitude,
+      });
+      // Show candidate medic on the map
+      if (payload.medic?.latitude != null && payload.medic?.longitude != null) {
+        setMedicLocation({
+          latitude: Number(payload.medic.latitude),
+          longitude: Number(payload.medic.longitude),
+          updatedAt: new Date().toISOString(),
+          source: 'socket',
+        });
       }
     });
 
@@ -301,6 +344,32 @@ export default function TrackOrderScreen() {
         </Text>
       </View>
 
+      {/* Dispatch status banner (shown while order is CREATED) */}
+      {order.status === 'CREATED' && dispatchState && (
+        <View style={[
+          styles.dispatchBanner,
+          dispatchState.status === 'no_medics' && styles.dispatchBannerWaiting,
+        ]}>
+          <ActivityIndicator
+            size="small"
+            color={dispatchState.status === 'no_medics' ? Theme.warning : Theme.primary}
+          />
+          <View style={styles.dispatchBannerText}>
+            <FontAwesome
+              name={dispatchState.status === 'no_medics' ? 'clock-o' : 'search'}
+              size={13}
+              color={dispatchState.status === 'no_medics' ? Theme.warning : Theme.primary}
+            />
+            <Text style={[
+              styles.dispatchBannerLabel,
+              dispatchState.status === 'no_medics' && { color: Theme.warning },
+            ]}>
+              {getDispatchStatusText(dispatchState)}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Canceled banner */}
       {isCanceled && (
         <View style={styles.canceledBanner}>
@@ -428,9 +497,17 @@ export default function TrackOrderScreen() {
                     latitude: medicLocation.latitude,
                     longitude: medicLocation.longitude,
                   }}
-                  title="🩺 Медик в пути"
-                  description="Текущая позиция медика"
-                  pinColor="#dc2626"
+                  title={
+                    order.status === 'CREATED' && dispatchState?.candidateName
+                      ? `🩺 ${dispatchState.candidateName}`
+                      : '🩺 Медик в пути'
+                  }
+                  description={
+                    order.status === 'CREATED'
+                      ? 'Кандидат — ожидаем подтверждения'
+                      : 'Текущая позиция медика'
+                  }
+                  pinColor={order.status === 'CREATED' ? '#f59e0b' : '#dc2626'}
                 />
                 <TrackMapComponent.Polyline
                   coordinates={routeCoords.length > 1
@@ -532,6 +609,22 @@ export default function TrackOrderScreen() {
       )}
     </ScrollView>
   );
+}
+
+function getDispatchStatusText(dispatchState: {
+  status: DispatchStatus;
+  candidateName?: string;
+} | null): string | null {
+  if (!dispatchState) return null;
+  switch (dispatchState.status) {
+    case 'searching': return 'Ищем медика...';
+    case 'contacting':
+      return dispatchState.candidateName
+        ? `Связываемся с ${dispatchState.candidateName}...`
+        : 'Связываемся с медиком...';
+    case 'no_medics': return 'Медики заняты, продолжаем поиск...';
+    default: return null;
+  }
 }
 
 function getStepHint(status: OrderStatus): string {
@@ -732,6 +825,34 @@ const styles = StyleSheet.create({
   mapMeta: {
     fontSize: 12,
     color: Theme.textSecondary,
+  },
+
+  // Dispatch status banner
+  dispatchBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}25`,
+  },
+  dispatchBannerWaiting: {
+    backgroundColor: `${Theme.warning}10`,
+    borderColor: `${Theme.warning}25`,
+  },
+  dispatchBannerText: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  dispatchBannerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Theme.primary,
+    flex: 1,
   },
 
   // Canceled banner

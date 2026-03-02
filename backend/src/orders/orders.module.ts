@@ -4,7 +4,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Order } from './entities/order.entity';
 import { OrderLocation } from './entities/order-location.entity';
+import { DispatchAttempt } from './entities/dispatch-attempt.entity';
 import { OrdersService } from './orders.service';
+import { DispatchService } from './dispatch.service';
 import { OrdersController } from './orders.controller';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { MedicsModule } from '../medics/medics.module';
@@ -13,7 +15,7 @@ import { ServicesModule } from '../services/services.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderLocation]),
+    TypeOrmModule.forFeature([Order, OrderLocation, DispatchAttempt]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -28,7 +30,7 @@ import { ServicesModule } from '../services/services.module';
     ServicesModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
-  exports: [OrdersService],
+  providers: [OrdersService, DispatchService],
+  exports: [OrdersService, DispatchService],
 })
 export class OrdersModule {}

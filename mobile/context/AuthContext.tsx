@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import { apiFetch } from '@/constants/api';
+
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
 
 export interface AuthUser {
   id: string;
@@ -10,6 +14,7 @@ export interface AuthUser {
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
+  isLoading: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -21,14 +26,42 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, token: null });
+  const [state, setState] = useState<AuthState>({ user: null, token: null, isLoading: true });
+
+  // Restore session from SecureStore on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const [token, userJson] = await Promise.all([
+          SecureStore.getItemAsync(TOKEN_KEY),
+          SecureStore.getItemAsync(USER_KEY),
+        ]);
+        if (token && userJson) {
+          const user = JSON.parse(userJson) as AuthUser;
+          setState({ user, token, isLoading: false });
+        } else {
+          setState({ user: null, token: null, isLoading: false });
+        }
+      } catch {
+        setState({ user: null, token: null, isLoading: false });
+      }
+    })();
+  }, []);
+
+  const persist = async (token: string, user: AuthUser) => {
+    await Promise.all([
+      SecureStore.setItemAsync(TOKEN_KEY, token),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+    ]);
+  };
 
   const login = async (phone: string, password: string) => {
     const res = await apiFetch<{ access_token: string; user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ phone, password }),
     });
-    setState({ user: res.user, token: res.access_token });
+    await persist(res.access_token, res.user);
+    setState({ user: res.user, token: res.access_token, isLoading: false });
   };
 
   const register = async (phone: string, password: string, name?: string) => {
@@ -36,10 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: JSON.stringify({ phone, password, ...(name ? { name } : {}) }),
     });
-    setState({ user: res.user, token: res.access_token });
+    await persist(res.access_token, res.user);
+    setState({ user: res.user, token: res.access_token, isLoading: false });
   };
 
-  const logout = () => setState({ user: null, token: null });
+  const logout = async () => {
+    await Promise.all([
+      SecureStore.deleteItemAsync(TOKEN_KEY),
+      SecureStore.deleteItemAsync(USER_KEY),
+    ]).catch(() => {});
+    setState({ user: null, token: null, isLoading: false });
+  };
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, logout }}>

@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 import { apiFetch } from '@/constants/api';
+
+const TOKEN_KEY = 'medic_auth_token';
+const MEDIC_KEY = 'medic_auth_user';
 
 export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -22,6 +26,7 @@ export interface MedicUser {
 interface AuthState {
   medic: MedicUser | null;
   token: string | null;
+  isLoading: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -35,14 +40,42 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ medic: null, token: null });
+  const [state, setState] = useState<AuthState>({ medic: null, token: null, isLoading: true });
+
+  // Restore session from SecureStore on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const [token, medicJson] = await Promise.all([
+          SecureStore.getItemAsync(TOKEN_KEY),
+          SecureStore.getItemAsync(MEDIC_KEY),
+        ]);
+        if (token && medicJson) {
+          const medic = JSON.parse(medicJson) as MedicUser;
+          setState({ medic, token, isLoading: false });
+        } else {
+          setState({ medic: null, token: null, isLoading: false });
+        }
+      } catch {
+        setState({ medic: null, token: null, isLoading: false });
+      }
+    })();
+  }, []);
+
+  const persist = async (token: string, medic: MedicUser) => {
+    await Promise.all([
+      SecureStore.setItemAsync(TOKEN_KEY, token),
+      SecureStore.setItemAsync(MEDIC_KEY, JSON.stringify(medic)),
+    ]);
+  };
 
   const login = async (phone: string, password: string) => {
     const res = await apiFetch<{ access_token: string; medic: MedicUser }>('/medics/login', {
       method: 'POST',
       body: JSON.stringify({ phone, password }),
     });
-    setState({ medic: res.medic, token: res.access_token });
+    await persist(res.access_token, res.medic);
+    setState({ medic: res.medic, token: res.access_token, isLoading: false });
   };
 
   const register = async (
@@ -55,7 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: JSON.stringify({ phone, password, name, experienceYears }),
     });
-    setState({ medic: res.medic, token: res.access_token });
+    await persist(res.access_token, res.medic);
+    setState({ medic: res.medic, token: res.access_token, isLoading: false });
   };
 
   const updateOnlineStatus = (isOnline: boolean) => {
@@ -73,16 +107,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Re-fetch profile from backend to get latest verificationStatus */
   const refreshProfile = async () => {
-    setState((s) => {
-      if (!s.token) return s;
-      apiFetch<MedicUser>('/medics/me', { token: s.token })
-        .then((profile) => setState((prev) => ({ ...prev, medic: profile })))
-        .catch(() => {});
-      return s;
-    });
+    const currentToken = state.token;
+    if (!currentToken) return;
+    try {
+      const profile = await apiFetch<MedicUser>('/medics/me', { token: currentToken });
+      setState((prev) => ({ ...prev, medic: profile }));
+      await SecureStore.setItemAsync(MEDIC_KEY, JSON.stringify(profile)).catch(() => {});
+    } catch {
+      // ignore — keep stale data
+    }
   };
 
-  const logout = () => setState({ medic: null, token: null });
+  const logout = async () => {
+    await Promise.all([
+      SecureStore.deleteItemAsync(TOKEN_KEY),
+      SecureStore.deleteItemAsync(MEDIC_KEY),
+    ]).catch(() => {});
+    setState({ medic: null, token: null, isLoading: false });
+  };
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, updateOnlineStatus, refreshProfile, logout }}>

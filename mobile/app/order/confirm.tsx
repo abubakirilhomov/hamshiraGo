@@ -5,7 +5,6 @@ import { Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
-import { formatEta } from '@/types/nurse';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -35,10 +34,6 @@ export default function OrderConfirmScreen() {
     floor?: string;
     apartment?: string;
     phone: string;
-    nurseName?: string;
-    nurseRating?: string;
-    nurseEta?: string;
-    nurseDistance?: string;
   }>();
 
   useEffect(() => {
@@ -55,16 +50,6 @@ export default function OrderConfirmScreen() {
       .catch(() => {})
       .finally(() => setLoadingService(false));
   }, [params.serviceId]);
-
-  // Nurse data comes directly from params (real API data from location screen)
-  const nurse = params.nurseName
-    ? {
-        name: params.nurseName,
-        rating: params.nurseRating ? parseFloat(params.nurseRating) : null,
-        etaMinutes: params.nurseEta ? parseInt(params.nurseEta, 10) : null,
-        distanceKm: params.nurseDistance ? parseFloat(params.nurseDistance) : null,
-      }
-    : null;
 
   const basePrice = service?.price ?? 0;
   const discountAmount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
@@ -136,21 +121,6 @@ export default function OrderConfirmScreen() {
         <Row label="Телефон" value={params.phone ?? ''} />
         {service.durationMinutes && (
           <Row label="Длительность" value={`~${service.durationMinutes} мин`} />
-        )}
-        {nurse && (
-          <>
-            <View style={styles.divider} />
-            <Row
-              label="Медсестра"
-              value={nurse.rating ? `${nurse.name} · ${nurse.rating} ★` : nurse.name}
-            />
-            {nurse.etaMinutes != null && (
-              <Row label="Время подачи" value={formatEta(nurse.etaMinutes)} />
-            )}
-            {nurse.distanceKm != null && (
-              <Row label="Расстояние" value={`${nurse.distanceKm} км`} />
-            )}
-          </>
         )}
       </View>
 

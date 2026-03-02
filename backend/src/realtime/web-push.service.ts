@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import * as webpush from 'web-push';
 import { WebPushSubscription } from './entities/web-push-subscription.entity';
 
@@ -128,7 +128,7 @@ export class WebPushService implements OnModuleInit {
     );
 
     if (stale.length) {
-      await this.subRepo.delete(stale.map((endpoint) => ({ endpoint })));
+      await this.subRepo.delete({ endpoint: In(stale) });
       this.logger.log(`Removed ${stale.length} stale web push subscription(s)`);
     }
 

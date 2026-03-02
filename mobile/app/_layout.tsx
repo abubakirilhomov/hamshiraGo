@@ -59,18 +59,19 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { token } = useAuth();
+  const { token, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (isLoading) return; // wait for SecureStore restore
     const inAuth = segments[0] === 'auth';
     if (!token && !inAuth) {
       router.replace('/auth');
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [token, segments]);
+  }, [token, segments, isLoading]);
 
   useEffect(() => {
     if (token) registerPushToken(token);

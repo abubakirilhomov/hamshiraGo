@@ -43,7 +43,16 @@ export default function AuthScreen() {
         await register(phone.trim(), password, name.trim() || undefined);
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Ошибка. Попробуйте ещё раз.');
+      const raw = (e instanceof Error ? e.message : '').toLowerCase();
+      if (raw.includes('password') || raw.includes('number invalid') || raw.includes('invalid credentials')) {
+        setError('Неверный номер телефона или пароль');
+      } else if (raw.includes('blocked')) {
+        setError('Ваш аккаунт заблокирован. Обратитесь в поддержку.');
+      } else if (raw.includes('already') || raw.includes('duplicate') || raw.includes('unique')) {
+        setError('Пользователь с таким номером уже зарегистрирован');
+      } else {
+        setError((e instanceof Error ? e.message : '') || 'Ошибка. Попробуйте ещё раз.');
+      }
     } finally {
       setLoading(false);
     }

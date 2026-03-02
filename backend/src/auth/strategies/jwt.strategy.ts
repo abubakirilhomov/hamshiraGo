@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 import { MedicsService } from '../../medics/medics.service';
 
-export type JwtPayload = { sub: string; role: 'client' | 'medic' };
+export type JwtPayload = { sub: string; role: 'client' | 'medic' | 'admin' };
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -22,6 +22,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
+    if (payload.role === 'admin') {
+      return { id: payload.sub, role: 'admin' as const };
+    }
     if (payload.role === 'medic') {
       const medic = await this.medicsService.findById(payload.sub);
       if (!medic) throw new UnauthorizedException();

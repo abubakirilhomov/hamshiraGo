@@ -37,7 +37,7 @@ export class Order {
   priceAmount: number | null;
 
   @Column({ type: 'int', default: 0, nullable: true })
-  discountAmount: number;
+  discountAmount: number | null;
 
   /** Platform commission (10% of net price), credited to platform account */
   @Column({ type: 'int', default: 0, nullable: true })
@@ -49,6 +49,10 @@ export class Order {
     default: OrderStatus.CREATED,
   })
   status: OrderStatus;
+
+  /** Internal dispatch state — does not replace order status */
+  @Column({ type: 'varchar', length: 50, nullable: true, default: null })
+  dispatchStatus: 'SEARCHING' | 'ASSIGNED' | 'NO_MEDICS' | 'FAILED' | null;
 
   /** Rating left by client after order completion (1-5), null if not rated yet */
   @Column({ type: 'smallint', nullable: true, default: null })

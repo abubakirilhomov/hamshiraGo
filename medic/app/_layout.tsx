@@ -60,7 +60,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { token, medic } = useAuth();
+  const { token, medic, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const lastLocationSyncTs = useRef(0);
@@ -68,13 +68,14 @@ function RootLayoutNav() {
   const lastAutoOfflineAlertTs = useRef(0);
 
   useEffect(() => {
+    if (isLoading) return; // wait for SecureStore restore
     const inAuth = segments[0] === 'auth';
     if (!token && !inAuth) {
       router.replace('/auth');
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [token, segments]);
+  }, [token, segments, isLoading]);
 
   // Register push token whenever the medic logs in
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import { Text } from '@/components/Themed';
@@ -17,12 +17,19 @@ interface CatalogService {
 export default function HomeScreen() {
   const [services, setServices] = useState<CatalogService[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadServices = () => {
+    setLoading(true);
+    setError(null);
     apiFetch<CatalogService[]>('/services')
       .then(setServices)
-      .catch(() => {})
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Ошибка загрузки услуг'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadServices();
   }, []);
 
   // Group by category
@@ -46,6 +53,13 @@ export default function HomeScreen() {
 
       {loading ? (
         <ActivityIndicator color={Theme.primary} style={{ marginTop: 32 }} />
+      ) : error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable onPress={loadServices} style={styles.retryBtn}>
+            <Text style={styles.retryText}>Повторить</Text>
+          </Pressable>
+        </View>
       ) : (
         categories.map((cat) => (
           <View key={cat}>
@@ -113,5 +127,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Theme.text,
     marginBottom: 12,
+  },
+  errorBox: {
+    margin: 16,
+    padding: 16,
+    backgroundColor: `${Theme.error}12`,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: Theme.error,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: Theme.primary,
+    borderRadius: 10,
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

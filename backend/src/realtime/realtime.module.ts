@@ -6,11 +6,12 @@ import { OrderEventsGateway } from './order-events.gateway';
 import { PushNotificationsService } from './push-notifications.service';
 import { WebPushService } from './web-push.service';
 import { WebPushSubscription } from './entities/web-push-subscription.entity';
+import { Order } from '../orders/entities/order.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([WebPushSubscription]),
+    TypeOrmModule.forFeature([WebPushSubscription, Order]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

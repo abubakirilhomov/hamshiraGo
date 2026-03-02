@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
@@ -76,6 +76,13 @@ export default function MyOrdersScreen() {
     setLoading(true);
     fetchOrders().finally(() => setLoading(false));
   }, [fetchOrders]);
+
+  // Refetch when tab comes into focus (picks up status changes from order detail screen)
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [fetchOrders]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

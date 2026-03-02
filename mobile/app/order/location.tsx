@@ -16,37 +16,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import type { OrderAddress } from '@/types/order';
-import {
-  MOCK_NEARBY_NURSES,
-  formatEta,
-  type NearbyNurse,
-} from '@/types/nurse';
 import { getServiceById, type ServiceId } from '@/types/services';
-import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
-
-interface ApiMedic {
-  id: string;
-  name: string;
-  rating: number;
-  reviewCount: number;
-  experienceYears: number;
-  distanceKm: number;
-  latitude: number | null;
-  longitude: number | null;
-}
-
-function medicToNurse(m: ApiMedic): NearbyNurse {
-  return {
-    id: m.id,
-    name: m.name,
-    rating: m.rating ?? 4.8,
-    reviewCount: m.reviewCount ?? 0,
-    experienceYears: m.experienceYears ?? 3,
-    distanceKm: Math.round(m.distanceKm * 10) / 10,
-    etaMinutes: Math.max(5, Math.round((m.distanceKm / 0.4) * 60 / 60)),
-  };
-}
 
 const LocationMapComponent =
   Platform.OS === 'web'
@@ -58,7 +29,6 @@ const WEAK_GPS_ACCURACY_METERS = 25;
 export default function OrderLocationScreen() {
   const { serviceId } = useLocalSearchParams<{ serviceId?: string }>();
   const router = useRouter();
-  const { token } = useAuth();
   const service = serviceId ? getServiceById(serviceId as ServiceId) : null;
 
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
@@ -72,34 +42,9 @@ export default function OrderLocationScreen() {
     apartment: '',
     phone: '',
   });
-  const [autoAssign, setAutoAssign] = useState(true);
-  const [selectedNurseId, setSelectedNurseId] = useState<string | null>(null);
-  const [nearbyNurses, setNearbyNurses] = useState<NearbyNurse[]>(MOCK_NEARBY_NURSES);
-  const [nearbyMedics, setNearbyMedics] = useState<ApiMedic[]>([]);
 
   const isWeakGps = accuracyMeters != null && accuracyMeters > WEAK_GPS_ACCURACY_METERS;
   const displayCoords = pin ?? coords;
-  const selectedNurse = selectedNurseId
-    ? nearbyNurses.find((n) => n.id === selectedNurseId)
-    : autoAssign
-      ? nearbyNurses[0]
-      : null;
-
-  const fetchNearbyMedics = useCallback(async (latitude: number, longitude: number) => {
-    try {
-      const medics = await apiFetch<ApiMedic[]>(
-        `/medics/nearby?latitude=${latitude}&longitude=${longitude}&limit=10`,
-        { token: token ?? undefined },
-      );
-      setNearbyMedics(
-        medics.filter((m) => m.latitude != null && m.longitude != null),
-      );
-      setNearbyNurses(medics.length > 0 ? medics.map(medicToNurse) : []);
-    } catch {
-      // fallback to mock on error
-      setNearbyMedics([]);
-    }
-  }, [token]);
 
   const fetchLocation = useCallback(async () => {
     setLoadingLocation(true);
@@ -118,22 +63,16 @@ export default function OrderLocationScreen() {
       setCoords({ latitude, longitude });
       setAccuracyMeters(acc);
       if (!pin) setPin({ latitude, longitude });
-      fetchNearbyMedics(latitude, longitude);
     } catch {
       setLocationPermission(false);
     } finally {
       setLoadingLocation(false);
     }
-  }, [pin, fetchNearbyMedics]);
+  }, [pin]);
 
   useEffect(() => {
     fetchLocation();
-  }, []);
-
-  useEffect(() => {
-    if (!displayCoords) return;
-    fetchNearbyMedics(displayCoords.latitude, displayCoords.longitude);
-  }, [displayCoords?.latitude, displayCoords?.longitude, fetchNearbyMedics]);
+  }, [fetchLocation]);
 
   const handleConfirm = () => {
     if (!displayCoords || !address.house?.trim() || !address.phone?.trim()) {
@@ -150,12 +89,6 @@ export default function OrderLocationScreen() {
         floor: address.floor ?? '',
         apartment: address.apartment ?? '',
         phone: address.phone,
-        // Pass full nurse data so confirm screen doesn't rely on mock lookup
-        nurseName: selectedNurse?.name ?? '',
-        nurseRating: selectedNurse?.rating != null ? String(selectedNurse.rating) : '',
-        nurseEta: selectedNurse?.etaMinutes != null ? String(selectedNurse.etaMinutes) : '',
-        nurseDistance: selectedNurse?.distanceKm != null ? String(selectedNurse.distanceKm) : '',
-        autoAssign: autoAssign ? '1' : '0',
       },
     });
   };
@@ -221,19 +154,9 @@ export default function OrderLocationScreen() {
             latitude={displayCoords.latitude}
             longitude={displayCoords.longitude}
             onPinChange={setPin}
-            medics={nearbyMedics
-              .filter((m) => m.latitude != null && m.longitude != null)
-              .map((m) => ({
-                id: m.id,
-                name: m.name,
-                latitude: Number(m.latitude),
-                longitude: Number(m.longitude),
-              }))}
-            selectedMedicId={selectedNurseId}
-            onSelectMedic={(medicId: string) => {
-              setAutoAssign(false);
-              setSelectedNurseId(medicId);
-            }}
+            medics={[]}
+            selectedMedicId={null}
+            onSelectMedic={() => {}}
           />
         ) : displayCoords ? (
           <View style={styles.coordsFallback}>
@@ -292,52 +215,6 @@ export default function OrderLocationScreen() {
           />
         </View>
 
-        {/* Nearby nurses */}
-        <Text style={styles.sectionTitle}>Медсестра</Text>
-        <View style={styles.toggleRow}>
-          <Pressable
-            style={[styles.toggleOption, autoAssign && styles.toggleOptionActive]}
-            onPress={() => { setAutoAssign(true); setSelectedNurseId(null); }}
-          >
-            <Text style={[styles.toggleText, autoAssign && styles.toggleTextActive]}>
-              Автоназначение
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.toggleOption, !autoAssign && styles.toggleOptionActive]}
-            onPress={() => setAutoAssign(false)}
-          >
-            <Text style={[styles.toggleText, !autoAssign && styles.toggleTextActive]}>
-              Выбрать вручную
-            </Text>
-          </Pressable>
-        </View>
-        {autoAssign && selectedNurse && (
-          <View style={styles.autoAssignHint}>
-            <Text style={styles.autoAssignText}>
-              Будет назначена: {selectedNurse.name} • {selectedNurse.rating} ★ • {formatEta(selectedNurse.etaMinutes)}
-            </Text>
-          </View>
-        )}
-        {!autoAssign && (
-          <View style={styles.nurseList}>
-            {nearbyNurses.length > 0 ? (
-              nearbyNurses.map((nurse) => (
-                <NurseCard
-                  key={nurse.id}
-                  nurse={nurse}
-                  selected={selectedNurseId === nurse.id}
-                  onSelect={() => setSelectedNurseId(nurse.id)}
-                />
-              ))
-            ) : (
-              <Text style={styles.emptyNurseText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-                Рядом пока нет онлайн-медиков
-              </Text>
-            )}
-          </View>
-        )}
-
         <Pressable
           style={({ pressed }) => [styles.confirmButton, pressed && styles.confirmButtonPressed]}
           onPress={handleConfirm}
@@ -346,34 +223,6 @@ export default function OrderLocationScreen() {
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function NurseCard({
-  nurse,
-  selected,
-  onSelect,
-}: {
-  nurse: NearbyNurse;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <Pressable
-      style={[styles.nurseCard, selected && styles.nurseCardSelected]}
-      onPress={onSelect}
-    >
-      <View style={styles.nurseAvatar}>
-        <Text style={styles.nurseAvatarText}>{nurse.name.charAt(0)}</Text>
-      </View>
-      <View style={styles.nurseInfo}>
-        <Text style={styles.nurseName}>{nurse.name}</Text>
-        <Text style={styles.nurseMeta} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-          {nurse.rating} ★ · {nurse.experienceYears} лет опыта · {formatEta(nurse.etaMinutes)} · {nurse.distanceKm} км
-        </Text>
-      </View>
-      {selected && <FontAwesome name="check-circle" size={22} color={Theme.primary} />}
-    </Pressable>
   );
 }
 
@@ -483,88 +332,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
-  toggleRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  toggleOption: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: Theme.surface,
-    borderWidth: 2,
-    borderColor: Theme.border,
-    alignItems: 'center',
-  },
-  toggleOptionActive: {
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}12`,
-  },
-  toggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Theme.textSecondary,
-  },
-  toggleTextActive: {
-    color: Theme.primary,
-  },
-  autoAssignHint: {
-    padding: 12,
-    backgroundColor: `${Theme.primary}12`,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  autoAssignText: {
-    fontSize: 14,
-    color: Theme.text,
-  },
-  nurseList: {
-    gap: 8,
-    marginBottom: 20,
-  },
-  emptyNurseText: {
-    fontSize: 14,
-    textAlign: 'center',
-    paddingVertical: 14,
-  },
-  nurseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Theme.surface,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  nurseCardSelected: {
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}08`,
-  },
-  nurseAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  nurseAvatarText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  nurseInfo: { flex: 1 },
-  nurseName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Theme.text,
-  },
-  nurseMeta: {
-    fontSize: 12,
-    marginTop: 2,
-  },
   confirmButton: {
     backgroundColor: Theme.primary,
     paddingVertical: 16,

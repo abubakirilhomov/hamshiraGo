@@ -1,0 +1,13 @@
+{
+  "name": "hamshirago-tests",
+  "version": "1.0.0",
+  "description": "Playwright API tests for HamshiraGo backend",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test api/",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.0"
+  }
+}
