@@ -1,4 +1,4 @@
-const BASE_URL = "https://hamshirago-production-0a65.up.railway.app";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
 export const WS_URL = BASE_URL;
 
 function getToken(): string | null {
@@ -16,7 +16,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers,
     },
   });
-  if (res.status === 401) {
+  if (res.status === 401 && !path.startsWith("/auth/") && !path.startsWith("/medics/login") && !path.startsWith("/medics/register")) {
     localStorage.removeItem("medic_token");
     localStorage.removeItem("medic");
     window.location.href = "/auth";

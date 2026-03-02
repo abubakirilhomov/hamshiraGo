@@ -5,6 +5,7 @@ import {
   Users,
   ClipboardList,
   Package,
+  BarChart2,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -30,6 +31,7 @@ const navItems = [
   { title: "Клиенты", url: "/clients", icon: Users },
   { title: "Заказы", url: "/orders", icon: ClipboardList },
   { title: "Услуги", url: "/services", icon: Package },
+  { title: "Отчёты", url: "/reports", icon: BarChart2 },
 ];
 
 export function AdminSidebar() {
@@ -47,15 +49,21 @@ export function AdminSidebar() {
       <SidebarContent>
         <div className="px-4 py-5">
           {!collapsed && (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-teal-400 text-sidebar-primary-foreground font-bold text-sm shadow-lg">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-full shadow-lg flex-shrink-0 font-bold text-white text-base"
+                style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}
+              >
                 H
               </div>
-              <span className="font-semibold text-sidebar-foreground">HamshiraGo</span>
+              <span className="font-bold text-sidebar-foreground">HamshiraGo</span>
             </div>
           )}
           {collapsed && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-teal-400 text-sidebar-primary-foreground font-bold text-sm mx-auto shadow-lg">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-full shadow-lg mx-auto font-bold text-white text-base"
+              style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}
+            >
               H
             </div>
           )}
