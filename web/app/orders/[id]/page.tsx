@@ -113,6 +113,10 @@ export default function OrderDetailPage() {
   const [ratingDone, setRatingDone] = useState(false);
   const [socketOk, setSocketOk] = useState(true);
   const [medicLocation, setMedicLocation] = useState<{ lat: number; lng: number; updatedAt: string } | null>(null);
+  const [dispatchState, setDispatchState] = useState<{
+    status: "searching" | "contacting" | "no_medics";
+    candidateName?: string;
+  } | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -136,8 +140,19 @@ export default function OrderDetailPage() {
     socket.on("disconnect", () => setSocketOk(false));
     socket.on("connect_error", () => setSocketOk(false));
 
-    socket.on("order_status", ({ orderId }: { orderId: string; status: OrderStatus }) => {
+    socket.on("dispatch_update", (payload: {
+      status: "searching" | "contacting" | "no_medics";
+      medic?: { name: string; latitude: number | null; longitude: number | null; rating: number | null };
+    }) => {
+      setDispatchState({
+        status: payload.status,
+        candidateName: payload.medic?.name,
+      });
+    });
+
+    socket.on("order_status", ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       if (orderId === id) {
+        if (status !== "CREATED") setDispatchState(null);
         api.orders.get(id).then(setOrder).catch((err: unknown) => console.error("order refresh failed", err));
       }
     });
@@ -314,11 +329,27 @@ export default function OrderDetailPage() {
           </div>
         ) : order.status === "CREATED" ? (
           <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", textAlign: "center" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#f1f5f9", margin: "0 auto 10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FaUserNurse size={24} color="#94a3b8" />
             </div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Ищем медсестру...</p>
-            <p style={{ fontSize: 13, color: "#64748b" }}>Обычно это занимает 2–5 минут</p>
+            {dispatchState?.status === "contacting" && dispatchState.candidateName ? (
+              <>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
+                  Связываемся с {dispatchState.candidateName}...
+                </p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>Медик рассматривает ваш заказ (до 60 сек)</p>
+              </>
+            ) : dispatchState?.status === "no_medics" ? (
+              <>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Медики заняты...</p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>Продолжаем поиск, вам сообщим</p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Ищем медика...</p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>Обычно это занимает 2–5 минут</p>
+              </>
+            )}
           </div>
         ) : null}
 

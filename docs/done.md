@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-03-03
+
+- **[web]** Dispatch migration — убраны `nearbyMedics`, `fetchNearbyMedics`, `closestMedic`, nurse-плашка под картой, nurse-карточка "Ближайший медик", nurse-параметры в `handleSubmit` (`web/app/order/location/page.tsx`)
+- **[web]** Dispatch migration — убраны `nurseName/nurseRating/nurseDistance/nurseEta` params и карточка "Медсестра" (`web/app/order/confirm/page.tsx`)
+- **[web]** Dispatch migration — добавлен state `dispatchState`, listener `dispatch_update`, обновлён UI "Ищем медика" с 3 состояниями (searching/contacting/no_medics) (`web/app/orders/[id]/page.tsx`)
+- **[web-medic]** Dispatch migration — добавлен `medicApi.orders.decline(id)` (`web-medic/lib/api.ts`)
+- **[web-medic]** Dispatch migration — добавлены `invite` state, listeners `dispatch_invite`/`dispatch_invite_expired`, функции `acceptInvite`/`declineInvite`, fullscreen overlay с таймером 60 сек (`web-medic/app/page.tsx`)
+- **[admin]** Логотип в сайдбаре — буква "H" заменена на иконку `Stethoscope` (lucide-react), форма изменена с `rounded-full` на `rounded-lg` для соответствия favicon (`admin/src/components/AdminSidebar.tsx`)
+
 ## 2026-03-02 (сессия 2)
 
 - **[web, web-medic]** Единый favicon — `app/icon.tsx` обновлён на букву **H** белым на бирюзовом градиенте `#0d9488→#0f766e` (было: крест у web, силуэт медсестры у web-medic) (`web/app/icon.tsx`, `web-medic/app/icon.tsx`)
