@@ -155,6 +155,18 @@ export class OrdersService {
     return order;
   }
 
+  async findOneForActor(
+    id: string,
+    actorId: string,
+    role: 'client' | 'medic' | 'admin',
+  ): Promise<Order> {
+    const order = await this.findOne(id);
+    if (role === 'admin') return order;
+    if (role === 'client' && order.clientId === actorId) return order;
+    if (role === 'medic' && order.medicId === actorId) return order;
+    throw new ForbiddenException('You do not have access to this order');
+  }
+
   /** Client cancels their own order — only allowed while CREATED or ASSIGNED */
   async cancelOrder(orderId: string, clientId: string): Promise<Order> {
     const order = await this.findOne(orderId);
@@ -196,11 +208,25 @@ export class OrdersService {
     return this.findOne(orderId);
   }
 
-  async updateStatus(id: string, dto: UpdateOrderStatusDto): Promise<Order> {
+  async updateStatusByClient(
+    id: string,
+    clientId: string,
+    dto: UpdateOrderStatusDto,
+  ): Promise<Order> {
     const order = await this.findOne(id);
-    order.status = dto.status;
+    if (order.clientId !== clientId) {
+      throw new ForbiddenException('Not your order');
+    }
+    // Client can only confirm completion once medic started service.
+    if (dto.status !== OrderStatus.DONE || order.status !== OrderStatus.SERVICE_STARTED) {
+      throw new BadRequestException(
+        `Client cannot transition from "${order.status}" to "${dto.status}"`,
+      );
+    }
+    order.status = OrderStatus.DONE;
     await this.orderRepo.save(order);
-    this.orderEventsGateway.emitOrderStatus(id, dto.status);
+    this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
+    this.notifyClient(order, OrderStatus.DONE);
     return this.findOne(id);
   }
 

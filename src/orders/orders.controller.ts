@@ -8,8 +8,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -47,10 +49,13 @@ export class OrdersController {
     );
   }
 
-  @Get(':id')
+  @Get(':id([0-9a-fA-F-]{36})')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: string; role: 'client' | 'medic' | 'admin' } },
+  ) {
+    return this.ordersService.findOneForActor(id, req.user.id, req.user.role);
   }
 
   /** Client cancels their own order (only CREATED or ASSIGNED) */
@@ -73,10 +78,14 @@ export class OrdersController {
     return this.ordersService.rateOrder(id, clientId, dto);
   }
 
-  @Patch(':id/status')
+  @Patch(':id([0-9a-fA-F-]{36})/status')
   @UseGuards(JwtAuthGuard)
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
-    return this.ordersService.updateStatus(id, dto);
+  updateStatus(
+    @Param('id') id: string,
+    @ClientId() clientId: string,
+    @Body() dto: UpdateOrderStatusDto,
+  ) {
+    return this.ordersService.updateStatusByClient(id, clientId, dto);
   }
 
   // ── Medic endpoints ───────────────────────────────────────────────────────

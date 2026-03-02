@@ -1,4 +1,5 @@
 import { Injectable, ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
@@ -50,7 +51,20 @@ export class AuthService {
       throw new UnauthorizedException('Admin credentials are not configured on the server.');
     }
 
-    if (username !== adminUsername || password !== adminPassword) {
+    // Timing-safe comparison to prevent timing attacks
+    const userBuf = Buffer.from(username);
+    const passBuf = Buffer.from(password);
+    const expectedUserBuf = Buffer.from(adminUsername);
+    const expectedPassBuf = Buffer.from(adminPassword);
+
+    const userMatch =
+      userBuf.length === expectedUserBuf.length &&
+      crypto.timingSafeEqual(userBuf, expectedUserBuf);
+    const passMatch =
+      passBuf.length === expectedPassBuf.length &&
+      crypto.timingSafeEqual(passBuf, expectedPassBuf);
+
+    if (!userMatch || !passMatch) {
       throw new UnauthorizedException('Invalid username or password');
     }
 

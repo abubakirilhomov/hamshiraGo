@@ -9,6 +9,10 @@ import { Server } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Order } from '../orders/entities/order.entity';
+import { OrderStatus } from '../orders/entities/order-status.enum';
 
 export type OrderStatusPayload = { orderId: string; status: string };
 export type MedicLocationPayload = {
@@ -20,7 +24,26 @@ export type MedicLocationPayload = {
   source?: 'socket' | 'rest';
 };
 
-@WebSocketGateway({ cors: { origin: '*' } })
+const WS_ALLOWED_ORIGINS = [
+  'https://hamshirago-web.vercel.app',
+  'https://hamshirago-web-medic.vercel.app',
+  'https://hamshirago-admin.vercel.app',
+  'http://localhost:3001',
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'http://localhost:8081',
+  'http://localhost:8082',
+];
+
+@WebSocketGateway({
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (WS_ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      return callback(new Error(`WS CORS: origin "${origin}" not allowed`));
+    },
+  },
+})
 export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -29,9 +52,44 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   private clientOrderRooms = new Map<string, Set<string>>(); // socketId -> Set of orderIds
 
   constructor(
+    @InjectRepository(Order)
+    private readonly orderRepo: Repository<Order>,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
+
+  private async canAccessOrderRoom(
+    userId: string,
+    role: 'client' | 'medic' | 'admin',
+    orderId: string,
+  ): Promise<boolean> {
+    if (role === 'admin') return true;
+    if (role === 'client') {
+      const exists = await this.orderRepo.exist({ where: { id: orderId, clientId: userId } });
+      return exists;
+    }
+    if (role === 'medic') {
+      const exists = await this.orderRepo.exist({ where: { id: orderId, medicId: userId } });
+      return exists;
+    }
+    return false;
+  }
+
+  private async isMedicAssignedToActiveOrder(medicId: string, orderId: string): Promise<boolean> {
+    return this.orderRepo.exist({
+      where: {
+        id: orderId,
+        medicId,
+        status: In([
+          OrderStatus.ASSIGNED,
+          OrderStatus.ACCEPTED,
+          OrderStatus.ON_THE_WAY,
+          OrderStatus.ARRIVED,
+          OrderStatus.SERVICE_STARTED,
+        ]),
+      },
+    });
+  }
 
   async handleConnection(client: any) {
     try {
@@ -59,7 +117,13 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   }
 
   @SubscribeMessage('subscribe_order')
-  handleSubscribeOrder(client: any, orderId: string) {
+  async handleSubscribeOrder(client: any, orderId: string) {
+    if (!orderId) return;
+    const role = (client as any).role as 'client' | 'medic' | 'admin';
+    const userId = (client as any).userId as string;
+    const allowed = await this.canAccessOrderRoom(userId, role, orderId);
+    if (!allowed) return;
+
     const room = `order:${orderId}`;
     client.join(room);
     let set = this.clientOrderRooms.get(client.id);
@@ -89,17 +153,20 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   }
 
   @SubscribeMessage('medic_location')
-  handleMedicLocation(
+  async handleMedicLocation(
     client: any,
     payload: { orderId: string; latitude: number; longitude: number },
   ) {
     if ((client as any).role !== 'medic') return;
     if (!payload?.orderId) return;
     if (!Number.isFinite(payload.latitude) || !Number.isFinite(payload.longitude)) return;
+    const medicId = (client as any).userId as string;
+    const canEmit = await this.isMedicAssignedToActiveOrder(medicId, payload.orderId);
+    if (!canEmit) return;
 
     this.emitMedicLocation(
       payload.orderId,
-      (client as any).userId,
+      medicId,
       payload.latitude,
       payload.longitude,
       'socket',

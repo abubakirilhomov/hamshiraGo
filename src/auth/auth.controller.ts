@@ -16,6 +16,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { ClientId } from './decorators/client-id.decorator';
@@ -97,8 +98,8 @@ export class AuthController {
    */
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
-  adminLogin(@Body() body: { username: string; password: string }) {
-    return this.authService.adminLogin(body.username, body.password);
+  adminLogin(@Body() dto: AdminLoginDto) {
+    return this.authService.adminLogin(dto.username, dto.password);
   }
 
   @Patch('admin/users/:id/block')
