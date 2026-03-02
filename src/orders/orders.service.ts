@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -14,6 +14,7 @@ import { TelegramService } from '../common/telegram.service';
 import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
+import { DispatchService } from './dispatch.service';
 
 const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
   ASSIGNED:        { title: '👤 Медик назначен',      body: 'Медик принял ваш заказ и скоро выедет' },
@@ -27,6 +28,7 @@ const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
   /** Platform commission rate — 10% of the net order price */
   private static readonly COMMISSION_RATE = 0.10;
 
@@ -42,6 +44,7 @@ export class OrdersService {
     private medicsService: MedicsService,
     private usersService: UsersService,
     private servicesService: ServicesService,
+    private dispatchService: DispatchService,
   ) {}
 
   /** Send Expo + Web Push notifications to the client of a given order */
@@ -52,7 +55,7 @@ export class OrdersService {
     // Expo push (mobile app)
     const expoToken = await this.usersService.getPushToken(order.clientId);
     if (expoToken) {
-      this.pushService.send([expoToken], {
+      await this.pushService.send([expoToken], {
         title: msg.title,
         body: msg.body,
         sound: 'default',
@@ -63,7 +66,7 @@ export class OrdersService {
     }
 
     // Web push (browser)
-    this.webPushService.sendToSubscriber('client', order.clientId, {
+    await this.webPushService.sendToSubscriber('client', order.clientId, {
       title: msg.title,
       body: msg.body,
       data: { orderId: order.id, status },
@@ -105,42 +108,9 @@ export class OrdersService {
     await this.locationRepo.save(location);
     const fullOrder = await this.findOne(saved.id);
 
-    // WebSocket — for medics with the app open
-    this.orderEventsGateway.emitNewOrder(fullOrder as unknown as Record<string, unknown>);
-
-    // Expo push — for medics with the app in background/closed (mobile)
-    const priceLabel = netPrice.toLocaleString('ru-RU');
-    this.medicsService.getOnlinePushTokens().then((tokens) => {
-      if (!tokens.length) return;
-      this.pushService.send(tokens, {
-        title: '🚨 Новый заказ!',
-        body: `${service.title} — ${priceLabel} UZS`,
-        sound: 'default',
-        data: { orderId: saved.id },
-        channelId: 'new_orders',
-        priority: 'high',
-      });
-    });
-
-    // Web push — for medics using the web dashboard in any browser state
-    this.webPushService.broadcast('medic', {
-      title: '🚨 Новый заказ!',
-      body: `${service.title} — ${priceLabel} UZS`,
-      data: { orderId: saved.id },
-      url: `/orders/${saved.id}`,
-    });
-
-    // Telegram — for medics who linked their Telegram (works even if app/browser closed)
-    this.medicsService.getOnlineTelegramChatIds().then((chatIds) => {
-      if (!chatIds.length) return;
-      const address = fullOrder.location?.house ?? 'адрес не указан';
-      const msg =
-        `🚨 <b>Новый заказ!</b>\n\n` +
-        `📋 <b>${service.title}</b>\n` +
-        `💰 ${priceLabel} UZS\n` +
-        `📍 ${address}\n\n` +
-        `Откройте приложение чтобы принять заказ.`;
-      this.telegramService.broadcastToAll(chatIds, msg);
+    // Start automatic dispatch (Yandex-taxi-style push-based assignment)
+    this.dispatchService.startDispatch(saved.id).catch((err) => {
+      this.logger.error(`startDispatch failed for order ${saved.id}: ${err}`);
     });
 
     return fullOrder;
@@ -176,6 +146,10 @@ export class OrdersService {
       throw new BadRequestException(
         `Cannot cancel an order with status "${order.status}". Only CREATED or ASSIGNED orders can be cancelled.`,
       );
+    }
+    // Cancel any active dispatch search
+    if (order.status === OrderStatus.CREATED) {
+      this.dispatchService.cancelDispatch(orderId).catch(() => {});
     }
     await this.orderRepo.update(orderId, { status: OrderStatus.CANCELED });
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
@@ -311,18 +285,26 @@ export class OrdersService {
     }
     if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked.');
 
-    const order = await this.findOne(orderId);
-    if (order.status !== OrderStatus.CREATED) {
-      throw new Error(`Order is not available (status: ${order.status})`);
+    // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
+    await this.dispatchService.onMedicAccept(orderId, medicId);
+
+    // Atomic update: only succeeds if order is still CREATED (prevents race condition)
+    const result = await this.orderRepo.update(
+      { id: orderId, status: OrderStatus.CREATED },
+      { medicId, status: OrderStatus.ASSIGNED },
+    );
+    if (!result.affected) {
+      throw new BadRequestException('Order is no longer available');
     }
-    await this.orderRepo.update(orderId, {
-      medicId,
-      status: OrderStatus.ASSIGNED,
-    });
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.ASSIGNED);
     return updated;
+  }
+
+  /** Medic declines a dispatch invite → dispatch advances to next medic */
+  async declineOrder(orderId: string, medicId: string): Promise<void> {
+    await this.dispatchService.onMedicDecline(orderId, medicId);
   }
 
   /** Medic updates status of their own order */
@@ -409,10 +391,14 @@ export class OrdersService {
     if (order.status === OrderStatus.DONE || order.status === OrderStatus.CANCELED) {
       throw new BadRequestException(`Order is already ${order.status}`);
     }
+    if (order.status === OrderStatus.CREATED) {
+      this.dispatchService.cancelDispatch(orderId).catch(() => {});
+    }
     order.status = OrderStatus.CANCELED;
     await this.orderRepo.save(order);
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
-    this.notifyClient(order, OrderStatus.CANCELED);
-    return this.findOne(orderId);
+    const updated = await this.findOne(orderId);
+    this.notifyClient(updated, OrderStatus.CANCELED);
+    return updated;
   }
 }

@@ -101,9 +101,11 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       const payload = this.jwtService.verify(token, { secret: this.configService.get('JWT_SECRET') });
       (client as any).userId = payload.sub;
       (client as any).role = payload.role;
-      // Medics join the feed room to receive new_order broadcasts
       if (payload.role === 'medic') {
+        // Feed room for broadcast new_order (fallback list)
         client.join('medics_feed');
+        // Personal room for targeted dispatch invites
+        client.join(`medic:${payload.sub}`);
       }
       this.logger.log(`Client connected: ${client.id} user=${payload.sub} role=${payload.role}`);
     } catch {
@@ -171,6 +173,22 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       payload.longitude,
       'socket',
     );
+  }
+
+  /** Send dispatch invite to a specific medic's personal room */
+  emitDispatchInvite(medicId: string, payload: Record<string, unknown>) {
+    this.server.to(`medic:${medicId}`).emit('dispatch_invite', payload);
+    this.logger.log(`Emitted dispatch_invite to medic=${medicId} order=${payload['orderId']}`);
+  }
+
+  /** Notify a medic that their invite expired or was revoked */
+  emitDispatchInviteExpired(medicId: string, payload: { orderId: string }) {
+    this.server.to(`medic:${medicId}`).emit('dispatch_invite_expired', payload);
+  }
+
+  /** Notify the client (order room) about current dispatch state */
+  emitDispatchUpdate(orderId: string, payload: Record<string, unknown>) {
+    this.server.to(`order:${orderId}`).emit('dispatch_update', { orderId, ...payload });
   }
 
   emitMedicLocation(

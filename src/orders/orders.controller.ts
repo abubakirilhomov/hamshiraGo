@@ -112,12 +112,20 @@ export class OrdersController {
     );
   }
 
-  /** Accept an available order */
+  /** Accept an available order (requires active dispatch invite) */
   @Post(':id/accept')
   @UseGuards(MedicAuthGuard)
   @HttpCode(HttpStatus.OK)
   acceptOrder(@Param('id') id: string, @MedicId() medicId: string) {
     return this.ordersService.acceptOrder(id, medicId);
+  }
+
+  /** Decline a dispatch invite → dispatch advances to the next medic */
+  @Post(':id/decline')
+  @UseGuards(MedicAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  declineOrder(@Param('id') id: string, @MedicId() medicId: string) {
+    return this.ordersService.declineOrder(id, medicId);
   }
 
   /** Update order status (ON_THE_WAY, ARRIVED, SERVICE_STARTED, DONE) */

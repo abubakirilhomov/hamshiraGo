@@ -14,7 +14,7 @@ export class Medic {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, unique: true })
   phone: string;
 
   @Column({ type: 'varchar', length: 255 })
@@ -60,7 +60,16 @@ export class Medic {
   @Column({ type: 'text', nullable: true, default: null })
   verificationRejectedReason: string | null;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (v: number) => v,
+      from: (v: string | number | null) => (v == null ? 0 : parseFloat(String(v))),
+    },
+  })
   balance: number;
 
   /** Expo push token for background notifications */
