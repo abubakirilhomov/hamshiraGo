@@ -9,6 +9,9 @@
 - **[backend]** Yandex Taxi-style push-based dispatch: создана entity `DispatchAttempt` (`dispatch_attempts`), добавлен `dispatchStatus` (nullable varchar) в `Order`, создан `DispatchService` (in-memory timers, 60s инвайт, авто-отбор медика по расстоянию/radius 15km, recovery on restart, Telegram admin alerts, auto-cancel при 0 медиках), добавлен `findCandidatesForDispatch` в `MedicsService`, обновлён `OrderEventsGateway` (personal `medic:{id}` room, `emitDispatchInvite`, `emitDispatchInviteExpired`, `emitDispatchUpdate`), обновлён `OrdersService` (убран pull-broadcast, добавлен `startDispatch`/`cancelDispatch`/`declineOrder`), добавлен `POST /orders/:id/decline` в контроллер, обновлён `OrdersModule` (`backend/`)
 - **[mobile]** Убраны nurse selection UI из `location.tsx` и `confirm.tsx`; в `track.tsx` добавлен `dispatch_update` listener, dispatch state banner («Связываемся с [Имя]...» / «Медики заняты, продолжаем поиск...»), маркер кандидата на карте (`mobile/app/order/`)
 - **[medic]** Создан `OrderInviteModal.tsx` — полноэкранный модал с таймером 60s, деталями заказа, кнопками Accept/Decline; обновлён `index.tsx` — добавлены слушатели `dispatch_invite` (показывает модал + haptic) и `dispatch_invite_expired` (скрывает модал) (`medic/components/`, `medic/app/(tabs)/`)
+- **[web]** Dispatch migration — убраны nurse selection UI из `location/page.tsx` и `confirm/page.tsx`; добавлен `dispatch_update` listener с 3 состояниями (searching/contacting/no_medics) на `orders/[id]/page.tsx`
+- **[web-medic]** Dispatch migration — добавлен `medicApi.orders.decline(id)`, fullscreen invite overlay с таймером 60 сек, listeners `dispatch_invite`/`dispatch_invite_expired` (`web-medic/app/page.tsx`, `web-medic/lib/api.ts`)
+- **[admin]** Логотип в сайдбаре — иконка `Stethoscope` (lucide-react), форма `rounded-lg` (`admin/src/components/AdminSidebar.tsx`)
 
 ## 2026-03-02 (сессия 2)
 

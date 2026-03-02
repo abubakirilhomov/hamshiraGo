@@ -11,11 +11,7 @@ import {
   FaExclamationTriangle,
   FaCrosshairs,
   FaExclamationCircle,
-  FaUserNurse,
 } from "react-icons/fa";
-import { api, Medic } from "@/lib/api";
-import type { MedicMarker } from "@/components/Map";
-
 // Карта грузится только на клиенте
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
@@ -60,42 +56,6 @@ function LocationForm() {
   const resolvedRef = useRef(false);
 
   const [error, setError] = useState("");
-  const [nearbyMedics, setNearbyMedics] = useState<MedicMarker[]>([]);
-  const [loadingMedics, setLoadingMedics] = useState(false);
-  const [closestMedic, setClosestMedic] = useState<MedicMarker | null>(null);
-  const medicsFetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ETA: ~3 мин/км, минимум 3 мин
-  function etaMinutes(distanceKm?: number) {
-    return Math.max(3, Math.round((distanceKm ?? 1) * 3));
-  }
-
-  const fetchNearbyMedics = useCallback((latitude: number, longitude: number) => {
-    if (medicsFetchTimer.current) clearTimeout(medicsFetchTimer.current);
-    medicsFetchTimer.current = setTimeout(async () => {
-      setLoadingMedics(true);
-      try {
-        const data: Medic[] = await api.medics.nearby(latitude, longitude);
-        const markers: MedicMarker[] = data
-          .filter((m) => m.latitude != null && m.longitude != null)
-          .map((m) => ({
-            id: m.id,
-            name: m.name,
-            lat: m.latitude!,
-            lng: m.longitude!,
-            rating: m.rating,
-            distanceKm: m.distanceKm,
-          }));
-        setNearbyMedics(markers);
-        // Ближайший = первый (бэкенд сортирует по расстоянию)
-        setClosestMedic(markers[0] ?? null);
-      } catch {
-        // не критично — просто не показываем медиков
-      } finally {
-        setLoadingMedics(false);
-      }
-    }, 600);
-  }, []);
 
   const applyCoords = useCallback(async (latitude: number, longitude: number, accuracy?: number) => {
     resolvedRef.current = true;
@@ -105,8 +65,7 @@ function LocationForm() {
     setGpsLoading(false);
     const detected = await reverseGeocode(latitude, longitude);
     if (detected) setAddress(detected);
-    fetchNearbyMedics(latitude, longitude);
-  }, [fetchNearbyMedics]);
+  }, []);
 
   const getLocation = useCallback(() => {
     resolvedRef.current = false;
@@ -182,7 +141,6 @@ function LocationForm() {
     setLng(newLng);
     const detected = await reverseGeocode(newLat, newLng);
     if (detected) setAddress(detected);
-    fetchNearbyMedics(newLat, newLng);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -201,12 +159,6 @@ function LocationForm() {
       lat: String(lat ?? 41.2995),
       lng: String(lng ?? 69.2401),
     });
-    if (closestMedic) {
-      queryParams.set("nurseName", closestMedic.name);
-      if (closestMedic.rating != null) queryParams.set("nurseRating", String(closestMedic.rating));
-      if (closestMedic.distanceKm != null) queryParams.set("nurseDistance", String(closestMedic.distanceKm));
-      queryParams.set("nurseEta", String(etaMinutes(closestMedic.distanceKm)));
-    }
     router.push(`/order/confirm?${queryParams.toString()}`);
   }
 
@@ -290,36 +242,15 @@ function LocationForm() {
           position: "relative",
           background: "#e2e8f0",
         }}>
-          <Map lat={lat} lng={lng} onMove={handleMapMove} medics={nearbyMedics} />
+          <Map lat={lat} lng={lng} onMove={handleMapMove} medics={[]} />
         </div>
 
-        {/* Плашка: количество медиков рядом */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: nearbyMedics.length > 0 ? "#0d948814" : "#f1f5f9",
-          border: `1px solid ${nearbyMedics.length > 0 ? "#0d948830" : "#e2e8f0"}`,
-          borderRadius: "0 0 12px 12px",
-          padding: "8px 14px",
-          marginBottom: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <FaUserNurse size={13} color={nearbyMedics.length > 0 ? "#0d9488" : "#94a3b8"} />
-            {loadingMedics ? (
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>Ищем медиков рядом...</span>
-            ) : nearbyMedics.length > 0 ? (
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#0d9488" }}>
-                {nearbyMedics.length} медик{nearbyMedics.length === 1 ? "" : nearbyMedics.length < 5 ? "а" : "ов"} доступно рядом
-              </span>
-            ) : (
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>Медики рядом не найдены</span>
-            )}
-          </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12, marginTop: 4 }}>
           <button
             type="button"
             onClick={getLocation}
             disabled={gpsLoading}
             style={{
-              flexShrink: 0,
               background: gpsLoading ? "#94a3b8" : "#0d9488",
               color: "#fff",
               border: "none",
@@ -331,7 +262,6 @@ function LocationForm() {
               display: "flex",
               alignItems: "center",
               gap: 5,
-              whiteSpace: "nowrap",
               transition: "background 150ms ease",
             }}
           >
@@ -339,27 +269,6 @@ function LocationForm() {
             {gpsLoading ? "Ищем..." : "Моё место"}
           </button>
         </div>
-
-        {/* ─── Ближайший медик ─── */}
-        {closestMedic && (
-          <div style={{
-            background: "#f0fdf9",
-            border: "1px solid #0d948830",
-            borderRadius: "0 0 12px 12px",
-            padding: "10px 14px",
-            fontSize: 13,
-            color: "#0f172a",
-            fontWeight: 500,
-            marginTop: -1,
-          }}>
-            Будет назначена:&nbsp;
-            <strong>{closestMedic.name}</strong>
-            {closestMedic.rating != null && (
-              <span style={{ color: "#f59e0b" }}>&nbsp;· {Number(closestMedic.rating).toFixed(1)} ★</span>
-            )}
-            <span style={{ color: "#64748b" }}>&nbsp;· ~{etaMinutes(closestMedic.distanceKm)} мин</span>
-          </div>
-        )}
 
         <p style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", marginBottom: 16 }}>
           Нажмите на карту или перетащите маркер чтобы уточнить место
