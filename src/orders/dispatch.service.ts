@@ -270,13 +270,7 @@ export class DispatchService implements OnApplicationBootstrap {
         dist: this.haversineKm(lat, lng, Number(m.latitude!), Number(m.longitude!)),
       }))
       .filter(({ dist }) => dist <= this.DISPATCH_RADIUS_KM)
-      .sort((a, b) => {
-        const rd = Number(b.medic.rating ?? 0) - Number(a.medic.rating ?? 0);
-        if (rd !== 0) return rd;
-        const cd = (b.medic.reviewCount ?? 0) - (a.medic.reviewCount ?? 0);
-        if (cd !== 0) return cd;
-        return a.dist - b.dist;
-      });
+      .sort((a, b) => a.dist - b.dist);
 
     return withDist[0]?.medic ?? null;
   }
