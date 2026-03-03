@@ -4,6 +4,10 @@
 
 ---
 
+## 2026-03-03 (сессия 6)
+
+- **[devops]** Исправлены 404 ошибки на статических ассетах Railway — добавлены multi-stage `Dockerfile` и `railway.toml` для `web/` и `web-medic/`: multi-stage build (deps → builder → runner), правильное копирование `.next/static` и `public` в standalone директорию, `builder = "DOCKERFILE"` в railway.toml
+
 ## 2026-03-03 (сессия 5)
 
 - **[medic]** `order/[id].tsx` — добавлена встроенная карта маршрута (240px) для статусов ASSIGNED/ACCEPTED/ON_THE_WAY/ARRIVED: маркер клиента 🏠 синий, маркер медика 🧑‍⚕️ зелёный, OSRM маршрут (зелёная линия, 8с таймаут, 12с троттл), `fitToCoordinates` для авто-фокуса при обновлении позиции медика; в `emitCurrentLocation` добавлен `setMedicPos` для обновления карты; отдельный location fetch при смене статуса (`medic/app/order/[id].tsx`)
