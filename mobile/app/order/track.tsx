@@ -112,6 +112,7 @@ export default function TrackOrderScreen() {
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [pendingRating, setPendingRating] = useState(0);
   const [dispatchState, setDispatchState] = useState<{
     status: DispatchStatus;
     candidateName?: string;
@@ -651,22 +652,40 @@ export default function TrackOrderScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Оцените медика</Text>
           <Text style={styles.ratingHint} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-            Как прошёл визит?
+            Нажмите на звезду чтобы выбрать оценку
           </Text>
           <View style={styles.starsRow}>
             {[1, 2, 3, 4, 5].map((star) => (
               <Pressable
                 key={star}
                 style={({ pressed }) => [styles.starBtn, pressed && { opacity: 0.6 }]}
-                onPress={() => handleRate(star)}
+                onPress={() => setPendingRating(star)}
                 disabled={submittingRating}
               >
-                <FontAwesome name="star" size={36} color={Theme.primary} />
-                <Text style={styles.starLabel}>{star}</Text>
+                <FontAwesome
+                  name={star <= pendingRating ? 'star' : 'star-o'}
+                  size={38}
+                  color={star <= pendingRating ? Theme.primary : Theme.border}
+                />
               </Pressable>
             ))}
           </View>
-          {submittingRating && <ActivityIndicator color={Theme.primary} style={{ marginTop: 8 }} />}
+          <Pressable
+            style={({ pressed }) => [
+              styles.submitRatingBtn,
+              pendingRating === 0 && styles.submitRatingDisabled,
+              pressed && pendingRating > 0 && { opacity: 0.8 },
+            ]}
+            onPress={() => pendingRating > 0 && handleRate(pendingRating)}
+            disabled={submittingRating || pendingRating === 0}
+          >
+            {submittingRating
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={styles.submitRatingText}>
+                  {pendingRating === 0 ? 'Выберите оценку' : `Отправить — ${pendingRating} ★`}
+                </Text>
+            }
+          </Pressable>
         </View>
       )}
 
@@ -1093,12 +1112,22 @@ const styles = StyleSheet.create({
   },
   starBtn: {
     alignItems: 'center',
-    gap: 4,
-    padding: 4,
+    padding: 6,
   },
-  starLabel: {
-    fontSize: 12,
-    color: Theme.textSecondary,
+  submitRatingBtn: {
+    backgroundColor: Theme.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  submitRatingDisabled: {
+    backgroundColor: Theme.border,
+  },
+  submitRatingText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
   ratingDoneRow: {
     flexDirection: 'row',

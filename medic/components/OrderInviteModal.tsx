@@ -139,19 +139,19 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       ? haversineKm(medicPos.latitude, medicPos.longitude, clientLat, clientLng)
       : null;
   const showMap = MapsModule && clientLat != null && clientLng != null;
-  const mapRegion =
+  const mapInitialRegion =
     medicPos && clientLat != null && clientLng != null
       ? {
           latitude: (medicPos.latitude + clientLat) / 2,
           longitude: (medicPos.longitude + clientLng) / 2,
-          latitudeDelta: Math.abs(medicPos.latitude - clientLat) * 2.5 + 0.01,
-          longitudeDelta: Math.abs(medicPos.longitude - clientLng) * 2.5 + 0.01,
+          latitudeDelta: Math.max(Math.abs(medicPos.latitude - clientLat) * 2.2, 0.008),
+          longitudeDelta: Math.max(Math.abs(medicPos.longitude - clientLng) * 2.2, 0.008),
         }
       : {
           latitude: clientLat ?? 0,
           longitude: clientLng ?? 0,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
+          latitudeDelta: 0.015,
+          longitudeDelta: 0.015,
         };
 
   return (
@@ -212,10 +212,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             <View style={styles.mapWrap}>
               <MapsModule.default
                 style={styles.map}
-                initialRegion={mapRegion}
-                region={mapRegion}
-                scrollEnabled={false}
-                zoomEnabled={false}
+                initialRegion={mapInitialRegion}
                 pitchEnabled={false}
                 rotateEnabled={false}
               >
@@ -476,7 +473,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   mapWrap: {
-    height: 170,
+    height: 200,
   },
   map: {
     width: '100%',
