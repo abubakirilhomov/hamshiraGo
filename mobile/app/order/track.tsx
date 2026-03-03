@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -124,9 +125,12 @@ export default function TrackOrderScreen() {
     source?: 'socket' | 'rest';
   } | null>(null);
   const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const socketRef = useRef<Socket | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastRouteFetchAtRef = useRef(0);
+  const pulseAnim = useRef(new Animated.Value(0)).current;
 
   // ── REST fetch ──────────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
@@ -267,6 +271,37 @@ export default function TrackOrderScreen() {
     fetchRoadRoute();
   }, [fetchRoadRoute]);
 
+  // ── Pulse animation (while dispatching) ─────────────────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'CREATED' || !dispatchState) return;
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [order?.status, dispatchState, pulseAnim]);
+
+  // ── Elapsed timer (while order is CREATED) ───────────────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'CREATED') {
+      setElapsedSeconds(0);
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+      return;
+    }
+    if (order?.created_at) {
+      const startMs = new Date(order.created_at).getTime();
+      const tick = () => setElapsedSeconds(Math.floor((Date.now() - startMs) / 1000));
+      tick();
+      elapsedTimerRef.current = setInterval(tick, 1000);
+    }
+    return () => {
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    };
+  }, [order?.status, order?.created_at]);
+
   // ── Rate order ───────────────────────────────────────────────────────────────
   const handleRate = async (stars: number) => {
     if (!orderId || !token || submittingRating) return;
@@ -378,6 +413,7 @@ export default function TrackOrderScreen() {
               {getDispatchStatusText(dispatchState)}
             </Text>
           </View>
+          <Text style={styles.dispatchTimer}>{formatElapsed(elapsedSeconds)}</Text>
         </View>
       )}
 
@@ -474,73 +510,124 @@ export default function TrackOrderScreen() {
       {/* Live map */}
       {order.location?.latitude != null &&
         order.location?.longitude != null &&
-        medicLocation &&
         TrackMapComponent && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Медик на карте</Text>
+            <Text style={styles.sectionTitle}>
+              {order.status === 'CREATED' ? 'Поиск медика' : 'Медик на карте'}
+            </Text>
             <View style={styles.mapWrap}>
               <TrackMapComponent.default
                 style={styles.map}
                 initialRegion={{
+                  latitude: medicLocation
+                    ? (Number(order.location.latitude) + medicLocation.latitude) / 2
+                    : Number(order.location.latitude),
+                  longitude: medicLocation
+                    ? (Number(order.location.longitude) + medicLocation.longitude) / 2
+                    : Number(order.location.longitude),
+                  latitudeDelta: 0.025,
+                  longitudeDelta: 0.025,
+                }}
+                region={medicLocation ? {
                   latitude: (Number(order.location.latitude) + medicLocation.latitude) / 2,
                   longitude: (Number(order.location.longitude) + medicLocation.longitude) / 2,
-                  latitudeDelta: 0.02,
-                  longitudeDelta: 0.02,
-                }}
-                region={{
-                  latitude: (Number(order.location.latitude) + medicLocation.latitude) / 2,
-                  longitude: (Number(order.location.longitude) + medicLocation.longitude) / 2,
-                  latitudeDelta: 0.02,
-                  longitudeDelta: 0.02,
-                }}
+                  latitudeDelta: 0.025,
+                  longitudeDelta: 0.025,
+                } : undefined}
               >
+                {/* Client marker — blue, pulsing during search */}
                 <TrackMapComponent.Marker
                   coordinate={{
                     latitude: Number(order.location.latitude),
                     longitude: Number(order.location.longitude),
                   }}
-                  title="🏠 Вы здесь"
+                  title="Вы здесь"
                   description="Адрес вызова"
-                  pinColor="#2563eb"
-                />
-                <TrackMapComponent.Marker
-                  coordinate={{
-                    latitude: medicLocation.latitude,
-                    longitude: medicLocation.longitude,
-                  }}
-                  title={
-                    order.status === 'CREATED' && dispatchState?.candidateName
-                      ? `🩺 ${dispatchState.candidateName}`
-                      : '🩺 Медик в пути'
-                  }
-                  description={
-                    order.status === 'CREATED'
-                      ? 'Кандидат — ожидаем подтверждения'
-                      : 'Текущая позиция медика'
-                  }
-                  pinColor={order.status === 'CREATED' ? '#f59e0b' : '#dc2626'}
-                />
-                <TrackMapComponent.Polyline
-                  coordinates={routeCoords.length > 1
-                    ? routeCoords
-                    : [
-                        {
-                          latitude: Number(order.location.latitude),
-                          longitude: Number(order.location.longitude),
-                        },
-                        {
-                          latitude: medicLocation.latitude,
-                          longitude: medicLocation.longitude,
-                        },
-                      ]}
-                  strokeColor={Theme.primary}
-                  strokeWidth={3}
-                />
+                  tracksViewChanges={order.status === 'CREATED' && !!dispatchState}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                >
+                  <View style={styles.clientMarkerWrap}>
+                    {order.status === 'CREATED' && dispatchState && (
+                      <Animated.View
+                        style={[
+                          styles.pulseRing,
+                          {
+                            opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
+                            transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] }) }],
+                          },
+                        ]}
+                      />
+                    )}
+                    <View style={styles.clientMarkerDot}>
+                      <Text style={styles.markerEmoji}>🏠</Text>
+                    </View>
+                  </View>
+                </TrackMapComponent.Marker>
+
+                {/* Medic/candidate marker — red */}
+                {medicLocation && (
+                  <TrackMapComponent.Marker
+                    coordinate={{
+                      latitude: medicLocation.latitude,
+                      longitude: medicLocation.longitude,
+                    }}
+                    title={
+                      order.status === 'CREATED' && dispatchState?.candidateName
+                        ? dispatchState.candidateName
+                        : 'Медик'
+                    }
+                    description={
+                      order.status === 'CREATED'
+                        ? 'Ожидаем подтверждения'
+                        : 'Текущая позиция медика'
+                    }
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    tracksViewChanges={false}
+                  >
+                    <View style={[
+                      styles.medicMarkerDot,
+                      order.status === 'CREATED' && { backgroundColor: '#f59e0b' },
+                    ]}>
+                      <Text style={styles.markerEmoji}>🩺</Text>
+                    </View>
+                  </TrackMapComponent.Marker>
+                )}
+
+                {/* Route line */}
+                {medicLocation && (
+                  <TrackMapComponent.Polyline
+                    coordinates={routeCoords.length > 1
+                      ? routeCoords
+                      : [
+                          { latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) },
+                          { latitude: medicLocation.latitude, longitude: medicLocation.longitude },
+                        ]}
+                    strokeColor={order.status === 'CREATED' ? '#f59e0b' : Theme.primary}
+                    strokeWidth={3}
+                    lineDashPattern={order.status === 'CREATED' ? [6, 4] : undefined}
+                  />
+                )}
               </TrackMapComponent.default>
             </View>
-            <Text style={styles.mapMeta}>
-              Обновлено: {new Date(medicLocation.updatedAt).toLocaleTimeString('ru-RU')}
-            </Text>
+
+            {/* Legend + meta */}
+            <View style={styles.mapLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
+                <Text style={styles.legendText}>Вы</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: order.status === 'CREATED' ? '#f59e0b' : '#dc2626' }]} />
+                <Text style={styles.legendText}>
+                  {order.status === 'CREATED' ? 'Кандидат' : 'Медик'}
+                </Text>
+              </View>
+              {medicLocation && (
+                <Text style={styles.mapMeta}>
+                  {new Date(medicLocation.updatedAt).toLocaleTimeString('ru-RU')}
+                </Text>
+              )}
+            </View>
           </View>
         )}
 
@@ -620,6 +707,12 @@ export default function TrackOrderScreen() {
       )}
     </ScrollView>
   );
+}
+
+function formatElapsed(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}м ${s}с` : `${s}с`;
 }
 
 function getDispatchStatusText(dispatchState: {
@@ -825,7 +918,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   mapWrap: {
-    height: 210,
+    height: 220,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -833,9 +926,80 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  mapLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flexWrap: 'wrap',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    fontWeight: '600',
+  },
   mapMeta: {
     fontSize: 12,
     color: Theme.textSecondary,
+    marginLeft: 'auto',
+  },
+
+  // Marker styles
+  clientMarkerWrap: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2563eb',
+  },
+  clientMarkerDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  medicMarkerDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#dc2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  markerEmoji: {
+    fontSize: 18,
+    lineHeight: 22,
   },
 
   // Dispatch status banner
@@ -864,6 +1028,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Theme.primary,
     flex: 1,
+  },
+  dispatchTimer: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Theme.textSecondary,
+    minWidth: 48,
+    textAlign: 'right',
   },
 
   // Canceled banner

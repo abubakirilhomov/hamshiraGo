@@ -1,10 +1,26 @@
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+
+const MapsModule =
+  Platform.OS === 'web' ? null : require('react-native-maps');
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export interface DispatchInvitePayload {
   orderId: string;
@@ -35,6 +51,8 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
   const router = useRouter();
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [loading, setLoading] = useState<'accept' | 'decline' | null>(null);
+  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     if (!invite) return;
@@ -46,6 +64,26 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
     const interval = setInterval(update, 500);
     return () => clearInterval(interval);
   }, [invite]);
+
+  // Get medic's current location for distance + map
+  useEffect(() => {
+    if (!invite) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted' || !alive) return;
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (alive) setMedicPos({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      } catch {
+        // GPS unavailable — show text-only distance
+      }
+    })();
+    return () => {
+      alive = false;
+      locationSubRef.current?.remove();
+    };
+  }, [invite?.orderId]);
 
   const handleAccept = async () => {
     if (!invite) return;
@@ -94,6 +132,28 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       ].filter(Boolean)
     : [];
 
+  const clientLat = loc?.latitude != null ? Number(loc.latitude) : null;
+  const clientLng = loc?.longitude != null ? Number(loc.longitude) : null;
+  const distanceKm =
+    medicPos && clientLat != null && clientLng != null
+      ? haversineKm(medicPos.latitude, medicPos.longitude, clientLat, clientLng)
+      : null;
+  const showMap = MapsModule && clientLat != null && clientLng != null;
+  const mapRegion =
+    medicPos && clientLat != null && clientLng != null
+      ? {
+          latitude: (medicPos.latitude + clientLat) / 2,
+          longitude: (medicPos.longitude + clientLng) / 2,
+          latitudeDelta: Math.abs(medicPos.latitude - clientLat) * 2.5 + 0.01,
+          longitudeDelta: Math.abs(medicPos.longitude - clientLng) * 2.5 + 0.01,
+        }
+      : {
+          latitude: clientLat ?? 0,
+          longitude: clientLng ?? 0,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        };
+
   return (
     <Modal visible animationType="slide" statusBarTranslucent>
       <View style={styles.container}>
@@ -133,13 +193,86 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
                 <InfoRow label="Адрес" value={addressParts.join(', ')} />
               )}
               <InfoRow label="Телефон" value={loc.phone} />
-              <InfoRow
-                label="Координаты"
-                value={`${Number(loc.latitude).toFixed(5)}, ${Number(loc.longitude).toFixed(5)}`}
-              />
+              {distanceKm != null && (
+                <InfoRow
+                  label="Расстояние"
+                  value={distanceKm < 1
+                    ? `~${Math.round(distanceKm * 1000)} м`
+                    : `~${distanceKm.toFixed(1)} км`}
+                  valueStyle={styles.distanceValue}
+                />
+              )}
             </>
           )}
         </View>
+
+        {/* Mini map: client + medic positions */}
+        {showMap && (
+          <View style={styles.mapCard}>
+            <View style={styles.mapWrap}>
+              <MapsModule.default
+                style={styles.map}
+                initialRegion={mapRegion}
+                region={mapRegion}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                pitchEnabled={false}
+                rotateEnabled={false}
+              >
+                {/* Client marker — blue */}
+                <MapsModule.Marker
+                  coordinate={{ latitude: clientLat!, longitude: clientLng! }}
+                  title="Клиент"
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  tracksViewChanges={false}
+                >
+                  <View style={styles.clientDot}>
+                    <Text style={styles.markerEmoji}>🏠</Text>
+                  </View>
+                </MapsModule.Marker>
+
+                {/* Medic marker — red */}
+                {medicPos && (
+                  <MapsModule.Marker
+                    coordinate={medicPos}
+                    title="Вы"
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    tracksViewChanges={false}
+                  >
+                    <View style={styles.medicDot}>
+                      <Text style={styles.markerEmoji}>🩺</Text>
+                    </View>
+                  </MapsModule.Marker>
+                )}
+
+                {/* Straight line */}
+                {medicPos && (
+                  <MapsModule.Polyline
+                    coordinates={[
+                      { latitude: clientLat!, longitude: clientLng! },
+                      medicPos,
+                    ]}
+                    strokeColor="#f59e0b"
+                    strokeWidth={2.5}
+                    lineDashPattern={[6, 4]}
+                  />
+                )}
+              </MapsModule.default>
+            </View>
+            <View style={styles.mapLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
+                <Text style={styles.legendLabel}>Клиент</Text>
+              </View>
+              {medicPos && (
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
+                  <Text style={styles.legendLabel}>Вы</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Action buttons */}
         <View style={styles.buttons}>
@@ -322,6 +455,78 @@ const styles = StyleSheet.create({
     color: Theme.primary,
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // ── Distance value ──────────────────────────────────────────────────────────
+  distanceValue: {
+    color: Theme.primary,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+
+  // ── Mini map ────────────────────────────────────────────────────────────────
+  mapCard: {
+    marginHorizontal: 16,
+    marginBottom: 4,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Theme.border,
+    backgroundColor: Theme.surface,
+    gap: 0,
+  },
+  mapWrap: {
+    height: 170,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  mapLegend: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: Theme.surface,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendLabel: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    fontWeight: '600',
+  },
+  clientDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  medicDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#dc2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  markerEmoji: {
+    fontSize: 16,
+    lineHeight: 20,
   },
 
   // ── Buttons ─────────────────────────────────────────────────────────────────

@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-03-03 (сессия 3)
+
+- **[mobile]** `track.tsx` — таймер отсчёта в диспетч-баннере (`formatElapsed`), пульсирующий маркер клиента (синий, `Animated.loop`) во время поиска медика, кастомные маркеры с эмодзи (🏠 синий = клиент, 🩺 красный/оранжевый = медик), карта теперь показывается и без `medicLocation` (пока медик не найден), легенда маркеров (`mobile/app/order/track.tsx`)
+- **[medic]** Установлен `react-native-maps` в medic-приложение; `OrderInviteModal.tsx` — добавлена мини-карта 170px (клиент 🏠 синий, медик 🩺 красный), расстояние через haversine, GPS медика через `expo-location`, пунктирная линия клиент↔медик (`medic/components/OrderInviteModal.tsx`)
+- **[fix]** WebSocket не подключался в Expo Go — Expo Go отправляет `Origin: exp://...`, заблокировано CORS allowlist. Исправлено: `cors: { origin: true }` в `@WebSocketGateway()`; polling-fallback `['websocket', 'polling']` во всех Socket.IO клиентах (`backend/`, `mobile/`, `medic/`)
+
 ## 2026-03-03
 
 - **[backend]** Yandex Taxi-style push-based dispatch: создана entity `DispatchAttempt` (`dispatch_attempts`), добавлен `dispatchStatus` (nullable varchar) в `Order`, создан `DispatchService` (in-memory timers, 60s инвайт, авто-отбор медика по расстоянию/radius 15km, recovery on restart, Telegram admin alerts, auto-cancel при 0 медиках), добавлен `findCandidatesForDispatch` в `MedicsService`, обновлён `OrderEventsGateway` (personal `medic:{id}` room, `emitDispatchInvite`, `emitDispatchInviteExpired`, `emitDispatchUpdate`), обновлён `OrdersService` (убран pull-broadcast, добавлен `startDispatch`/`cancelDispatch`/`declineOrder`), добавлен `POST /orders/:id/decline` в контроллер, обновлён `OrdersModule` (`backend/`)
