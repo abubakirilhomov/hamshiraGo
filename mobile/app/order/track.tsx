@@ -2,13 +2,14 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { io, Socket } from 'socket.io-client';
@@ -106,6 +107,7 @@ const STATUS_INDEX: Partial<Record<OrderStatus, number>> = Object.fromEntries(
 export default function TrackOrderScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const { token } = useAuth();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -188,8 +190,10 @@ export default function TrackOrderScreen() {
       if (payload.orderId !== orderId) return;
       setOrder((prev) => (prev ? { ...prev, status: payload.status } : prev));
       if (payload.status === 'ASSIGNED') {
-        // Medic accepted — clear dispatch overlay
+        // Medic accepted — clear dispatch overlay and reset route so it refetches
         setDispatchState(null);
+        setRouteCoords([]);
+        lastRouteFetchAtRef.current = 0;
       }
       if (payload.status === 'DONE' || payload.status === 'CANCELED') {
         // Refetch full order so medic field is populated for the rating block
@@ -238,12 +242,43 @@ export default function TrackOrderScreen() {
     };
   }, [orderId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Force rating: block back navigation until rated ──────────────────────────
+  const mustRate = order?.status === 'DONE' && order.clientRating === null && !!order.medic;
+
+  useEffect(() => {
+    if (!mustRate) return;
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      e.preventDefault();
+      Alert.alert(
+        'Оцените медика',
+        'Пожалуйста, оцените медика перед тем как вернуться назад.',
+        [{ text: 'Хорошо' }],
+      );
+    });
+    return unsubscribe;
+  }, [navigation, mustRate]);
+
+  useEffect(() => {
+    if (!mustRate) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      Alert.alert(
+        'Оцените медика',
+        'Пожалуйста, оцените медика перед тем как вернуться назад.',
+        [{ text: 'Хорошо' }],
+      );
+      return true;
+    });
+    return () => sub.remove();
+  }, [mustRate]);
+
   const fetchRoadRoute = useCallback(async () => {
     if (!order?.location || !medicLocation) return;
     if (order.location.latitude == null || order.location.longitude == null) return;
+    // Only fetch road route when medic is actively on the way (not during dispatch search)
+    if (order.status === 'CREATED') return;
 
     const now = Date.now();
-    if (now - lastRouteFetchAtRef.current < 20_000) return;
+    if (now - lastRouteFetchAtRef.current < 12_000) return;
     lastRouteFetchAtRef.current = now;
 
     const fromLng = medicLocation.longitude;
@@ -251,9 +286,13 @@ export default function TrackOrderScreen() {
     const toLng = Number(order.location.longitude);
     const toLat = Number(order.location.latitude);
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+
     try {
       const url = `${OSRM_ROUTE_URL}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
       if (!res.ok) return;
       const data = await res.json() as {
         routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
@@ -264,9 +303,10 @@ export default function TrackOrderScreen() {
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
     } catch {
+      clearTimeout(timer);
       // Keep previous route on network/API errors
     }
-  }, [medicLocation, order?.location]);
+  }, [medicLocation, order?.location, order?.status]);
 
   useEffect(() => {
     fetchRoadRoute();
@@ -589,7 +629,7 @@ export default function TrackOrderScreen() {
                       styles.medicMarkerDot,
                       order.status === 'CREATED' && { backgroundColor: '#f59e0b' },
                     ]}>
-                      <Text style={styles.markerEmoji}>🩺</Text>
+                      <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
                     </View>
                   </TrackMapComponent.Marker>
                 )}
@@ -603,7 +643,7 @@ export default function TrackOrderScreen() {
                           { latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) },
                           { latitude: medicLocation.latitude, longitude: medicLocation.longitude },
                         ]}
-                    strokeColor={order.status === 'CREATED' ? '#f59e0b' : Theme.primary}
+                    strokeColor={order.status === 'CREATED' ? '#f59e0b' : '#16a34a'}
                     strokeWidth={3}
                     lineDashPattern={order.status === 'CREATED' ? [6, 4] : undefined}
                   />
@@ -618,7 +658,7 @@ export default function TrackOrderScreen() {
                 <Text style={styles.legendText}>Вы</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: order.status === 'CREATED' ? '#f59e0b' : '#dc2626' }]} />
+                <View style={[styles.legendDot, { backgroundColor: order.status === 'CREATED' ? '#f59e0b' : '#16a34a' }]} />
                 <Text style={styles.legendText}>
                   {order.status === 'CREATED' ? 'Кандидат' : 'Медик'}
                 </Text>
@@ -716,7 +756,7 @@ export default function TrackOrderScreen() {
         </Pressable>
       )}
 
-      {(isDone || isCanceled) && (
+      {(isDone || isCanceled) && !mustRate && (
         <Pressable
           style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
           onPress={() => router.replace('/(tabs)/two')}
@@ -1005,7 +1045,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#dc2626',
+    backgroundColor: '#16a34a',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
