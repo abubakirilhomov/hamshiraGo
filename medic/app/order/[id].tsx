@@ -18,6 +18,13 @@ import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
+const MapsModule =
+  Platform.OS === 'web' ? null : require('react-native-maps');
+
+const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
+
+const MAP_ACTIVE_STATUSES: OrderStatus[] = ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED'];
+
 async function openInMaps(latitude: number, longitude: number) {
   const lat = latitude;
   const lng = longitude;
@@ -37,7 +44,6 @@ async function openInMaps(latitude: number, longitude: number) {
     }
   } catch {}
 
-  // fallback: Yandex Maps web, then Google Maps
   Alert.alert(
     'Открыть в картах',
     '',
@@ -98,11 +104,11 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 
 /** Next status transition map for medic */
 const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
-  ASSIGNED:       { status: 'ACCEPTED',       label: 'Подтвердить принятие' },
-  ACCEPTED:       { status: 'ON_THE_WAY',     label: 'Еду к клиенту' },
-  ON_THE_WAY:     { status: 'ARRIVED',        label: 'Я прибыл' },
+  ASSIGNED:       { status: 'ACCEPTED',        label: 'Подтвердить принятие' },
+  ACCEPTED:       { status: 'ON_THE_WAY',      label: 'Еду к клиенту' },
+  ON_THE_WAY:     { status: 'ARRIVED',         label: 'Я прибыл' },
   ARRIVED:        { status: 'SERVICE_STARTED', label: 'Начать услугу' },
-  SERVICE_STARTED:{ status: 'DONE',           label: 'Завершить заказ' },
+  SERVICE_STARTED:{ status: 'DONE',            label: 'Завершить заказ' },
 };
 
 export default function OrderDetailScreen() {
@@ -116,8 +122,12 @@ export default function OrderDetailScreen() {
   const [socketConnected, setSocketConnected] = useState(false);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
+  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const socketRef = useRef<Socket | null>(null);
   const trackingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastRouteFetchRef = useRef(0);
+  const mapRef = useRef<any>(null);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -168,6 +178,7 @@ export default function OrderDetailScreen() {
     const loc = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
+    setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
     socketRef.current.emit('medic_location', {
       orderId: id,
       latitude: loc.coords.latitude,
@@ -177,6 +188,7 @@ export default function OrderDetailScreen() {
     setSentLocationCount((prev) => prev + 1);
   }, [id, locationDeniedWarned]);
 
+  // Send location every 5s while ON_THE_WAY
   useEffect(() => {
     const shouldTrack = order?.status === 'ON_THE_WAY';
 
@@ -200,6 +212,61 @@ export default function OrderDetailScreen() {
       }
     };
   }, [order?.status, emitCurrentLocation]);
+
+  // Get medic location for the map when in active statuses (even if not ON_THE_WAY yet)
+  useEffect(() => {
+    if (!order || !MAP_ACTIVE_STATUSES.includes(order.status)) return;
+    Location.getForegroundPermissionsAsync().then((perm) => {
+      if (perm.status !== 'granted') return;
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then((loc) => setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }))
+        .catch(() => {});
+    });
+  }, [order?.status]);
+
+  // Fetch OSRM road route medic → client
+  const fetchRoute = useCallback(async () => {
+    if (!medicPos || !order?.location) return;
+    if (order.location.latitude == null || order.location.longitude == null) return;
+
+    const now = Date.now();
+    if (now - lastRouteFetchRef.current < 12_000) return;
+    lastRouteFetchRef.current = now;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const url = `${OSRM_URL}/${medicPos.longitude},${medicPos.latitude};${Number(order.location.longitude)},${Number(order.location.latitude)}?overview=full&geometries=geojson`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return;
+      const data = await res.json() as {
+        routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
+      };
+      const coordinates = data?.routes?.[0]?.geometry?.coordinates ?? [];
+      if (!coordinates.length) return;
+      setRouteCoords(coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })));
+    } catch {
+      clearTimeout(timer);
+    }
+  }, [medicPos, order?.location]);
+
+  useEffect(() => {
+    fetchRoute();
+  }, [fetchRoute]);
+
+  // Auto-fit map when both positions are available
+  useEffect(() => {
+    if (!mapRef.current || !medicPos || !order?.location?.latitude) return;
+    mapRef.current.fitToCoordinates(
+      [
+        { latitude: medicPos.latitude, longitude: medicPos.longitude },
+        { latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) },
+      ],
+      { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: true },
+    );
+  }, [medicPos]);
 
   const handleNextStatus = async () => {
     if (!order) return;
@@ -261,6 +328,25 @@ export default function OrderDetailScreen() {
   const date = new Date(order.created_at).toLocaleDateString('ru-RU', {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
+
+  const clientLat = order.location?.latitude != null ? Number(order.location.latitude) : null;
+  const clientLng = order.location?.longitude != null ? Number(order.location.longitude) : null;
+  const showMap = MapsModule && clientLat != null && clientLng != null &&
+    MAP_ACTIVE_STATUSES.includes(order.status);
+
+  const mapInitialRegion = medicPos && clientLat != null && clientLng != null
+    ? {
+        latitude: (medicPos.latitude + clientLat) / 2,
+        longitude: (medicPos.longitude + clientLng) / 2,
+        latitudeDelta: Math.max(Math.abs(medicPos.latitude - clientLat) * 2.5, 0.01),
+        longitudeDelta: Math.max(Math.abs(medicPos.longitude - clientLng) * 2.5, 0.01),
+      }
+    : {
+        latitude: clientLat ?? 0,
+        longitude: clientLng ?? 0,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -334,18 +420,99 @@ export default function OrderDetailScreen() {
             <FontAwesome name="phone" size={16} color={Theme.primary} />
             <Text style={styles.locationText}>{order.location.phone}</Text>
           </View>
-          {order.location.latitude != null && order.location.longitude != null && (
+          {clientLat != null && clientLng != null && (
             <Pressable
               style={({ pressed }) => [styles.mapsBtn, pressed && styles.mapsBtnPressed]}
-              onPress={() => openInMaps(
-                Number(order.location!.latitude),
-                Number(order.location!.longitude),
-              )}
+              onPress={() => openInMaps(clientLat!, clientLng!)}
             >
               <FontAwesome name="location-arrow" size={15} color="#fff" />
-              <Text style={styles.mapsBtnText}>Открыть маршрут</Text>
+              <Text style={styles.mapsBtnText}>Открыть маршрут во внешних картах</Text>
             </Pressable>
           )}
+        </View>
+      )}
+
+      {/* Embedded map: medic → client */}
+      {showMap && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Маршрут к клиенту</Text>
+          <View style={styles.mapWrap}>
+            <MapsModule.default
+              ref={mapRef}
+              style={styles.map}
+              initialRegion={mapInitialRegion}
+              pitchEnabled={false}
+              rotateEnabled={false}
+              onMapReady={() => {
+                if (medicPos && clientLat != null && clientLng != null) {
+                  mapRef.current?.fitToCoordinates(
+                    [
+                      { latitude: medicPos.latitude, longitude: medicPos.longitude },
+                      { latitude: clientLat, longitude: clientLng },
+                    ],
+                    { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: false },
+                  );
+                }
+              }}
+            >
+              {/* Client marker — blue */}
+              <MapsModule.Marker
+                coordinate={{ latitude: clientLat!, longitude: clientLng! }}
+                title="Клиент"
+                anchor={{ x: 0.5, y: 0.5 }}
+                tracksViewChanges={false}
+              >
+                <View style={styles.clientDot}>
+                  <Text style={styles.markerEmoji}>🏠</Text>
+                </View>
+              </MapsModule.Marker>
+
+              {/* Medic marker — green */}
+              {medicPos && (
+                <MapsModule.Marker
+                  coordinate={medicPos}
+                  title="Вы"
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  tracksViewChanges={false}
+                >
+                  <View style={styles.medicDot}>
+                    <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                  </View>
+                </MapsModule.Marker>
+              )}
+
+              {/* Route line */}
+              {medicPos && (
+                <MapsModule.Polyline
+                  coordinates={
+                    routeCoords.length > 1
+                      ? routeCoords
+                      : [
+                          { latitude: medicPos.latitude, longitude: medicPos.longitude },
+                          { latitude: clientLat!, longitude: clientLng! },
+                        ]
+                  }
+                  strokeColor="#16a34a"
+                  strokeWidth={3.5}
+                />
+              )}
+            </MapsModule.default>
+          </View>
+
+          {/* Legend */}
+          <View style={styles.mapLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
+              <Text style={styles.legendLabel}>Клиент</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: '#16a34a' }]} />
+              <Text style={styles.legendLabel}>Вы</Text>
+            </View>
+            {!medicPos && (
+              <Text style={styles.waitingGps}>Ожидаем GPS...</Text>
+            )}
+          </View>
         </View>
       )}
 
@@ -447,6 +614,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Theme.border,
     marginBottom: 12,
+    gap: 0,
   },
   cardTitle: { fontSize: 12, fontWeight: '700', color: Theme.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
   serviceTitle: { fontSize: 18, fontWeight: '700', color: Theme.text },
@@ -479,6 +647,77 @@ const styles = StyleSheet.create({
   },
   mapsBtnPressed: { opacity: 0.9 },
   mapsBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+
+  // ── Map ──────────────────────────────────────────────────────────────────────
+  mapWrap: {
+    height: 240,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  map: { width: '100%', height: '100%' },
+  mapLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flexWrap: 'wrap',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendLabel: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    fontWeight: '600',
+  },
+  waitingGps: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    marginLeft: 4,
+  },
+  clientDot: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  medicDot: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#16a34a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2.5,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  markerEmoji: {
+    fontSize: 17,
+    lineHeight: 21,
+  },
+
+  // ── Action button ─────────────────────────────────────────────────────────────
   actionBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 14,
