@@ -139,10 +139,10 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     if (!token) return;
     const socket = io(API_BASE, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       auth: { token },
-      reconnectionAttempts: 10,
       reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
     });
     socketRef.current = socket;
     socket.on('connect', () => setSocketConnected(true));

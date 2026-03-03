@@ -42,6 +42,7 @@ interface Order {
   priceAmount: number;
   discountAmount: number;
   status: OrderStatus;
+  dispatchStatus?: 'SEARCHING' | 'NO_MEDICS' | 'ASSIGNED' | 'FAILED' | null;
   clientRating: number | null;
   medic?: Medic | null;
   location: {
@@ -142,6 +143,15 @@ export default function TrackOrderScreen() {
           source: 'rest',
         });
       }
+      // Initialize dispatch state from REST as fallback (WebSocket events override with richer data)
+      if (data.status === 'CREATED' && data.dispatchStatus) {
+        setDispatchState((prev) => {
+          if (prev) return prev; // WebSocket already provided richer info — keep it
+          if (data.dispatchStatus === 'SEARCHING') return { status: 'searching' };
+          if (data.dispatchStatus === 'NO_MEDICS') return { status: 'no_medics' };
+          return null;
+        });
+      }
     } catch {
       // silent – keep stale data
     }
@@ -155,9 +165,10 @@ export default function TrackOrderScreen() {
     fetchOrder().finally(() => setLoading(false));
 
     const socket = io(API_BASE, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       auth: { token },
-      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
     });
     socketRef.current = socket;
 
