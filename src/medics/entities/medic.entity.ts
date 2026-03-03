@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
 import { VerificationStatus } from './verification-status.enum';
@@ -14,7 +15,8 @@ export class Medic {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 255 })
   phone: string;
 
   @Column({ type: 'varchar', length: 255 })
@@ -33,6 +35,7 @@ export class Medic {
   @Column({ type: 'int', default: 0 })
   experienceYears: number;
 
+  @Index()
   @Column({ type: 'boolean', default: false })
   isOnline: boolean;
 
@@ -40,6 +43,7 @@ export class Medic {
   isBlocked: boolean;
 
   /** Verification lifecycle: PENDING → APPROVED or REJECTED */
+  @Index()
   @Column({
     type: 'enum',
     enum: VerificationStatus,

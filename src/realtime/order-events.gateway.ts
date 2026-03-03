@@ -24,25 +24,8 @@ export type MedicLocationPayload = {
   source?: 'socket' | 'rest';
 };
 
-const WS_ALLOWED_ORIGINS = [
-  'https://hamshirago-web.vercel.app',
-  'https://hamshirago-web-medic.vercel.app',
-  'https://hamshirago-admin.vercel.app',
-  'http://localhost:3001',
-  'http://localhost:3000',
-  'http://localhost:3002',
-  'http://localhost:8081',
-  'http://localhost:8082',
-];
-
 @WebSocketGateway({
-  cors: {
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (WS_ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      return callback(new Error(`WS CORS: origin "${origin}" not allowed`));
-    },
-  },
+  cors: { origin: true },
 })
 export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
