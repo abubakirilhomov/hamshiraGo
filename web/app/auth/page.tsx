@@ -72,7 +72,7 @@ export default function AuthPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const rawPhone = phone.replace(/\D/g, "");
+    const rawPhone = "+" + phone.replace(/\D/g, "");
     try {
       const res =
         mode === "login"
