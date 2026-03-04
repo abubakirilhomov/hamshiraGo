@@ -3,14 +3,14 @@ import { IsString, MinLength, IsOptional, IsInt, Min, Max, Matches } from 'class
 export class RegisterMedicDto {
   @IsString()
   @Matches(/^\+998\d{9}$/, { message: 'Phone must be in format +998XXXXXXXXX' })
-  phone: string;
+  phone!: string;
 
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsInt()

@@ -3,7 +3,7 @@ import { VerificationStatus } from '../entities/verification-status.enum';
 
 export class VerifyMedicDto {
   @IsEnum([VerificationStatus.APPROVED, VerificationStatus.REJECTED])
-  status: VerificationStatus.APPROVED | VerificationStatus.REJECTED;
+  status!: VerificationStatus.APPROVED | VerificationStatus.REJECTED;
 
   @IsOptional()
   @IsString()

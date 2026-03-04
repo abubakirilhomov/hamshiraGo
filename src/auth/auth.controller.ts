@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { LoginDto } from './dto/login.dto';
@@ -28,6 +29,7 @@ interface WebPushSubscriptionBody {
   keys: { p256dh: string; auth: string };
 }
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -38,6 +40,9 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({ summary: 'Регистрация клиента' })
+  @ApiResponse({ status: 201, description: 'Клиент зарегистрирован, возвращает access_token' })
+  @ApiResponse({ status: 409, description: 'Телефон уже зарегистрирован' })
   registerClient(@Body() dto: RegisterClientDto) {
     return this.authService.registerClient(dto);
   }
@@ -45,6 +50,9 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Логин клиента' })
+  @ApiResponse({ status: 200, description: 'Успешный логин, возвращает access_token' })
+  @ApiResponse({ status: 401, description: 'Неверный телефон или пароль' })
   loginClient(@Body() dto: LoginDto) {
     return this.authService.loginClient(dto);
   }
@@ -52,12 +60,16 @@ export class AuthController {
   @Patch('push-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Сохранить Expo push-token клиента' })
+  @ApiResponse({ status: 204, description: 'Токен сохранён' })
   async savePushToken(@ClientId() clientId: string, @Body() body: { token: string }) {
     if (body?.token) await this.usersService.savePushToken(clientId, body.token);
   }
 
   /** Returns the VAPID public key — must be called by the frontend before subscribing */
   @Get('vapid-public-key')
+  @ApiOperation({ summary: 'Получить VAPID public key для Web Push' })
   getVapidPublicKey() {
     return { publicKey: this.webPushService.getVapidPublicKey() ?? null };
   }
@@ -66,6 +78,8 @@ export class AuthController {
   @Post('web-push-subscription')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Сохранить Web Push подписку клиента' })
   async saveWebPushSubscription(
     @ClientId() clientId: string,
     @Body() body: WebPushSubscriptionBody,
@@ -85,6 +99,8 @@ export class AuthController {
   @Delete('web-push-subscription')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Удалить Web Push подписку клиента' })
   async deleteWebPushSubscription(@Body() body: { endpoint: string }) {
     if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
   }
@@ -98,6 +114,9 @@ export class AuthController {
    */
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Логин администратора' })
+  @ApiResponse({ status: 200, description: 'Возвращает admin JWT' })
+  @ApiResponse({ status: 401, description: 'Неверный логин или пароль' })
   adminLogin(@Body() dto: AdminLoginDto) {
     return this.authService.adminLogin(dto.username, dto.password);
   }
@@ -105,12 +124,16 @@ export class AuthController {
   @Patch('admin/users/:id/block')
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Заблокировать / разблокировать клиента' })
   blockUser(@Param('id') id: string, @Body() body: { isBlocked: boolean }) {
     return this.usersService.blockUser(id, body.isBlocked ?? true);
   }
 
   @Get('admin/users')
   @UseGuards(AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Список клиентов (admin)' })
   findAllUsersAdmin(
     @Query('page') page?: string,
     @Query('limit') limit?: string,

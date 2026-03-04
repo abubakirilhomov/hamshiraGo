@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -23,6 +24,8 @@ import { ClientId } from '../auth/decorators/client-id.decorator';
 import { MedicId } from '../auth/decorators/medic-id.decorator';
 import { OrderStatus } from './entities/order-status.enum';
 
+@ApiTags('orders')
+@ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -31,12 +34,15 @@ export class OrdersController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Создать заказ (клиент)' })
+  @ApiResponse({ status: 201, description: 'Заказ создан' })
   create(@ClientId() clientId: string, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(clientId, dto);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'История заказов клиента' })
   findByClient(
     @ClientId() clientId: string,
     @Query('page') page?: string,
@@ -51,6 +57,7 @@ export class OrdersController {
 
   @Get(':id([0-9a-fA-F-]{36})')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Получить заказ по ID' })
   findOne(
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string; role: 'client' | 'medic' | 'admin' } },
@@ -62,6 +69,7 @@ export class OrdersController {
   @Post(':id/cancel')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Клиент отменяет заказ' })
   cancelOrder(@Param('id') id: string, @ClientId() clientId: string) {
     return this.ordersService.cancelOrder(id, clientId);
   }

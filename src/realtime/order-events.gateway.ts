@@ -29,7 +29,7 @@ export type MedicLocationPayload = {
 })
 export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(OrderEventsGateway.name);
   private clientOrderRooms = new Map<string, Set<string>>(); // socketId -> Set of orderIds
