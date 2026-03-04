@@ -6,5 +6,5 @@ export class RateOrderDto {
   @IsInt()
   @Min(1)
   @Max(5)
-  rating: number;
+  rating!: number;
 }

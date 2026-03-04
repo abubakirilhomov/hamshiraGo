@@ -12,6 +12,7 @@ import { OrdersModule } from './orders/orders.module';
 import { MedicsModule } from './medics/medics.module';
 import { ServicesModule } from './services/services.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { RealtimeModule } from './realtime/realtime.module';
     MedicsModule,
     ServicesModule,
     RealtimeModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [

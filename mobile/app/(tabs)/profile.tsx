@@ -8,10 +8,13 @@ import {
 import { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { Language } from '@/i18n';
 
 interface OrderSummary {
   id: string;
@@ -28,6 +31,8 @@ const STATUS_ACTIVE = ['CREATED', 'ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED
 
 export default function ProfileScreen() {
   const { user, token, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
 
   useEffect(() => {
@@ -38,9 +43,9 @@ export default function ProfileScreen() {
   }, [token]);
 
   const handleLogout = () => {
-    Alert.alert('Выйти?', 'Вы будете отключены от аккаунта.', [
-      { text: 'Отмена', style: 'cancel' },
-      { text: 'Выйти', style: 'destructive', onPress: logout },
+    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
+      { text: t('profile.cancel'), style: 'cancel' },
+      { text: t('profile.logout'), style: 'destructive', onPress: logout },
     ]);
   };
 
@@ -67,7 +72,7 @@ export default function ProfileScreen() {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{initials}</Text>
         </View>
-        <Text style={styles.name}>{user.name ?? 'Клиент'}</Text>
+        <Text style={styles.name}>{user.name ?? t('profile.client')}</Text>
         <Text style={styles.phone}>{user.phone}</Text>
       </LinearGradient>
 
@@ -75,32 +80,50 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{totalOrders}</Text>
-          <Text style={styles.statLabel}>всего заказов</Text>
+          <Text style={styles.statLabel}>{t('profile.totalOrders')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{doneOrders}</Text>
-          <Text style={styles.statLabel}>завершено</Text>
+          <Text style={styles.statLabel}>{t('profile.completed')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={[styles.statValue, activeOrders > 0 && { color: Theme.warning }]}>
             {activeOrders}
           </Text>
-          <Text style={styles.statLabel}>активных</Text>
+          <Text style={styles.statLabel}>{t('profile.active')}</Text>
         </View>
       </View>
 
       {/* Info card */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Данные аккаунта</Text>
-        <InfoRow icon="phone" label="Телефон" value={user.phone} />
-        {user.name && <InfoRow icon="user" label="Имя" value={user.name} />}
+        <Text style={styles.cardTitle}>{t('profile.accountInfo')}</Text>
+        <InfoRow icon="phone" label={t('profile.phone')} value={user.phone} />
+        {user.name && <InfoRow icon="user" label={t('profile.name')} value={user.name} />}
+      </View>
+
+      {/* Language picker */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('language.title')}</Text>
+        <View style={styles.langRow}>
+          {(['ru', 'uz'] as Language[]).map((lang) => (
+            <Pressable
+              key={lang}
+              style={[styles.langBtn, language === lang && styles.langBtnActive]}
+              onPress={() => setLanguage(lang)}
+            >
+              <Text style={[styles.langBtnText, language === lang && styles.langBtnTextActive]}>
+                {lang === 'ru' ? '🇷🇺 Русский' : '🇺🇿 O\'zbekcha'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {/* App info */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>О приложении</Text>
-        <InfoRow icon="heartbeat" label="HamshiraGo" value="Медсёстры с опытом 3+ лет" />
-        <InfoRow icon="star" label="Скидка" value="10% на первый заказ" />
+        <Text style={styles.cardTitle}>{t('profile.about')}</Text>
+        <InfoRow icon="heartbeat" label="HamshiraGo" value={t('profile.aboutDesc')} />
+        <InfoRow icon="star" label={t('profile.discount')} value={t('profile.discountDesc')} />
       </View>
 
       {/* Logout */}
@@ -109,7 +132,7 @@ export default function ProfileScreen() {
         onPress={handleLogout}
       >
         <FontAwesome name="sign-out" size={16} color={Theme.error} />
-        <Text style={styles.logoutText}>Выйти из аккаунта</Text>
+        <Text style={styles.logoutText}>{t('profile.logout')}</Text>
       </Pressable>
 
     </ScrollView>
@@ -194,6 +217,33 @@ const styles = StyleSheet.create({
   infoTexts: { flex: 1 },
   infoLabel: { fontSize: 12, color: Theme.textSecondary },
   infoValue: { fontSize: 15, fontWeight: '500', color: Theme.text, marginTop: 1 },
+
+  langRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  langBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Theme.border,
+    backgroundColor: Theme.background,
+  },
+  langBtnActive: {
+    borderColor: Theme.primary,
+    backgroundColor: `${Theme.primary}15`,
+  },
+  langBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Theme.textSecondary,
+  },
+  langBtnTextActive: {
+    color: Theme.primary,
+    fontWeight: '700',
+  },
 
   logoutBtn: {
     flexDirection: 'row',

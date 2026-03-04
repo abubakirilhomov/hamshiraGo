@@ -1,0 +1,81 @@
+{
+  "tabs": {
+    "home": "Главная",
+    "orders": "Заказы",
+    "profile": "Профиль"
+  },
+  "home": {
+    "bannerSubtitle": "Медсёстры с опытом 3+ лет",
+    "other": "Прочее",
+    "loading": "Загрузка...",
+    "errorRetry": "Повторить"
+  },
+  "auth": {
+    "login": "Войти",
+    "register": "Регистрация",
+    "phone": "Телефон",
+    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "password": "Пароль",
+    "passwordPlaceholder": "Минимум 6 символов",
+    "name": "Имя (необязательно)",
+    "namePlaceholder": "Ваше имя",
+    "submit": "Продолжить",
+    "switchToRegister": "Нет аккаунта? Зарегистрироваться",
+    "switchToLogin": "Уже есть аккаунт? Войти",
+    "errorPhonePassword": "Введите телефон и пароль",
+    "errorPasswordLength": "Пароль минимум 6 символов",
+    "errorInvalidCreds": "Неверный номер телефона или пароль",
+    "errorBlocked": "Ваш аккаунт заблокирован. Обратитесь в поддержку.",
+    "errorDuplicate": "Пользователь с таким номером уже зарегистрирован",
+    "errorGeneral": "Ошибка. Попробуйте ещё раз."
+  },
+  "profile": {
+    "client": "Клиент",
+    "totalOrders": "всего заказов",
+    "completed": "завершено",
+    "active": "активных",
+    "accountInfo": "Данные аккаунта",
+    "phone": "Телефон",
+    "name": "Имя",
+    "about": "О приложении",
+    "aboutDesc": "Медсёстры с опытом 3+ лет",
+    "discount": "Скидка",
+    "discountDesc": "10% на первый заказ",
+    "language": "Язык",
+    "logout": "Выйти из аккаунта",
+    "logoutConfirmTitle": "Выйти?",
+    "logoutConfirmMessage": "Вы будете отключены от аккаунта.",
+    "cancel": "Отмена"
+  },
+  "language": {
+    "title": "Язык / Til",
+    "ru": "Русский",
+    "uz": "O'zbekcha"
+  },
+  "order": {
+    "searchingMedic": "Ищем медика...",
+    "cancelOrder": "Отменить заказ",
+    "cancelConfirmTitle": "Отменить заказ?",
+    "cancelConfirmMessage": "Вы уверены, что хотите отменить заказ?",
+    "yes": "Да",
+    "no": "Нет",
+    "status": {
+      "CREATED": "Поиск медика",
+      "ASSIGNED": "Медик назначен",
+      "ACCEPTED": "Медик подтвердил",
+      "ON_THE_WAY": "Медик едет",
+      "ARRIVED": "Медик прибыл",
+      "SERVICE_STARTED": "Услуга начата",
+      "DONE": "Выполнено",
+      "CANCELED": "Отменён"
+    }
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "back": "Назад",
+    "sum": "сум"
+  }
+}

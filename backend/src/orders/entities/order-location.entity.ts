@@ -10,30 +10,30 @@ import { Order } from './order.entity';
 @Entity('order_locations')
 export class OrderLocation {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid', unique: true })
-  orderId: string;
+  orderId!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 7 })
-  latitude: number;
+  latitude!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 7 })
-  longitude: number;
+  longitude!: number;
 
   @Column({ type: 'varchar', length: 255 })
-  house: string;
+  house!: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  floor: string | null;
+  floor!: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  apartment: string | null;
+  apartment!: string | null;
 
   @Column({ type: 'varchar', length: 30 })
-  phone: string;
+  phone!: string;
 
   @OneToOne(() => Order, (order) => order.location, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'orderId' })
-  order: Order;
+  order!: Order;
 }

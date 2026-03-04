@@ -19,32 +19,32 @@ export enum DispatchResult {
 @Entity('dispatch_attempts')
 export class DispatchAttempt {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  orderId: string;
+  orderId!: string;
 
   @Column({ type: 'uuid' })
-  medicId: string;
+  medicId!: string;
 
   @CreateDateColumn()
-  sentAt: Date;
+  sentAt!: Date;
 
   @Column({ type: 'timestamp' })
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @Column({
     type: 'enum',
     enum: DispatchResult,
     default: DispatchResult.PENDING,
   })
-  result: DispatchResult;
+  result!: DispatchResult;
 
   @ManyToOne(() => Order, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'orderId' })
-  order: Order;
+  order!: Order;
 
   @ManyToOne(() => Medic, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'medicId' })
-  medic: Medic;
+  medic!: Medic;
 }

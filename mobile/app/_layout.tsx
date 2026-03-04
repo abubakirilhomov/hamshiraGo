@@ -9,7 +9,9 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { registerPushToken } from '@/utils/registerPushToken';
+import '@/i18n';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,27 +53,39 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { token, isLoading } = useAuth();
+  const { isLoaded, isFirstLaunch } = useLanguage();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return; // wait for SecureStore restore
+    if (isLoading || !isLoaded) return; // wait for both stores
+
+    const inLangPicker = segments[0] === 'language-picker';
+
+    // First launch → show language picker before auth
+    if (isFirstLaunch) {
+      if (!inLangPicker) router.replace('/language-picker');
+      return;
+    }
+
     const inAuth = segments[0] === 'auth';
     if (!token && !inAuth) {
       router.replace('/auth');
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [token, segments, isLoading]);
+  }, [isLoaded, isFirstLaunch, token, segments, isLoading]);
 
   useEffect(() => {
     if (token) registerPushToken(token);
@@ -80,6 +94,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="language-picker" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="service" options={{ headerShown: false }} />

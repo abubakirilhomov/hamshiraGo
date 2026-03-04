@@ -33,6 +33,9 @@
 - [x] **[plan]** Этап 2 (mobile/medic realtime UX): BUG из tasks + авто-обновление, ошибки логина
 - [x] **[plan]** Этап 3 (auth + validation hardening): BUG 5/6/7/8/12/20 — phone regex, SecureStore, timing-safe
 - [x] **[backend/mobile/medic]** Yandex Taxi-style push-based автоматический dispatch — `dispatch.service.ts`, `dispatch_attempts` таблица, медик инвайт-модал, dispatch_update UI на клиенте
+- [x] **[backend]** Этап 1 аудита — Swagger/OpenAPI, Jest unit тесты, GitHub Actions CI
+- [x] **[backend/mobile/medic]** Этап 2 аудита — i18n (Узбекский + Русский): Service entity titleUz/descriptionUz/categoryUz, i18next в mobile/medic, LanguageContext + SecureStore, language picker в profile + first-launch screen
+- [x] **[backend]** Этап 3 аудита — TypeScript strict: `strict: true`, 109 ошибок исправлено (`!` на entity/DTO свойствах)
 - [ ] **[mobile/backend/medic]** Плавная интерполяция маркера медика на карте клиента (`mobile/app/order/track.tsx`)
 
 ### Процесс выполнения
@@ -46,6 +49,8 @@
 
 ## 💡 Идеи / V1
 
+- [x] **[backend]** Этап 4 — Платёжная система (Payme + Click) — выполнено 2026-03-05
+- [x] **[mobile/medic]** Fix AsyncStorageError + language picker first-launch — выполнено 2026-03-05
 - [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
 - [ ] Аналитика в admin: графики заказов, выручка, топ медики
 - [ ] Фильтр услуг по категории на главном экране mobile/web

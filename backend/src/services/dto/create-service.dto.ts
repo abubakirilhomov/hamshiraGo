@@ -3,7 +3,7 @@ import { IsString, IsInt, IsOptional, IsBoolean, Min, MaxLength } from 'class-va
 export class CreateServiceDto {
   @IsString()
   @MaxLength(255)
-  title: string;
+  title!: string;
 
   @IsOptional()
   @IsString()
@@ -16,7 +16,7 @@ export class CreateServiceDto {
 
   @IsInt()
   @Min(1000)
-  price: number;
+  price!: number;
 
   @IsOptional()
   @IsInt()

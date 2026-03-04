@@ -4,7 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
   OneToMany,
   Index,
 } from 'typeorm';
@@ -13,30 +12,30 @@ import { Order } from '../../orders/entities/order.entity';
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 255 })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  name: string | null;
+  name!: string | null;
 
   @Column({ type: 'varchar', length: 255 })
-  passwordHash: string;
+  passwordHash!: string;
 
   @Column({ type: 'varchar', nullable: true, default: null })
-  pushToken: string | null;
+  pushToken!: string | null;
 
   @Column({ type: 'boolean', default: false, nullable: true })
-  isBlocked: boolean;
+  isBlocked!: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @OneToMany(() => Order, (order) => order.client)
-  orders: Order[];
+  orders!: Order[];
 }

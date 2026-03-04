@@ -1,0 +1,77 @@
+{
+  "tabs": {
+    "available": "Buyurtmalar",
+    "myOrders": "Mening buyurtmalarim",
+    "profile": "Profil"
+  },
+  "auth": {
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "phone": "Telefon",
+    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "password": "Parol",
+    "passwordPlaceholder": "Kamida 6 belgi",
+    "name": "Ism",
+    "namePlaceholder": "Ismingiz",
+    "submit": "Davom etish",
+    "switchToRegister": "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
+    "switchToLogin": "Hisobingiz bormi? Kiring",
+    "errorPhonePassword": "Telefon va parolni kiriting",
+    "errorPasswordLength": "Parol kamida 6 belgi bo'lishi kerak",
+    "errorInvalidCreds": "Telefon raqami yoki parol noto'g'ri",
+    "errorBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "errorDuplicate": "Bu raqam bilan foydalanuvchi allaqachon ro'yxatdan o'tgan",
+    "errorGeneral": "Xatolik. Qayta urinib ko'ring."
+  },
+  "profile": {
+    "completedOrders": "Bajarilgan buyurtmalar",
+    "accountInfo": "Hisob ma'lumotlari",
+    "phone": "Telefon",
+    "name": "Ism",
+    "rating": "Reyting",
+    "balance": "Balans",
+    "verification": "Tasdiqlash",
+    "online": "Onlayn",
+    "offline": "Oflayn",
+    "language": "Til",
+    "telegram": "Telegram",
+    "telegramConnected": "Ulangan",
+    "telegramDisconnect": "Uzish",
+    "telegramConnect": "Ulash",
+    "logout": "Chiqish",
+    "logoutConfirmTitle": "Chiqasizmi?",
+    "logoutConfirmMessage": "Hisobdan chiqasiz.",
+    "cancel": "Bekor qilish"
+  },
+  "language": {
+    "title": "Язык / Til",
+    "ru": "Русский",
+    "uz": "O'zbekcha"
+  },
+  "orders": {
+    "available": "Mavjud buyurtmalar",
+    "my": "Mening buyurtmalarim",
+    "empty": "Mavjud buyurtmalar yo'q",
+    "emptyMy": "Buyurtmalar yo'q",
+    "accept": "Qabul qilish",
+    "decline": "Rad etish",
+    "status": {
+      "CREATED": "Hamshira qidirilmoqda",
+      "ASSIGNED": "Tayinlandi",
+      "ACCEPTED": "Tasdiqlandi",
+      "ON_THE_WAY": "Yo'lda",
+      "ARRIVED": "Yetib keldi",
+      "SERVICE_STARTED": "Xizmat boshlandi",
+      "DONE": "Bajarildi",
+      "CANCELED": "Bekor qilindi"
+    }
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik",
+    "retry": "Qayta urinish",
+    "save": "Saqlash",
+    "back": "Orqaga",
+    "sum": "so'm"
+  }
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import Colors from '@/constants/Colors';
 import { Theme } from '@/constants/Theme';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -16,6 +17,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const tint = Theme.primary;
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -28,21 +30,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Главная',
+          title: t('tabs.home'),
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Заказы',
+          title: t('tabs.orders'),
           tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Профиль',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
         }}
       />

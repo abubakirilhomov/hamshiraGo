@@ -1,0 +1,77 @@
+{
+  "tabs": {
+    "available": "Заказы",
+    "myOrders": "Мои заказы",
+    "profile": "Профиль"
+  },
+  "auth": {
+    "login": "Войти",
+    "register": "Регистрация",
+    "phone": "Телефон",
+    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "password": "Пароль",
+    "passwordPlaceholder": "Минимум 6 символов",
+    "name": "Имя",
+    "namePlaceholder": "Ваше имя",
+    "submit": "Продолжить",
+    "switchToRegister": "Нет аккаунта? Зарегистрироваться",
+    "switchToLogin": "Уже есть аккаунт? Войти",
+    "errorPhonePassword": "Введите телефон и пароль",
+    "errorPasswordLength": "Пароль минимум 6 символов",
+    "errorInvalidCreds": "Неверный номер телефона или пароль",
+    "errorBlocked": "Ваш аккаунт заблокирован. Обратитесь в поддержку.",
+    "errorDuplicate": "Пользователь с таким номером уже зарегистрирован",
+    "errorGeneral": "Ошибка. Попробуйте ещё раз."
+  },
+  "profile": {
+    "completedOrders": "Выполнено заказов",
+    "accountInfo": "Данные аккаунта",
+    "phone": "Телефон",
+    "name": "Имя",
+    "rating": "Рейтинг",
+    "balance": "Баланс",
+    "verification": "Верификация",
+    "online": "Онлайн",
+    "offline": "Оффлайн",
+    "language": "Язык",
+    "telegram": "Telegram",
+    "telegramConnected": "Подключён",
+    "telegramDisconnect": "Отключить",
+    "telegramConnect": "Подключить",
+    "logout": "Выйти из аккаунта",
+    "logoutConfirmTitle": "Выйти?",
+    "logoutConfirmMessage": "Вы будете отключены от аккаунта.",
+    "cancel": "Отмена"
+  },
+  "language": {
+    "title": "Язык / Til",
+    "ru": "Русский",
+    "uz": "O'zbekcha"
+  },
+  "orders": {
+    "available": "Доступные заказы",
+    "my": "Мои заказы",
+    "empty": "Нет доступных заказов",
+    "emptyMy": "Нет заказов",
+    "accept": "Принять",
+    "decline": "Отказаться",
+    "status": {
+      "CREATED": "Поиск медика",
+      "ASSIGNED": "Назначен",
+      "ACCEPTED": "Подтверждён",
+      "ON_THE_WAY": "В пути",
+      "ARRIVED": "Прибыл",
+      "SERVICE_STARTED": "Услуга начата",
+      "DONE": "Выполнено",
+      "CANCELED": "Отменён"
+    }
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "back": "Назад",
+    "sum": "сум"
+  }
+}

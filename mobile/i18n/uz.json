@@ -1,0 +1,81 @@
+{
+  "tabs": {
+    "home": "Bosh sahifa",
+    "orders": "Buyurtmalar",
+    "profile": "Profil"
+  },
+  "home": {
+    "bannerSubtitle": "3+ yillik tajribali hamshiralar",
+    "other": "Boshqa",
+    "loading": "Yuklanmoqda...",
+    "errorRetry": "Qayta urinish"
+  },
+  "auth": {
+    "login": "Kirish",
+    "register": "Ro'yxatdan o'tish",
+    "phone": "Telefon",
+    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "password": "Parol",
+    "passwordPlaceholder": "Kamida 6 belgi",
+    "name": "Ism (ixtiyoriy)",
+    "namePlaceholder": "Ismingiz",
+    "submit": "Davom etish",
+    "switchToRegister": "Hisobingiz yo'qmi? Ro'yxatdan o'ting",
+    "switchToLogin": "Hisobingiz bormi? Kiring",
+    "errorPhonePassword": "Telefon va parolni kiriting",
+    "errorPasswordLength": "Parol kamida 6 belgi bo'lishi kerak",
+    "errorInvalidCreds": "Telefon raqami yoki parol noto'g'ri",
+    "errorBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
+    "errorDuplicate": "Bu raqam bilan foydalanuvchi allaqachon ro'yxatdan o'tgan",
+    "errorGeneral": "Xatolik. Qayta urinib ko'ring."
+  },
+  "profile": {
+    "client": "Mijoz",
+    "totalOrders": "jami buyurtma",
+    "completed": "bajarildi",
+    "active": "faol",
+    "accountInfo": "Hisob ma'lumotlari",
+    "phone": "Telefon",
+    "name": "Ism",
+    "about": "Ilova haqida",
+    "aboutDesc": "3+ yillik tajribali hamshiralar",
+    "discount": "Chegirma",
+    "discountDesc": "Birinchi buyurtmaga 10% chegirma",
+    "language": "Til",
+    "logout": "Chiqish",
+    "logoutConfirmTitle": "Chiqasizmi?",
+    "logoutConfirmMessage": "Hisobdan chiqasiz.",
+    "cancel": "Bekor qilish"
+  },
+  "language": {
+    "title": "Язык / Til",
+    "ru": "Русский",
+    "uz": "O'zbekcha"
+  },
+  "order": {
+    "searchingMedic": "Hamshira qidirilmoqda...",
+    "cancelOrder": "Buyurtmani bekor qilish",
+    "cancelConfirmTitle": "Buyurtmani bekor qilasizmi?",
+    "cancelConfirmMessage": "Haqiqatan ham bekor qilmoqchimisiz?",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "status": {
+      "CREATED": "Hamshira qidirilmoqda",
+      "ASSIGNED": "Hamshira tayinlandi",
+      "ACCEPTED": "Hamshira tasdiqladi",
+      "ON_THE_WAY": "Hamshira yo'lda",
+      "ARRIVED": "Hamshira yetib keldi",
+      "SERVICE_STARTED": "Xizmat boshlandi",
+      "DONE": "Bajarildi",
+      "CANCELED": "Bekor qilindi"
+    }
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik",
+    "retry": "Qayta urinish",
+    "save": "Saqlash",
+    "back": "Orqaga",
+    "sum": "so'm"
+  }
+}

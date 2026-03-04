@@ -11,6 +11,8 @@ import 'react-native-reanimated';
 
 import { apiFetch } from '@/constants/api';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
+import '@/i18n';
 import {
   hasBackgroundLocationPermission,
   setBackgroundLocationToken,
@@ -53,14 +55,17 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
 function RootLayoutNav() {
   const { token, medic, isLoading } = useAuth();
+  const { isLoaded, isFirstLaunch } = useLanguage();
   const segments = useSegments();
   const router = useRouter();
   const lastLocationSyncTs = useRef(0);
@@ -68,14 +73,23 @@ function RootLayoutNav() {
   const lastAutoOfflineAlertTs = useRef(0);
 
   useEffect(() => {
-    if (isLoading) return; // wait for SecureStore restore
+    if (isLoading || !isLoaded) return; // wait for both stores
+
+    const inLangPicker = segments[0] === 'language-picker';
+
+    // First launch → show language picker before auth
+    if (isFirstLaunch) {
+      if (!inLangPicker) router.replace('/language-picker');
+      return;
+    }
+
     const inAuth = segments[0] === 'auth';
     if (!token && !inAuth) {
       router.replace('/auth');
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [token, segments, isLoading]);
+  }, [isLoaded, isFirstLaunch, token, segments, isLoading]);
 
   // Register push token whenever the medic logs in
   useEffect(() => {
@@ -180,6 +194,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack>
+        <Stack.Screen name="language-picker" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen

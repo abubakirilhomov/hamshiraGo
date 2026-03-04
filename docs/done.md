@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-03-05 (сессия 2)
+
+- **[mobile/medic]** Fix AsyncStorageError + language picker screen — заменён `@react-native-async-storage/async-storage` (сломан в Expo Go) на `expo-secure-store` в `LanguageContext.tsx`; добавлены `isLoaded`/`isFirstLaunch` в контекст; создан экран `app/language-picker.tsx` с флагами 🇺🇿/🇷🇺; `_layout.tsx` обновлён — при первом запуске редиректит на `/language-picker`, затем на `/auth`
+
+## 2026-03-05
+
+- **[backend]** Платёжная система Payme + Click — создан модуль `backend/src/payments/`: `payment.entity.ts` (UUID PK, orderId FK, provider, status, amount, providerTransactionId, providerState, performTime, cancelTime, reason), `payme.service.ts` (6 JSON-RPC методов: CheckPerform/Create/Perform/Cancel/Check/GetStatement; Basic Auth validation; tiyin↔UZS конвертация), `click.service.ts` (prepare + complete webhooks; MD5 signature check), `payments.service.ts` (initiatePayment, getPaymentStatus), `payments.controller.ts` (5 endpoints: POST /:orderId/initiate, GET /:orderId/status, POST /payme, POST /click/prepare, POST /click/complete); `PaymentsModule` добавлен в `AppModule`; `.env.example` дополнен переменными PAYME_*/CLICK_*/APP_URL. `tsc --noEmit` = 0 ошибок, 15/15 тестов зелёные.
+
+## 2026-03-04 (сессия 3)
+
+- **[backend]** TypeScript strict mode — включён `strict: true` в `backend/tsconfig.json`; исправлены все 109 ошибок TS2564 (`strictPropertyInitialization`) — добавлен `!` (definite assignment assertion) на все class-level свойства в 12 entity файлах, 7 DTO файлах, 1 gateway; `tsc --noEmit` = 0 ошибок, 15/15 тестов зелёные
+
+## 2026-03-04 (сессия 2)
+
+- **[backend]** i18n поля в Service entity — добавлены nullable колонки `titleUz`, `descriptionUz`, `categoryUz`; seed обновлён с переводами на узбекский + back-fill для существующих записей (`backend/src/services/entities/service.entity.ts`, `backend/src/services/services.seed.ts`)
+- **[mobile]** i18n инфраструктура — установлены `i18next`, `react-i18next`, `@react-native-async-storage/async-storage`; созданы `i18n/index.ts`, `i18n/ru.json`, `i18n/uz.json` (tabs, auth, profile, order, common ключи); `context/LanguageContext.tsx` с персистентностью через AsyncStorage; обёртка в `_layout.tsx`
+- **[mobile]** Переводы UI — `tabs/_layout.tsx` (переводы вкладок), `index.tsx` (баннер, категории, заголовки услуг через titleUz), `profile.tsx` (все строки + language picker — кнопки 🇷🇺/🇺🇿)
+- **[medic]** i18n инфраструктура — те же пакеты + `i18n/ru.json`, `i18n/uz.json`, `context/LanguageContext.tsx`, обёртка в `_layout.tsx`
+- **[medic]** Переводы UI — `tabs/_layout.tsx` (переводы вкладок), `profile.tsx` (logout confirm + language picker)
+
+## 2026-03-04
+
+- **[backend]** Swagger/OpenAPI — установлен `@nestjs/swagger` + `swagger-ui-express`, настроен `SwaggerModule.setup('api/docs')` в `main.ts`; `@ApiTags`, `@ApiBearerAuth`, `@ApiOperation`, `@ApiResponse` на auth/orders/medics контроллерах; `@ApiProperty` на всех DTO полях (`backend/src/main.ts`, `backend/src/auth/`, `backend/src/orders/`)
+- **[backend]** Jest unit тесты — установлен `jest` + `ts-jest` + `@nestjs/testing` + `supertest` + `ts-node`; создан `jest.config.ts`; добавлены скрипты `test` / `test:cov` в `package.json`; написаны `auth.service.spec.ts` (4 теста) и `orders.service.spec.ts` (8 тестов) — 15 тестов, все зелёные (`backend/src/auth/`, `backend/src/orders/`)
+- **[devops]** GitHub Actions CI — создан `.github/workflows/ci.yml`; два job-а: `backend` (npm ci → build → test) и `typecheck` (tsc --noEmit); триггер push/PR на main
+
 ## 2026-03-03 (сессия 6)
 
 - **[devops]** Исправлены 404 ошибки на статических ассетах Railway — добавлены multi-stage `Dockerfile` и `railway.toml` для `web/` и `web-medic/`: multi-stage build (deps → builder → runner), правильное копирование `.next/static` и `public` в standalone директорию, `builder = "DOCKERFILE"` в railway.toml

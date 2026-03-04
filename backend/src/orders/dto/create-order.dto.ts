@@ -5,15 +5,15 @@ import { ApiProperty } from '@nestjs/swagger';
 class OrderLocationDto {
   @ApiProperty({ example: 41.2995 })
   @IsNumber()
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({ example: 69.2401 })
   @IsNumber()
-  longitude: number;
+  longitude!: number;
 
   @ApiProperty({ example: 'ул. Амира Темура, 107' })
   @IsString()
-  house: string;
+  house!: string;
 
   @ApiProperty({ example: '3', required: false })
   @IsString()
@@ -27,13 +27,13 @@ class OrderLocationDto {
 
   @ApiProperty({ example: '+998901234567' })
   @IsString()
-  phone: string;
+  phone!: string;
 }
 
 export class CreateOrderDto {
   @ApiProperty({ example: 'uuid-of-service', description: 'ID услуги из каталога' })
   @IsUUID()
-  serviceId: string;
+  serviceId!: string;
 
   @ApiProperty({ example: 50000, required: false, description: 'Скидка в UZS (опционально)' })
   @IsOptional()
@@ -44,5 +44,5 @@ export class CreateOrderDto {
   @ApiProperty({ type: OrderLocationDto })
   @ValidateNested()
   @Type(() => OrderLocationDto)
-  location: OrderLocationDto;
+  location!: OrderLocationDto;
 }

@@ -14,9 +14,12 @@ import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import type { Language } from '@/i18n';
 import {
   hasBackgroundLocationPermission,
   requestBackgroundLocationPermission,
@@ -37,6 +40,8 @@ const VERIFICATION_CONFIG = {
 
 export default function ProfileScreen() {
   const { medic, token, updateOnlineStatus, refreshProfile, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const router = useRouter();
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [completedCount, setCompletedCount] = useState<number | null>(null);
@@ -143,9 +148,9 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Выйти?', 'Вы будете отключены от аккаунта.', [
-      { text: 'Отмена', style: 'cancel' },
-      { text: 'Выйти', style: 'destructive', onPress: logout },
+    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
+      { text: t('profile.cancel'), style: 'cancel' },
+      { text: t('profile.logout'), style: 'destructive', onPress: logout },
     ]);
   };
 
@@ -339,13 +344,31 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* Language picker */}
+      <View style={styles.card}>
+        <Text style={styles.cardSectionTitle}>{t('language.title')}</Text>
+        <View style={styles.langRow}>
+          {(['ru', 'uz'] as Language[]).map((lang) => (
+            <Pressable
+              key={lang}
+              style={[styles.langBtn, language === lang && styles.langBtnActive]}
+              onPress={() => setLanguage(lang)}
+            >
+              <Text style={[styles.langBtnText, language === lang && styles.langBtnTextActive]}>
+                {lang === 'ru' ? '🇷🇺 Русский' : '🇺🇿 O\'zbekcha'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       {/* Logout */}
       <Pressable
         style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
         onPress={handleLogout}
       >
         <FontAwesome name="sign-out" size={16} color={Theme.error} />
-        <Text style={styles.logoutText}>Выйти из аккаунта</Text>
+        <Text style={styles.logoutText}>{t('profile.logout')}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -489,4 +512,39 @@ const styles = StyleSheet.create({
   },
   logoutBtnPressed: { opacity: 0.8 },
   logoutText: { fontSize: 16, fontWeight: '600', color: Theme.error },
+
+  cardSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  langRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  langBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Theme.border,
+    backgroundColor: Theme.background,
+  },
+  langBtnActive: {
+    borderColor: Theme.primary,
+    backgroundColor: `${Theme.primary}15`,
+  },
+  langBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Theme.textSecondary,
+  },
+  langBtnTextActive: {
+    color: Theme.primary,
+    fontWeight: '700',
+  },
 });
