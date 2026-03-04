@@ -17,6 +17,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
@@ -38,6 +39,7 @@ interface WebPushSubscriptionBody {
   keys: { p256dh: string; auth: string };
 }
 
+@ApiTags('medics')
 @Controller('medics')
 export class MedicsController {
   constructor(
@@ -50,6 +52,8 @@ export class MedicsController {
 
   @Post('register')
   @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({ summary: 'Регистрация медика' })
+  @ApiResponse({ status: 201, description: 'Медик зарегистрирован' })
   register(@Body() dto: RegisterMedicDto) {
     return this.medicsService.register(dto);
   }
@@ -57,6 +61,8 @@ export class MedicsController {
   @Post('login')
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Логин медика' })
+  @ApiResponse({ status: 200, description: 'Успешный логин медика' })
   login(@Body() dto: LoginMedicDto) {
     return this.medicsService.login(dto);
   }
@@ -65,6 +71,8 @@ export class MedicsController {
 
   @Get('me')
   @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Профиль текущего медика' })
   getProfile(@MedicId() medicId: string) {
     return this.medicsService.getProfile(medicId);
   }
@@ -74,6 +82,8 @@ export class MedicsController {
   @Patch('location')
   @UseGuards(MedicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить геопозицию медика' })
   async updateLocation(@MedicId() medicId: string, @Body() dto: UpdateLocationDto) {
     await this.medicsService.updateLocation(medicId, dto);
   }
@@ -83,6 +93,9 @@ export class MedicsController {
   @Post('documents')
   @UseGuards(MedicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Загрузить документы для верификации' })
+  @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor(
       [

@@ -4,6 +4,7 @@ import { getDataSourceToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { seedServices } from './services/services.seed';
 
@@ -48,6 +49,16 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
   });
+
+  // ── Swagger / OpenAPI ──────────────────────────────────────────────────────
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('HamshiraGo API')
+    .setDescription('REST API для мобильного приложения HamshiraGo')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
 
   // Seed reference data (idempotent — skips existing rows)
   const dataSource = app.get<DataSource>(getDataSourceToken());
