@@ -36,7 +36,7 @@
 - [x] **[backend]** Этап 1 аудита — Swagger/OpenAPI, Jest unit тесты, GitHub Actions CI
 - [x] **[backend/mobile/medic]** Этап 2 аудита — i18n (Узбекский + Русский): Service entity titleUz/descriptionUz/categoryUz, i18next в mobile/medic, LanguageContext + SecureStore, language picker в profile + first-launch screen
 - [x] **[backend]** Этап 3 аудита — TypeScript strict: `strict: true`, 109 ошибок исправлено (`!` на entity/DTO свойствах)
-- [ ] **[mobile/backend/medic]** Плавная интерполяция маркера медика на карте клиента (`mobile/app/order/track.tsx`)
+- [x] **[mobile]** Плавная интерполяция маркера медика на карте клиента (`mobile/app/order/track.tsx`) — выполнено 2026-03-05
 
 ### Процесс выполнения
 

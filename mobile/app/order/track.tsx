@@ -84,6 +84,13 @@ const TrackMapComponent =
   Platform.OS === 'web'
     ? null
     : require('react-native-maps');
+
+// Animated marker: prefer the built-in Marker.Animated, fall back to createAnimatedComponent
+const AnimatedMedicMarker: React.ComponentType<any> | null = TrackMapComponent
+  ? (TrackMapComponent.Marker.Animated ??
+     Animated.createAnimatedComponent(TrackMapComponent.Marker as React.ComponentType<any>))
+  : null;
+
 const OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/driving';
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
@@ -134,6 +141,9 @@ export default function TrackOrderScreen() {
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastRouteFetchAtRef = useRef(0);
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  // AnimatedRegion used for smooth marker interpolation (initialized on first location)
+  const medicAnimCoordRef = useRef<any>(null);
+  const [medicAnimReady, setMedicAnimReady] = useState(false);
 
   // ── REST fetch ──────────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
@@ -324,6 +334,35 @@ export default function TrackOrderScreen() {
     anim.start();
     return () => anim.stop();
   }, [order?.status, dispatchState, pulseAnim]);
+
+  // ── Smooth medic marker interpolation ────────────────────────────────────────
+  useEffect(() => {
+    if (!medicLocation || !TrackMapComponent) return;
+
+    if (!medicAnimCoordRef.current) {
+      // First position — initialize at exact location (no animation needed)
+      medicAnimCoordRef.current = new TrackMapComponent.AnimatedRegion({
+        latitude: medicLocation.latitude,
+        longitude: medicLocation.longitude,
+        latitudeDelta: 0,
+        longitudeDelta: 0,
+      });
+      setMedicAnimReady(true);
+    } else {
+      // Subsequent positions — animate smoothly.
+      // Socket events: 900 ms (frequent small deltas → silky motion).
+      // REST polling:  0 ms (20 s gap → large jump, don't mislead with slow anim).
+      const duration = medicLocation.source === 'socket' ? 900 : 0;
+      medicAnimCoordRef.current.timing({
+        latitude: medicLocation.latitude,
+        longitude: medicLocation.longitude,
+        latitudeDelta: 0,
+        longitudeDelta: 0,
+        duration,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [medicLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Elapsed timer (while order is CREATED) ───────────────────────────────────
   useEffect(() => {
@@ -605,13 +644,10 @@ export default function TrackOrderScreen() {
                   </View>
                 </TrackMapComponent.Marker>
 
-                {/* Medic/candidate marker — red */}
-                {medicLocation && (
-                  <TrackMapComponent.Marker
-                    coordinate={{
-                      latitude: medicLocation.latitude,
-                      longitude: medicLocation.longitude,
-                    }}
+                {/* Medic/candidate marker — smoothly interpolated via AnimatedRegion */}
+                {medicLocation && medicAnimReady && medicAnimCoordRef.current && AnimatedMedicMarker && (
+                  <AnimatedMedicMarker
+                    coordinate={medicAnimCoordRef.current}
                     title={
                       order.status === 'CREATED' && dispatchState?.candidateName
                         ? dispatchState.candidateName
@@ -631,7 +667,7 @@ export default function TrackOrderScreen() {
                     ]}>
                       <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
                     </View>
-                  </TrackMapComponent.Marker>
+                  </AnimatedMedicMarker>
                 )}
 
                 {/* Route line */}
