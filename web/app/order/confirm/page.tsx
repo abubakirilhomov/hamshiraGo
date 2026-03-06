@@ -79,7 +79,6 @@ function ConfirmForm() {
         phone,
       },
     };
-    console.log("[confirm] sending order body:", JSON.stringify(body));
     try {
       const order = await api.orders.create(body);
       notify("success");
