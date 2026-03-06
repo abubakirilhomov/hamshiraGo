@@ -88,7 +88,8 @@ export default function AuthPage() {
       router.push("/");
     } catch (err: unknown) {
       notify("error");
-      setError(err instanceof Error ? err.message : t("auth.errorGeneral"));
+      const msg = err instanceof Error ? err.message : "";
+      setError(msg === "TOO_MANY_REQUESTS" ? t("auth.tooManyAttempts") : msg || t("auth.errorGeneral"));
     } finally {
       setLoading(false);
     }

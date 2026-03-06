@@ -18,6 +18,7 @@
     "errorBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
     "errorDuplicate": "Bu raqam bilan foydalanuvchi allaqachon ro'yxatdan o'tgan",
     "errorGeneral": "Xatolik. Ma'lumotlarni tekshiring.",
+    "tooManyAttempts": "Ko'p urinish. 15 daqiqadan so'ng urinib ko'ring.",
     "headline": "Hamshira — 15 daqiqada uyga",
     "tagline": "Uyingizda professional tibbiy yordam. In'ektsiya, tomchi, bosim o'lchash.",
     "feature1": "15–30 daqiqada yetib boramiz",
