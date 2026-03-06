@@ -48,7 +48,7 @@ export class AuthController {
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Throttle({ default: { ttl: 900_000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин клиента' })
   @ApiResponse({ status: 200, description: 'Успешный логин, возвращает access_token' })

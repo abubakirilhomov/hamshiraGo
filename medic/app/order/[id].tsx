@@ -147,6 +147,7 @@ export default function OrderDetailScreen() {
       auth: { token },
       reconnectionDelay: 2000,
       reconnectionDelayMax: 10000,
+      reconnectionAttempts: 10,
     });
     socketRef.current = socket;
     socket.on('connect', () => setSocketConnected(true));
@@ -417,6 +418,15 @@ export default function OrderDetailScreen() {
           <View style={styles.locationRow}>
             <FontAwesome name="phone" size={16} color={Theme.primary} />
             <Text style={styles.locationText}>{order.location.phone}</Text>
+            {order.status !== 'DONE' && order.status !== 'CANCELED' && (
+              <Pressable
+                style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.8 }]}
+                onPress={() => Linking.openURL(`tel:${order.location!.phone}`)}
+              >
+                <FontAwesome name="phone" size={13} color="#fff" />
+                <Text style={styles.callBtnText}>{t('orders.callPatient')}</Text>
+              </Pressable>
+            )}
           </View>
           {clientLat != null && clientLng != null && (
             <Pressable
@@ -639,6 +649,16 @@ const styles = StyleSheet.create({
   finalValue: { fontSize: 17, fontWeight: '700', color: Theme.primary },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   locationText: { fontSize: 15, color: Theme.text, flex: 1 },
+  callBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Theme.success,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  callBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
   mapsBtn: {
     flexDirection: 'row',
     alignItems: 'center',

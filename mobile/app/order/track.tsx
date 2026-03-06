@@ -607,9 +607,6 @@ export default function TrackOrderScreen() {
             </View>
             <View style={styles.medicInfo}>
               <Text style={styles.medicName}>{order.medic.name}</Text>
-              <Text style={styles.medicPhone} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-                {order.medic.phone}
-              </Text>
             </View>
           </View>
         </View>
