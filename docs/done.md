@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-03-06
+
+- **[landing]** Dark / Light mode — CSS vars (`--bg1..4`, `--card-bg/border`, `--text-primary..5`, `--hero-from/to`, `--phone-bg`, `--navbar-scrolled-bg`), `ThemeContext.tsx` с `localStorage("hamshira-theme")` + `document.documentElement.setAttribute("data-theme", ...)`, `ThemeProvider` в `layout.tsx`, `data-theme="dark"` на `<html>` (антифлеш), `IconSun`/`IconMoon` в `Icons.tsx`, кнопка переключения в `Navbar.tsx`, все хардкоженные цвета заменены на CSS vars в `Hero`, `HowItWorks`, `Services`, `Features`, `Download`, `Footer`; `.glass` обновлён на vars; Tailwind-overrides для light mode (`.text-white`, `.border-white\/8`, etc.); `npm run build` — 0 ошибок
+
+---
+
+## 2026-03-05 (сессия 4)
+
+- **[web/web-medic/admin]** Полный i18n (RU + UZ) для всех трёх web-приложений — созданы i18n инфраструктура для admin (`admin/src/i18n/ru.json`, `uz.json`, `index.ts`, `context/LanguageContext.tsx`); все страницы и компоненты переведены через `useTranslation()`: `web/app/auth/page.tsx`, `web/app/page.tsx`, `web/app/profile/page.tsx`, `web/app/orders/page.tsx`, `web/app/orders/[id]/page.tsx`, `web/app/order/confirm/page.tsx`, `web/app/order/location/page.tsx`, `web-medic/app/auth/page.tsx`, `web-medic/app/page.tsx`, `web-medic/app/profile/page.tsx`, `web-medic/app/order/[id]/page.tsx`; `admin/src/pages/Login.tsx`, `admin/src/components/AdminSidebar.tsx`, `admin/src/components/AdminLayout.tsx`; LanguageProvider добавлен в layout.tsx web/web-medic и App.tsx admin; language switcher в хедере admin, web (главная + auth + профиль), web-medic (профиль + auth)
+
 ## 2026-03-05 (сессия 3)
 
 - **[mobile]** Плавная интерполяция маркера медика — `AnimatedMedicMarker` через `Marker.Animated` / `createAnimatedComponent`; `AnimatedRegion.timing()` 900 мс для socket-событий, 0 мс для REST-polling; маркер инициализируется при первой позиции, затем плавно скользит к каждой новой (`mobile/app/order/track.tsx`)

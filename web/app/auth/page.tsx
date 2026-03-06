@@ -18,6 +18,8 @@ import {
 } from "react-icons/fa";
 import { api } from "@/lib/api";
 import { subscribeWebPush } from "@/lib/webPush";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Mode = "login" | "register";
 
@@ -37,6 +39,8 @@ export default function AuthPage() {
   const router = useRouter();
   const { inTelegram } = useTelegram();
   const { notify, impact } = useHaptic();
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -51,7 +55,6 @@ export default function AuthPage() {
     setPhone(formatPhone(raw));
   }
 
-  // Автозаполнение имени из Telegram
   useEffect(() => {
     if (mode === "register") {
       const tgName = getTelegramUserName();
@@ -85,7 +88,7 @@ export default function AuthPage() {
       router.push("/");
     } catch (err: unknown) {
       notify("error");
-      setError(err instanceof Error ? err.message : "Ошибка. Проверьте данные.");
+      setError(err instanceof Error ? err.message : t("auth.errorGeneral"));
     } finally {
       setLoading(false);
     }
@@ -148,9 +151,8 @@ export default function AuthPage() {
 
       <div style={{ display: "flex", minHeight: "100vh" }}>
 
-        {/* ─── Левая половина (брендинг) ─── */}
+        {/* Left branding panel */}
         <div className="auth-left">
-          {/* Декоративные круги */}
           <div style={{
             position: "absolute", top: -80, right: -80,
             width: 280, height: 280, borderRadius: "50%",
@@ -162,7 +164,6 @@ export default function AuthPage() {
             background: "rgba(255,255,255,0.06)",
           }} />
 
-          {/* Лого */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 48 }}>
             <div style={{
               width: 56, height: 56, borderRadius: 16,
@@ -176,21 +177,19 @@ export default function AuthPage() {
             </span>
           </div>
 
-          {/* Заголовок */}
           <h2 style={{ fontSize: 34, fontWeight: 800, color: "#fff", lineHeight: 1.25, marginBottom: 16, letterSpacing: "-0.5px" }}>
-            Медсестра на дом — за 15 минут
+            {t("auth.headline")}
           </h2>
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.75)", lineHeight: 1.6, marginBottom: 48 }}>
-            Профессиональная медицинская помощь у вас дома. Уколы, капельницы, измерение давления.
+            {t("auth.tagline")}
           </p>
 
-          {/* Преимущества */}
           {[
-            { Icon: FaClock,    text: "Приедем за 15–30 минут" },
-            { Icon: FaShieldAlt, text: "Проверенные медсёстры" },
-            { Icon: FaStar,     text: "Рейтинг и отзывы по каждому специалисту" },
-          ].map(({ Icon, text }) => (
-            <div key={text} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            { Icon: FaClock,     key: "feature1" as const },
+            { Icon: FaShieldAlt, key: "feature2" as const },
+            { Icon: FaStar,      key: "feature3" as const },
+          ].map(({ Icon, key }) => (
+            <div key={key} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 12,
                 background: "rgba(255,255,255,0.12)",
@@ -200,17 +199,17 @@ export default function AuthPage() {
                 <Icon size={17} color="#fff" />
               </div>
               <span style={{ fontSize: 15, color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>
-                {text}
+                {t(`auth.${key}`)}
               </span>
             </div>
           ))}
         </div>
 
-        {/* ─── Правая половина (форма) ─── */}
+        {/* Right form panel */}
         <div className="auth-right">
           <div style={{ width: "100%", maxWidth: 400 }}>
 
-            {/* Мобильный логотип (только < 768px) */}
+            {/* Mobile logo */}
             <div style={{ display: "none" }} className="mobile-logo">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
                 <FaMedkit size={24} color="#0d9488" />
@@ -218,13 +217,34 @@ export default function AuthPage() {
               </div>
             </div>
 
+            {/* Language switcher */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 20, justifyContent: "flex-end" }}>
+              {(["ru", "uz"] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setLanguage(lang)}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 8,
+                    border: `1.5px solid ${language === lang ? "#0d9488" : "#e2e8f0"}`,
+                    background: language === lang ? "#0d9488" : "#fff",
+                    color: language === lang ? "#fff" : "#64748b",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  {lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
             <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", marginBottom: 6, letterSpacing: "-0.3px" }}>
-              {mode === "login" ? "Добро пожаловать" : "Создать аккаунт"}
+              {mode === "login" ? t("auth.welcomeTitle") : t("auth.createAccountTitle")}
             </h1>
             <p style={{ fontSize: 14, color: "#64748b", marginBottom: 28 }}>
-              {mode === "login"
-                ? "Войдите чтобы продолжить"
-                : "Заполните данные для регистрации"}
+              {mode === "login" ? t("auth.loginSubtitle") : t("auth.registerSubtitle")}
             </p>
 
             {/* Toggle */}
@@ -254,17 +274,17 @@ export default function AuthPage() {
                     boxShadow: mode === m ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  {m === "login" ? "Войти" : "Регистрация"}
+                  {m === "login" ? t("auth.loginBtn") : t("auth.register")}
                 </button>
               ))}
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-              {/* Имя */}
+              {/* Name */}
               {mode === "register" && (
                 <div style={{ animation: "fadeIn 200ms ease" }}>
-                  <label style={labelStyle}>Ваше имя</label>
+                  <label style={labelStyle}>{t("auth.yourName")}</label>
                   <div style={{ position: "relative" }}>
                     <FaUser size={15} color={focusedField === "name" ? "#0d9488" : "#94a3b8"}
                       style={{ position: "absolute", left: 15, top: "50%", transform: "translateY(-50%)", transition: "color 150ms" }} />
@@ -273,7 +293,7 @@ export default function AuthPage() {
                       onChange={(e) => setName(e.target.value)}
                       onFocus={() => setFocusedField("name")}
                       onBlur={() => setFocusedField(null)}
-                      placeholder="Иван Иванов"
+                      placeholder={t("auth.namePlaceholderInput")}
                       required
                       style={fieldStyle("name")}
                     />
@@ -281,9 +301,9 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {/* Телефон */}
+              {/* Phone */}
               <div>
-                <label style={labelStyle}>Номер телефона</label>
+                <label style={labelStyle}>{t("auth.phoneLabel")}</label>
                 <div style={{ position: "relative" }}>
                   <FaPhone size={14} color={focusedField === "phone" ? "#0d9488" : "#94a3b8"}
                     style={{ position: "absolute", left: 15, top: "50%", transform: "translateY(-50%)", transition: "color 150ms" }} />
@@ -299,9 +319,9 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {/* Пароль */}
+              {/* Password */}
               <div>
-                <label style={labelStyle}>Пароль</label>
+                <label style={labelStyle}>{t("auth.passwordLabel")}</label>
                 <div style={{ position: "relative" }}>
                   <FaLock size={14} color={focusedField === "password" ? "#0d9488" : "#94a3b8"}
                     style={{ position: "absolute", left: 15, top: "50%", transform: "translateY(-50%)", transition: "color 150ms" }} />
@@ -311,7 +331,7 @@ export default function AuthPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     onFocus={() => setFocusedField("password")}
                     onBlur={() => setFocusedField(null)}
-                    placeholder="Минимум 6 символов"
+                    placeholder={t("auth.passwordPlaceholder")}
                     required minLength={6}
                     style={{ ...fieldStyle("password"), paddingRight: 48 }}
                   />
@@ -326,7 +346,7 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              {/* Ошибка */}
+              {/* Error */}
               {error && (
                 <div style={{
                   background: "#ef444412", borderRadius: 10, padding: "12px 14px",
@@ -338,7 +358,7 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {/* Кнопка */}
+              {/* Submit button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -367,18 +387,18 @@ export default function AuthPage() {
                     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                   </svg>
                 )}
-                {loading ? "Подождите..." : mode === "login" ? "Войти" : "Зарегистрироваться"}
+                {loading ? t("auth.wait") : mode === "login" ? t("auth.loginBtn") : t("auth.registerBtn")}
               </button>
             </form>
 
             <p style={{ textAlign: "center", marginTop: 20, fontSize: 14, color: "#64748b" }}>
-              {mode === "login" ? "Нет аккаунта? " : "Уже есть аккаунт? "}
+              {mode === "login" ? t("auth.noAccount") + " " : t("auth.hasAccount") + " "}
               <button
                 type="button"
                 onClick={() => switchMode(mode === "login" ? "register" : "login")}
                 style={{ background: "none", border: "none", color: "#0d9488", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
               >
-                {mode === "login" ? "Зарегистрироваться" : "Войти"}
+                {mode === "login" ? t("auth.registerBtn") : t("auth.loginBtn")}
               </button>
             </p>
           </div>

@@ -8,9 +8,12 @@ import {
   FaFlask, FaBandAid,
 } from "react-icons/fa";
 import { api, Service, formatPrice } from "@/lib/api";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CATEGORY_META: Record<string, { icon: React.ElementType }> = {
   "Уколы":      { icon: FaSyringe        },
+  "Инъекции":   { icon: FaSyringe        },
   "Капельницы": { icon: FaTint           },
   "Измерения":  { icon: FaThermometerHalf},
   "Анализы":    { icon: FaFlask          },
@@ -23,6 +26,8 @@ const DEFAULT_META = { icon: FaMedkit };
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,7 +40,7 @@ export default function HomePage() {
     api.services.list()
       .then((data) => setServices(data.filter((s) => s.isActive)))
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Ошибка загрузки услуг");
+        setError(err instanceof Error ? err.message : t("home.errorLoad"));
       })
       .finally(() => setLoading(false));
   }
@@ -83,16 +88,37 @@ export default function HomePage() {
         .svc-card { transition: box-shadow 150ms ease, transform 150ms ease; }
       `}</style>
 
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)", paddingBottom: 28, position: "relative" }}>
         <div className="hero-wrap">
-          {/* Топ-бар */}
+          {/* Top bar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <FaMedkit size={22} color="#fff" />
               <span style={{ fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {/* Language switcher */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {(["ru", "uz"] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguage(lang)}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      border: `1px solid ${language === lang ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.25)"}`,
+                      background: language === lang ? "rgba(255,255,255,0.25)" : "transparent",
+                      color: "#fff",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={() => router.push("/orders")}
                 style={{
@@ -102,11 +128,11 @@ export default function HomePage() {
                   display: "flex", alignItems: "center", gap: 6,
                 }}
               >
-                <FaListAlt size={12} /> Мои заказы
+                <FaListAlt size={12} /> {t("home.myOrders")}
               </button>
               <button
                 onClick={() => router.push("/profile")}
-                title="Профиль"
+                title="Profile"
                 style={{
                   background: "rgba(255,255,255,0.2)", border: "1.5px solid rgba(255,255,255,0.4)",
                   borderRadius: "50%", width: 36, height: 36,
@@ -120,16 +146,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Заголовок */}
           <h1 style={{ fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px", marginBottom: 6 }}>
-            Медсестра на дом
+            {t("home.headline")}
           </h1>
           <p style={{ fontSize: 15, color: "rgba(255,255,255,0.82)" }}>
-            Профессиональная помощь — за 15–30 минут
+            {t("home.subheadline")}
           </p>
         </div>
 
-        {/* Волна */}
         <svg viewBox="0 0 1440 36" xmlns="http://www.w3.org/2000/svg"
           style={{ display: "block", position: "absolute", bottom: -1, left: 0, width: "100%" }}
           preserveAspectRatio="none">
@@ -137,10 +161,10 @@ export default function HomePage() {
         </svg>
       </div>
 
-      {/* Контент */}
+      {/* Content */}
       <div className="page-wrap" style={{ padding: "20px 20px 60px" }}>
 
-        {/* Поиск услуг */}
+        {/* Search */}
         <div style={{ position: "relative", marginBottom: 16 }}>
           <svg
             width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -153,7 +177,7 @@ export default function HomePage() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск услуг..."
+            placeholder={t("home.search")}
             style={{
               width: "100%", boxSizing: "border-box",
               padding: "12px 14px 12px 42px",
@@ -174,7 +198,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Баннер скидки */}
+        {/* Discount banner */}
         <div style={{
           background: "linear-gradient(135deg, #fef3c7, #fef9ec)",
           border: "1px solid #fde68a",
@@ -184,12 +208,12 @@ export default function HomePage() {
         }}>
           <span style={{ fontSize: 20 }}>🎁</span>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#92400e", marginBottom: 1 }}>Скидка 10% на первый заказ</p>
-            <p style={{ fontSize: 12, color: "#b45309" }}>Применяется автоматически при оформлении</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "#92400e", marginBottom: 1 }}>{t("home.discountBanner")}</p>
+            <p style={{ fontSize: 12, color: "#b45309" }}>{t("home.discountBannerSub")}</p>
           </div>
         </div>
 
-        {/* Услуги */}
+        {/* Services */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "56px 0" }}>
             <div style={{
@@ -197,7 +221,7 @@ export default function HomePage() {
               border: "3px solid #e2e8f0", borderTopColor: "#0d9488",
               animation: "spin 0.8s linear infinite", margin: "0 auto 12px",
             }} />
-            <p style={{ fontSize: 14, color: "#94a3b8" }}>Загружаем услуги...</p>
+            <p style={{ fontSize: 14, color: "#94a3b8" }}>{t("home.loadingServices")}</p>
           </div>
         ) : error ? (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
@@ -210,14 +234,14 @@ export default function HomePage() {
                 fontSize: 14, fontWeight: 700, cursor: "pointer",
               }}
             >
-              Попробовать снова
+              {t("home.tryAgain")}
             </button>
           </div>
         ) : filteredServices.length === 0 && q ? (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
             <p style={{ fontSize: 36, marginBottom: 12 }}>🔍</p>
-            <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>Ничего не найдено</p>
-            <p style={{ fontSize: 14, color: "#94a3b8" }}>Попробуйте другой запрос</p>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>{t("home.notFound")}</p>
+            <p style={{ fontSize: 14, color: "#94a3b8" }}>{t("home.tryOtherSearch")}</p>
           </div>
         ) : (
           Object.entries(grouped)

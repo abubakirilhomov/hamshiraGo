@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import dynamic from "next/dynamic";
+import { useTranslation } from "react-i18next";
 
 const TrackingMap = dynamic(() => import("@/components/TrackingMap"), { ssr: false });
 import {
@@ -44,11 +45,11 @@ const STATUS_FLOW: OrderStatus[] = [
   "CREATED", "ASSIGNED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED", "DONE",
 ];
 
-function StatusStepper({ current }: { current: OrderStatus }) {
+function StatusStepper({ current, canceledLabel }: { current: OrderStatus; canceledLabel: string }) {
   if (current === "CANCELED") {
     return (
       <div style={{ background: "#ef444412", borderRadius: 12, padding: "12px 16px", textAlign: "center" }}>
-        <p style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>Заказ отменён</p>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>{canceledLabel}</p>
       </div>
     );
   }
@@ -101,6 +102,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { t } = useTranslation();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,33 +182,33 @@ export default function OrderDetailPage() {
         });
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки");
+      setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleConfirmDone() {
-    if (!confirm("Подтвердить, что услуга выполнена?")) return;
+    if (!confirm(t("order.confirmDoneConfirmMsg"))) return;
     setConfirming(true);
     try {
       const updated = await api.orders.confirmDone(id);
       setOrder(updated);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при подтверждении");
+      alert(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setConfirming(false);
     }
   }
 
   async function handleCancel() {
-    if (!confirm("Вы уверены, что хотите отменить заказ?")) return;
+    if (!confirm(t("order.cancelConfirm"))) return;
     setCanceling(true);
     try {
       await api.orders.cancel(id);
       router.push("/");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при отмене");
+      alert(err instanceof Error ? err.message : t("common.error"));
       setCanceling(false);
     }
   }
@@ -220,7 +222,7 @@ export default function OrderDetailPage() {
       setRatingDone(true);
       setTimeout(() => router.push("/"), 1500);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при оценке");
+      alert(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setRatingLoading(false);
     }
@@ -231,7 +233,7 @@ export default function OrderDetailPage() {
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0d9488", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-          <p style={{ fontSize: 14, color: "#64748b" }}>Загружаем заказ...</p>
+          <p style={{ fontSize: 14, color: "#64748b" }}>{t("order.loading")}</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -241,9 +243,9 @@ export default function OrderDetailPage() {
   if (error || !order) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: 24 }}>
-        <p style={{ fontSize: 15, color: "#ef4444", marginBottom: 16 }}>{error || "Заказ не найден"}</p>
+        <p style={{ fontSize: 15, color: "#ef4444", marginBottom: 16 }}>{error || t("order.notFound")}</p>
         <button onClick={() => router.push("/orders")} style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-          К списку заказов
+          {t("order.toOrderList")}
         </button>
       </div>
     );
@@ -258,10 +260,9 @@ export default function OrderDetailPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 28px" }}>
-        {/* Логотип */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
           <FaMedkit size={20} color="#fff" />
           <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
@@ -288,23 +289,23 @@ export default function OrderDetailPage() {
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 80px" }}>
 
-        {/* Баннер обрыва соединения */}
+        {/* Connection lost banner */}
         {!socketOk && (
           <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13, fontWeight: 600, color: "#92400e" }}>
-            Соединение потеряно — статус может не обновляться.
+            {t("order.connectionLost")}
           </div>
         )}
 
-        {/* Прогресс */}
+        {/* Status stepper */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-          <p style={sectionLabel}>Статус заказа</p>
-          <StatusStepper current={order.status} />
+          <p style={sectionLabel}>{t("order.orderStatus")}</p>
+          <StatusStepper current={order.status} canceledLabel={t("order.canceled")} />
         </div>
 
-        {/* Медик */}
+        {/* Medic */}
         {order.medic ? (
           <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <p style={sectionLabel}>Медсестра</p>
+            <p style={sectionLabel}>{t("order.nurse")}</p>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, #0d9488, #0f766e)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <FaUserNurse size={24} color="#fff" />
@@ -321,7 +322,7 @@ export default function OrderDetailPage() {
                   )}
                   <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#64748b" }}>
                     <FaBriefcaseMedical size={11} color="#94a3b8" />
-                    {order.medic.experienceYears} лет
+                    {order.medic.experienceYears} {t("order.years")}
                   </span>
                 </div>
               </div>
@@ -335,34 +336,34 @@ export default function OrderDetailPage() {
             {dispatchState?.status === "contacting" && dispatchState.candidateName ? (
               <>
                 <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
-                  Связываемся с {dispatchState.candidateName}...
+                  {t("order.contactingMedic", { name: dispatchState.candidateName })}
                 </p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>Медик рассматривает ваш заказ (до 60 сек)</p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.medicReviewing")}</p>
               </>
             ) : dispatchState?.status === "no_medics" ? (
               <>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Медики заняты...</p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>Продолжаем поиск, вам сообщим</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.allMedicsBusy")}</p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.keepSearching")}</p>
               </>
             ) : (
               <>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Ищем медика...</p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>Обычно это занимает 2–5 минут</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.searchingMedicDefault")}</p>
+                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.eta")}</p>
               </>
             )}
           </div>
         ) : null}
 
-        {/* Карта медика */}
+        {/* Medic on map */}
         {medicLocation &&
           order.location?.latitude != null &&
           order.location?.longitude != null &&
           ["ASSIGNED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED"].includes(order.status) && (
           <div style={{ background: "#fff", borderRadius: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", overflow: "hidden" }}>
             <div style={{ padding: "12px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <p style={sectionLabel}>Медик на карте</p>
+              <p style={sectionLabel}>{t("order.medicOnMap")}</p>
               <span style={{ fontSize: 11, color: "#64748b" }}>
-                обновлено {new Date(medicLocation.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                {t("order.updated")} {new Date(medicLocation.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
               </span>
             </div>
             <div style={{ height: 240 }}>
@@ -371,25 +372,25 @@ export default function OrderDetailPage() {
                 clientLng={order.location.longitude}
                 medicLat={medicLocation.lat}
                 medicLng={medicLocation.lng}
-                medicName={order.medic?.name ?? "Медик"}
+                medicName={order.medic?.name ?? t("order.nurse")}
               />
             </div>
           </div>
         )}
 
-        {/* Адрес */}
+        {/* Address */}
         {order.location && (
           <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <p style={sectionLabel}>Адрес</p>
+            <p style={sectionLabel}>{t("order.address")}</p>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
               <FaMapMarker size={16} color="#0d9488" style={{ marginTop: 2, flexShrink: 0 }} />
               <div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{order.location.house}</p>
                 {(order.location.floor || order.location.apartment) && (
                   <p style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
-                    {order.location.floor ? `Этаж ${order.location.floor}` : ""}
+                    {order.location.floor ? `${t("order.floor")} ${order.location.floor}` : ""}
                     {order.location.floor && order.location.apartment ? ", " : ""}
-                    {order.location.apartment ? `Кв. ${order.location.apartment}` : ""}
+                    {order.location.apartment ? `${t("order.apt")} ${order.location.apartment}` : ""}
                   </p>
                 )}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
@@ -401,22 +402,22 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {/* Стоимость */}
+        {/* Price */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-          <p style={sectionLabel}>Стоимость</p>
+          <p style={sectionLabel}>{t("order.price")}</p>
           {order.discountAmount > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, color: "#94a3b8" }}>Скидка</span>
+              <span style={{ fontSize: 14, color: "#94a3b8" }}>{t("order.discount")}</span>
               <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 600 }}>−{formatPrice(order.discountAmount)} UZS</span>
             </div>
           )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Итого</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{t("order.total")}</span>
             <span style={{ fontSize: 22, fontWeight: 800, color: "#0d9488" }}>{formatPrice(finalPrice)} UZS</span>
           </div>
         </div>
 
-        {/* Подтверждение завершения — клиент подтверждает что услуга выполнена */}
+        {/* Confirm done */}
         {canConfirmDone && (
           <div style={{
             background: "#fff",
@@ -427,10 +428,10 @@ export default function OrderDetailPage() {
             border: "1.5px solid #0d948840",
           }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
-              Услуга оказывается
+              {t("order.serviceInProgress")}
             </p>
             <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
-              Если медик завершил работу — подтвердите выполнение услуги
+              {t("order.confirmDoneText")}
             </p>
             <button
               onClick={handleConfirmDone}
@@ -447,27 +448,27 @@ export default function OrderDetailPage() {
                 cursor: confirming ? "not-allowed" : "pointer",
               }}
             >
-              {confirming ? "Подтверждаем..." : "Подтвердить завершение"}
+              {confirming ? t("order.confirming") : t("order.confirmDone")}
             </button>
           </div>
         )}
 
-        {/* Рейтинг — показываем только для завершённых заказов с медиком */}
+        {/* Rating */}
         {order.status === "DONE" && order.medic && (
           <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", textAlign: "center" }}>
             {order.clientRating !== null || ratingDone ? (
               <>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Ваша оценка</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{t("order.yourRating")}</p>
                 <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
                   {[1, 2, 3, 4, 5].map((s) => (
                     <span key={s} style={{ fontSize: 28, color: s <= (order.clientRating ?? rating) ? "#eab308" : "#e2e8f0" }}>★</span>
                   ))}
                 </div>
-                <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>Спасибо за оценку!</p>
+                <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>{t("order.thanksForRating")}</p>
               </>
             ) : (
               <>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Оцените медсестру</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.rateNurse")}</p>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>{order.medic.name}</p>
                 <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}>
                   {[1, 2, 3, 4, 5].map((s) => (
@@ -488,13 +489,13 @@ export default function OrderDetailPage() {
                     </button>
                   ))}
                 </div>
-                {ratingLoading && <p style={{ fontSize: 13, color: "#64748b" }}>Сохраняем...</p>}
+                {ratingLoading && <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.saving")}</p>}
               </>
             )}
           </div>
         )}
 
-        {/* Кнопка отмены */}
+        {/* Cancel button */}
         {canCancel && (
           <button
             onClick={handleCancel}
@@ -510,7 +511,7 @@ export default function OrderDetailPage() {
             }}
           >
             <FaTimes size={14} />
-            {canceling ? "Отменяем..." : "Отменить заказ"}
+            {canceling ? t("order.canceling") : t("order.cancel")}
           </button>
         )}
       </div>

@@ -5,6 +5,7 @@ import WebPushInit from "@/components/WebPushInit";
 import SplashScreen from "@/components/SplashScreen";
 import OfflineBanner from "@/components/OfflineBanner";
 import InstallPrompt from "@/components/InstallPrompt";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://web-production-d365f.up.railway.app";
 
@@ -53,13 +54,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="https://telegram.org/js/telegram-web-app.js" />
       </head>
       <body>
-        <OfflineBanner />
-        <InstallPrompt />
-        <SplashScreen />
-        <WebPushInit />
-        <TelegramProvider>
-          {children}
-        </TelegramProvider>
+        <LanguageProvider>
+          <OfflineBanner />
+          <InstallPrompt />
+          <SplashScreen />
+          <WebPushInit />
+          <TelegramProvider>
+            {children}
+          </TelegramProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

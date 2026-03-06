@@ -20,6 +20,7 @@ import {
   ORDER_STATUS_COLOR,
   formatPrice,
 } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   const { text, bg } = ORDER_STATUS_COLOR[status];
@@ -52,7 +53,6 @@ function OrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
         transition: "box-shadow 150ms ease",
       }}
     >
-      {/* Верхняя строка */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
         <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
           {order.serviceTitle}
@@ -60,21 +60,17 @@ function OrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
         <StatusBadge status={order.status} />
       </div>
 
-      {/* Адрес */}
       {order.location && (
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <FaMapMarker size={12} color="#94a3b8" />
           <span style={{ fontSize: 13, color: "#64748b" }}>
             {order.location.house}
-            {order.location.floor ? `, эт. ${order.location.floor}` : ""}
           </span>
         </div>
       )}
 
-      {/* Разделитель */}
       <div style={{ height: 1, background: "#f1f5f9", marginBottom: 10 }} />
 
-      {/* Нижняя строка */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 16, fontWeight: 700, color: "#0d9488" }}>
           {formatPrice(order.priceAmount - order.discountAmount)} UZS
@@ -89,6 +85,7 @@ function OrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [orders, setOrders]       = useState<Order[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
@@ -105,20 +102,18 @@ export default function OrdersPage() {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       ));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки");
+      setError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setLoading(false);
     }
   }
 
-  // WebSocket — real-time обновление статусов
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth"); return; }
 
     loadOrders();
 
-    // Подключаем Socket.io (как и требует бекенд)
     const socket = io(WS_URL, {
       auth: { token },
       transports: ["websocket"],
@@ -135,7 +130,6 @@ export default function OrdersPage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o))
       );
-      // Отписываемся от завершённых заказов
       if (status === "DONE" || status === "CANCELED") {
         socket.emit("unsubscribe_order", orderId);
       }
@@ -147,7 +141,6 @@ export default function OrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Подписываемся на каждый активный заказ
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
@@ -175,7 +168,7 @@ export default function OrdersPage() {
         @media (min-width: 1000px) { .orders-grid { grid-template-columns: 1fr 1fr 1fr; } }
       `}</style>
 
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
         <div className="orders-header-inner">
           <div>
@@ -183,9 +176,9 @@ export default function OrdersPage() {
               <FaMedkit size={18} color="#fff" />
               <span style={{ fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.85)", letterSpacing: "-0.2px" }}>HamshiraGo</span>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>Мои заказы</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{t("orders.title")}</h1>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
-              Статус обновляется в реальном времени
+              {t("orders.statusRealtime")}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -193,7 +186,7 @@ export default function OrdersPage() {
               onClick={() => router.push("/")}
               style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 10, padding: "8px 16px", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
             >
-              Услуги
+              {t("orders.services")}
             </button>
             <button onClick={loadOrders} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
               <FaRedo size={14} />
@@ -206,11 +199,16 @@ export default function OrdersPage() {
       </div>
 
       <div className="orders-body">
-        {/* Фильтр по статусу */}
+        {/* Filter */}
         {!loading && !error && orders.length > 0 && (
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
             {(["ALL", "ACTIVE", "DONE", "CANCELED"] as const).map((f) => {
-              const labels: Record<string, string> = { ALL: "Все", ACTIVE: "Активные", DONE: "Завершённые", CANCELED: "Отменённые" };
+              const labels: Record<string, string> = {
+                ALL: t("orders.all"),
+                ACTIVE: t("orders.active"),
+                DONE: t("orders.done"),
+                CANCELED: t("orders.canceled"),
+              };
               const active = statusFilter === f;
               return (
                 <button
@@ -233,13 +231,14 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Баннер обрыва соединения */}
+        {/* Connection lost banner */}
         {!socketOk && (
           <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13, fontWeight: 600, color: "#92400e" }}>
-            Соединение потеряно — статусы не обновляются. Проверьте интернет.
+            {t("orders.connectionLost")}
           </div>
         )}
-        {/* Загрузка */}
+
+        {/* Loading */}
         {loading && (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
             <div style={{
@@ -248,11 +247,11 @@ export default function OrdersPage() {
               animation: "spin 0.8s linear infinite",
               margin: "0 auto 12px",
             }} />
-            <p style={{ fontSize: 14, color: "#64748b" }}>Загружаем заказы...</p>
+            <p style={{ fontSize: 14, color: "#64748b" }}>{t("orders.loadingOrders")}</p>
           </div>
         )}
 
-        {/* Ошибка */}
+        {/* Error */}
         {!loading && error && (
           <div style={{
             background: "#ef444412", borderRadius: 12,
@@ -265,12 +264,12 @@ export default function OrdersPage() {
               padding: "8px 20px", fontSize: 14, fontWeight: 600,
               cursor: "pointer",
             }}>
-              Повторить
+              {t("common.retry")}
             </button>
           </div>
         )}
 
-        {/* Пустой список */}
+        {/* Empty */}
         {!loading && !error && orders.length === 0 && (
           <div style={{ textAlign: "center", padding: "64px 24px" }}>
             <div style={{
@@ -282,10 +281,10 @@ export default function OrdersPage() {
               <FaListAlt size={28} color="#94a3b8" />
             </div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>
-              Заказов пока нет
+              {t("orders.empty")}
             </h2>
             <p style={{ fontSize: 14, color: "#64748b", marginBottom: 24 }}>
-              Вызовите медсестру на дом прямо сейчас
+              {t("orders.callNurse")}
             </p>
             <button
               onClick={() => router.push("/")}
@@ -297,12 +296,12 @@ export default function OrdersPage() {
               }}
             >
               <FaMedkit size={15} />
-              Заказать услугу
+              {t("orders.orderService")}
             </button>
           </div>
         )}
 
-        {/* Список заказов */}
+        {/* Orders list */}
         {!loading && !error && orders.length > 0 && (() => {
           const active = orders.filter((o) => !["DONE", "CANCELED"].includes(o.status));
           const done = orders.filter((o) => o.status === "DONE");
@@ -310,21 +309,21 @@ export default function OrdersPage() {
 
           const sections: { label: string; items: Order[] }[] = statusFilter === "ALL"
             ? [
-                ...(active.length > 0 ? [{ label: "Активные", items: active }] : []),
+                ...(active.length > 0 ? [{ label: t("orders.active"), items: active }] : []),
                 ...(done.length > 0 || canceled.length > 0
-                  ? [{ label: "История", items: [...done, ...canceled] }]
+                  ? [{ label: t("orders.history"), items: [...done, ...canceled] }]
                   : []),
               ]
             : statusFilter === "ACTIVE"
-            ? (active.length > 0 ? [{ label: "Активные", items: active }] : [])
+            ? (active.length > 0 ? [{ label: t("orders.active"), items: active }] : [])
             : statusFilter === "DONE"
-            ? (done.length > 0 ? [{ label: "Завершённые", items: done }] : [])
-            : (canceled.length > 0 ? [{ label: "Отменённые", items: canceled }] : []);
+            ? (done.length > 0 ? [{ label: t("orders.done"), items: done }] : [])
+            : (canceled.length > 0 ? [{ label: t("orders.canceled"), items: canceled }] : []);
 
           if (sections.length === 0) {
             return (
               <div style={{ textAlign: "center", padding: "40px 0" }}>
-                <p style={{ fontSize: 15, color: "#94a3b8" }}>Нет заказов в этой категории</p>
+                <p style={{ fontSize: 15, color: "#94a3b8" }}>{t("orders.noOrdersInCategory")}</p>
               </div>
             );
           }
