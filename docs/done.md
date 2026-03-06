@@ -4,6 +4,11 @@
 
 ---
 
+## 2026-03-06 — Railway deployment fix
+
+- **[backend]** Created `tsconfig.build.json` excluding `e2e/`, `test/`, `jest.config.ts`, `playwright.config.ts` — TypeScript now infers `rootDir=src`, outputting `dist/main.js` (not `dist/src/main.js`)
+- **[backend]** `railway.toml` `buildCommand` changed from `npm run build` to `npm install && npm run build` — ensures devDependencies (`@nestjs/cli`) are available at build time
+
 ## 2026-03-06 — Landing SEO (bilingual RU + UZ, Uzbekistan #1)
 
 - **[landing]** App Router i18n: `/` → redirect `/ru`; созданы `/app/[lang]/layout.tsx` и `/app/[lang]/page.tsx` с `generateStaticParams` — Google теперь раздельно индексирует `/ru` и `/uz`
