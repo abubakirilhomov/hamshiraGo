@@ -142,6 +142,7 @@
     "loading": "Buyurtma yaratilmoqda...",
     "serviceCost": "Xizmat narxi",
     "checkingDiscount": "Chegirma tekshirilmoqda...",
+    "discountCheckFailed": "Chegirmani tekshirib bo'lmadi",
     "cancel": "Bekor qilish",
     "floor": "Qavat",
     "apt": "Xonadon"

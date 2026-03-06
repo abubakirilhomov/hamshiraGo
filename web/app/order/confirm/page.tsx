@@ -29,6 +29,7 @@ function ConfirmForm() {
   const lng          = parseFloat(params.get("lng") || "69.2401");
   const [discount, setDiscount] = useState(0);
   const [checkingDiscount, setCheckingDiscount] = useState(true);
+  const [discountError, setDiscountError] = useState(false);
   const total = price - discount;
 
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,7 @@ function ConfirmForm() {
           setDiscount(Math.round(price * 0.1));
         }
       })
-      .catch(() => {})
+      .catch(() => { setDiscountError(true); })
       .finally(() => setCheckingDiscount(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -180,6 +181,12 @@ function ConfirmForm() {
 
             {checkingDiscount && (
               <div style={{ fontSize: 13, color: "#94a3b8" }}>{t("confirm.checkingDiscount")}</div>
+            )}
+
+            {!checkingDiscount && discountError && (
+              <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 500 }}>
+                {t("confirm.discountCheckFailed")}
+              </div>
             )}
 
             {!checkingDiscount && discount > 0 && (

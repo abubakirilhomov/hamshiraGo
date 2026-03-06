@@ -142,18 +142,28 @@ export default function Hero() {
               </motion.div>
 
               <div style={{perspective:"600px",marginBottom:4}}>
-                <h1 className="font-black tracking-tight" style={{fontSize:"clamp(52px,7vw,84px)",lineHeight:0.95,color:"var(--text-primary)"}}>
-                  {t1.split("").map((ch,i)=>(
-                    <motion.span key={i} custom={i} variants={lv} initial="hidden" animate="visible"
-                      style={{display:ch===" "?"inline":"inline-block"}}>{ch===" "?"\u00A0":ch}</motion.span>
+                <h1 className="font-black tracking-tight" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05,color:"var(--text-primary)"}}>
+                  {t1.split(" ").map((word,wi)=>(
+                    <span key={wi} style={{display:"inline-block",whiteSpace:"nowrap"}}>
+                      {word.split("").map((ch,ci)=>(
+                        <motion.span key={ci} custom={t1.split(" ").slice(0,wi).join(" ").length+ci} variants={lv} initial="hidden" animate="visible"
+                          style={{display:"inline-block"}}>{ch}</motion.span>
+                      ))}
+                      {wi < t1.split(" ").length-1 && <span style={{display:"inline-block"}}>&nbsp;</span>}
+                    </span>
                   ))}
                 </h1>
               </div>
               <div style={{perspective:"600px",marginBottom:28}}>
-                <h1 className="font-black tracking-tight grad-text-anim" style={{fontSize:"clamp(52px,7vw,84px)",lineHeight:0.95}}>
-                  {t2.split("").map((ch,i)=>(
-                    <motion.span key={i} custom={t1.length+i} variants={lv} initial="hidden" animate="visible"
-                      style={{display:ch===" "?"inline":"inline-block"}}>{ch===" "?"\u00A0":ch}</motion.span>
+                <h1 className="font-black tracking-tight grad-text-anim" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05}}>
+                  {t2.split(" ").map((word,wi)=>(
+                    <span key={wi} style={{display:"inline-block",whiteSpace:"nowrap"}}>
+                      {word.split("").map((ch,ci)=>(
+                        <motion.span key={ci} custom={t1.length+t2.split(" ").slice(0,wi).join(" ").length+ci} variants={lv} initial="hidden" animate="visible"
+                          style={{display:"inline-block"}}>{ch}</motion.span>
+                      ))}
+                      {wi < t2.split(" ").length-1 && <span style={{display:"inline-block"}}>&nbsp;</span>}
+                    </span>
                   ))}
                 </h1>
               </div>

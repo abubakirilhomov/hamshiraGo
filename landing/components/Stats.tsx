@@ -63,7 +63,7 @@ function StatCard({ value, suffix, label, delay, started, iconIndex }: {
           <div className="mb-3 flex justify-center" style={{ color: "rgba(255,255,255,0.85)" }}>
             {(() => { const Icon = STAT_ICONS[iconIndex % STAT_ICONS.length]; return <Icon size={26} />; })()}
           </div>
-          <div className="font-black text-white mb-1 leading-none" style={{ fontSize: "clamp(42px, 6vw, 60px)", textShadow: "0 0 40px rgba(255,255,255,0.3)" }}>
+          <div className="font-black mb-1 leading-none" style={{ fontSize: "clamp(42px, 6vw, 60px)", color: "#fff", textShadow: "0 0 40px rgba(255,255,255,0.3)" }}>
             {display}<span style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.6em" }}>{suffix}</span>
           </div>
           <p className="font-medium text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>{label}</p>

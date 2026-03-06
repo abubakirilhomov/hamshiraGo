@@ -142,6 +142,7 @@
     "loading": "Создаём заказ...",
     "serviceCost": "Стоимость услуги",
     "checkingDiscount": "Проверяем скидку...",
+    "discountCheckFailed": "Не удалось проверить скидку",
     "cancel": "Отмена",
     "floor": "Этаж",
     "apt": "Кв."

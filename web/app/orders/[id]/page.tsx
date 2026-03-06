@@ -132,6 +132,7 @@ export default function OrderDetailPage() {
       transports: ["websocket"],
       reconnection: true,
       reconnectionDelay: 2000,
+      reconnectionAttempts: 5,
     });
     socketRef.current = socket;
 

@@ -86,8 +86,8 @@ export default function HowItWorks() {
   });
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
-    if (v < 0.38) setActiveStep(0);
-    else if (v < 0.72) setActiveStep(1);
+    if (v < 0.42) setActiveStep(0);
+    else if (v < 0.76) setActiveStep(1);
     else setActiveStep(2);
   });
 
@@ -95,15 +95,15 @@ export default function HowItWorks() {
   const steps = t.how.steps;
 
   const stepRanges: [number, number, number, number][] = [
-    [0, 0.06, 0.28, 0.38],
-    [0.28, 0.38, 0.62, 0.72],
-    [0.62, 0.72, 0.92, 1.0],
+    [0, 0.05, 0.32, 0.42],
+    [0.32, 0.42, 0.66, 0.76],
+    [0.66, 0.76, 0.93, 1.0],
   ];
 
   return (
     <section id="how">
-      {/* Outer — 350vh for scroll space */}
-      <div ref={containerRef} style={{ height: "350vh" }}>
+      {/* Outer — 260vh for scroll space */}
+      <div ref={containerRef} style={{ height: "260vh" }}>
         {/* Sticky inner */}
         <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "linear-gradient(180deg, var(--bg2) 0%, var(--bg3) 100%)" }}
           className="flex flex-col">

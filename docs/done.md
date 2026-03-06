@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-03-06 — Landing SEO (bilingual RU + UZ, Uzbekistan #1)
+
+- **[landing]** App Router i18n: `/` → redirect `/ru`; созданы `/app/[lang]/layout.tsx` и `/app/[lang]/page.tsx` с `generateStaticParams` — Google теперь раздельно индексирует `/ru` и `/uz`
+- **[landing]** `generateMetadata` per lang — уникальные title/description/keywords для каждого языка (RU: «медик на дому Ташкент», UZ: «uyda hamshira Toshkent» и т.д.)
+- **[landing]** hreflang alternates: `ru`, `ru-UZ`, `uz`, `uz-UZ`, `x-default` — Google Search Console будет правильно направлять трафик
+- **[landing]** JSON-LD structured data: `MedicalBusiness` + `FAQPage` + `MobileApplication` для каждого языка (rich snippets в выдаче)
+- **[landing]** `app/sitemap.ts` — `/sitemap.xml` с oboma URL + language alternates
+- **[landing]** `app/robots.ts` — `/robots.txt` с ссылкой на sitemap
+- **[landing]** `app/[lang]/opengraph-image.tsx` — автогенерация OG-картинки 1200×630 для каждого языка
+- **[landing]** `LangContext` — добавлен `initialLang` prop для SSR-инициализации языка
+- **[landing]** `Navbar` — переключатель языка теперь делает `router.push('/ru')` / `router.push('/uz')` — URL отражает язык
+- `npm run build` — 0 ошибок, `/ru` и `/uz` статически пресгенерированы
+
+## 2026-03-06 — Web-medic bug fixes (3 консольных ошибки)
+
+- **[web-medic]** `app/page.tsx` — убран `navigator.vibrate(...)` (Chrome блокирует без user gesture → бесполезный шум в консоли); добавлен `reconnectionAttempts: 5` в WebSocket
+- **[web-medic]** `app/order/[id]/page.tsx` — добавлен `reconnectionAttempts: 5` в WebSocket
+- **[web-medic]** `components/Map.tsx` — исправлен Leaflet `_leaflet_pos` TypeError: в async `import("leaflet").then(...)` добавлен `cancelled` флаг + `return () => { cancelled = true }` для обоих useEffect (medic position, route); `fitBounds` обёрнут в try-catch (защита от вызова после unmount при zoom-анимации)
+
+## 2026-03-06 — Web bug fixes (Etap 3: W4, W5)
+
+- **[web]** `app/orders/[id]/page.tsx` — W4: добавлен `reconnectionAttempts: 5` в `io()` опции, WebSocket больше не переподключается бесконечно
+- **[web]** `app/order/confirm/page.tsx` — W5: добавлен `discountError` state; `.catch(() => {})` заменён на `.catch(() => { setDiscountError(true); })`; в UI показывается предупреждение «Не удалось проверить скидку» (amber цвет, не блокирующее); добавлены переводы `confirm.discountCheckFailed` в `i18n/ru.json` и `i18n/uz.json`
+
+## 2026-03-06 — Admin bug fixes (Etap 2: A2, A3, A6)
+
+- **[admin]** `Dashboard.tsx` — A2: параллельный `Promise.all` заменён на последовательный цикл с лимитом `REVENUE_LIMIT=500` заказов; A6: добавлен error banner с `AlertCircle` + кнопка «Повторить»; polling снижен с 30 сек до 2 мин (`REFRESH_MS=120_000`); добавлены константы `REVENUE_LIMIT`, `CHART_LIMIT`
+- **[admin]** `Reports.tsx` — A3: `Promise.all` N параллельных страниц заменён на последовательный цикл с лимитом `ORDER_LIMIT=500`; добавлен `error` state + error banner с `AlertCircle`/`RefreshCw` + кнопка «Повторить»
+- **[web]** `order/confirm/page.tsx` — W1: удалён `console.log("[confirm] sending order body:", ...)` с персональными данными
+- **[admin]** `lib/api.ts` — A1: `API_BASE` читается из `import.meta.env.VITE_API_URL` с fallback на production URL
+
 ## 2026-03-06 — Medic map: OSRM route + loading overlay
 
 - **[medic]** `OrderInviteModal.tsx` — заменена жёлтая пунктирная линия на реальный дорожный маршрут через OSRM API; добавлен `routeLoading` state + лоадинг-оверлей «Строим маршрут...» поверх карты; fallback на прямую линию если OSRM недоступен
