@@ -25,7 +25,22 @@ export type MedicLocationPayload = {
 };
 
 @WebSocketGateway({
-  cors: { origin: true },
+  cors: {
+    origin: [
+      'https://hamshirago-web.vercel.app',
+      'https://hamshirago-web-medic.vercel.app',
+      'https://hamshirago-admin.vercel.app',
+      'https://web-production-d365f.up.railway.app',
+      'https://admin-production-9727.up.railway.app',
+      'https://web-medic-production.up.railway.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:8081',
+      'http://localhost:8082',
+    ],
+    credentials: true,
+  },
 })
 export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

@@ -20,8 +20,16 @@
     "errorPasswordLength": "Пароль минимум 6 символов",
     "errorInvalidCreds": "Неверный номер телефона или пароль",
     "errorBlocked": "Ваш аккаунт заблокирован. Обратитесь в поддержку.",
-    "errorDuplicate": "Пользователь с таким номером уже зарегистрирован",
-    "errorGeneral": "Ошибка. Попробуйте ещё раз."
+    "errorDuplicate": "Медик с таким номером уже зарегистрирован",
+    "errorGeneral": "Ошибка. Попробуйте ещё раз.",
+    "tagline": "Портал медика",
+    "experienceYears": "Опыт работы (лет)",
+    "errorNameRequired": "Введите ваше имя"
+  },
+  "dispatch": {
+    "newOrder": "Новый заказ!",
+    "accept": "Принять",
+    "decline": "Отклонить"
   },
   "profile": {
     "completedOrders": "Выполнено заказов",
@@ -55,6 +63,18 @@
     "emptyMy": "Нет заказов",
     "accept": "Принять",
     "decline": "Отказаться",
+    "active": "Активные",
+    "history": "История",
+    "earnings": "Заработок",
+    "commission": "Комиссия платформы",
+    "netEarnings": "Ваш заработок",
+    "openMap": "Открыть в картах",
+    "noLocation": "Адрес не указан",
+    "completeOrder": "Завершить заказ",
+    "startService": "Начать услугу",
+    "arrived": "Я на месте",
+    "onTheWay": "Я в пути",
+    "accepted": "Принять заказ",
     "status": {
       "CREATED": "Поиск медика",
       "ASSIGNED": "Назначен",
@@ -66,12 +86,30 @@
       "CANCELED": "Отменён"
     }
   },
+  "verification": {
+    "title": "Верификация",
+    "statusPending": "На проверке",
+    "statusApproved": "Аккаунт подтверждён",
+    "statusRejected": "Аккаунт отклонён",
+    "instructions": "Загрузите документы для верификации",
+    "uploadPhoto": "Фото профиля",
+    "uploadDiploma": "Диплом / Сертификат",
+    "uploadLicense": "Лицензия (если есть)",
+    "uploadPassport": "Паспорт",
+    "submit": "Отправить на проверку",
+    "rejectedReason": "Причина отказа",
+    "photoRequired": "Фото обязательно"
+  },
   "common": {
     "loading": "Загрузка...",
     "error": "Ошибка",
     "retry": "Повторить",
     "save": "Сохранить",
     "back": "Назад",
-    "sum": "сум"
+    "sum": "сум",
+    "locationPermission": "Нужно разрешение на геолокацию",
+    "alwaysAllow": "Разрешить всегда",
+    "openSettings": "Открыть настройки",
+    "permissionDenied": "Разрешение отклонено"
   }
 }

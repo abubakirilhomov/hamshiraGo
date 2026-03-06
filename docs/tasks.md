@@ -37,6 +37,8 @@
 - [x] **[backend/mobile/medic]** Этап 2 аудита — i18n (Узбекский + Русский): Service entity titleUz/descriptionUz/categoryUz, i18next в mobile/medic, LanguageContext + SecureStore, language picker в profile + first-launch screen
 - [x] **[backend]** Этап 3 аудита — TypeScript strict: `strict: true`, 109 ошибок исправлено (`!` на entity/DTO свойствах)
 - [x] **[mobile]** Плавная интерполяция маркера медика на карте клиента (`mobile/app/order/track.tsx`) — выполнено 2026-03-05
+- [x] **[mobile/medic]** 95% MVP — i18n auth.tsx (mobile+medic), payment UI в track.tsx, медик 7 экранов i18n (index, my-orders, _layout, order/[id], verification, auth, i18n-файлы) — выполнено 2026-03-05
+- [x] **[backend]** Security fixes (tech lead feedback) — #1 rateOrder race, #2 updateStatusByMedic atomic, #3 DONE+balance tx, #4 initiatePayment lock, #5 netPrice fix, #6 WS CORS, #8 Swagger prod guard, #9 dispatch MAX_ATTEMPTS — выполнено 2026-03-06
 
 ### Процесс выполнения
 

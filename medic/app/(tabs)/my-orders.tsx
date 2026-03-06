@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -28,16 +29,7 @@ interface Order {
   created_at: string;
 }
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  CREATED: 'Создан',
-  ASSIGNED: 'Назначен',
-  ACCEPTED: 'Принят',
-  ON_THE_WAY: 'В пути',
-  ARRIVED: 'Прибыл',
-  SERVICE_STARTED: 'Оказывается услуга',
-  DONE: 'Выполнен',
-  CANCELED: 'Отменён',
-};
+// STATUS_LABEL resolved via t() in the component
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   CREATED: Theme.primary,
@@ -56,6 +48,7 @@ const ACTIVE_STATUSES: OrderStatus[] = [
 
 export default function MyOrdersScreen() {
   const { token } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,20 +105,20 @@ export default function MyOrdersScreen() {
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
         active.length > 0 ? (
-          <Text style={styles.sectionTitle}>Активные</Text>
+          <Text style={styles.sectionTitle}>{t('orders.active')}</Text>
         ) : null
       }
       ListEmptyComponent={
         <View style={styles.empty}>
           <FontAwesome name="briefcase" size={48} color={Theme.border} />
-          <Text style={styles.emptyTitle}>Нет заказов</Text>
-          <Text style={styles.emptyHint}>Принятые заказы появятся здесь</Text>
+          <Text style={styles.emptyTitle}>{t('orders.emptyMy')}</Text>
+          <Text style={styles.emptyHint}>{t('common.loading')}</Text>
         </View>
       }
       renderItem={({ item, index }) => (
         <>
           {index === active.length && history.length > 0 && (
-            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>История</Text>
+            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('orders.history')}</Text>
           )}
           <Pressable
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -135,7 +128,7 @@ export default function MyOrdersScreen() {
               <Text style={styles.serviceTitle}>{item.serviceTitle}</Text>
               <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLOR[item.status]}18` }]}>
                 <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] }]}>
-                  {STATUS_LABEL[item.status]}
+                  {t(`orders.status.${item.status}`)}
                 </Text>
               </View>
             </View>

@@ -13,6 +13,8 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { io, Socket } from 'socket.io-client';
+import * as WebBrowser from 'expo-web-browser';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
@@ -116,12 +118,14 @@ export default function TrackOrderScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { token } = useAuth();
+  const { t } = useTranslation();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
   const [submittingRating, setSubmittingRating] = useState(false);
   const [pendingRating, setPendingRating] = useState(0);
+  const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
   const [dispatchState, setDispatchState] = useState<{
     status: DispatchStatus;
     candidateName?: string;
@@ -397,6 +401,30 @@ export default function TrackOrderScreen() {
       Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отправить оценку');
     } finally {
       setSubmittingRating(false);
+    }
+  };
+
+  // ── Payment status check (when DONE) ─────────────────────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'DONE' || !orderId || !token) return;
+    apiFetch<{ status: string }>(`/payments/${orderId}/status`, { token })
+      .then((p) => { if (p.status === 'paid') setPayStatus('paid'); })
+      .catch(() => {});
+  }, [order?.status, orderId, token]);
+
+  // ── Pay handler ───────────────────────────────────────────────────────────────
+  const handlePay = async () => {
+    try {
+      const { paymeUrl, clickUrl } = await apiFetch<{ paymeUrl: string; clickUrl: string }>(
+        `/payments/${orderId}/initiate`, { method: 'POST', token: token ?? undefined },
+      );
+      Alert.alert(t('payment.choosePlatform'), '', [
+        { text: 'Payme', onPress: () => WebBrowser.openBrowserAsync(paymeUrl) },
+        { text: 'Click', onPress: () => WebBrowser.openBrowserAsync(clickUrl) },
+        { text: t('payment.cancel'), style: 'cancel' },
+      ]);
+    } catch {
+      Alert.alert(t('payment.errorFetch'));
     }
   };
 
@@ -792,6 +820,14 @@ export default function TrackOrderScreen() {
         </Pressable>
       )}
 
+      {isDone && !mustRate && (
+        payStatus === 'paid'
+          ? <Text style={styles.payPaid}>{t('payment.paid')}</Text>
+          : <Pressable style={styles.payBtn} onPress={handlePay}>
+              <Text style={styles.payBtnText}>{t('payment.pay')}</Text>
+            </Pressable>
+      )}
+
       {(isDone || isCanceled) && !mustRate && (
         <Pressable
           style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]}
@@ -1174,6 +1210,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
+  },
+  payBtn: {
+    backgroundColor: Theme.success,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  payBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  payPaid: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Theme.success,
+    textAlign: 'center',
+    paddingVertical: 16,
+    marginTop: 4,
   },
 
   // Rating

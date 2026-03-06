@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-03-06 — Medic map: OSRM route + loading overlay
+
+- **[medic]** `OrderInviteModal.tsx` — заменена жёлтая пунктирная линия на реальный дорожный маршрут через OSRM API; добавлен `routeLoading` state + лоадинг-оверлей «Строим маршрут...» поверх карты; fallback на прямую линию если OSRM недоступен
+- **[medic]** `app/order/[id].tsx` — добавлен `routeLoading` state; `fetchRoute` теперь показывает лоадинг-оверлей пока маршрут строится; `finally` гарантирует снятие лоадинга при ошибке/тайм-ауте
+- `tsc --noEmit` = 0 ошибок
+
+## 2026-03-06 — Backend security fixes (tech lead feedback)
+
+- **[backend]** #5 fix: `initiatePayment` теперь считает `netPrice = priceAmount - discountAmount` вместо `priceAmount` (`payments.service.ts:28`)
+- **[backend]** #8 fix: Swagger/OpenAPI открывается только при `NODE_ENV !== 'production'` (`main.ts:53-62`)
+- **[backend]** #6 fix: WebSocket CORS `origin: true` → явный список allowed origins из `main.ts` (`order-events.gateway.ts:27-29`)
+- **[backend]** #2 fix: `updateStatusByMedic` — атомарный `UPDATE ... WHERE status = :currentStatus`, проверка `affected > 0` вместо `findOne → save` (`orders.service.ts`)
+- **[backend]** #3 fix: переход DONE + `addBalance` в одной транзакции через `DataSource.transaction()` + `manager.increment(Medic)` (`orders.service.ts`)
+- **[backend]** #1 fix: `rateOrder` — атомарный `UPDATE ... WHERE clientRating IS NULL` устраняет гонку двойного рейтинга (`orders.service.ts`)
+- **[backend]** #4 fix: `initiatePayment` — SELECT FOR UPDATE (`pessimistic_write`) в транзакции при upsert payment record (`payments.service.ts`)
+- **[backend]** #9 fix: `dispatch.service.ts` — константа `MAX_DISPATCH_ATTEMPTS = 10`, проверка в `advanceDispatch` до выбора следующего медика (`dispatch.service.ts`)
+- `tsc --noEmit` = 0 ошибок
+
+## 2026-03-05 (сессия 4)
+
+- **[mobile]** i18n auth.tsx — добавлен `useTranslation`; все ~17 хардкодных строк (ошибки, лейблы, кнопки, тэглайн) заменены на `t('auth.*')`; в `ru.json`/`uz.json` добавлены ключи `auth.tagline`, раздел `payment` (pay, choosePlatform, cancel, paid, errorFetch). `tsc --noEmit` = 0 ошибок (`mobile/app/auth.tsx`, `mobile/i18n/ru.json`, `mobile/i18n/uz.json`)
+- **[mobile]** Payment UI в track.tsx — добавлен `expo-web-browser`; state `payStatus`; при DONE фетч `GET /payments/:orderId/status`; функция `handlePay` → Alert Payme/Click → `WebBrowser.openBrowserAsync`; кнопка «Оплатить» / текст «Оплачено ✓» перед кнопкой «К моим заказам»; стили `payBtn`/`payBtnText`/`payPaid` (`mobile/app/order/track.tsx`)
+- **[medic]** i18n расширение — в `ru.json`/`uz.json` добавлены разделы `dispatch` (newOrder, accept, decline), ключи в `orders` (active, history, earnings, commission, netEarnings, openMap, noLocation, completeOrder, startService, arrived, onTheWay, accepted), раздел `verification` (11 ключей), ключи в `common` (locationPermission, alwaysAllow, openSettings, permissionDenied); обновлён `auth.errorDuplicate`, добавлены `auth.tagline`, `auth.experienceYears`, `auth.errorNameRequired` (`medic/i18n/ru.json`, `medic/i18n/uz.json`)
+- **[medic]** i18n auth.tsx — все хардкодные строки заменены на `t()`; поле «Опыт работы» через `t('auth.experienceYears')` (`medic/app/auth.tsx`)
+- **[medic]** i18n index.tsx — `NewOrderBanner.Принять` → `t('dispatch.accept')`; `AvailableOrderCard.Принять` → `t('dispatch.accept')`; строки empty/error через t() (`medic/app/(tabs)/index.tsx`)
+- **[medic]** i18n my-orders.tsx — убран статичный `STATUS_LABEL`; статус через `t('orders.status.*')`; «Активные»/«История» через t(); empty через t() (`medic/app/(tabs)/my-orders.tsx`)
+- **[medic]** i18n _layout.tsx — Alert геолокации через `t('common.locationPermission')` / `t('common.alwaysAllow')` / `t('common.openSettings')` (`medic/app/_layout.tsx`)
+- **[medic]** i18n order/[id].tsx — убран `STATUS_LABEL`; `NEXT_STATUS` → `NEXT_STATUS_MAP` (labelKey вместо label); все кнопки, earnings, карта через t(); `tsc --noEmit` = 0 ошибок (`medic/app/order/[id].tsx`)
+- **[medic]** i18n verification.tsx — статус-баннер, причина отказа, лейблы фото, кнопка submit через t() (`medic/app/verification.tsx`)
+
 ## 2026-03-05 (сессия 3)
 
 - **[mobile]** Плавная интерполяция маркера медика — `AnimatedMedicMarker` через `Marker.Animated` / `createAnimatedComponent`; `AnimatedRegion.timing()` 900 мс для socket-событий, 0 мс для REST-polling; маркер инициализируется при первой позиции, затем плавно скользит к каждой новой (`mobile/app/order/track.tsx`)

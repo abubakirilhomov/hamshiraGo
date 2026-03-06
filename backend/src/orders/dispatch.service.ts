@@ -22,6 +22,7 @@ export class DispatchService implements OnApplicationBootstrap {
   private readonly logger = new Logger(DispatchService.name);
   private readonly DISPATCH_TIMEOUT_MS = 60_000;
   private readonly DISPATCH_RADIUS_KM = 15;
+  private readonly MAX_DISPATCH_ATTEMPTS = 10;
 
   /** In-memory timers: orderId → timeout handle */
   private timers = new Map<string, NodeJS.Timeout>();
@@ -77,6 +78,12 @@ export class DispatchService implements OnApplicationBootstrap {
       select: ['medicId'],
     });
     const excludedIds = prev.map((a) => a.medicId);
+
+    // Hard cap: stop after MAX_DISPATCH_ATTEMPTS to avoid infinite loops
+    if (excludedIds.length >= this.MAX_DISPATCH_ATTEMPTS) {
+      await this.handleNoMedics(order, excludedIds.length);
+      return;
+    }
 
     const medic = await this.selectBestMedic(order, excludedIds);
     if (!medic) {

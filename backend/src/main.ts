@@ -50,15 +50,17 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
   });
 
-  // ── Swagger / OpenAPI ──────────────────────────────────────────────────────
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('HamshiraGo API')
-    .setDescription('REST API для мобильного приложения HamshiraGo')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  // ── Swagger / OpenAPI (dev only) ───────────────────────────────────────────
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('HamshiraGo API')
+      .setDescription('REST API для мобильного приложения HamshiraGo')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   // Seed reference data (idempotent — skips existing rows)
   const dataSource = app.get<DataSource>(getDataSourceToken());

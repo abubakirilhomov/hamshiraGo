@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './entities/order-status.enum';
 import { OrderLocation } from './entities/order-location.entity';
@@ -15,6 +15,7 @@ import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
+import { Medic } from '../medics/entities/medic.entity';
 
 const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
   ASSIGNED:        { title: '👤 Медик назначен',      body: 'Медик принял ваш заказ и скоро выедет' },
@@ -45,6 +46,7 @@ export class OrdersService {
     private usersService: UsersService,
     private servicesService: ServicesService,
     private dispatchService: DispatchService,
+    private dataSource: DataSource,
   ) {}
 
   /** Send Expo + Web Push notifications to the client of a given order */
@@ -163,11 +165,14 @@ export class OrdersService {
     const order = await this.findOne(orderId);
     if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
     if (order.status !== OrderStatus.DONE) throw new BadRequestException('Can only rate a completed order');
-    if (order.clientRating !== null) throw new BadRequestException('Order already rated');
     if (!order.medicId) throw new BadRequestException('No medic assigned to this order');
 
-    // Save rating on the order
-    await this.orderRepo.update(orderId, { clientRating: dto.rating });
+    // Atomic: only saves if rating is still NULL (prevents concurrent double-rating)
+    const rateResult = await this.orderRepo.update(
+      { id: orderId, clientRating: IsNull() },
+      { clientRating: dto.rating },
+    );
+    if (!rateResult.affected) throw new BadRequestException('Order already rated');
 
     // Recalculate medic's weighted average rating
     const medic = await this.medicsService.findById(order.medicId);
@@ -330,17 +335,35 @@ export class OrdersService {
       );
     }
 
-    order.status = status;
-    await this.orderRepo.save(order);
-    this.orderEventsGateway.emitOrderStatus(orderId, status);
+    const currentStatus = order.status;
 
-    // Credit medic balance when order is completed (net price minus platform commission)
+    // DONE: status update + balance credit in a single transaction
     if (status === OrderStatus.DONE) {
       const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
       const medicEarned = netPrice - (order.platformFee ?? 0);
-      await this.medicsService.addBalance(medicId, medicEarned);
+      await this.dataSource.transaction(async (manager) => {
+        const result = await manager.update(
+          Order,
+          { id: orderId, medicId, status: currentStatus },
+          { status: OrderStatus.DONE },
+        );
+        if (!result.affected) {
+          throw new BadRequestException('Status changed concurrently, please retry');
+        }
+        await manager.increment(Medic, { id: medicId }, 'balance', medicEarned);
+      });
+    } else {
+      // Atomic: only succeeds if status hasn't changed since we read it
+      const result = await this.orderRepo.update(
+        { id: orderId, medicId, status: currentStatus },
+        { status },
+      );
+      if (!result.affected) {
+        throw new BadRequestException('Status changed concurrently, please retry');
+      }
     }
 
+    this.orderEventsGateway.emitOrderStatus(orderId, status);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, status);
     return updated;

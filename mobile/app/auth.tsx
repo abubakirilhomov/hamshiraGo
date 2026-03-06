@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +19,7 @@ type Mode = 'login' | 'register';
 
 export default function AuthScreen() {
   const { login, register } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -28,11 +30,11 @@ export default function AuthScreen() {
   const handleSubmit = async () => {
     setError(null);
     if (!phone.trim() || !password.trim()) {
-      setError('Введите телефон и пароль');
+      setError(t('auth.errorPhonePassword'));
       return;
     }
     if (password.length < 6) {
-      setError('Пароль минимум 6 символов');
+      setError(t('auth.errorPasswordLength'));
       return;
     }
     setLoading(true);
@@ -45,13 +47,13 @@ export default function AuthScreen() {
     } catch (e: unknown) {
       const raw = (e instanceof Error ? e.message : '').toLowerCase();
       if (raw.includes('password') || raw.includes('number invalid') || raw.includes('invalid credentials')) {
-        setError('Неверный номер телефона или пароль');
+        setError(t('auth.errorInvalidCreds'));
       } else if (raw.includes('blocked')) {
-        setError('Ваш аккаунт заблокирован. Обратитесь в поддержку.');
+        setError(t('auth.errorBlocked'));
       } else if (raw.includes('already') || raw.includes('duplicate') || raw.includes('unique')) {
-        setError('Пользователь с таким номером уже зарегистрирован');
+        setError(t('auth.errorDuplicate'));
       } else {
-        setError((e instanceof Error ? e.message : '') || 'Ошибка. Попробуйте ещё раз.');
+        setError((e instanceof Error ? e.message : '') || t('auth.errorGeneral'));
       }
     } finally {
       setLoading(false);
@@ -83,7 +85,7 @@ export default function AuthScreen() {
             <FontAwesome name="medkit" size={36} color="#fff" />
           </View>
           <Text style={styles.appName}>HamshiraGo</Text>
-          <Text style={styles.appTagline}>Медсёстры на дом</Text>
+          <Text style={styles.appTagline}>{t('auth.tagline')}</Text>
         </LinearGradient>
 
         <View style={styles.card}>
@@ -93,7 +95,7 @@ export default function AuthScreen() {
               onPress={() => { setMode('login'); setError(null); }}
             >
               <Text style={[styles.tabText, mode === 'login' && styles.tabTextActive]}>
-                Войти
+                {t('auth.login')}
               </Text>
             </Pressable>
             <Pressable
@@ -101,19 +103,19 @@ export default function AuthScreen() {
               onPress={() => { setMode('register'); setError(null); }}
             >
               <Text style={[styles.tabText, mode === 'register' && styles.tabTextActive]}>
-                Регистрация
+                {t('auth.register')}
               </Text>
             </Pressable>
           </View>
 
           {mode === 'register' && (
             <>
-              <Text style={styles.label}>Имя</Text>
+              <Text style={styles.label}>{t('auth.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="Иван (необязательно)"
+                placeholder={t('auth.namePlaceholder')}
                 placeholderTextColor={Theme.textSecondary}
                 autoCapitalize="words"
                 returnKeyType="next"
@@ -121,24 +123,24 @@ export default function AuthScreen() {
             </>
           )}
 
-          <Text style={styles.label}>Телефон *</Text>
+          <Text style={styles.label}>{t('auth.phone')}</Text>
           <TextInput
             style={styles.input}
             value={phone}
             onChangeText={setPhone}
-            placeholder="+998901234567"
+            placeholder={t('auth.phonePlaceholder')}
             placeholderTextColor={Theme.textSecondary}
             keyboardType="phone-pad"
             autoComplete="tel"
             returnKeyType="next"
           />
 
-          <Text style={styles.label}>Пароль *</Text>
+          <Text style={styles.label}>{t('auth.password')}</Text>
           <TextInput
             style={styles.input}
             value={password}
             onChangeText={setPassword}
-            placeholder="Минимум 6 символов"
+            placeholder={t('auth.passwordPlaceholder')}
             placeholderTextColor={Theme.textSecondary}
             secureTextEntry
             returnKeyType="done"
@@ -161,17 +163,14 @@ export default function AuthScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.submitBtnText}>
-                {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+                {mode === 'login' ? t('auth.login') : t('auth.register')}
               </Text>
             )}
           </Pressable>
 
           <Pressable onPress={toggleMode} style={styles.switchLink}>
             <Text style={styles.switchText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-              {mode === 'login' ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}
-              <Text style={styles.switchTextBold} lightColor={Theme.primary} darkColor={Theme.primary}>
-                {mode === 'login' ? 'Зарегистрироваться' : 'Войти'}
-              </Text>
+              {mode === 'login' ? t('auth.switchToRegister') : t('auth.switchToLogin')}
             </Text>
           </Pressable>
         </View>

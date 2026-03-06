@@ -10,6 +10,8 @@ import { useAuth } from '@/context/AuthContext';
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
 
+const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
+
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -52,7 +54,13 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [loading, setLoading] = useState<'accept' | 'decline' | null>(null);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
+  const [routeLoading, setRouteLoading] = useState(false);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+
+  // Computed early so they can be used in useEffect dependency arrays
+  const clientLat = invite?.order?.location?.latitude != null ? Number(invite.order.location.latitude) : null;
+  const clientLng = invite?.order?.location?.longitude != null ? Number(invite.order.location.longitude) : null;
 
   useEffect(() => {
     if (!invite) return;
@@ -84,6 +92,32 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       locationSubRef.current?.remove();
     };
   }, [invite?.orderId]);
+
+  // Fetch road route medic → client via OSRM when both positions are known
+  useEffect(() => {
+    if (!medicPos || clientLat == null || clientLng == null) return;
+    setRouteLoading(true);
+    setRouteCoords([]);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    fetch(
+      `${OSRM_URL}/${medicPos.longitude},${medicPos.latitude};${clientLng},${clientLat}?overview=full&geometries=geojson`,
+      { signal: controller.signal },
+    )
+      .then((res) => res.json())
+      .then((data: { routes?: Array<{ geometry?: { coordinates?: [number, number][] } }> }) => {
+        const coords = data?.routes?.[0]?.geometry?.coordinates ?? [];
+        if (coords.length) {
+          setRouteCoords(coords.map(([lng, lat]) => ({ latitude: lat, longitude: lng })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setRouteLoading(false);
+      });
+    return () => { controller.abort(); };
+  }, [medicPos, clientLat, clientLng]);
 
   const handleAccept = async () => {
     if (!invite) return;
@@ -132,8 +166,6 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       ].filter(Boolean)
     : [];
 
-  const clientLat = loc?.latitude != null ? Number(loc.latitude) : null;
-  const clientLng = loc?.longitude != null ? Number(loc.longitude) : null;
   const distanceKm =
     medicPos && clientLat != null && clientLng != null
       ? haversineKm(medicPos.latitude, medicPos.longitude, clientLat, clientLng)
@@ -242,19 +274,25 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
                   </MapsModule.Marker>
                 )}
 
-                {/* Straight line */}
+                {/* Road route (OSRM), fallback to straight line while loading */}
                 {medicPos && (
                   <MapsModule.Polyline
-                    coordinates={[
-                      { latitude: clientLat!, longitude: clientLng! },
-                      medicPos,
-                    ]}
-                    strokeColor="#f59e0b"
-                    strokeWidth={2.5}
-                    lineDashPattern={[6, 4]}
+                    coordinates={
+                      routeCoords.length > 1
+                        ? routeCoords
+                        : [{ latitude: clientLat!, longitude: clientLng! }, medicPos]
+                    }
+                    strokeColor="#16a34a"
+                    strokeWidth={3}
                   />
                 )}
               </MapsModule.default>
+              {routeLoading && (
+                <View style={styles.mapLoadingOverlay}>
+                  <ActivityIndicator color={Theme.primary} size="small" />
+                  <Text style={styles.mapLoadingText}>Строим маршрут...</Text>
+                </View>
+              )}
             </View>
             <View style={styles.mapLegend}>
               <View style={styles.legendItem}>
@@ -524,6 +562,18 @@ const styles = StyleSheet.create({
   markerEmoji: {
     fontSize: 16,
     lineHeight: 20,
+  },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  mapLoadingText: {
+    fontSize: 12,
+    color: Theme.primary,
+    fontWeight: '600',
   },
 
   // ── Buttons ─────────────────────────────────────────────────────────────────

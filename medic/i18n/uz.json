@@ -20,8 +20,16 @@
     "errorPasswordLength": "Parol kamida 6 belgi bo'lishi kerak",
     "errorInvalidCreds": "Telefon raqami yoki parol noto'g'ri",
     "errorBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
-    "errorDuplicate": "Bu raqam bilan foydalanuvchi allaqachon ro'yxatdan o'tgan",
-    "errorGeneral": "Xatolik. Qayta urinib ko'ring."
+    "errorDuplicate": "Bu raqamli medik allaqachon ro'yxatdan o'tgan",
+    "errorGeneral": "Xatolik. Qayta urinib ko'ring.",
+    "tagline": "Medik portali",
+    "experienceYears": "Ish tajribasi (yil)",
+    "errorNameRequired": "Ismingizni kiriting"
+  },
+  "dispatch": {
+    "newOrder": "Yangi buyurtma!",
+    "accept": "Qabul qilish",
+    "decline": "Rad etish"
   },
   "profile": {
     "completedOrders": "Bajarilgan buyurtmalar",
@@ -55,6 +63,18 @@
     "emptyMy": "Buyurtmalar yo'q",
     "accept": "Qabul qilish",
     "decline": "Rad etish",
+    "active": "Faol",
+    "history": "Tarix",
+    "earnings": "Daromad",
+    "commission": "Platforma komissiyasi",
+    "netEarnings": "Sizning daromadingiz",
+    "openMap": "Xaritada ochish",
+    "noLocation": "Manzil ko'rsatilmagan",
+    "completeOrder": "Buyurtmani yakunlash",
+    "startService": "Xizmatni boshlash",
+    "arrived": "Men joyidaman",
+    "onTheWay": "Men yo'ldaman",
+    "accepted": "Buyurtmani qabul qilish",
     "status": {
       "CREATED": "Hamshira qidirilmoqda",
       "ASSIGNED": "Tayinlandi",
@@ -66,12 +86,30 @@
       "CANCELED": "Bekor qilindi"
     }
   },
+  "verification": {
+    "title": "Tasdiqlash",
+    "statusPending": "Tekshiruvda",
+    "statusApproved": "Hisob tasdiqlandi",
+    "statusRejected": "Hisob rad etildi",
+    "instructions": "Tasdiqlash uchun hujjatlarni yuklang",
+    "uploadPhoto": "Profil rasmi",
+    "uploadDiploma": "Diplom / Sertifikat",
+    "uploadLicense": "Litsenziya (mavjud bo'lsa)",
+    "uploadPassport": "Pasport",
+    "submit": "Tekshiruvga yuborish",
+    "rejectedReason": "Rad etish sababi",
+    "photoRequired": "Rasm majburiy"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",
     "retry": "Qayta urinish",
     "save": "Saqlash",
     "back": "Orqaga",
-    "sum": "so'm"
+    "sum": "so'm",
+    "locationPermission": "Geolokatsiya uchun ruxsat kerak",
+    "alwaysAllow": "Har doim ruxsat bering",
+    "openSettings": "Sozlamalarni ochish",
+    "permissionDenied": "Ruxsat rad etildi"
   }
 }

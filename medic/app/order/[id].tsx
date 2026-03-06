@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import { io, Socket } from 'socket.io-client';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -80,16 +81,7 @@ interface OrderDetail {
   created_at: string;
 }
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  CREATED: 'Создан',
-  ASSIGNED: 'Назначен',
-  ACCEPTED: 'Принят',
-  ON_THE_WAY: 'В пути',
-  ARRIVED: 'Прибыл',
-  SERVICE_STARTED: 'Оказывается услуга',
-  DONE: 'Выполнен',
-  CANCELED: 'Отменён',
-};
+// STATUS_LABEL resolved via t('orders.status.*') in the component
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   CREATED: Theme.primary,
@@ -102,18 +94,19 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   CANCELED: Theme.error,
 };
 
-/** Next status transition map for medic */
-const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
-  ASSIGNED:       { status: 'ACCEPTED',        label: 'Подтвердить принятие' },
-  ACCEPTED:       { status: 'ON_THE_WAY',      label: 'Еду к клиенту' },
-  ON_THE_WAY:     { status: 'ARRIVED',         label: 'Я прибыл' },
-  ARRIVED:        { status: 'SERVICE_STARTED', label: 'Начать услугу' },
-  SERVICE_STARTED:{ status: 'DONE',            label: 'Завершить заказ' },
+/** Next status transition map for medic (labels resolved in component via t()) */
+const NEXT_STATUS_MAP: Partial<Record<OrderStatus, { status: OrderStatus; labelKey: string }>> = {
+  ASSIGNED:        { status: 'ACCEPTED',        labelKey: 'orders.accepted' },
+  ACCEPTED:        { status: 'ON_THE_WAY',      labelKey: 'orders.onTheWay' },
+  ON_THE_WAY:      { status: 'ARRIVED',         labelKey: 'orders.arrived' },
+  ARRIVED:         { status: 'SERVICE_STARTED', labelKey: 'orders.startService' },
+  SERVICE_STARTED: { status: 'DONE',            labelKey: 'orders.completeOrder' },
 };
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +117,7 @@ export default function OrderDetailScreen() {
   const [sentLocationCount, setSentLocationCount] = useState(0);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
+  const [routeLoading, setRouteLoading] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const trackingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastRouteFetchRef = useRef(0);
@@ -233,6 +227,7 @@ export default function OrderDetailScreen() {
     if (now - lastRouteFetchRef.current < 12_000) return;
     lastRouteFetchRef.current = now;
 
+    setRouteLoading(true);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
 
@@ -249,6 +244,8 @@ export default function OrderDetailScreen() {
       setRouteCoords(coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })));
     } catch {
       clearTimeout(timer);
+    } finally {
+      setRouteLoading(false);
     }
   }, [medicPos, order?.location]);
 
@@ -270,18 +267,19 @@ export default function OrderDetailScreen() {
 
   const handleNextStatus = async () => {
     if (!order) return;
-    const next = NEXT_STATUS[order.status];
+    const next = NEXT_STATUS_MAP[order.status];
     if (!next) return;
 
     const isDone = next.status === 'DONE';
+    const nextLabel = t(next.labelKey);
     const confirmMsg = isDone
-      ? 'Завершить заказ? Подтвердите что услуга оказана.'
-      : `Перевести статус: "${STATUS_LABEL[next.status]}"?`;
+      ? `${t('orders.completeOrder')}?`
+      : `${nextLabel}?`;
 
-    Alert.alert('Подтвердите действие', confirmMsg, [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('common.save'), confirmMsg, [
+      { text: t('common.back'), style: 'cancel' },
       {
-        text: 'Да',
+        text: nextLabel,
         style: isDone ? 'destructive' : 'default',
         onPress: async () => {
           setUpdating(true);
@@ -297,13 +295,13 @@ export default function OrderDetailScreen() {
               const fee = updated.platformFee ?? Math.round(net * 0.1);
               const earned = net - fee;
               Alert.alert(
-                'Заказ завершён ✓',
-                `Заработок зачислен на баланс:\n+${earned.toLocaleString('ru-RU')} UZS`,
+                `${t('orders.completeOrder')} ✓`,
+                `${t('orders.netEarnings')}:\n+${earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
                 [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
               );
             }
           } catch (e: unknown) {
-            Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось обновить статус');
+            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
           } finally {
             setUpdating(false);
           }
@@ -321,7 +319,7 @@ export default function OrderDetailScreen() {
   }
 
   const statusColor = STATUS_COLOR[order.status];
-  const nextStep = NEXT_STATUS[order.status];
+  const nextStep = NEXT_STATUS_MAP[order.status];
   const netPrice = order.priceAmount - (order.discountAmount ?? 0);
   const platformFee = order.platformFee ?? Math.round(netPrice * 0.1);
   const medicEarnings = netPrice - platformFee;
@@ -354,7 +352,7 @@ export default function OrderDetailScreen() {
       <View style={[styles.statusBlock, { backgroundColor: `${statusColor}12`, borderColor: `${statusColor}30` }]}>
         <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
         <Text style={[styles.statusLabel, { color: statusColor }]}>
-          {STATUS_LABEL[order.status]}
+          {t(`orders.status.${order.status}`)}
         </Text>
       </View>
 
@@ -392,12 +390,12 @@ export default function OrderDetailScreen() {
           />
         )}
         <Row
-          label="Комиссия платформы (10%)"
+          label={`${t('orders.commission')} (10%)`}
           value={`−${platformFee.toLocaleString('ru-RU')} UZS`}
           valueColor={Theme.textSecondary}
         />
         <View style={styles.finalRow}>
-          <Text style={styles.finalLabel}>Ваш заработок</Text>
+          <Text style={styles.finalLabel}>{t('orders.netEarnings')}</Text>
           <Text style={styles.finalValue}>
             {medicEarnings.toLocaleString('ru-RU')} UZS
           </Text>
@@ -426,7 +424,7 @@ export default function OrderDetailScreen() {
               onPress={() => openInMaps(clientLat!, clientLng!)}
             >
               <FontAwesome name="location-arrow" size={15} color="#fff" />
-              <Text style={styles.mapsBtnText}>Открыть маршрут во внешних картах</Text>
+              <Text style={styles.mapsBtnText}>{t('orders.openMap')}</Text>
             </Pressable>
           )}
         </View>
@@ -497,6 +495,12 @@ export default function OrderDetailScreen() {
                 />
               )}
             </MapsModule.default>
+            {routeLoading && (
+              <View style={styles.mapLoadingOverlay}>
+                <ActivityIndicator color={Theme.primary} />
+                <Text style={styles.mapLoadingText}>Строим маршрут...</Text>
+              </View>
+            )}
           </View>
 
           {/* Legend */}
@@ -537,7 +541,7 @@ export default function OrderDetailScreen() {
                 size={18}
                 color="#fff"
               />
-              <Text style={styles.actionBtnText}>{nextStep.label}</Text>
+              <Text style={styles.actionBtnText}>{t(nextStep.labelKey)}</Text>
             </>
           )}
         </Pressable>
@@ -551,7 +555,7 @@ export default function OrderDetailScreen() {
             color={statusColor}
           />
           <Text style={[styles.completedText, { color: statusColor }]}>
-            {order.status === 'DONE' ? 'Заказ выполнен' : 'Заказ отменён'}
+            {t(`orders.status.${order.status}`)}
           </Text>
         </View>
       )}
@@ -654,6 +658,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 10,
+  },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  mapLoadingText: {
+    fontSize: 12,
+    color: Theme.primary,
+    fontWeight: '600',
   },
   map: { width: '100%', height: '100%' },
   mapLegend: {

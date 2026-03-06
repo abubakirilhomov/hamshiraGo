@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -19,6 +20,7 @@ type PhotoType = 'facePhoto' | 'licensePhoto';
 
 export default function VerificationScreen() {
   const { medic, token, refreshProfile } = useAuth();
+  const { t } = useTranslation();
   const [faceUri, setFaceUri] = useState<string | null>(medic?.facePhotoUrl ?? null);
   const [licenseUri, setLicenseUri] = useState<string | null>(medic?.licensePhotoUrl ?? null);
   const [uploading, setUploading] = useState(false);
@@ -73,7 +75,7 @@ export default function VerificationScreen() {
     const hasNewLicense = licenseUri && !licenseUri.startsWith('http');
 
     if (!hasNewFace && !hasNewLicense) {
-      Alert.alert('Ничего не выбрано', 'Выберите хотя бы одно фото для загрузки.');
+      Alert.alert(t('verification.photoRequired'), t('verification.instructions'));
       return;
     }
 
@@ -112,11 +114,11 @@ export default function VerificationScreen() {
 
       await refreshProfile();
       Alert.alert(
-        'Документы отправлены',
-        'Ваши документы переданы на проверку. Обычно это занимает до 24 часов.',
+        t('verification.submit'),
+        t('verification.instructions'),
       );
     } catch (e: unknown) {
-      Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось загрузить документы');
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
     } finally {
       setUploading(false);
     }
@@ -135,7 +137,7 @@ export default function VerificationScreen() {
         />
         <View style={styles.statusTexts}>
           <Text style={[styles.statusTitle, { color: statusIconColor(status) }]}>
-            {STATUS_TITLE[status]}
+            {status === 'APPROVED' ? t('verification.statusApproved') : status === 'REJECTED' ? t('verification.statusRejected') : t('verification.statusPending')}
           </Text>
           <Text style={styles.statusDesc}>{STATUS_DESC[status]}</Text>
         </View>
@@ -144,7 +146,7 @@ export default function VerificationScreen() {
       {/* Rejection reason */}
       {status === 'REJECTED' && medic?.verificationRejectedReason && (
         <View style={styles.rejectedReason}>
-          <Text style={styles.rejectedReasonLabel}>Причина отказа:</Text>
+          <Text style={styles.rejectedReasonLabel}>{t('verification.rejectedReason')}:</Text>
           <Text style={styles.rejectedReasonText}>{medic.verificationRejectedReason}</Text>
         </View>
       )}
@@ -158,16 +160,16 @@ export default function VerificationScreen() {
 
       {/* Face photo */}
       <PhotoBlock
-        label="Фото лица"
+        label={t('verification.uploadPhoto')}
         uri={faceUri}
-        onPress={() => showPickerOptions('facePhoto', 'Фото лица')}
+        onPress={() => showPickerOptions('facePhoto', t('verification.uploadPhoto'))}
       />
 
       {/* License photo */}
       <PhotoBlock
-        label="Медицинская лицензия / диплом"
+        label={t('verification.uploadDiploma')}
         uri={licenseUri}
-        onPress={() => showPickerOptions('licensePhoto', 'Лицензия / диплом')}
+        onPress={() => showPickerOptions('licensePhoto', t('verification.uploadDiploma'))}
       />
 
       {/* Submit */}
@@ -184,7 +186,7 @@ export default function VerificationScreen() {
           {uploading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitBtnText}>Отправить на проверку</Text>
+            <Text style={styles.submitBtnText}>{t('verification.submit')}</Text>
           )}
         </Pressable>
       )}

@@ -7,6 +7,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useRef } from 'react';
 import { Alert, AppState, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
 import { apiFetch } from '@/constants/api';
@@ -66,6 +67,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const { token, medic, isLoading } = useAuth();
   const { isLoaded, isFirstLaunch } = useLanguage();
+  const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
   const lastLocationSyncTs = useRef(0);
@@ -113,12 +115,12 @@ function RootLayoutNav() {
       if (hasPermission) return;
       lastPermissionReminderTs.current = now;
       Alert.alert(
-        'Нужно разрешение "Всегда"',
-        'Чтобы клиенты видели вашу актуальную геолокацию, разрешите доступ к локации "Всегда".',
+        t('common.locationPermission'),
+        t('common.alwaysAllow'),
         [
-          { text: 'Позже', style: 'cancel' },
+          { text: t('common.back'), style: 'cancel' },
           {
-            text: 'Открыть настройки',
+            text: t('common.openSettings'),
             onPress: () => {
               Linking.openSettings().catch(() => {});
             },

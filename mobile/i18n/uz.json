@@ -27,7 +27,15 @@
     "errorInvalidCreds": "Telefon raqami yoki parol noto'g'ri",
     "errorBlocked": "Hisobingiz bloklangan. Qo'llab-quvvatlash xizmatiga murojaat qiling.",
     "errorDuplicate": "Bu raqam bilan foydalanuvchi allaqachon ro'yxatdan o'tgan",
-    "errorGeneral": "Xatolik. Qayta urinib ko'ring."
+    "errorGeneral": "Xatolik. Qayta urinib ko'ring.",
+    "tagline": "Uyga hamshira"
+  },
+  "payment": {
+    "pay": "To'lash",
+    "choosePlatform": "To'lov usulini tanlang",
+    "cancel": "Bekor qilish",
+    "paid": "To'landi ✓",
+    "errorFetch": "Havola olib bo'lmadi"
   },
   "profile": {
     "client": "Mijoz",

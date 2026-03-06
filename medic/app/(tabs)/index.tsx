@@ -16,6 +16,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { io, Socket } from 'socket.io-client';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -50,6 +51,7 @@ function NewOrderBanner({
   onAccept: () => void;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(-120)).current;
 
   useEffect(() => {
@@ -91,7 +93,7 @@ function NewOrderBanner({
           style={styles.bannerAcceptBtn}
           onPress={onAccept}
         >
-          <Text style={styles.bannerAcceptText}>Принять</Text>
+          <Text style={styles.bannerAcceptText}>{t('dispatch.accept')}</Text>
         </Pressable>
         <Pressable style={styles.bannerCloseBtn} onPress={onDismiss}>
           <FontAwesome name="times" size={14} color="rgba(255,255,255,0.7)" />
@@ -105,6 +107,7 @@ function NewOrderBanner({
 
 export default function AvailableOrdersScreen() {
   const { token, medic } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const [orders, setOrders] = useState<AvailableOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +128,7 @@ export default function AvailableOrdersScreen() {
       setOrders(data);
       setFetchError(null);
     } catch (e: unknown) {
-      setFetchError(e instanceof Error ? e.message : 'Ошибка загрузки заказов');
+      setFetchError(e instanceof Error ? e.message : t('common.error'));
     }
   }, [token]);
 
@@ -212,13 +215,13 @@ export default function AvailableOrdersScreen() {
 
   const handleAccept = async (orderId: string) => {
     if (!medic?.isOnline) {
-      Alert.alert('Вы офлайн', 'Перейдите в профиль и включите онлайн-режим.');
+      Alert.alert(t('profile.offline') ?? 'Offline', t('common.error'));
       return;
     }
-    Alert.alert('Принять заказ?', 'Вы будете назначены на этот заказ.', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('orders.accepted'), '', [
+      { text: t('common.back'), style: 'cancel' },
       {
-        text: 'Принять',
+        text: t('dispatch.accept'),
         style: 'default',
         onPress: async () => {
           setAccepting(orderId);
@@ -231,7 +234,7 @@ export default function AvailableOrdersScreen() {
             setOrders((prev) => prev.filter((o) => o.id !== orderId));
             router.push(`/order/${orderId}`);
           } catch (e: unknown) {
-            Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось принять заказ');
+            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
           } finally {
             setAccepting(null);
           }
@@ -327,8 +330,8 @@ export default function AvailableOrdersScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <FontAwesome name="inbox" size={48} color={Theme.border} />
-            <Text style={styles.emptyTitle}>Нет доступных заказов</Text>
-            <Text style={styles.emptyHint}>Потяните вниз чтобы обновить</Text>
+            <Text style={styles.emptyTitle}>{t('orders.empty')}</Text>
+            <Text style={styles.emptyHint}>{t('common.retry')}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -357,6 +360,7 @@ function AvailableOrderCard({
   onAccept: () => void;
   accepting: boolean;
 }) {
+  const { t } = useTranslation();
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
   const date = new Date(order.created_at);
   const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -400,7 +404,7 @@ function AvailableOrderCard({
           {accepting ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.acceptBtnText}>Принять</Text>
+            <Text style={styles.acceptBtnText}>{t('dispatch.accept')}</Text>
           )}
         </Pressable>
       </View>
