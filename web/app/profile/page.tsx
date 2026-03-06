@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt } from "react-icons/fa";
 import { unsubscribeWebPush } from "@/lib/webPush";
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface UserInfo {
   id: string;
@@ -13,6 +15,8 @@ interface UserInfo {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
   const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
@@ -24,7 +28,6 @@ export default function ProfilePage() {
       if (stored) {
         setUser(JSON.parse(stored) as UserInfo);
       } else {
-        // Fallback: decode JWT payload to get phone
         const payload = JSON.parse(atob(token.split(".")[1])) as { sub?: string; phone?: string };
         setUser({ id: payload.sub ?? "", phone: payload.phone ?? "", name: null });
       }
@@ -57,7 +60,7 @@ export default function ProfilePage() {
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "20px 20px 48px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
@@ -71,7 +74,7 @@ export default function ProfilePage() {
             >
               <FaArrowLeft size={14} />
             </button>
-            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Мой профиль</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{t("profile.title")}</p>
             <button
               onClick={handleLogout}
               style={{
@@ -84,7 +87,7 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Аватар */}
+          {/* Avatar */}
           <div style={{ textAlign: "center" }}>
             <div style={{
               width: 80, height: 80, borderRadius: "50%",
@@ -97,24 +100,24 @@ export default function ProfilePage() {
               {initials || <FaUser size={32} color="#fff" />}
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
-              {user.name ?? "Пользователь"}
+              {user.name ?? t("profile.user")}
             </h1>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>{user.phone}</p>
           </div>
         </div>
       </div>
 
-      {/* Карточки */}
+      {/* Cards */}
       <div style={{ maxWidth: 680, margin: "-20px auto 0", padding: "0 20px 80px" }}>
 
-        {/* Данные */}
+        {/* Personal data */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
-          <p style={sectionLabel}>Личные данные</p>
+          <p style={sectionLabel}>{t("profile.personalData")}</p>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: "1px solid #f1f5f9" }}>
             <div style={iconWrap}><FaUser size={14} color="#0d9488" /></div>
             <div>
-              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>Имя</p>
+              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>{t("profile.name")}</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{user.name ?? "—"}</p>
             </div>
           </div>
@@ -122,13 +125,38 @@ export default function ProfilePage() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={iconWrap}><FaPhone size={14} color="#0d9488" /></div>
             <div>
-              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>Телефон</p>
+              <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>{t("profile.phone")}</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{user.phone}</p>
             </div>
           </div>
         </div>
 
-        {/* Мои заказы */}
+        {/* Language */}
+        <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+          <p style={sectionLabel}>{t("profile.language")}</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["ru", "uz"] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 10,
+                  border: `1.5px solid ${language === lang ? "#0d9488" : "#e2e8f0"}`,
+                  background: language === lang ? "#0d9488" : "#fff",
+                  color: language === lang ? "#fff" : "#64748b",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {lang === "ru" ? "Русский" : "O'zbek"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Orders */}
         <button
           onClick={() => router.push("/orders")}
           style={{
@@ -143,15 +171,15 @@ export default function ProfilePage() {
         >
           <div style={iconWrap}><FaListAlt size={14} color="#0d9488" /></div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>История заказов</p>
-            <p style={{ fontSize: 12, color: "#94a3b8" }}>Ваши прошлые и активные заказы</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{t("profile.orders")}</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>{t("profile.ordersDescription")}</p>
           </div>
           <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
 
-        {/* Выход */}
+        {/* Logout */}
         <button
           onClick={handleLogout}
           style={{
@@ -164,7 +192,7 @@ export default function ProfilePage() {
           }}
         >
           <FaSignOutAlt size={14} />
-          Выйти из аккаунта
+          {t("profile.logout")}
         </button>
       </div>
     </div>

@@ -7,15 +7,13 @@ import { getTelegramWebApp, isInTelegram } from "@/lib/telegram";
 import dynamic from "next/dynamic";
 import {
   FaChevronLeft,
-  FaMapMarker,
   FaExclamationTriangle,
   FaCrosshairs,
   FaExclamationCircle,
 } from "react-icons/fa";
-// Карта грузится только на клиенте
+import { useTranslation } from "react-i18next";
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
-// Reverse geocoding через OpenStreetMap Nominatim
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const controller = new AbortController();
@@ -37,8 +35,9 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
 function LocationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const serviceId    = searchParams.get("service") ?? "";
-  const serviceTitle = searchParams.get("title")   ?? "Услуга";
+  const serviceTitle = searchParams.get("title")   ?? t("confirm.service");
   const servicePrice = searchParams.get("price")   ?? "0";
   useTelegramBackButton(() => router.back());
 
@@ -48,7 +47,6 @@ function LocationForm() {
   const [phone, setPhone] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Default coords (Tashkent) — map shows immediately, GPS updates async
   const [lat, setLat] = useState<number>(41.2995);
   const [lng, setLng] = useState<number>(69.2401);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
@@ -72,16 +70,14 @@ function LocationForm() {
     setGpsLoading(true);
     setError("");
 
-    // Hard timeout — если за 10 сек ничего не пришло, используем Ташкент
     const hardTimeout = setTimeout(() => {
       if (!resolvedRef.current) {
         resolvedRef.current = true;
         setGpsLoading(false);
-        setError("Не удалось определить геолокацию. Уточните адрес или подвиньте маркер.");
+        setError(t("location.enterAddress"));
       }
     }, 10000);
 
-    // 1. Пробуем Telegram LocationManager (нативный TMA API)
     const twa = getTelegramWebApp();
     if (isInTelegram() && twa?.LocationManager) {
       twa.LocationManager.init(() => {
@@ -101,15 +97,14 @@ function LocationForm() {
       return;
     }
 
-    // 2. Обычный браузерный геолокация
     tryBrowserGeolocation(hardTimeout);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applyCoords]);
+  }, [applyCoords, t]);
 
   const tryBrowserGeolocation = useCallback((outerTimeout?: ReturnType<typeof setTimeout>) => {
     if (!navigator.geolocation) {
       if (outerTimeout) clearTimeout(outerTimeout);
-      setError("Геолокация не поддерживается. Введите адрес вручную.");
+      setError(t("location.enterAddress"));
       resolvedRef.current = true;
       setGpsLoading(false);
       return;
@@ -123,19 +118,18 @@ function LocationForm() {
         if (outerTimeout) clearTimeout(outerTimeout);
         if (!resolvedRef.current) {
           resolvedRef.current = true;
-          setError("Не удалось определить геолокацию. Введите адрес или подвиньте маркер.");
+          setError(t("location.enterAddress"));
           setGpsLoading(false);
         }
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     );
-  }, [applyCoords]);
+  }, [applyCoords, t]);
 
   useEffect(() => {
     getLocation();
   }, [getLocation]);
 
-  // Когда пользователь двигает маркер — обновляем адрес и медиков
   async function handleMapMove(newLat: number, newLng: number) {
     setLat(newLat);
     setLng(newLng);
@@ -145,8 +139,8 @@ function LocationForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!address.trim()) { setError("Введите адрес"); return; }
-    if (!phone.trim())   { setError("Введите номер телефона"); return; }
+    if (!address.trim()) { setError(t("location.enterAddress")); return; }
+    if (!phone.trim())   { setError(t("location.enterPhone")); return; }
 
     const queryParams = new URLSearchParams({
       service: serviceId,
@@ -180,7 +174,7 @@ function LocationForm() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
       <div style={{
         maxWidth: 860, margin: "0 auto",
@@ -202,7 +196,7 @@ function LocationForm() {
           <FaChevronLeft size={16} />
         </button>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Адрес вызова</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{t("location.title")}</h1>
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>
             {serviceTitle}
           </p>
@@ -212,27 +206,27 @@ function LocationForm() {
 
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "16px 24px 100px" }}>
 
-        {/* GPS статус */}
+        {/* GPS status */}
         {gpsLoading && (
           <div style={{ ...bannerStyle, background: "#0d948814", color: "#0d9488" }}>
             <FaCrosshairs size={14} />
-            Определяем местоположение...
+            {t("location.detectingLocation")}
           </div>
         )}
         {!gpsLoading && gpsAccuracy !== null && gpsAccuracy > 25 && (
           <div style={{ ...bannerStyle, background: "#ef444412", color: "#ef4444" }}>
             <FaExclamationTriangle size={14} style={{ flexShrink: 0 }} />
-            Слабый сигнал GPS (±{gpsAccuracy} м) — уточните адрес или подвиньте маркер
+            {t("location.weakGPS", { m: gpsAccuracy })}
           </div>
         )}
         {!gpsLoading && gpsAccuracy !== null && gpsAccuracy <= 25 && (
           <div style={{ ...bannerStyle, background: "#22c55e20", color: "#16a34a" }}>
             <FaCrosshairs size={14} />
-            Местоположение определено (±{gpsAccuracy} м)
+            {t("location.goodGPS", { m: gpsAccuracy })}
           </div>
         )}
 
-        {/* ─── Карта ─── */}
+        {/* Map */}
         <div style={{
           borderRadius: 16,
           overflow: "hidden",
@@ -266,28 +260,28 @@ function LocationForm() {
             }}
           >
             <FaCrosshairs size={11} />
-            {gpsLoading ? "Ищем..." : "Моё место"}
+            {gpsLoading ? t("location.searching") : t("location.myLocation")}
           </button>
         </div>
 
         <p style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", marginBottom: 16 }}>
-          Нажмите на карту или перетащите маркер чтобы уточнить место
+          {t("location.mapHint")}
         </p>
 
         <form onSubmit={handleSubmit}>
-          {/* ─── Адрес ─── */}
+          {/* Address */}
           <div style={cardStyle}>
-            <h2 style={sectionTitle}>Адрес</h2>
+            <h2 style={sectionTitle}>{t("confirm.address")}</h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label style={labelStyle}>Улица, дом *</label>
+                <label style={labelStyle}>{t("location.street")}</label>
                 <input
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   onFocus={() => setFocusedField("address")}
                   onBlur={() => setFocusedField(null)}
-                  placeholder="Определяется автоматически..."
+                  placeholder={t("location.placeholder")}
                   required
                   style={fieldStyle("address")}
                 />
@@ -295,7 +289,7 @@ function LocationForm() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
-                  <label style={labelStyle}>Этаж</label>
+                  <label style={labelStyle}>{t("location.floor")}</label>
                   <input
                     value={floor}
                     onChange={(e) => setFloor(e.target.value)}
@@ -306,7 +300,7 @@ function LocationForm() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Квартира</label>
+                  <label style={labelStyle}>{t("location.apt")}</label>
                   <input
                     value={apartment}
                     onChange={(e) => setApartment(e.target.value)}
@@ -319,7 +313,7 @@ function LocationForm() {
               </div>
 
               <div>
-                <label style={labelStyle}>Телефон *</label>
+                <label style={labelStyle}>{t("location.phone")}</label>
                 <input
                   type="tel"
                   value={phone}
@@ -334,7 +328,7 @@ function LocationForm() {
             </div>
           </div>
 
-          {/* Ошибка */}
+          {/* Error */}
           {error && (
             <div style={{
               background: "#ef444412", borderRadius: 10,
@@ -354,7 +348,7 @@ function LocationForm() {
             borderRadius: 12, padding: "16px 24px",
             border: "none", cursor: "pointer",
           }}>
-            Подтвердить адрес
+            {t("location.confirm")}
           </button>
         </form>
       </div>
@@ -370,7 +364,6 @@ export default function LocationPage() {
   );
 }
 
-// ─── Styles ───
 const cardStyle: React.CSSProperties = {
   background: "#fff",
   borderRadius: 16,

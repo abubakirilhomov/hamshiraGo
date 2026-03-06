@@ -11,13 +11,15 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import { api, formatPrice } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 function ConfirmForm() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useTranslation();
 
   const serviceId    = params.get("service")      ?? "";
-  const serviceTitle = params.get("title")        ?? "Услуга";
+  const serviceTitle = params.get("title")        ?? t("confirm.service");
   const price        = parseInt(params.get("price") || "0", 10);
   const address      = params.get("address")      ?? "";
   const floor        = params.get("floor")        ?? "";
@@ -32,7 +34,6 @@ function ConfirmForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
 
-  // Проверяем первый ли это заказ — если да, даём скидку 10%
   useEffect(() => {
     api.orders.list()
       .then((orders) => {
@@ -52,12 +53,10 @@ function ConfirmForm() {
   const { inTelegram } = useTelegram();
   const { notify } = useHaptic();
 
-  // Telegram BackButton — назад
   useTelegramBackButton(() => router.back());
 
-  // Telegram MainButton — подтвердить заказ
   useTelegramMainButton({
-    text: loading ? "Создаём заказ..." : "Подтвердить заказ",
+    text: loading ? t("confirm.loading") : t("confirm.confirm"),
     onClick: handleConfirm,
     loading,
     color: "#0d9488",
@@ -87,15 +86,14 @@ function ConfirmForm() {
       router.push(`/orders/${order.id}`);
     } catch (err: unknown) {
       notify("error");
-      setError(err instanceof Error ? err.message : "Ошибка создания заказа");
+      setError(err instanceof Error ? err.message : t("common.error"));
       setLoading(false);
     }
   }
 
-  // ─── Экран подтверждения ───
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Шапка */}
+      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
       <div style={{
         maxWidth: 720, margin: "0 auto",
@@ -114,16 +112,16 @@ function ConfirmForm() {
           <FaChevronLeft size={16} />
         </button>
         <h1 style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>
-          Подтверждение заказа
+          {t("confirm.title")}
         </h1>
       </div>
       </div>
 
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 100px" }}>
 
-        {/* ─── Услуга ─── */}
+        {/* Service */}
         <div style={cardStyle}>
-          <h2 style={sectionTitle}>Услуга</h2>
+          <h2 style={sectionTitle}>{t("confirm.service")}</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
               width: 52, height: 52, borderRadius: "50%",
@@ -138,15 +136,15 @@ function ConfirmForm() {
                 {serviceTitle}
               </p>
               <p style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>
-                Стоимость: {formatPrice(price)} UZS
+                {t("confirm.serviceCost")}: {formatPrice(price)} UZS
               </p>
             </div>
           </div>
         </div>
 
-        {/* ─── Адрес ─── */}
+        {/* Address */}
         <div style={cardStyle}>
-          <h2 style={sectionTitle}>Адрес</h2>
+          <h2 style={sectionTitle}>{t("confirm.address")}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={infoRow}>
               <FaMapMarker size={14} color="#0d9488" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -156,9 +154,9 @@ function ConfirmForm() {
               <div style={infoRow}>
                 <span style={{ width: 14, flexShrink: 0 }} />
                 <span style={{ ...infoText, color: "#64748b" }}>
-                  {floor ? `Этаж ${floor}` : ""}
+                  {floor ? `${t("confirm.floor")} ${floor}` : ""}
                   {floor && apartment ? ", " : ""}
-                  {apartment ? `Кв. ${apartment}` : ""}
+                  {apartment ? `${t("confirm.apt")} ${apartment}` : ""}
                 </span>
               </div>
             )}
@@ -169,26 +167,26 @@ function ConfirmForm() {
           </div>
         </div>
 
-        {/* ─── Стоимость ─── */}
+        {/* Price */}
         <div style={cardStyle}>
-          <h2 style={sectionTitle}>Стоимость</h2>
+          <h2 style={sectionTitle}>{t("confirm.price")}</h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 14, color: "#64748b" }}>Стоимость услуги</span>
+              <span style={{ fontSize: 14, color: "#64748b" }}>{t("confirm.serviceCost")}</span>
               <span style={{ fontSize: 14, color: "#0f172a", fontWeight: 600 }}>
                 {formatPrice(price)} UZS
               </span>
             </div>
 
             {checkingDiscount && (
-              <div style={{ fontSize: 13, color: "#94a3b8" }}>Проверяем скидку...</div>
+              <div style={{ fontSize: 13, color: "#94a3b8" }}>{t("confirm.checkingDiscount")}</div>
             )}
 
             {!checkingDiscount && discount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#16a34a", fontWeight: 600 }}>
-                  🎁 Скидка 10% (первый заказ)
+                  🎁 {t("confirm.discount")}
                 </span>
                 <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 700 }}>
                   −{formatPrice(discount)} UZS
@@ -199,7 +197,7 @@ function ConfirmForm() {
             <div style={{ height: 1, background: "#e2e8f0" }} />
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Итого</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{t("confirm.total")}</span>
               <span style={{ fontSize: 20, fontWeight: 800, color: "#0d9488" }}>
                 {formatPrice(total)} UZS
               </span>
@@ -207,7 +205,7 @@ function ConfirmForm() {
           </div>
         </div>
 
-        {/* Ошибка */}
+        {/* Error */}
         {error && (
           <div style={{
             background: "#ef444412", borderRadius: 10,
@@ -220,7 +218,7 @@ function ConfirmForm() {
           </div>
         )}
 
-        {/* Нативные кнопки — только вне Telegram */}
+        {/* Buttons (only outside Telegram) */}
         {!inTelegram && (
           <>
             <button
@@ -244,7 +242,7 @@ function ConfirmForm() {
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                 </svg>
               )}
-              {loading ? "Создаём заказ..." : "Подтвердить заказ"}
+              {loading ? t("confirm.loading") : t("confirm.confirm")}
             </button>
             <button
               onClick={() => router.back()}
@@ -256,7 +254,7 @@ function ConfirmForm() {
                 cursor: "pointer",
               }}
             >
-              Отмена
+              {t("confirm.cancel")}
             </button>
           </>
         )}
@@ -277,7 +275,6 @@ export default function ConfirmPage() {
   );
 }
 
-// ─── Styles ───
 const cardStyle: React.CSSProperties = {
   background: "#fff", borderRadius: 16,
   padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
