@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-03-06 — B6/B9/M3/M4 fixes + call patient feature
+
+- **[backend]** B6: rate limit `/auth/login` и `/medics/login` → 5 req / 15 min (`ttl: 900_000, limit: 5`) вместо 10/min
+- **[backend]** B9: `findNearby` — SQL bounding box фильтр (lat/lng ±delta) до загрузки в память вместо `find({ where: { isOnline: true } })` на всю таблицу (`medics.service.ts`)
+- **[medic]** M3: `reconnectionAttempts: 10` добавлен в socket.io конфиг (`medic/app/order/[id].tsx`)
+- **[medic]** M4: подтверждено — `STATUS_LABEL` уже заменён на `t('orders.status.*')` ранее
+- **[medic]** Фича «Позвонить пациенту» — кнопка рядом с телефоном клиента в карточке адреса; `Linking.openURL('tel:...')`; видна только в активных статусах; i18n ключ `orders.callPatient` (RU + UZ)
+- **[mobile]** Скрыт телефон медика из карточки «Ваш медик» на экране клиента (`mobile/app/order/track.tsx`) — `order.medic.phone` больше не отображается
+- `tsc --noEmit` = 0 ошибок (backend + medic + mobile)
+
 ## 2026-03-06 — Medic map: OSRM route + loading overlay
 
 - **[medic]** `OrderInviteModal.tsx` — заменена жёлтая пунктирная линия на реальный дорожный маршрут через OSRM API; добавлен `routeLoading` state + лоадинг-оверлей «Строим маршрут...» поверх карты; fallback на прямую линию если OSRM недоступен

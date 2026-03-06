@@ -372,23 +372,39 @@ export class MedicsService {
 
   async findNearby(latitude: number, longitude: number, limit = 10): Promise<Medic[]> {
     await this.autoDisableStaleOnlineMedics();
-    const medics = await this.medicRepo.find({
-      where: { isOnline: true },
-      select: ['id', 'name', 'rating', 'reviewCount', 'experienceYears', 'latitude', 'longitude'],
-    });
-    const withDistance = medics
-      .filter((m) => m.latitude != null && m.longitude != null)
+
+    // Pre-filter at DB level with a bounding box (avoids loading all medics into memory)
+    const MAX_KM = 50;
+    const latDelta = MAX_KM / 111;
+    const lngDelta = MAX_KM / (111 * Math.cos((latitude * Math.PI) / 180));
+
+    const medics = await this.medicRepo
+      .createQueryBuilder('medic')
+      .select([
+        'medic.id', 'medic.name', 'medic.rating',
+        'medic.reviewCount', 'medic.experienceYears',
+        'medic.latitude', 'medic.longitude',
+      ])
+      .where('medic.isOnline = :isOnline', { isOnline: true })
+      .andWhere('medic.latitude IS NOT NULL')
+      .andWhere('medic.longitude IS NOT NULL')
+      .andWhere('medic.latitude >= :minLat AND medic.latitude <= :maxLat', {
+        minLat: latitude - latDelta,
+        maxLat: latitude + latDelta,
+      })
+      .andWhere('medic.longitude >= :minLng AND medic.longitude <= :maxLng', {
+        minLng: longitude - lngDelta,
+        maxLng: longitude + lngDelta,
+      })
+      .getMany();
+
+    return medics
       .map((m) => ({
         ...m,
-        distanceKm: this.distanceKm(
-          latitude,
-          longitude,
-          Number(m.latitude),
-          Number(m.longitude),
-        ),
+        distanceKm: this.distanceKm(latitude, longitude, Number(m.latitude!), Number(m.longitude!)),
       }))
+      .filter(({ distanceKm }) => distanceKm <= MAX_KM)
       .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, limit);
-    return withDistance as (Medic & { distanceKm: number })[];
+      .slice(0, limit) as (Medic & { distanceKm: number })[];
   }
 }
