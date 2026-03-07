@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-03-07 — Wallet system портирован в web-medic
+
+- **[web-medic]** `lib/api.ts` — добавлен обработчик 402 INSUFFICIENT_WALLET: создаёт Error с полями `required` и `current`
+- **[web-medic]** `app/page.tsx` — добавлены состояние `walletModal`, обработка в `acceptOrder` и `acceptInvite`, модальное окно с текущим балансом и требуемой суммой
+- **[web-medic]** `i18n/ru.json`, `i18n/uz.json` — добавлена секция `wallet.*` с ключами `insufficientTitle`, `insufficientDesc`, `current`, `required`, `contactAdmin`, `close`
+
 ## 2026-03-07 — Wallet system доработка (medic modal + admin UI)
 
 - **[medic]** `app/(tabs)/index.tsx` — заменён `Alert.alert` на полноценный `Modal` при ошибке INSUFFICIENT_WALLET: показывает текущий баланс, требуемую сумму, кнопку «Связаться с администратором» (открывает Telegram), кнопку «Закрыть»
