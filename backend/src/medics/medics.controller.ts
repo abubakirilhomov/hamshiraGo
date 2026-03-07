@@ -204,13 +204,6 @@ export class MedicsController {
     return this.medicsService.blockMedic(id, body.isBlocked ?? true);
   }
 
-  @Patch('admin/:id/wallet')
-  @UseGuards(AdminGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  topupWallet(@Param('id') id: string, @Body() body: { amount: number }) {
-    return this.medicsService.addToWallet(id, body.amount);
-  }
-
   // ── Push token (Expo) ────────────────────────────────────────────────────
 
   @Patch('push-token')

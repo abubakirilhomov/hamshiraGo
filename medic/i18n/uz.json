@@ -101,16 +101,6 @@
     "rejectedReason": "Rad etish sababi",
     "photoRequired": "Rasm majburiy"
   },
-  "wallet": {
-    "balance": "Hamyon balansi",
-    "insufficientTitle": "Mablag' yetarli emas",
-    "insufficientDesc": "Buyurtmani qabul qilish uchun hamyoningizda yetarli mablag' yo'q. Hisobni to'ldiring va administrator bilan bog'laning.",
-    "current": "Balansingiz",
-    "required": "Kerakli miqdor",
-    "contactAdmin": "Administrator bilan bog'lanish",
-    "close": "Yopish",
-    "ok": "Tushunarli"
-  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",
