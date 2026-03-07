@@ -41,6 +41,7 @@
 - [x] **[web/web-medic/admin]** Полный i18n (RU + UZ) для всех web-приложений — выполнено 2026-03-05
 - [x] **[backend]** Security fixes (tech lead feedback) — #1 rateOrder race, #2 updateStatusByMedic atomic, #3 DONE+balance tx, #4 initiatePayment lock, #5 netPrice fix, #6 WS CORS, #8 Swagger prod guard, #9 dispatch MAX_ATTEMPTS — выполнено 2026-03-06
 - [x] **[backend]** Railway deployment fix — tsconfig.build.json + railway.toml buildCommand — выполнено 2026-03-06
+- [x] **[backend/medic]** Wallet system для медиков — walletBalance поле (default 30000), проверка при acceptOrder (HTTP 402), списание при DONE, admin топап эндпоинт, i18n + UI карточка в profile — выполнено 2026-03-07
 
 ### Процесс выполнения
 

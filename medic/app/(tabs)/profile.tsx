@@ -303,6 +303,14 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* Wallet balance */}
+      <View style={styles.walletCard}>
+        <Text style={styles.walletLabel}>{t('wallet.balance')}</Text>
+        <Text style={styles.walletAmount}>
+          {Number(medic.walletBalance ?? 0).toLocaleString('ru-RU')} {t('common.sum')}
+        </Text>
+      </View>
+
       {/* Telegram */}
       <View style={styles.card}>
         <View style={styles.tgHeader}>
@@ -513,6 +521,28 @@ const styles = StyleSheet.create({
   logoutBtnPressed: { opacity: 0.8 },
   logoutText: { fontSize: 16, fontWeight: '600', color: Theme.error },
 
+  walletCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: Theme.surface,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Theme.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  walletLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Theme.textSecondary,
+  },
+  walletAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Theme.primary,
+  },
   cardSectionTitle: {
     fontSize: 12,
     fontWeight: '700',

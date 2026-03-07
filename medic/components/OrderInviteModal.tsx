@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -50,6 +51,7 @@ interface Props {
 
 export function OrderInviteModal({ invite, onDismiss }: Props) {
   const { token } = useAuth();
+  const { t } = useTranslation();
   const router = useRouter();
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [loading, setLoading] = useState<'accept' | 'decline' | null>(null);
@@ -130,7 +132,12 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       onDismiss();
       router.push(`/order/${invite.orderId}`);
     } catch (e: unknown) {
-      Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось принять заказ');
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('INSUFFICIENT_WALLET')) {
+        Alert.alert(t('wallet.insufficientTitle'), t('wallet.insufficientMessage'), [{ text: t('wallet.ok') }]);
+      } else {
+        Alert.alert(t('common.error'), msg || t('common.error'));
+      }
       setLoading(null);
     }
   };
