@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -291,13 +291,6 @@ export class OrdersService {
     if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked.');
 
     const order = await this.findOne(orderId);
-    const fee = order.platformFee ?? 0;
-    if (medic.walletBalance < fee) {
-      throw new HttpException(
-        { message: 'INSUFFICIENT_WALLET', required: fee, current: medic.walletBalance },
-        HttpStatus.PAYMENT_REQUIRED,
-      );
-    }
 
     // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
     await this.dispatchService.onMedicAccept(orderId, medicId);
@@ -361,9 +354,6 @@ export class OrdersService {
           throw new BadRequestException('Status changed concurrently, please retry');
         }
         await manager.increment(Medic, { id: medicId }, 'balance', medicEarned);
-        if (fee > 0) {
-          await manager.decrement(Medic, { id: medicId }, 'walletBalance', fee);
-        }
       });
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it
