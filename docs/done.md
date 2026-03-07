@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-03-08 — Этап 5: баги + кастомные модалки
+
+- **[medic]** BUG-A1: Статы профиля переведены через i18n — `profile.statExperience/statCompleted/statRating/statBalance` (ru + uz) вместо хардкода на русском (`medic/app/(tabs)/profile.tsx`, `medic/i18n/*.json`)
+- **[mobile]** BUG-A2: UI звёзд при оценке заказа — `starsRow` теперь `justifyContent: center` + `gap: 12`; убран `marginTop: -8` у hint; в блоке "Ваша оценка" звёзды выше рейтинга отображаются `star-o` (outline) а не закрашенными (`mobile/app/order/track.tsx`)
+- **[mobile/medic]** Создан компонент `AppModal` — кастомная замена системного `Alert.alert` (анимированный modal, кнопки cancel/destructive/default, overlay tap для закрытия) (`mobile/components/AppModal.tsx`, `medic/components/AppModal.tsx`)
+- **[mobile]** `AppModal` внедрён: logout confirm в профиле клиента, отмена заказа в track.tsx
+- **[medic]** `AppModal` внедрён: logout confirm, Telegram disconnect confirm, подтверждение принятия заказа
+- **[medic]** i18n: добавлен ключ `dispatch.confirmAccept` (ru + uz)
+- `tsc --noEmit` = 0 ошибок (mobile + medic)
+
 ## 2026-03-07 — Wallet system доработка (medic modal + admin UI)
 
 - **[medic]** `app/(tabs)/index.tsx` — заменён `Alert.alert` на полноценный `Modal` при ошибке INSUFFICIENT_WALLET: показывает текущий баланс, требуемую сумму, кнопку «Связаться с администратором» (открывает Telegram), кнопку «Закрыть»
