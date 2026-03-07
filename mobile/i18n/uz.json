@@ -78,6 +78,28 @@
       "CANCELED": "Bekor qilindi"
     }
   },
+  "service": {
+    "notFound": "Xizmat topilmadi",
+    "cost": "Narxi",
+    "duration": "Taxminan {{n}} daqiqa.",
+    "order": "Buyurtma berish",
+    "min": "daq"
+  },
+  "confirm": {
+    "title": "Buyurtmani tasdiqlash",
+    "address": "Manzil",
+    "phone": "Telefon",
+    "duration": "Davomiyligi",
+    "discountFirst": "Birinchi buyurtmaga 10% chegirma — −{{amount}} UZS",
+    "basePrice": "Xizmat narxi",
+    "total": "Jami",
+    "submit": "Buyurtmani tasdiqlash",
+    "cancel": "Bekor qilish",
+    "notFound": "Xizmat topilmadi",
+    "error": "Buyurtma yaratishda xatolik",
+    "floor": "q.",
+    "apt": "x."
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

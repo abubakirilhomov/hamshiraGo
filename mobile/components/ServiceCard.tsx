@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 
@@ -17,6 +18,7 @@ type ServiceCardProps = {
 
 export function ServiceCard({ service }: ServiceCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Pressable
@@ -35,7 +37,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         <Text style={styles.title}>{service.title}</Text>
         <Text style={styles.price} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
           {service.price.toLocaleString('ru-RU')} UZS
-          {service.durationMinutes ? ` · ~${service.durationMinutes} мин` : ''}
+          {service.durationMinutes ? ` · ~${service.durationMinutes} ${t('service.min')}` : ''}
         </Text>
       </View>
       <FontAwesome name="chevron-right" size={14} color={Theme.textSecondary} />

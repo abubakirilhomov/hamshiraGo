@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-03-08 — Этап 8: i18n услуг в mobile
+
+- **[mobile]** `app/service/[id].tsx` — добавлен `useLanguage()`, показывает `titleUz`/`descriptionUz` если язык UZ; все строки интерфейса через `useTranslation()` (service.cost, service.duration, service.order, service.notFound)
+- **[mobile]** `app/order/confirm.tsx` — добавлен `useLanguage()`, `service.title` → `titleUz` если UZ; все строки через i18n (confirm.title, confirm.address, confirm.phone, confirm.duration, confirm.total, confirm.submit, confirm.cancel, confirm.discountFirst, confirm.basePrice)
+- **[mobile]** `components/ServiceCard.tsx` — "мин" → `t('service.min')` (RU: "мин" / UZ: "daq")
+- **[mobile]** `i18n/ru.json` + `i18n/uz.json` — добавлены секции `service` и `confirm`
+- `tsc --noEmit` = 0 ошибок
+
 ## 2026-03-08 — Этап 6: фото профиля медика
 
 - **[backend]** `medic.entity.ts` — добавлена колонка `profilePhotoUrl` (nullable varchar 512)
