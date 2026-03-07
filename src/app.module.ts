@@ -13,6 +13,7 @@ import { MedicsModule } from './medics/medics.module';
 import { ServicesModule } from './services/services.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ClientErrorsModule } from './client-errors/client-errors.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { PaymentsModule } from './payments/payments.module';
     ServicesModule,
     RealtimeModule,
     PaymentsModule,
+    ClientErrorsModule,
   ],
   controllers: [AppController],
   providers: [
