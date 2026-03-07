@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-08
+- **[feat]** Admin i18n — все страницы (Dashboard, Medics, Orders, Clients, Services, Verification, Reports) переведены на ru/uz через react-i18next
+- **[feat]** Admin navbar — добавлен PWA install button (`NavbarInstallButton` + `usePWAInstall`) и кастомный логотип
+- **[feat]** Logo — кастомный логотип (медицинский крест) скопирован в admin/public и landing/public; favicon landing/app/icon.png
+- **[feat]** Landing — логотип заменён во всех компонентах (Navbar, Footer, Hero phone mockup), иконка добавлена через app/icon.png (Next.js auto favicon)
+- **[feat]** Admin logo — увеличен с h-7 до h-9, форма rounded-xl
+
+---
+
+## 2026-03-08 — Admin i18n + navbar download button
+
+- **[admin]** `i18n/ru.json`, `i18n/uz.json` — добавлены все недостающие ключи для всех страниц: dashboard (subtitle, efficiency, last7Days, orderFlow, financialFocus, efficiencyNote...), medics (allMedics, total, online, blocked, lowWallet, topup*, toast*...), orders (subtitle, active, completed, commission, colDate/Service/Price/Commission/Address/Action, toast*...), clients (allClients, subtitle, total, blockedPage, notFound, toast*...), services (catalog, subtitle, totalServices, activeServices, categories, col*, label*, toast*...), verification (subtitle, queue, hotkey, navHint, approveHint, rejectHint, waitingCount, requests, noMedics, photo, license, confirmReject, toast*...), reports (новая секция целиком), common.downloadApp
+- **[admin]** `pages/Dashboard.tsx` — все строки переведены через `t()`, добавлен `useTranslation`
+- **[admin]** `pages/Medics.tsx` — все строки переведены через `t()`
+- **[admin]** `pages/Orders.tsx` — все строки переведены через `t()`, STATUSES массив использует t()
+- **[admin]** `pages/Clients.tsx` — все строки переведены через `t()`
+- **[admin]** `pages/Services.tsx` — все строки переведены через `t()`
+- **[admin]** `pages/Verification.tsx` — все строки переведены через `t()`
+- **[admin]** `pages/Reports.tsx` — все строки переведены через `t()`
+- **[admin]** `components/AdminLayout.tsx` — добавлена кнопка «Скачать приложение» (Smartphone icon + ссылка на hamshirago.uz) в navbar, импортирован Smartphone из lucide-react
+- `npm run build` = 0 TypeScript ошибок
+
+---
+
 ## 2026-03-07 — Wallet system портирован в web-medic
 
 - **[web-medic]** `lib/api.ts` — добавлен обработчик 402 INSUFFICIENT_WALLET: создаёт Error с полями `required` и `current`

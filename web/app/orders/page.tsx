@@ -173,7 +173,7 @@ export default function OrdersPage() {
         <div className="orders-header-inner">
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <FaMedkit size={18} color="#fff" />
+              <img src="/logo.png" alt="HamshiraGo" style={{ width: 30, height: 30, borderRadius: 9, objectFit: "cover" }} />
               <span style={{ fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.85)", letterSpacing: "-0.2px" }}>HamshiraGo</span>
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>{t("orders.title")}</h1>

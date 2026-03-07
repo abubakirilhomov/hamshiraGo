@@ -21,6 +21,16 @@ const CATEGORY_META: Record<string, { icon: React.ElementType }> = {
   "Уход":       { icon: FaHeartbeat      },
 };
 
+const CATEGORY_UZ: Record<string, string> = {
+  "Уколы":      "In'ektsiyalar",
+  "Инъекции":   "In'ektsiyalar",
+  "Капельницы": "Tomchilar",
+  "Измерения":  "O'lchashlar",
+  "Анализы":    "Tahlillar",
+  "Перевязки":  "Bog'lamlar",
+  "Уход":       "Parvarish",
+};
+
 const TEAL = { color: "#0d9488", bg: "#f0fdfa" };
 const DEFAULT_META = { icon: FaMedkit };
 
@@ -94,7 +104,7 @@ export default function HomePage() {
           {/* Top bar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <FaMedkit size={22} color="#fff" />
+              <img src="/logo.png" alt="HamshiraGo" style={{ width: 35, height: 35, borderRadius: 10, objectFit: "cover" }} />
               <span style={{ fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -259,7 +269,7 @@ export default function HomePage() {
                       <Icon size={14} color={TEAL.color} />
                     </div>
                     <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.2px" }}>
-                      {category}
+                      {language === "uz" ? (CATEGORY_UZ[category] ?? category) : category}
                     </h2>
                   </div>
 

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTelegram, useHaptic } from "@/hooks/useTelegram";
 import { getTelegramUserName } from "@/lib/telegram";
 import {
-  FaMedkit,
   FaExclamationCircle,
   FaUser,
   FaPhone,
@@ -166,13 +165,7 @@ export default function AuthPage() {
           }} />
 
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 48 }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: 16,
-              background: "rgba(255,255,255,0.15)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <FaMedkit size={28} color="#fff" />
-            </div>
+            <img src="/logo.png" alt="HamshiraGo" style={{ width: 72, height: 72, borderRadius: 20, objectFit: "cover" }} />
             <span style={{ fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>
               HamshiraGo
             </span>
@@ -213,7 +206,7 @@ export default function AuthPage() {
             {/* Mobile logo */}
             <div style={{ display: "none" }} className="mobile-logo">
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
-                <FaMedkit size={24} color="#0d9488" />
+                <img src="/logo.png" alt="HamshiraGo" style={{ width: 45, height: 45, borderRadius: 13, objectFit: "cover" }} />
                 <span style={{ fontSize: 20, fontWeight: 800, color: "#0d9488" }}>HamshiraGo</span>
               </div>
             </div>
