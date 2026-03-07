@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import AppModal from '@/components/AppModal';
 import { useCallback, useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -46,6 +47,8 @@ export default function ProfileScreen() {
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [completedCount, setCompletedCount] = useState<number | null>(null);
   const [disconnectingTg, setDisconnectingTg] = useState(false);
+  const [logoutModal, setLogoutModal] = useState(false);
+  const [tgDisconnectModal, setTgDisconnectModal] = useState(false);
   const [hasAlwaysLocation, setHasAlwaysLocation] = useState(true);
 
   useEffect(() => {
@@ -147,50 +150,36 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
-      { text: t('profile.cancel'), style: 'cancel' },
-      { text: t('profile.logout'), style: 'destructive', onPress: logout },
-    ]);
-  };
+  const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
     Linking.openURL(TELEGRAM_BOT_LINK);
   };
 
-  const handleDisconnectTelegram = () => {
-    Alert.alert(
-      'Отключить Telegram?',
-      'Вы больше не будете получать уведомления о новых заказах в Telegram.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Отключить',
-          style: 'destructive',
-          onPress: async () => {
-            setDisconnectingTg(true);
-            try {
-              await apiFetch('/medics/telegram-chat-id', {
-                method: 'PATCH',
-                token: token ?? undefined,
-                body: JSON.stringify({ chatId: null }),
-              });
-              await refreshProfile();
-            } catch {
-              Alert.alert('Ошибка', 'Не удалось отключить Telegram');
-            } finally {
-              setDisconnectingTg(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleDisconnectTelegram = () => setTgDisconnectModal(true);
+
+  const confirmDisconnectTelegram = async () => {
+    setTgDisconnectModal(false);
+    setDisconnectingTg(true);
+    try {
+      await apiFetch('/medics/telegram-chat-id', {
+        method: 'PATCH',
+        token: token ?? undefined,
+        body: JSON.stringify({ chatId: null }),
+      });
+      await refreshProfile();
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось отключить Telegram');
+    } finally {
+      setDisconnectingTg(false);
+    }
   };
 
   const vStatus = (medic.verificationStatus ?? 'PENDING') as keyof typeof VERIFICATION_CONFIG;
   const vConfig = VERIFICATION_CONFIG[vStatus];
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <LinearGradient
@@ -280,25 +269,25 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{medic.experienceYears}</Text>
-          <Text style={styles.statLabel}>лет опыта</Text>
+          <Text style={styles.statLabel}>{t('profile.statExperience')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>
             {completedCount ?? '—'}
           </Text>
-          <Text style={styles.statLabel}>выполнено</Text>
+          <Text style={styles.statLabel}>{t('profile.statCompleted')}</Text>
         </View>
         {medic.rating != null ? (
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{Number(medic.rating).toFixed(1)}</Text>
-            <Text style={styles.statLabel}>рейтинг</Text>
+            <Text style={styles.statLabel}>{t('profile.statRating')}</Text>
           </View>
         ) : (
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
               {Number(medic.balance).toLocaleString('ru-RU')}
             </Text>
-            <Text style={styles.statLabel}>UZS баланс</Text>
+            <Text style={styles.statLabel}>{t('profile.statBalance')}</Text>
           </View>
         )}
       </View>
@@ -371,6 +360,29 @@ export default function ProfileScreen() {
         <Text style={styles.logoutText}>{t('profile.logout')}</Text>
       </Pressable>
     </ScrollView>
+
+    <AppModal
+      visible={logoutModal}
+      title={t('profile.logoutConfirmTitle')}
+      message={t('profile.logoutConfirmMessage')}
+      buttons={[
+        { text: t('profile.cancel'), style: 'cancel', onPress: () => setLogoutModal(false) },
+        { text: t('profile.logout'), style: 'destructive', onPress: logout },
+      ]}
+      onClose={() => setLogoutModal(false)}
+    />
+
+    <AppModal
+      visible={tgDisconnectModal}
+      title="Отключить Telegram?"
+      message="Вы больше не будете получать уведомления о новых заказах в Telegram."
+      buttons={[
+        { text: 'Отмена', style: 'cancel', onPress: () => setTgDisconnectModal(false) },
+        { text: 'Отключить', style: 'destructive', onPress: confirmDisconnectTelegram },
+      ]}
+      onClose={() => setTgDisconnectModal(false)}
+    />
+    </>
   );
 }
 

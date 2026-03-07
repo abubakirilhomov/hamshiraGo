@@ -29,7 +29,8 @@
   "dispatch": {
     "newOrder": "Новый заказ!",
     "accept": "Принять",
-    "decline": "Отклонить"
+    "decline": "Отклонить",
+    "confirmAccept": "Вы хотите принять этот заказ?"
   },
   "profile": {
     "completedOrders": "Выполнено заказов",
@@ -49,7 +50,11 @@
     "logout": "Выйти из аккаунта",
     "logoutConfirmTitle": "Выйти?",
     "logoutConfirmMessage": "Вы будете отключены от аккаунта.",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "statExperience": "лет опыта",
+    "statCompleted": "выполнено",
+    "statRating": "рейтинг",
+    "statBalance": "баланс"
   },
   "language": {
     "title": "Язык / Til",

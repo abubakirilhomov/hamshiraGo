@@ -9,6 +9,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import AppModal from '@/components/AppModal';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -126,6 +127,8 @@ export default function TrackOrderScreen() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [pendingRating, setPendingRating] = useState(0);
   const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
+  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [dispatchState, setDispatchState] = useState<{
     status: DispatchStatus;
     candidateName?: string;
@@ -429,25 +432,19 @@ export default function TrackOrderScreen() {
   };
 
   // ── Cancel order ────────────────────────────────────────────────────────────
-  const handleCancel = () => {
-    Alert.alert('Отменить заказ?', 'Вы уверены, что хотите отменить заказ?', [
-      { text: 'Нет', style: 'cancel' },
-      {
-        text: 'Отменить',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await apiFetch(`/orders/${orderId}/cancel`, {
-              method: 'POST',
-              token: token ?? undefined,
-            });
-            router.replace('/(tabs)/two');
-          } catch (e: unknown) {
-            Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отменить');
-          }
-        },
-      },
-    ]);
+  const handleCancel = () => setCancelModal(true);
+
+  const confirmCancel = async () => {
+    setCancelModal(false);
+    try {
+      await apiFetch(`/orders/${orderId}/cancel`, {
+        method: 'POST',
+        token: token ?? undefined,
+      });
+      router.replace('/(tabs)/two');
+    } catch (e: unknown) {
+      setCancelError(e instanceof Error ? e.message : 'Не удалось отменить');
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -477,6 +474,7 @@ export default function TrackOrderScreen() {
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
 
   return (
+    <>
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.content}
@@ -798,7 +796,7 @@ export default function TrackOrderScreen() {
             {[1, 2, 3, 4, 5].map((star) => (
               <FontAwesome
                 key={star}
-                name="star"
+                name={star <= order.clientRating! ? 'star' : 'star-o'}
                 size={28}
                 color={star <= order.clientRating! ? Theme.primary : Theme.border}
               />
@@ -834,6 +832,28 @@ export default function TrackOrderScreen() {
         </Pressable>
       )}
     </ScrollView>
+
+    {/* Cancel confirm modal */}
+    <AppModal
+      visible={cancelModal}
+      title="Отменить заказ?"
+      message="Вы уверены, что хотите отменить заказ?"
+      buttons={[
+        { text: 'Нет', style: 'cancel', onPress: () => setCancelModal(false) },
+        { text: 'Отменить', style: 'destructive', onPress: confirmCancel },
+      ]}
+      onClose={() => setCancelModal(false)}
+    />
+
+    {/* Cancel error modal */}
+    <AppModal
+      visible={cancelError !== null}
+      title="Ошибка"
+      message={cancelError ?? ''}
+      buttons={[{ text: 'OK', style: 'default', onPress: () => setCancelError(null) }]}
+      onClose={() => setCancelError(null)}
+    />
+    </>
   );
 }
 
@@ -1232,23 +1252,26 @@ const styles = StyleSheet.create({
   // Rating
   ratingHint: {
     fontSize: 14,
-    marginTop: -8,
+    marginTop: 2,
+    marginBottom: 4,
+    color: '#6b7280',
   },
   starsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 8,
   },
   starBtn: {
     alignItems: 'center',
-    padding: 6,
+    padding: 4,
   },
   submitRatingBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   submitRatingDisabled: {
     backgroundColor: Theme.border,
@@ -1261,5 +1284,6 @@ const styles = StyleSheet.create({
   ratingDoneRow: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 8,
   },
 });

@@ -21,6 +21,7 @@ import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { OrderInviteModal, type DispatchInvitePayload } from '@/components/OrderInviteModal';
+import AppModal from '@/components/AppModal';
 
 interface OrderLocation {
   house: string;
@@ -119,6 +120,8 @@ export default function AvailableOrdersScreen() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [invite, setInvite] = useState<DispatchInvitePayload | null>(null);
+  const [acceptModal, setAcceptModal] = useState<string | null>(null); // orderId
+  const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -213,34 +216,32 @@ export default function AvailableOrdersScreen() {
     setRefreshing(false);
   }, [fetchOrders]);
 
-  const handleAccept = async (orderId: string) => {
+  const handleAccept = (orderId: string) => {
     if (!medic?.isOnline) {
-      Alert.alert(t('profile.offline') ?? 'Offline', t('common.error'));
+      setAcceptError(t('profile.offline') ?? 'Offline');
       return;
     }
-    Alert.alert(t('orders.accepted'), '', [
-      { text: t('common.back'), style: 'cancel' },
-      {
-        text: t('dispatch.accept'),
-        style: 'default',
-        onPress: async () => {
-          setAccepting(orderId);
-          setBannerOrder(null);
-          try {
-            await apiFetch(`/orders/${orderId}/accept`, {
-              method: 'POST',
-              token: token ?? undefined,
-            });
-            setOrders((prev) => prev.filter((o) => o.id !== orderId));
-            router.push(`/order/${orderId}`);
-          } catch (e: unknown) {
-            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
-          } finally {
-            setAccepting(null);
-          }
-        },
-      },
-    ]);
+    setAcceptModal(orderId);
+  };
+
+  const confirmAccept = async () => {
+    const orderId = acceptModal;
+    if (!orderId) return;
+    setAcceptModal(null);
+    setAccepting(orderId);
+    setBannerOrder(null);
+    try {
+      await apiFetch(`/orders/${orderId}/accept`, {
+        method: 'POST',
+        token: token ?? undefined,
+      });
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      router.push(`/order/${orderId}`);
+    } catch (e: unknown) {
+      setAcceptError(e instanceof Error ? e.message : t('common.error'));
+    } finally {
+      setAccepting(null);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -345,6 +346,27 @@ export default function AvailableOrdersScreen() {
 
       {/* Fullscreen dispatch invite modal */}
       <OrderInviteModal invite={invite} onDismiss={() => setInvite(null)} />
+
+      {/* Accept order confirm */}
+      <AppModal
+        visible={acceptModal !== null}
+        title={t('orders.accepted')}
+        message={t('dispatch.confirmAccept')}
+        buttons={[
+          { text: t('common.back'), style: 'cancel', onPress: () => setAcceptModal(null) },
+          { text: t('dispatch.accept'), style: 'default', onPress: confirmAccept },
+        ]}
+        onClose={() => setAcceptModal(null)}
+      />
+
+      {/* Accept error */}
+      <AppModal
+        visible={acceptError !== null}
+        title={t('common.error')}
+        message={acceptError ?? ''}
+        buttons={[{ text: 'OK', style: 'default', onPress: () => setAcceptError(null) }]}
+        onClose={() => setAcceptError(null)}
+      />
     </View>
   );
 }

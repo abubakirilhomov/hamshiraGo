@@ -1,11 +1,11 @@
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
 import { useEffect, useState } from 'react';
+import AppModal from '@/components/AppModal';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +34,7 @@ export default function ProfileScreen() {
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
   const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [logoutModal, setLogoutModal] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -42,12 +43,7 @@ export default function ProfileScreen() {
       .catch(() => {});
   }, [token]);
 
-  const handleLogout = () => {
-    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
-      { text: t('profile.cancel'), style: 'cancel' },
-      { text: t('profile.logout'), style: 'destructive', onPress: logout },
-    ]);
-  };
+  const handleLogout = () => setLogoutModal(true);
 
   if (!user) return null;
 
@@ -60,6 +56,7 @@ export default function ProfileScreen() {
   const activeOrders = orders.filter((o) => STATUS_ACTIVE.includes(o.status)).length;
 
   return (
+    <>
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
       {/* Header */}
@@ -136,6 +133,18 @@ export default function ProfileScreen() {
       </Pressable>
 
     </ScrollView>
+
+    <AppModal
+      visible={logoutModal}
+      title={t('profile.logoutConfirmTitle')}
+      message={t('profile.logoutConfirmMessage')}
+      buttons={[
+        { text: t('profile.cancel'), style: 'cancel', onPress: () => setLogoutModal(false) },
+        { text: t('profile.logout'), style: 'destructive', onPress: logout },
+      ]}
+      onClose={() => setLogoutModal(false)}
+    />
+    </>
   );
 }
 

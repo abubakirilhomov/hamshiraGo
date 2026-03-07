@@ -29,7 +29,8 @@
   "dispatch": {
     "newOrder": "Yangi buyurtma!",
     "accept": "Qabul qilish",
-    "decline": "Rad etish"
+    "decline": "Rad etish",
+    "confirmAccept": "Bu buyurtmani qabul qilmoqchimisiz?"
   },
   "profile": {
     "completedOrders": "Bajarilgan buyurtmalar",
@@ -49,7 +50,11 @@
     "logout": "Chiqish",
     "logoutConfirmTitle": "Chiqasizmi?",
     "logoutConfirmMessage": "Hisobdan chiqasiz.",
-    "cancel": "Bekor qilish"
+    "cancel": "Bekor qilish",
+    "statExperience": "yil tajriba",
+    "statCompleted": "bajarildi",
+    "statRating": "reyting",
+    "statBalance": "balans"
   },
   "language": {
     "title": "Язык / Til",
