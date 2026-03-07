@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  AppState,
   BackHandler,
   Image,
   Platform,
@@ -10,6 +11,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import AppModal from '@/components/AppModal';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -114,6 +116,24 @@ const STATUS_INDEX: Partial<Record<OrderStatus, number>> = Object.fromEntries(
   STEPS.map((s, i) => [s.status, i]),
 );
 
+// ─── Persistent notification helpers ─────────────────────────────────────────
+
+const TRACK_NOTIF_ID = 'hamshirago-track';
+const ACTIVE_TRACK_STATUSES: OrderStatus[] = ['CREATED', 'ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED'];
+
+function getTrackNotifContent(order: Order): { title: string; body: string } | null {
+  const name = order.medic?.name;
+  switch (order.status) {
+    case 'CREATED':         return { title: '🔍 Ищем медика', body: 'Подбираем медика для вас...' };
+    case 'ASSIGNED':        return { title: '👤 Медик назначен', body: name ? `${name} принял заказ` : 'Медик принял заказ' };
+    case 'ACCEPTED':        return { title: '✅ Медик подтвердил', body: name ? `${name} скоро выедет` : 'Медик скоро выедет' };
+    case 'ON_THE_WAY':      return { title: '🚗 Медик едет', body: name ? `${name} едет к вам` : 'Медик едет к вам' };
+    case 'ARRIVED':         return { title: '📍 Медик прибыл', body: 'Откройте дверь — медик у вашего дома' };
+    case 'SERVICE_STARTED': return { title: '💉 Услуга начата', body: 'Медик оказывает услугу' };
+    default:                return null;
+  }
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function TrackOrderScreen() {
@@ -153,6 +173,7 @@ export default function TrackOrderScreen() {
   // AnimatedRegion used for smooth marker interpolation (initialized on first location)
   const medicAnimCoordRef = useRef<any>(null);
   const [medicAnimReady, setMedicAnimReady] = useState(false);
+  const orderRef = useRef<Order | null>(null);
 
   // ── REST fetch ──────────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
@@ -289,6 +310,40 @@ export default function TrackOrderScreen() {
     });
     return () => sub.remove();
   }, [mustRate]);
+
+  // ── Persistent notification ──────────────────────────────────────────────
+  // Keep ref in sync so AppState listener always reads latest order
+  useEffect(() => { orderRef.current = order; }, [order]);
+
+  // Dismiss notification when order ends (even while app is in foreground)
+  useEffect(() => {
+    if (order?.status === 'DONE' || order?.status === 'CANCELED') {
+      Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+    }
+  }, [order?.status]);
+
+  // AppState: show notification when backgrounded, dismiss when foregrounded
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      const current = orderRef.current;
+      if (state === 'background' && current && ACTIVE_TRACK_STATUSES.includes(current.status)) {
+        const content = getTrackNotifContent(current);
+        if (content) {
+          Notifications.scheduleNotificationAsync({
+            identifier: TRACK_NOTIF_ID,
+            content: { title: content.title, body: content.body, sound: false, data: { orderId } },
+            trigger: null,
+          }).catch(() => {});
+        }
+      } else if (state === 'active') {
+        Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+      }
+    });
+    return () => {
+      sub.remove();
+      Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRoadRoute = useCallback(async () => {
     if (!order?.location || !medicLocation) return;

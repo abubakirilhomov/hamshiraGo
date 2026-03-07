@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-03-08 — Этап 12: POST /client-errors (backend)
+
+- **[backend]** `client-errors/entities/client-error.entity.ts` — новая таблица `client_errors` (userId, appType, screen, message, stacktrace, meta)
+- **[backend]** `client-errors/dto/create-client-error.dto.ts` — DTO с валидацией (все поля опциональны)
+- **[backend]** `client-errors/client-errors.service.ts` — метод `save(dto)`
+- **[backend]** `client-errors/client-errors.controller.ts` — `POST /client-errors` публичный, без авторизации, throttle 20 req/min
+- **[backend]** `client-errors/client-errors.module.ts` — модуль, зарегистрирован в `AppModule`
+- `tsc --noEmit` = 0 ошибок
+
+## 2026-03-08 — Этап 9: пуш-уведомления + персистентное уведомление
+
+- **[backend]** `orders.service.ts` — добавлены `MEDIC_PUSH_MESSAGES` + метод `notifyMedic()`: медик получает push при отмене клиентом (CANCELED) и подтверждении DONE
+- **[mobile]** `app/order/track.tsx` — персистентное локальное уведомление при активном заказе: появляется при уходе в фон, обновляется при смене статуса, исчезает при DONE/CANCELED. Использует `AppState` + `expo-notifications` с фиксированным `identifier`
+- **[medic]** `app/order/[id].tsx` — персистентное локальное уведомление при активном заказе (аналог mobile); добавлен WebSocket-слушатель `order_status` — медик видит статус CANCELED в реальном времени, если клиент отменил заказ
+- `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
+
 ## 2026-03-08 — Этап 8: i18n услуг в mobile
 
 - **[mobile]** `app/service/[id].tsx` — добавлен `useLanguage()`, показывает `titleUz`/`descriptionUz` если язык UZ; все строки интерфейса через `useTranslation()` (service.cost, service.duration, service.order, service.notFound)
