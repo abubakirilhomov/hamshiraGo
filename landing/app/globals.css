@@ -37,11 +37,11 @@
   --card-bg: rgba(255,255,255,0.80);
   --card-border: rgba(0,0,0,0.07);
   --card-border-strong: rgba(0,0,0,0.10);
-  --text-primary: #0f172a;
-  --text-2: rgba(15,23,42,0.72);
-  --text-3: rgba(15,23,42,0.55);
-  --text-4: rgba(15,23,42,0.4);
-  --text-5: rgba(15,23,42,0.28);
+  --text-primary: #0f2744;
+  --text-2: rgba(15,39,68,0.72);
+  --text-3: rgba(15,39,68,0.55);
+  --text-4: rgba(15,39,68,0.4);
+  --text-5: rgba(15,39,68,0.28);
   --shadow: rgba(0,0,0,0.12);
   --hero-from: #d4f0ec;
   --hero-to: #f8fafc;

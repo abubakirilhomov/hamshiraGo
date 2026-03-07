@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLang } from "@/context/LangContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -10,7 +9,6 @@ import { IconSun, IconMoon } from "./Icons";
 export default function Navbar() {
   const { t, lang, setLang } = useLang();
   const { isDark, toggleTheme } = useTheme();
-  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -77,7 +75,7 @@ export default function Navbar() {
             {(["ru", "uz"] as const).map((l) => (
               <button
                 key={l}
-                onClick={() => { setLang(l); router.push(`/${l}`); }}
+                onClick={() => { setLang(l); window.history.pushState(null, "", `/${l}`); }}
                 className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition-all ${
                   lang === l
                     ? "bg-primary text-white"
