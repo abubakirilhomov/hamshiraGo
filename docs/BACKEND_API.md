@@ -588,6 +588,30 @@ medicEarns  = netPrice - platformFee
 
 ---
 
+## Client Errors — `POST /client-errors`
+
+Публичный endpoint для отправки ошибок из мобильных приложений. Авторизация не требуется.
+
+**Rate limit:** 20 запросов/мин.
+
+**Body (все поля опциональны):**
+```json
+{
+  "userId":     "uuid — ID пользователя (если залогинен)",
+  "appType":    "mobile | medic",
+  "screen":     "маршрут/экран где произошла ошибка",
+  "message":    "короткое сообщение об ошибке",
+  "stacktrace": "полный стек трейс",
+  "meta":       "JSON-строка с доп. данными"
+}
+```
+
+**Response:** `204 No Content`
+
+Ошибки сохраняются в таблицу `client_errors`.
+
+---
+
 ## CORS
 
 Разрешённые origins:

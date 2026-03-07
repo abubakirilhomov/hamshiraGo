@@ -4,27 +4,69 @@
 
 ---
 
-## 2026-03-08
-- **[feat]** Admin i18n — все страницы (Dashboard, Medics, Orders, Clients, Services, Verification, Reports) переведены на ru/uz через react-i18next
-- **[feat]** Admin navbar — добавлен PWA install button (`NavbarInstallButton` + `usePWAInstall`) и кастомный логотип
-- **[feat]** Logo — кастомный логотип (медицинский крест) скопирован в admin/public и landing/public; favicon landing/app/icon.png
-- **[feat]** Landing — логотип заменён во всех компонентах (Navbar, Footer, Hero phone mockup), иконка добавлена через app/icon.png (Next.js auto favicon)
-- **[feat]** Admin logo — увеличен с h-7 до h-9, форма rounded-xl
+## 2026-03-08 — Admin i18n + PWA + логотип
+
+- **[admin]** `i18n/ru.json`, `i18n/uz.json` — добавлены все недостающие ключи для всех страниц: dashboard, medics, orders, clients, services, verification, reports, common.downloadApp
+- **[admin]** `pages/Dashboard.tsx`, `Medics.tsx`, `Orders.tsx`, `Clients.tsx`, `Services.tsx`, `Verification.tsx`, `Reports.tsx` — все строки переведены через `t()`, добавлен `useTranslation`
+- **[admin]** `components/AdminLayout.tsx` — добавлен PWA install button (`NavbarInstallButton` + `usePWAInstall`)
+- **[admin]** Logo — кастомный логотип заменён во всех проектах (admin sidebar, landing Navbar/Footer/Hero, web/web-medic SplashScreen/auth/header); favicon обновлён через `app/icon.png` и явный `<link rel="icon">` в layout.tsx
+- `npm run build` = 0 TypeScript ошибок
 
 ---
 
-## 2026-03-08 — Admin i18n + navbar download button
+## 2026-03-08 — Этап 12: POST /client-errors (backend)
 
-- **[admin]** `i18n/ru.json`, `i18n/uz.json` — добавлены все недостающие ключи для всех страниц: dashboard (subtitle, efficiency, last7Days, orderFlow, financialFocus, efficiencyNote...), medics (allMedics, total, online, blocked, lowWallet, topup*, toast*...), orders (subtitle, active, completed, commission, colDate/Service/Price/Commission/Address/Action, toast*...), clients (allClients, subtitle, total, blockedPage, notFound, toast*...), services (catalog, subtitle, totalServices, activeServices, categories, col*, label*, toast*...), verification (subtitle, queue, hotkey, navHint, approveHint, rejectHint, waitingCount, requests, noMedics, photo, license, confirmReject, toast*...), reports (новая секция целиком), common.downloadApp
-- **[admin]** `pages/Dashboard.tsx` — все строки переведены через `t()`, добавлен `useTranslation`
-- **[admin]** `pages/Medics.tsx` — все строки переведены через `t()`
-- **[admin]** `pages/Orders.tsx` — все строки переведены через `t()`, STATUSES массив использует t()
-- **[admin]** `pages/Clients.tsx` — все строки переведены через `t()`
-- **[admin]** `pages/Services.tsx` — все строки переведены через `t()`
-- **[admin]** `pages/Verification.tsx` — все строки переведены через `t()`
-- **[admin]** `pages/Reports.tsx` — все строки переведены через `t()`
-- **[admin]** `components/AdminLayout.tsx` — добавлена кнопка «Скачать приложение» (Smartphone icon + ссылка на hamshirago.uz) в navbar, импортирован Smartphone из lucide-react
-- `npm run build` = 0 TypeScript ошибок
+- **[backend]** `client-errors/entities/client-error.entity.ts` — новая таблица `client_errors` (userId, appType, screen, message, stacktrace, meta)
+- **[backend]** `client-errors/dto/create-client-error.dto.ts` — DTO с валидацией (все поля опциональны)
+- **[backend]** `client-errors/client-errors.service.ts` — метод `save(dto)`
+- **[backend]** `client-errors/client-errors.controller.ts` — `POST /client-errors` публичный, без авторизации, throttle 20 req/min
+- **[backend]** `client-errors/client-errors.module.ts` — модуль, зарегистрирован в `AppModule`
+- `tsc --noEmit` = 0 ошибок
+
+---
+
+## 2026-03-08 — Этап 9: пуш-уведомления + персистентное уведомление
+
+- **[backend]** `orders.service.ts` — добавлены `MEDIC_PUSH_MESSAGES` + метод `notifyMedic()`: медик получает push при отмене клиентом (CANCELED) и подтверждении DONE
+- **[mobile]** `app/order/track.tsx` — персистентное локальное уведомление при активном заказе: появляется при уходе в фон, обновляется при смене статуса, исчезает при DONE/CANCELED. Использует `AppState` + `expo-notifications` с фиксированным `identifier`
+- **[medic]** `app/order/[id].tsx` — персистентное локальное уведомление при активном заказе (аналог mobile); добавлен WebSocket-слушатель `order_status` — медик видит статус CANCELED в реальном времени, если клиент отменил заказ
+- `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
+
+---
+
+## 2026-03-08 — Этап 8: i18n услуг в mobile
+
+- **[mobile]** `app/service/[id].tsx` — добавлен `useLanguage()`, показывает `titleUz`/`descriptionUz` если язык UZ; все строки интерфейса через `useTranslation()` (service.cost, service.duration, service.order, service.notFound)
+- **[mobile]** `app/order/confirm.tsx` — добавлен `useLanguage()`, `service.title` → `titleUz` если UZ; все строки через i18n (confirm.title, confirm.address, confirm.phone, confirm.duration, confirm.total, confirm.submit, confirm.cancel, confirm.discountFirst, confirm.basePrice)
+- **[mobile]** `components/ServiceCard.tsx` — "мин" → `t('service.min')` (RU: "мин" / UZ: "daq")
+- **[mobile]** `i18n/ru.json` + `i18n/uz.json` — добавлены секции `service` и `confirm`
+- `tsc --noEmit` = 0 ошибок
+
+---
+
+## 2026-03-08 — Этап 6: фото профиля медика
+
+- **[backend]** `medic.entity.ts` — добавлена колонка `profilePhotoUrl` (nullable varchar 512)
+- **[backend]** `medics.service.ts` — `profilePhotoUrl` добавлен в `toAuthResponse()` и `getProfile()`, добавлен метод `saveProfilePhotoUrl()`
+- **[backend]** `medics.controller.ts` — новый endpoint `POST /medics/profile-photo` (FileInterceptor, single file, Cloudinary upload в папку `hamshirago/medic-profiles`)
+- **[backend]** `orders.service.ts` — блокировка `acceptOrder` если `profilePhotoUrl` не загружен (`ForbiddenException`)
+- **[medic]** `AuthContext.tsx` — `profilePhotoUrl: string | null` добавлен в интерфейс `MedicUser`
+- **[medic]** `app/(tabs)/profile.tsx` — аватар медика заменён на фото профиля (если есть), нажатие открывает галерею для загрузки, индикатор загрузки, `expo-image-picker`
+- **[medic]** `app/(tabs)/index.tsx` — баннер "Добавьте фото профиля" для одобренных медиков без фото (ведёт на профиль)
+- **[mobile]** `app/order/track.tsx` — фото медика в карточке "Ваш медик" и на маркере карты (через `Image`, если `profilePhotoUrl` есть)
+- `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
+
+---
+
+## 2026-03-08 — Этап 5: баги + кастомные модалки
+
+- **[medic]** BUG-A1: Статы профиля переведены через i18n — `profile.statExperience/statCompleted/statRating/statBalance` (ru + uz) вместо хардкода на русском (`medic/app/(tabs)/profile.tsx`, `medic/i18n/*.json`)
+- **[mobile]** BUG-A2: UI звёзд при оценке заказа — `starsRow` теперь `justifyContent: center` + `gap: 12`; убран `marginTop: -8` у hint; в блоке "Ваша оценка" звёзды выше рейтинга отображаются `star-o` (outline) а не закрашенными (`mobile/app/order/track.tsx`)
+- **[mobile/medic]** Создан компонент `AppModal` — кастомная замена системного `Alert.alert` (анимированный modal, кнопки cancel/destructive/default, overlay tap для закрытия) (`mobile/components/AppModal.tsx`, `medic/components/AppModal.tsx`)
+- **[mobile]** `AppModal` внедрён: logout confirm в профиле клиента, отмена заказа в track.tsx
+- **[medic]** `AppModal` внедрён: logout confirm, Telegram disconnect confirm, подтверждение принятия заказа
+- **[medic]** i18n: добавлен ключ `dispatch.confirmAccept` (ru + uz)
+- `tsc --noEmit` = 0 ошибок (mobile + medic)
 
 ---
 

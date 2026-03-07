@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -16,6 +16,11 @@ import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
 import { Medic } from '../medics/entities/medic.entity';
+
+const MEDIC_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
+  CANCELED: { title: '❌ Заказ отменён клиентом', body: 'Клиент отменил заказ. Вы можете принять другой.' },
+  DONE:     { title: '✅ Заказ подтверждён',       body: 'Клиент подтвердил завершение услуги.' },
+};
 
 const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
   ASSIGNED:        { title: '👤 Медик назначен',      body: 'Медик принял ваш заказ и скоро выедет' },
@@ -74,6 +79,22 @@ export class OrdersService {
       data: { orderId: order.id, status },
       url: `/orders/${order.id}`,
     });
+  }
+
+  /** Send Expo push notification to the medic of a given order */
+  private async notifyMedic(order: Order, status: string): Promise<void> {
+    const msg = MEDIC_PUSH_MESSAGES[status];
+    if (!msg || !order.medicId) return;
+    const medic = await this.medicsService.findById(order.medicId);
+    if (!medic?.pushToken) return;
+    this.pushService.send([medic.pushToken], {
+      title: msg.title,
+      body: msg.body,
+      sound: 'default',
+      data: { orderId: order.id, status },
+      channelId: 'order_updates',
+      priority: 'high',
+    }).catch(() => {});
   }
 
   async create(clientId: string, dto: CreateOrderDto): Promise<Order> {
@@ -157,6 +178,7 @@ export class OrdersService {
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.CANCELED);
+    this.notifyMedic(updated, OrderStatus.CANCELED);
     return updated;
   }
 
@@ -205,8 +227,10 @@ export class OrdersService {
     order.status = OrderStatus.DONE;
     await this.orderRepo.save(order);
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
-    this.notifyClient(order, OrderStatus.DONE);
-    return this.findOne(id);
+    const doneOrder = await this.findOne(id);
+    this.notifyClient(doneOrder, OrderStatus.DONE);
+    this.notifyMedic(doneOrder, OrderStatus.DONE);
+    return doneOrder;
   }
 
   async findByClient(
@@ -289,15 +313,11 @@ export class OrdersService {
       );
     }
     if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked.');
+    if (!medic.profilePhotoUrl) {
+      throw new ForbiddenException('Please upload a profile photo before accepting orders.');
+    }
 
     const order = await this.findOne(orderId);
-    const fee = order.platformFee ?? 0;
-    if (medic.walletBalance < fee) {
-      throw new HttpException(
-        { message: 'INSUFFICIENT_WALLET', required: fee, current: medic.walletBalance },
-        HttpStatus.PAYMENT_REQUIRED,
-      );
-    }
 
     // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
     await this.dispatchService.onMedicAccept(orderId, medicId);
@@ -361,9 +381,6 @@ export class OrdersService {
           throw new BadRequestException('Status changed concurrently, please retry');
         }
         await manager.increment(Medic, { id: medicId }, 'balance', medicEarned);
-        if (fee > 0) {
-          await manager.decrement(Medic, { id: medicId }, 'walletBalance', fee);
-        }
       });
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it

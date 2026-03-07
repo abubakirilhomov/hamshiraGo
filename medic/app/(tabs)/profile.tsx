@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -9,6 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import AppModal from '@/components/AppModal';
 import { useCallback, useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -46,6 +49,9 @@ export default function ProfileScreen() {
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [completedCount, setCompletedCount] = useState<number | null>(null);
   const [disconnectingTg, setDisconnectingTg] = useState(false);
+  const [logoutModal, setLogoutModal] = useState(false);
+  const [tgDisconnectModal, setTgDisconnectModal] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [hasAlwaysLocation, setHasAlwaysLocation] = useState(true);
 
   useEffect(() => {
@@ -147,50 +153,72 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(t('profile.logoutConfirmTitle'), t('profile.logoutConfirmMessage'), [
-      { text: t('profile.cancel'), style: 'cancel' },
-      { text: t('profile.logout'), style: 'destructive', onPress: logout },
-    ]);
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setUploadingPhoto(true);
+    try {
+      const asset = result.assets[0];
+      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const formData = new FormData();
+      formData.append('photo', { uri: asset.uri, name: `photo.${ext}`, type: `image/${ext}` } as any);
+
+      const API_BASE = (await import('@/constants/api')).API_BASE;
+      const res = await fetch(`${API_BASE}/medics/profile-photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки фото');
+      await refreshProfile();
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось загрузить фото. Попробуйте ещё раз.');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
+
+  const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
     Linking.openURL(TELEGRAM_BOT_LINK);
   };
 
-  const handleDisconnectTelegram = () => {
-    Alert.alert(
-      'Отключить Telegram?',
-      'Вы больше не будете получать уведомления о новых заказах в Telegram.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Отключить',
-          style: 'destructive',
-          onPress: async () => {
-            setDisconnectingTg(true);
-            try {
-              await apiFetch('/medics/telegram-chat-id', {
-                method: 'PATCH',
-                token: token ?? undefined,
-                body: JSON.stringify({ chatId: null }),
-              });
-              await refreshProfile();
-            } catch {
-              Alert.alert('Ошибка', 'Не удалось отключить Telegram');
-            } finally {
-              setDisconnectingTg(false);
-            }
-          },
-        },
-      ],
-    );
+  const handleDisconnectTelegram = () => setTgDisconnectModal(true);
+
+  const confirmDisconnectTelegram = async () => {
+    setTgDisconnectModal(false);
+    setDisconnectingTg(true);
+    try {
+      await apiFetch('/medics/telegram-chat-id', {
+        method: 'PATCH',
+        token: token ?? undefined,
+        body: JSON.stringify({ chatId: null }),
+      });
+      await refreshProfile();
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось отключить Telegram');
+    } finally {
+      setDisconnectingTg(false);
+    }
   };
 
   const vStatus = (medic.verificationStatus ?? 'PENDING') as keyof typeof VERIFICATION_CONFIG;
   const vConfig = VERIFICATION_CONFIG[vStatus];
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <LinearGradient
@@ -199,9 +227,24 @@ export default function ProfileScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{medic.name.charAt(0).toUpperCase()}</Text>
-        </View>
+        <Pressable style={styles.avatarWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
+          {medic.profilePhotoUrl ? (
+            <Image source={{ uri: medic.profilePhotoUrl }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{medic.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          {uploadingPhoto ? (
+            <View style={styles.avatarBadge}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          ) : (
+            <View style={styles.avatarBadge}>
+              <FontAwesome name="camera" size={10} color="#fff" />
+            </View>
+          )}
+        </Pressable>
         <Text style={styles.name}>{medic.name}</Text>
         <Text style={styles.phone}>{medic.phone}</Text>
         {medic.rating != null && (
@@ -280,35 +323,27 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{medic.experienceYears}</Text>
-          <Text style={styles.statLabel}>лет опыта</Text>
+          <Text style={styles.statLabel}>{t('profile.statExperience')}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>
             {completedCount ?? '—'}
           </Text>
-          <Text style={styles.statLabel}>выполнено</Text>
+          <Text style={styles.statLabel}>{t('profile.statCompleted')}</Text>
         </View>
         {medic.rating != null ? (
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{Number(medic.rating).toFixed(1)}</Text>
-            <Text style={styles.statLabel}>рейтинг</Text>
+            <Text style={styles.statLabel}>{t('profile.statRating')}</Text>
           </View>
         ) : (
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
               {Number(medic.balance).toLocaleString('ru-RU')}
             </Text>
-            <Text style={styles.statLabel}>UZS баланс</Text>
+            <Text style={styles.statLabel}>{t('profile.statBalance')}</Text>
           </View>
         )}
-      </View>
-
-      {/* Wallet balance */}
-      <View style={styles.walletCard}>
-        <Text style={styles.walletLabel}>{t('wallet.balance')}</Text>
-        <Text style={styles.walletAmount}>
-          {Number(medic.walletBalance ?? 0).toLocaleString('ru-RU')} {t('common.sum')}
-        </Text>
       </View>
 
       {/* Telegram */}
@@ -379,6 +414,29 @@ export default function ProfileScreen() {
         <Text style={styles.logoutText}>{t('profile.logout')}</Text>
       </Pressable>
     </ScrollView>
+
+    <AppModal
+      visible={logoutModal}
+      title={t('profile.logoutConfirmTitle')}
+      message={t('profile.logoutConfirmMessage')}
+      buttons={[
+        { text: t('profile.cancel'), style: 'cancel', onPress: () => setLogoutModal(false) },
+        { text: t('profile.logout'), style: 'destructive', onPress: logout },
+      ]}
+      onClose={() => setLogoutModal(false)}
+    />
+
+    <AppModal
+      visible={tgDisconnectModal}
+      title="Отключить Telegram?"
+      message="Вы больше не будете получать уведомления о новых заказах в Telegram."
+      buttons={[
+        { text: 'Отмена', style: 'cancel', onPress: () => setTgDisconnectModal(false) },
+        { text: 'Отключить', style: 'destructive', onPress: confirmDisconnectTelegram },
+      ]}
+      onClose={() => setTgDisconnectModal(false)}
+    />
+    </>
   );
 }
 
@@ -390,6 +448,19 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 32,
   },
+  avatarWrap: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  avatarImg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
   avatar: {
     width: 80,
     height: 80,
@@ -397,7 +468,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   avatarText: { fontSize: 32, fontWeight: '700', color: '#fff' },
   name: { fontSize: 20, fontWeight: '700', color: '#fff' },
@@ -521,28 +604,6 @@ const styles = StyleSheet.create({
   logoutBtnPressed: { opacity: 0.8 },
   logoutText: { fontSize: 16, fontWeight: '600', color: Theme.error },
 
-  walletCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  walletLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Theme.textSecondary,
-  },
-  walletAmount: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Theme.primary,
-  },
   cardSectionTitle: {
     fontSize: 12,
     fontWeight: '700',

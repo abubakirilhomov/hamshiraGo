@@ -4,16 +4,26 @@
 
 ---
 
-## 🐛 Баги (открытые, в нашей зоне: backend / mobile / medic)
+## 👥 Роли разработки
 
-> Все баги в нашей зоне исправлены в Этапе 4.
+| Роль | Зона ответственности |
+|------|---------------------|
+| **Абубакир** | `backend/`, `mobile/`, `medic/` |
+| **Диёр** | `admin/`, `web/`, `web-medic/`, `landing/`, SEO, логотип |
+
+> Документация (`docs/`) обновляется тем, кто выполняет задачу.
 
 ---
 
-## ⛔ Баги вне зоны изменений (read-only: web / web-medic / admin)
+## 🐛 Баги (открытые)
 
-> Эти баги зафиксированы, но трогать эти части нельзя.
+### Абубакир
+> Все баги Абубакира исправлены (BUG-A1, BUG-A2 — выполнены в Этап 5).
 
+### Диёр
+> Все баги в зоне Диёра исправлены.
+
+### ⛔ Вне зоны изменений (read-only)
 - BUG 14: web-medic загружает все заказы чтобы найти один по id
 - BUG 15: web client передаёт лишние поля в CreateOrderDto
 - BUG 26: `BASE_URL` захардкожен `localhost:3000` в web и web-medic
@@ -27,35 +37,128 @@
 
 ---
 
-## 📋 Задачи
+## ✅ Этап 5 — ВЫПОЛНЕН
 
-- [x] **[plan]** Этап 1 (backend critical security): BUG 2/3/4/9/10/11/13/39 — ACL, WS auth, route fix, CORS
-- [x] **[plan]** Этап 2 (mobile/medic realtime UX): BUG из tasks + авто-обновление, ошибки логина
-- [x] **[plan]** Этап 3 (auth + validation hardening): BUG 5/6/7/8/12/20 — phone regex, SecureStore, timing-safe
-- [x] **[backend/mobile/medic]** Yandex Taxi-style push-based автоматический dispatch — `dispatch.service.ts`, `dispatch_attempts` таблица, медик инвайт-модал, dispatch_update UI на клиенте
-- [x] **[backend]** Этап 1 аудита — Swagger/OpenAPI, Jest unit тесты, GitHub Actions CI
-- [x] **[backend/mobile/medic]** Этап 2 аудита — i18n (Узбекский + Русский): Service entity titleUz/descriptionUz/categoryUz, i18next в mobile/medic, LanguageContext + SecureStore, language picker в profile + first-launch screen
-- [x] **[backend]** Этап 3 аудита — TypeScript strict: `strict: true`, 109 ошибок исправлено (`!` на entity/DTO свойствах)
-- [x] **[mobile]** Плавная интерполяция маркера медика на карте клиента (`mobile/app/order/track.tsx`) — выполнено 2026-03-05
-- [x] **[mobile/medic]** 95% MVP — i18n auth.tsx (mobile+medic), payment UI в track.tsx, медик 7 экранов i18n (index, my-orders, _layout, order/[id], verification, auth, i18n-файлы) — выполнено 2026-03-05
-- [x] **[web/web-medic/admin]** Полный i18n (RU + UZ) для всех web-приложений — выполнено 2026-03-05
-- [x] **[backend]** Security fixes (tech lead feedback) — #1 rateOrder race, #2 updateStatusByMedic atomic, #3 DONE+balance tx, #4 initiatePayment lock, #5 netPrice fix, #6 WS CORS, #8 Swagger prod guard, #9 dispatch MAX_ATTEMPTS — выполнено 2026-03-06
-- [x] **[backend]** Railway deployment fix — tsconfig.build.json + railway.toml buildCommand — выполнено 2026-03-06
-- [x] **[backend/medic]** Wallet system для медиков — walletBalance поле (default 30000), проверка при acceptOrder (HTTP 402), списание при DONE, admin топап эндпоинт, i18n + UI карточка в profile — выполнено 2026-03-07
+> BUG-A1, BUG-A2 исправлены. AppModal создан. Alert.alert заменены в key местах.
 
-### Процесс выполнения
+## ✅ Этап 6 — ВЫПОЛНЕН
 
-1. Этап 1: backend critical security — `выполнено`
-2. Этап 2: realtime UX (`mobile`/`medic`) — `выполнено`
-3. Этап 3: auth + validation hardening — `выполнено`
-4. Этап 4: оставшиеся баги backend/mobile/medic — `выполнено`
+> Фото профиля медика реализовано полностью.
+
+## ✅ Этап 8 — ВЫПОЛНЕН (частично Абубакир)
+
+> Backend ✅ уже корректен. Mobile: service/[id].tsx и confirm.tsx теперь используют titleUz/descriptionUz по языку устройства, все строки интерфейса через i18n.
+> Задача для Диёра (admin UI для редактирования услуг) остаётся открытой.
+
+## ✅ Этап 9 — ВЫПОЛНЕН
+
+> Backend: медик получает push при CANCELED и DONE. Mobile track.tsx + Medic order/[id].tsx: персистентное уведомление в фоне, WebSocket order_status в медике.
 
 ---
 
-## 💡 Идеи / V1
+## 📋 Этап 7 — Сплэш и брендинг (Диёр + Абубакир)
 
-- [x] **[backend]** Этап 4 — Платёжная система (Payme + Click) — выполнено 2026-03-05
-- [x] **[mobile/medic]** Fix AsyncStorageError + language picker first-launch — выполнено 2026-03-05
+- [ ] **[mobile/medic]** `[Абубакир]` Сплэш-экран: логотип HamshiraGo + "by tezcode.ai" при запуске приложения
+- [ ] **[web/web-medic/admin/landing]** `[Диёр]` Сплэш / лоадер с брендингом HamshiraGo + "by tezcode.ai"
+- [ ] **[all]** `[Диёр]` Внедрить выбранный логотип во все проекты
+
+---
+
+## 📋 Этап 8 — Динамические услуги через админку (Абубакир + Диёр)
+
+- [ ] **[backend]** `[Абубакир]` Услуги уже есть в БД (`Service` entity с `titleUz`/`titleRu`). Убедиться что API отдаёт оба языка корректно
+- [ ] **[mobile]** `[Абубакир]` Исправить i18n конфликт на главной: процедуры всегда на русском → использовать `titleUz`/`titleRu` динамически по языку устройства
+- [ ] **[admin]** `[Диёр]` UI для добавления/редактирования услуг с полями на RU и UZ
+
+---
+
+## 📋 Этап 9 — Пуш-уведомления (Абубакир)
+
+- [ ] **[backend/mobile]** Отправлять все статусы заказа по push (сейчас часть статусов пропускается)
+- [ ] **[mobile/medic]** Постоянное уведомление при активном заказе (foreground service / persistent notification, как у Яндекс Go)
+  - Клиент: "Медик едет — [Имя], статус [...]"
+  - Медик: "Активный заказ — [адрес], статус [...]"
+
+---
+
+## 📋 Этап 10 — Платный режим / комиссия (Абубакир + Диёр)
+
+> Замена откатанной wallet-системы на управляемый через админку платный режим.
+
+- [ ] **[backend]** `[Абубакир]` `isPaidMode: boolean` флаг в настройках приложения (отдельная таблица `app_settings` или env)
+  - `GET /settings` — публичный, возвращает текущий режим
+  - `PATCH /admin/settings` — только для админа
+- [ ] **[backend]** `[Абубакир]` Если `isPaidMode=true` — восстановить логику walletBalance (10% списание, блок при нехватке)
+- [ ] **[admin]** `[Диёр]` Переключатель "Платный режим" в настройках админки
+- [ ] **[medic]** `[Абубакир]` Баланс кошелька медика всегда виден в профиле (в обоих режимах — платный/бесплатный)
+- [ ] **[admin]** `[Диёр]` Просмотр балансов медиков + ручное пополнение через UI
+
+---
+
+## 📋 Этап 11 — Telegram (Абубакир)
+
+- [ ] **[backend/medic/mobile]** Упростить подключение Telegram-уведомлений:
+  - Сейчас: 4 шага (перейти в бот → /start → войти через WebApp → включить)
+  - Цель: одна кнопка → deep link `tg://resolve?domain=bot&start=MEDIC_ID` → бот автоматически привязывает аккаунт
+- [ ] **[backend]** Создать Telegram-канал для медиков. В боте при первом `/start` показывать ссылку на канал
+- [ ] **[medic/mobile]** Баннер "Вы теперь часть команды HamshiraGo! Подпишитесь на канал для медиков" + кнопка "Перейти"
+
+---
+
+## 📋 Этап 12 — Аналитика и мониторинг (Диёр)
+
+- [ ] **[admin]** `[Диёр]` Аналитика посещений и использования (интеграция Plausible или PostHog — self-hosted)
+- [ ] **[admin]** `[Диёр]` Логирование ошибок пользователей с просмотром в админке (Sentry уже подключён — настроить дашборд)
+- [x] **[backend]** `[Абубакир]` Эндпоинт `POST /client-errors` — клиент отправляет ошибки с userId, экраном, stacktrace ✅
+
+---
+
+## 📋 Этап 13 — SEO и продакшн (Диёр)
+
+- [ ] **[landing/web]** `[Диёр]` SEO улучшения (мета-теги, скорость, Core Web Vitals)
+- [ ] **[web/web-medic]** `[Диёр]` Проверка lighthouse score, оптимизация
+
+---
+
+## 📋 Этап 14 — Store публикация (Абубакир)
+
+> Инструкция и подготовка — выполняется после стабилизации кода.
+
+### Play Store (Android)
+- [ ] `app.json` → `android.package`, `versionCode`, `versionName`
+- [ ] EAS Build: `eas build --platform android --profile production`
+- [ ] Подписать APK/AAB ключом (`eas credentials`)
+- [ ] Загрузить `.aab` в Google Play Console → Internal Testing → Production
+- [ ] Скриншоты (минимум 2, 16:9), иконка 512×512, Feature Graphic 1024×500
+- [ ] Privacy Policy URL (обязательно)
+- [ ] Заполнить контентный рейтинг (IARC)
+
+### App Store (iOS)
+- [ ] `app.json` → `ios.bundleIdentifier`, `ios.buildNumber`
+- [ ] Apple Developer аккаунт ($99/год)
+- [ ] EAS Build: `eas build --platform ios --profile production`
+- [ ] Certificates & Provisioning Profiles через `eas credentials`
+- [ ] Загрузить через Transporter или EAS Submit
+- [ ] App Store Connect: скриншоты для каждого размера (6.7", 6.1", 5.5"), описание на RU/UZ
+- [ ] TestFlight → Public Beta → Review → Production
+- [ ] Время ревью: ~24-72 часа
+
+### Общее
+- [ ] `eas.json` с профилями `development`, `preview`, `production`
+- [ ] OTA обновления через `expo-updates` для хотфиксов без ревью
+- [ ] Push certificates: APNs (iOS) и FCM (Android) в EAS / Expo dashboard
+
+---
+
+## 📋 Документация (авто-обновление)
+
+> Правило: после каждого выполненного этапа — обновить `done.md` с датой, описанием, файлами.
+> Backend-изменения → обновить `docs/BACKEND_API.md`.
+
+---
+
+## 💡 Идеи / V2
+
 - [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
 - [ ] Аналитика в admin: графики заказов, выручка, топ медики
 - [ ] Фильтр услуг по категории на главном экране mobile/web

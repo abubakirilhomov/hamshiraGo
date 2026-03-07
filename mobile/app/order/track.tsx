@@ -2,13 +2,17 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  AppState,
   BackHandler,
+  Image,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import AppModal from '@/components/AppModal';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -36,6 +40,7 @@ interface Medic {
   id: string;
   name: string;
   phone: string;
+  profilePhotoUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -111,6 +116,24 @@ const STATUS_INDEX: Partial<Record<OrderStatus, number>> = Object.fromEntries(
   STEPS.map((s, i) => [s.status, i]),
 );
 
+// ─── Persistent notification helpers ─────────────────────────────────────────
+
+const TRACK_NOTIF_ID = 'hamshirago-track';
+const ACTIVE_TRACK_STATUSES: OrderStatus[] = ['CREATED', 'ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED'];
+
+function getTrackNotifContent(order: Order): { title: string; body: string } | null {
+  const name = order.medic?.name;
+  switch (order.status) {
+    case 'CREATED':         return { title: '🔍 Ищем медика', body: 'Подбираем медика для вас...' };
+    case 'ASSIGNED':        return { title: '👤 Медик назначен', body: name ? `${name} принял заказ` : 'Медик принял заказ' };
+    case 'ACCEPTED':        return { title: '✅ Медик подтвердил', body: name ? `${name} скоро выедет` : 'Медик скоро выедет' };
+    case 'ON_THE_WAY':      return { title: '🚗 Медик едет', body: name ? `${name} едет к вам` : 'Медик едет к вам' };
+    case 'ARRIVED':         return { title: '📍 Медик прибыл', body: 'Откройте дверь — медик у вашего дома' };
+    case 'SERVICE_STARTED': return { title: '💉 Услуга начата', body: 'Медик оказывает услугу' };
+    default:                return null;
+  }
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function TrackOrderScreen() {
@@ -126,6 +149,8 @@ export default function TrackOrderScreen() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [pendingRating, setPendingRating] = useState(0);
   const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
+  const [cancelModal, setCancelModal] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [dispatchState, setDispatchState] = useState<{
     status: DispatchStatus;
     candidateName?: string;
@@ -148,6 +173,7 @@ export default function TrackOrderScreen() {
   // AnimatedRegion used for smooth marker interpolation (initialized on first location)
   const medicAnimCoordRef = useRef<any>(null);
   const [medicAnimReady, setMedicAnimReady] = useState(false);
+  const orderRef = useRef<Order | null>(null);
 
   // ── REST fetch ──────────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
@@ -284,6 +310,40 @@ export default function TrackOrderScreen() {
     });
     return () => sub.remove();
   }, [mustRate]);
+
+  // ── Persistent notification ──────────────────────────────────────────────
+  // Keep ref in sync so AppState listener always reads latest order
+  useEffect(() => { orderRef.current = order; }, [order]);
+
+  // Dismiss notification when order ends (even while app is in foreground)
+  useEffect(() => {
+    if (order?.status === 'DONE' || order?.status === 'CANCELED') {
+      Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+    }
+  }, [order?.status]);
+
+  // AppState: show notification when backgrounded, dismiss when foregrounded
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      const current = orderRef.current;
+      if (state === 'background' && current && ACTIVE_TRACK_STATUSES.includes(current.status)) {
+        const content = getTrackNotifContent(current);
+        if (content) {
+          Notifications.scheduleNotificationAsync({
+            identifier: TRACK_NOTIF_ID,
+            content: { title: content.title, body: content.body, sound: false, data: { orderId } },
+            trigger: null,
+          }).catch(() => {});
+        }
+      } else if (state === 'active') {
+        Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+      }
+    });
+    return () => {
+      sub.remove();
+      Notifications.dismissNotificationAsync(TRACK_NOTIF_ID).catch(() => {});
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRoadRoute = useCallback(async () => {
     if (!order?.location || !medicLocation) return;
@@ -429,25 +489,19 @@ export default function TrackOrderScreen() {
   };
 
   // ── Cancel order ────────────────────────────────────────────────────────────
-  const handleCancel = () => {
-    Alert.alert('Отменить заказ?', 'Вы уверены, что хотите отменить заказ?', [
-      { text: 'Нет', style: 'cancel' },
-      {
-        text: 'Отменить',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await apiFetch(`/orders/${orderId}/cancel`, {
-              method: 'POST',
-              token: token ?? undefined,
-            });
-            router.replace('/(tabs)/two');
-          } catch (e: unknown) {
-            Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отменить');
-          }
-        },
-      },
-    ]);
+  const handleCancel = () => setCancelModal(true);
+
+  const confirmCancel = async () => {
+    setCancelModal(false);
+    try {
+      await apiFetch(`/orders/${orderId}/cancel`, {
+        method: 'POST',
+        token: token ?? undefined,
+      });
+      router.replace('/(tabs)/two');
+    } catch (e: unknown) {
+      setCancelError(e instanceof Error ? e.message : 'Не удалось отменить');
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -477,6 +531,7 @@ export default function TrackOrderScreen() {
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
 
   return (
+    <>
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.content}
@@ -603,7 +658,11 @@ export default function TrackOrderScreen() {
           <Text style={styles.sectionTitle}>Ваш медик</Text>
           <View style={styles.medicRow}>
             <View style={styles.medicAvatar}>
-              <FontAwesome name="user-md" size={22} color={Theme.primary} />
+              {order.medic.profilePhotoUrl ? (
+                <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicAvatarImg} />
+              ) : (
+                <FontAwesome name="user-md" size={22} color={Theme.primary} />
+              )}
             </View>
             <View style={styles.medicInfo}>
               <Text style={styles.medicName}>{order.medic.name}</Text>
@@ -690,7 +749,11 @@ export default function TrackOrderScreen() {
                       styles.medicMarkerDot,
                       order.status === 'CREATED' && { backgroundColor: '#f59e0b' },
                     ]}>
-                      <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                      {order.medic?.profilePhotoUrl ? (
+                        <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicMarkerImg} />
+                      ) : (
+                        <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                      )}
                     </View>
                   </AnimatedMedicMarker>
                 )}
@@ -798,7 +861,7 @@ export default function TrackOrderScreen() {
             {[1, 2, 3, 4, 5].map((star) => (
               <FontAwesome
                 key={star}
-                name="star"
+                name={star <= order.clientRating! ? 'star' : 'star-o'}
                 size={28}
                 color={star <= order.clientRating! ? Theme.primary : Theme.border}
               />
@@ -834,6 +897,28 @@ export default function TrackOrderScreen() {
         </Pressable>
       )}
     </ScrollView>
+
+    {/* Cancel confirm modal */}
+    <AppModal
+      visible={cancelModal}
+      title="Отменить заказ?"
+      message="Вы уверены, что хотите отменить заказ?"
+      buttons={[
+        { text: 'Нет', style: 'cancel', onPress: () => setCancelModal(false) },
+        { text: 'Отменить', style: 'destructive', onPress: confirmCancel },
+      ]}
+      onClose={() => setCancelModal(false)}
+    />
+
+    {/* Cancel error modal */}
+    <AppModal
+      visible={cancelError !== null}
+      title="Ошибка"
+      message={cancelError ?? ''}
+      buttons={[{ text: 'OK', style: 'default', onPress: () => setCancelError(null) }]}
+      onClose={() => setCancelError(null)}
+    />
+    </>
   );
 }
 
@@ -1020,6 +1105,12 @@ const styles = StyleSheet.create({
     backgroundColor: `${Theme.primary}18`,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  medicAvatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   medicInfo: {
     flex: 1,
@@ -1129,6 +1220,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 22,
   },
+  medicMarkerImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
 
   // Dispatch status banner
   dispatchBanner: {
@@ -1232,23 +1328,26 @@ const styles = StyleSheet.create({
   // Rating
   ratingHint: {
     fontSize: 14,
-    marginTop: -8,
+    marginTop: 2,
+    marginBottom: 4,
+    color: '#6b7280',
   },
   starsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 8,
   },
   starBtn: {
     alignItems: 'center',
-    padding: 6,
+    padding: 4,
   },
   submitRatingBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   submitRatingDisabled: {
     backgroundColor: Theme.border,
@@ -1261,5 +1360,6 @@ const styles = StyleSheet.create({
   ratingDoneRow: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 8,
   },
 });

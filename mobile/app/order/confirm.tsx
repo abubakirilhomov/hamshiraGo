@@ -3,14 +3,17 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CatalogService {
   id: string;
   title: string;
+  titleUz: string | null;
   price: number;
   durationMinutes: number | null;
   category: string | null;
@@ -21,6 +24,8 @@ const FIRST_ORDER_DISCOUNT_RATE = 0.10; // 10%
 export default function OrderConfirmScreen() {
   const router = useRouter();
   const { token } = useAuth();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [service, setService] = useState<CatalogService | null>(null);
   const [loadingService, setLoadingService] = useState(true);
@@ -38,7 +43,6 @@ export default function OrderConfirmScreen() {
 
   useEffect(() => {
     if (!params.serviceId) return;
-    // Load service and order history in parallel
     Promise.all([
       apiFetch<CatalogService>(`/services/${params.serviceId}`),
       apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined }),
@@ -77,8 +81,8 @@ export default function OrderConfirmScreen() {
       });
       router.replace({ pathname: '/order/track', params: { orderId: order.id } });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Ошибка при создании заказа';
-      Alert.alert('Ошибка', msg);
+      const msg = e instanceof Error ? e.message : t('confirm.error');
+      Alert.alert(t('common.error'), msg);
     } finally {
       setLoading(false);
     }
@@ -99,28 +103,28 @@ export default function OrderConfirmScreen() {
   if (!service) {
     return (
       <View style={styles.centered}>
-        <Text>Услуга не найдена</Text>
+        <Text>{t('confirm.notFound')}</Text>
       </View>
     );
   }
 
+  const displayTitle = language === 'uz' && service.titleUz ? service.titleUz : service.title;
+  const addressText = `${params.house}${params.floor ? `, ${t('confirm.floor')} ${params.floor}` : ''}${params.apartment ? `, ${t('confirm.apt')} ${params.apartment}` : ''}`;
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Подтверждение заказа</Text>
+      <Text style={styles.title}>{t('confirm.title')}</Text>
 
       <View style={styles.card}>
         <View style={styles.serviceRow}>
           <FontAwesome name="medkit" size={24} color={Theme.primary} />
-          <Text style={styles.serviceName}>{service.title}</Text>
+          <Text style={styles.serviceName}>{displayTitle}</Text>
         </View>
         <View style={styles.divider} />
-        <Row
-          label="Адрес"
-          value={`${params.house}${params.floor ? `, этаж ${params.floor}` : ''}${params.apartment ? `, кв. ${params.apartment}` : ''}`}
-        />
-        <Row label="Телефон" value={params.phone ?? ''} />
+        <Row label={t('confirm.address')} value={addressText} />
+        <Row label={t('confirm.phone')} value={params.phone ?? ''} />
         {service.durationMinutes && (
-          <Row label="Длительность" value={`~${service.durationMinutes} мин`} />
+          <Row label={t('confirm.duration')} value={`~${service.durationMinutes} ${t('service.min')}`} />
         )}
       </View>
 
@@ -129,18 +133,18 @@ export default function OrderConfirmScreen() {
           <View style={styles.discountBadge}>
             <FontAwesome name="tag" size={14} color="#854d0e" />
             <Text style={styles.discountBadgeText}>
-              Скидка 10% на первый заказ — −{discountAmount.toLocaleString('ru-RU')} UZS
+              {t('confirm.discountFirst', { amount: discountAmount.toLocaleString('ru-RU') })}
             </Text>
           </View>
         )}
         {isFirstOrder && (
           <View style={styles.row}>
-            <Text style={styles.rowLabel}>Стоимость услуги</Text>
+            <Text style={styles.rowLabel}>{t('confirm.basePrice')}</Text>
             <Text style={styles.rowValue}>{basePrice.toLocaleString('ru-RU')} UZS</Text>
           </View>
         )}
         <View style={[styles.finalRow, !isFirstOrder && { marginTop: 0, paddingTop: 0, borderTopWidth: 0 }]}>
-          <Text style={styles.finalLabel}>Итого</Text>
+          <Text style={styles.finalLabel}>{t('confirm.total')}</Text>
           <Text style={styles.finalPrice}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
         </View>
       </View>
@@ -159,7 +163,7 @@ export default function OrderConfirmScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.primaryButtonText}>Подтвердить заказ</Text>
+            <Text style={styles.primaryButtonText}>{t('confirm.submit')}</Text>
           )}
         </Pressable>
         <Pressable
@@ -167,7 +171,7 @@ export default function OrderConfirmScreen() {
           onPress={handleCancel}
           disabled={loading}
         >
-          <Text style={styles.cancelButtonText}>Отмена</Text>
+          <Text style={styles.cancelButtonText}>{t('confirm.cancel')}</Text>
         </Pressable>
       </View>
     </ScrollView>

@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Linking,
   Platform,
   Pressable,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { io, Socket } from 'socket.io-client';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -94,6 +96,21 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   CANCELED: Theme.error,
 };
 
+const MEDIC_NOTIF_ID = 'hamshirago-medic-order';
+const ACTIVE_MEDIC_STATUSES: OrderStatus[] = ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED'];
+
+function getMedicNotifContent(order: OrderDetail): { title: string; body: string } | null {
+  const addr = order.location?.house ?? '';
+  switch (order.status) {
+    case 'ASSIGNED':        return { title: '📋 Новый заказ назначен', body: `Услуга: ${order.serviceTitle}. Адрес: ${addr}` };
+    case 'ACCEPTED':        return { title: '✅ Заказ принят', body: `Вы приняли заказ. Адрес клиента: ${addr}` };
+    case 'ON_THE_WAY':      return { title: '🚗 Вы в пути', body: `Едете к клиенту. Адрес: ${addr}` };
+    case 'ARRIVED':         return { title: '📍 Вы прибыли', body: `Вы у клиента. Начните услугу.` };
+    case 'SERVICE_STARTED': return { title: '🩺 Услуга идёт', body: `Оказываете услугу: ${order.serviceTitle}` };
+    default: return null;
+  }
+}
+
 /** Next status transition map for medic (labels resolved in component via t()) */
 const NEXT_STATUS_MAP: Partial<Record<OrderStatus, { status: OrderStatus; labelKey: string }>> = {
   ASSIGNED:        { status: 'ACCEPTED',        labelKey: 'orders.accepted' },
@@ -122,6 +139,7 @@ export default function OrderDetailScreen() {
   const trackingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastRouteFetchRef = useRef(0);
   const mapRef = useRef<any>(null);
+  const orderRef = useRef<OrderDetail | null>(null);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -152,13 +170,18 @@ export default function OrderDetailScreen() {
     socketRef.current = socket;
     socket.on('connect', () => setSocketConnected(true));
     socket.on('disconnect', () => setSocketConnected(false));
+    socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
+      if (payload.orderId === id) {
+        setOrder((prev) => prev ? { ...prev, status: payload.status } : prev);
+      }
+    });
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
       setSocketConnected(false);
     };
-  }, [token]);
+  }, [token, id]);
 
   const emitCurrentLocation = useCallback(async () => {
     if (!id || !socketRef.current || !socketRef.current.connected) return;
@@ -253,6 +276,37 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     fetchRoute();
   }, [fetchRoute]);
+
+  // ── Persistent notification ──────────────────────────────────────────────
+  useEffect(() => { orderRef.current = order; }, [order]);
+
+  useEffect(() => {
+    if (order?.status === 'DONE' || order?.status === 'CANCELED') {
+      Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
+    }
+  }, [order?.status]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      const current = orderRef.current;
+      if (state === 'background' && current && ACTIVE_MEDIC_STATUSES.includes(current.status)) {
+        const content = getMedicNotifContent(current);
+        if (content) {
+          Notifications.scheduleNotificationAsync({
+            identifier: MEDIC_NOTIF_ID,
+            content: { title: content.title, body: content.body, sound: false, data: { orderId: current.id } },
+            trigger: null,
+          }).catch(() => {});
+        }
+      } else if (state === 'active') {
+        Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
+      }
+    });
+    return () => {
+      sub.remove();
+      Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fit map when both positions are available
   useEffect(() => {

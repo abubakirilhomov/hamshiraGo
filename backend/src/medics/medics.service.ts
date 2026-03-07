@@ -101,11 +101,11 @@ export class MedicsService {
         experienceYears: medic.experienceYears,
         rating: medic.rating,
         balance: medic.balance,
-        walletBalance: medic.walletBalance,
         isOnline: medic.isOnline,
         verificationStatus: medic.verificationStatus,
         facePhotoUrl: medic.facePhotoUrl,
         licensePhotoUrl: medic.licensePhotoUrl,
+        profilePhotoUrl: medic.profilePhotoUrl,
         verificationRejectedReason: medic.verificationRejectedReason,
         onlineDisabledReason,
       },
@@ -140,18 +140,22 @@ export class MedicsService {
       rating: medic.rating,
       reviewCount: medic.reviewCount,
       balance: medic.balance,
-      walletBalance: medic.walletBalance,
       isOnline: medic.isOnline,
       isBlocked: medic.isBlocked,
       verificationStatus: medic.verificationStatus,
       facePhotoUrl: medic.facePhotoUrl,
       licensePhotoUrl: medic.licensePhotoUrl,
+      profilePhotoUrl: medic.profilePhotoUrl,
       verificationRejectedReason: medic.verificationRejectedReason,
       latitude: medic.latitude,
       longitude: medic.longitude,
       telegramChatId: medic.telegramChatId,
       onlineDisabledReason,
     };
+  }
+
+  async saveProfilePhotoUrl(id: string, url: string): Promise<void> {
+    await this.medicRepo.update(id, { profilePhotoUrl: url });
   }
 
   // ── Documents upload ──────────────────────────────────────────────────────
@@ -221,7 +225,6 @@ export class MedicsService {
         'medic.rating',
         'medic.reviewCount',
         'medic.balance',
-        'medic.walletBalance',
         'medic.isOnline',
         'medic.isBlocked',
         'medic.verificationStatus',
@@ -308,10 +311,6 @@ export class MedicsService {
 
   async addBalance(id: string, amount: number): Promise<void> {
     await this.medicRepo.increment({ id }, 'balance', amount);
-  }
-
-  async addToWallet(id: string, amount: number): Promise<void> {
-    await this.medicRepo.increment({ id }, 'walletBalance', amount);
   }
 
   async getOnlinePushTokens(): Promise<string[]> {

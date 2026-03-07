@@ -3,8 +3,6 @@ import {
   Alert,
   Animated,
   FlatList,
-  Linking,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -23,6 +21,7 @@ import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { OrderInviteModal, type DispatchInvitePayload } from '@/components/OrderInviteModal';
+import AppModal from '@/components/AppModal';
 
 interface OrderLocation {
   house: string;
@@ -121,7 +120,8 @@ export default function AvailableOrdersScreen() {
 
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [invite, setInvite] = useState<DispatchInvitePayload | null>(null);
-  const [walletModal, setWalletModal] = useState<{ required: number; current: number } | null>(null);
+  const [acceptModal, setAcceptModal] = useState<string | null>(null); // orderId
+  const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -216,47 +216,32 @@ export default function AvailableOrdersScreen() {
     setRefreshing(false);
   }, [fetchOrders]);
 
-  const handleAccept = async (orderId: string) => {
+  const handleAccept = (orderId: string) => {
     if (!medic?.isOnline) {
-      Alert.alert(t('profile.offline') ?? 'Offline', t('common.error'));
+      setAcceptError(t('profile.offline') ?? 'Offline');
       return;
     }
-    Alert.alert(t('orders.accepted'), '', [
-      { text: t('common.back'), style: 'cancel' },
-      {
-        text: t('dispatch.accept'),
-        style: 'default',
-        onPress: async () => {
-          setAccepting(orderId);
-          setBannerOrder(null);
-          try {
-            const res = await fetch(`${API_BASE}/orders/${orderId}/accept`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
-            });
-            if (!res.ok) {
-              const body = await res.json().catch(() => ({}));
-              if (body?.message === 'INSUFFICIENT_WALLET') {
-                setWalletModal({ required: body.required ?? 0, current: body.current ?? 0 });
-              } else {
-                const msg = body?.message ?? `HTTP ${res.status}`;
-                Alert.alert(t('common.error'), Array.isArray(msg) ? msg.join(', ') : String(msg));
-              }
-              return;
-            }
-            setOrders((prev) => prev.filter((o) => o.id !== orderId));
-            router.push(`/order/${orderId}`);
-          } catch (e: unknown) {
-            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
-          } finally {
-            setAccepting(null);
-          }
-        },
-      },
-    ]);
+    setAcceptModal(orderId);
+  };
+
+  const confirmAccept = async () => {
+    const orderId = acceptModal;
+    if (!orderId) return;
+    setAcceptModal(null);
+    setAccepting(orderId);
+    setBannerOrder(null);
+    try {
+      await apiFetch(`/orders/${orderId}/accept`, {
+        method: 'POST',
+        token: token ?? undefined,
+      });
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      router.push(`/order/${orderId}`);
+    } catch (e: unknown) {
+      setAcceptError(e instanceof Error ? e.message : t('common.error'));
+    } finally {
+      setAccepting(null);
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -294,6 +279,20 @@ export default function AvailableOrdersScreen() {
               : 'Аккаунт не верифицирован — вы не можете принимать заказы'}
           </Text>
           <FontAwesome name="chevron-right" size={11} color={vStatus === 'REJECTED' ? '#ef4444' : '#92400e'} />
+        </Pressable>
+      )}
+
+      {/* No profile photo banner */}
+      {medic?.verificationStatus === 'APPROVED' && !medic?.profilePhotoUrl && (
+        <Pressable
+          style={styles.nophotoBanner}
+          onPress={() => router.push('/(tabs)/profile')}
+        >
+          <FontAwesome name="camera" size={15} color="#92400e" />
+          <Text style={styles.nophotoText}>
+            Добавьте фото профиля — без него нельзя принимать заказы
+          </Text>
+          <FontAwesome name="chevron-right" size={11} color="#92400e" />
         </Pressable>
       )}
 
@@ -362,49 +361,26 @@ export default function AvailableOrdersScreen() {
       {/* Fullscreen dispatch invite modal */}
       <OrderInviteModal invite={invite} onDismiss={() => setInvite(null)} />
 
-      {/* Wallet insufficient funds modal */}
-      <Modal
-        visible={walletModal !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setWalletModal(null)}
-      >
-        <View style={styles.walletOverlay}>
-          <View style={styles.walletModalBox}>
-            <View style={styles.walletModalIcon}>
-              <FontAwesome name="exclamation-circle" size={36} color="#ef4444" />
-            </View>
-            <Text style={styles.walletModalTitle}>{t('wallet.insufficientTitle')}</Text>
-            <Text style={styles.walletModalDesc}>{t('wallet.insufficientDesc')}</Text>
-            {walletModal && (
-              <View style={styles.walletModalStats}>
-                <View style={styles.walletStatRow}>
-                  <Text style={styles.walletStatLabel}>{t('wallet.current')}</Text>
-                  <Text style={[styles.walletStatValue, { color: '#ef4444' }]}>
-                    {Number(walletModal.current).toLocaleString('ru-RU')} {t('common.sum')}
-                  </Text>
-                </View>
-                <View style={styles.walletStatRow}>
-                  <Text style={styles.walletStatLabel}>{t('wallet.required')}</Text>
-                  <Text style={styles.walletStatValue}>
-                    {Number(walletModal.required).toLocaleString('ru-RU')} {t('common.sum')}
-                  </Text>
-                </View>
-              </View>
-            )}
-            <Pressable
-              style={styles.walletContactBtn}
-              onPress={() => Linking.openURL('https://t.me/hamshirago_support').catch(() => {})}
-            >
-              <FontAwesome name="telegram" size={16} color="#fff" />
-              <Text style={styles.walletContactText}>{t('wallet.contactAdmin')}</Text>
-            </Pressable>
-            <Pressable style={styles.walletCloseBtn} onPress={() => setWalletModal(null)}>
-              <Text style={styles.walletCloseText}>{t('wallet.close')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      {/* Accept order confirm */}
+      <AppModal
+        visible={acceptModal !== null}
+        title={t('orders.accepted')}
+        message={t('dispatch.confirmAccept')}
+        buttons={[
+          { text: t('common.back'), style: 'cancel', onPress: () => setAcceptModal(null) },
+          { text: t('dispatch.accept'), style: 'default', onPress: confirmAccept },
+        ]}
+        onClose={() => setAcceptModal(null)}
+      />
+
+      {/* Accept error */}
+      <AppModal
+        visible={acceptError !== null}
+        title={t('common.error')}
+        message={acceptError ?? ''}
+        buttons={[{ text: 'OK', style: 'default', onPress: () => setAcceptError(null) }]}
+        onClose={() => setAcceptError(null)}
+      />
     </View>
   );
 }
@@ -500,6 +476,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400e',
   },
+
+  nophotoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fef3c720',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f59e0b40',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  nophotoText: { flex: 1, fontSize: 13, color: '#92400e', fontWeight: '500' },
 
   offlineBanner: {
     flexDirection: 'row',
@@ -658,77 +646,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-
-  // ── Wallet insufficient modal ───────────────────────────────────────────────
-  walletOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  walletModalBox: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    alignItems: 'center',
-    gap: 12,
-  },
-  walletModalIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: '#fee2e2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  walletModalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f2937',
-    textAlign: 'center',
-  },
-  walletModalDesc: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  walletModalStats: {
-    width: '100%',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 14,
-    gap: 8,
-    marginTop: 4,
-  },
-  walletStatRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  walletStatLabel: { fontSize: 13, color: '#6b7280' },
-  walletStatValue: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
-  walletContactBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#0088cc',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    width: '100%',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  walletContactText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  walletCloseBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    width: '100%',
-    alignItems: 'center',
-  },
-  walletCloseText: { fontSize: 14, color: '#9ca3af', fontWeight: '500' },
 });

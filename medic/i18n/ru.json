@@ -29,7 +29,8 @@
   "dispatch": {
     "newOrder": "Новый заказ!",
     "accept": "Принять",
-    "decline": "Отклонить"
+    "decline": "Отклонить",
+    "confirmAccept": "Вы хотите принять этот заказ?"
   },
   "profile": {
     "completedOrders": "Выполнено заказов",
@@ -49,7 +50,11 @@
     "logout": "Выйти из аккаунта",
     "logoutConfirmTitle": "Выйти?",
     "logoutConfirmMessage": "Вы будете отключены от аккаунта.",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "statExperience": "лет опыта",
+    "statCompleted": "выполнено",
+    "statRating": "рейтинг",
+    "statBalance": "баланс"
   },
   "language": {
     "title": "Язык / Til",
@@ -100,16 +105,6 @@
     "submit": "Отправить на проверку",
     "rejectedReason": "Причина отказа",
     "photoRequired": "Фото обязательно"
-  },
-  "wallet": {
-    "balance": "Баланс кошелька",
-    "insufficientTitle": "Недостаточно средств",
-    "insufficientDesc": "На вашем кошельке недостаточно средств для принятия заказа. Пополните счёт и свяжитесь с администратором.",
-    "current": "Ваш баланс",
-    "required": "Необходимо",
-    "contactAdmin": "Связаться с администратором",
-    "close": "Закрыть",
-    "ok": "Понятно"
   },
   "common": {
     "loading": "Загрузка...",

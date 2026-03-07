@@ -2,14 +2,18 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CatalogService {
   id: string;
   title: string;
+  titleUz: string | null;
   description: string | null;
+  descriptionUz: string | null;
   price: number;
   durationMinutes: number | null;
   category: string | null;
@@ -18,6 +22,8 @@ interface CatalogService {
 export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const [service, setService] = useState<CatalogService | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,10 +46,15 @@ export default function ServiceDetailScreen() {
   if (!service) {
     return (
       <View style={styles.centered}>
-        <Text>Услуга не найдена</Text>
+        <Text>{t('service.notFound')}</Text>
       </View>
     );
   }
+
+  const displayTitle = language === 'uz' && service.titleUz ? service.titleUz : service.title;
+  const displayDescription = language === 'uz' && service.descriptionUz
+    ? service.descriptionUz
+    : service.description;
 
   return (
     <ScrollView
@@ -54,17 +65,17 @@ export default function ServiceDetailScreen() {
       <View style={styles.iconLarge}>
         <FontAwesome name="medkit" size={40} color={Theme.primary} />
       </View>
-      <Text style={styles.title}>{service.title}</Text>
+      <Text style={styles.title}>{displayTitle}</Text>
       <View style={styles.priceBlock}>
-        <Text style={styles.priceLabel}>Стоимость</Text>
+        <Text style={styles.priceLabel}>{t('service.cost')}</Text>
         <Text style={styles.price}>{service.price.toLocaleString('ru-RU')} UZS</Text>
       </View>
-      {service.description && (
-        <Text style={styles.desc}>{service.description}</Text>
+      {displayDescription && (
+        <Text style={styles.desc}>{displayDescription}</Text>
       )}
       {service.durationMinutes != null && (
         <Text style={styles.eta} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-          Примерно {service.durationMinutes} мин.
+          {t('service.duration', { n: service.durationMinutes })}
         </Text>
       )}
       <View style={styles.footer}>
@@ -72,7 +83,7 @@ export default function ServiceDetailScreen() {
           style={({ pressed }) => [styles.orderButton, pressed && styles.orderButtonPressed]}
           onPress={() => router.push({ pathname: '/order/location', params: { serviceId: service.id } })}
         >
-          <Text style={styles.orderButtonText}>Заказать</Text>
+          <Text style={styles.orderButtonText}>{t('service.order')}</Text>
         </Pressable>
       </View>
     </ScrollView>
@@ -140,10 +151,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 16,
-  },
-  discountHint: {
-    fontSize: 13,
-    marginBottom: 12,
   },
   orderButton: {
     backgroundColor: Theme.primary,

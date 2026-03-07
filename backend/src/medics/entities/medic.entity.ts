@@ -60,6 +60,10 @@ export class Medic {
   @Column({ type: 'varchar', length: 512, nullable: true, default: null })
   licensePhotoUrl!: string | null;
 
+  /** Public profile photo shown to clients on maps */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  profilePhotoUrl!: string | null;
+
   /** Reason shown to medic when rejected */
   @Column({ type: 'text', nullable: true, default: null })
   verificationRejectedReason!: string | null;
@@ -75,15 +79,6 @@ export class Medic {
     },
   })
   balance!: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 12,
-    scale: 2,
-    default: 30000,
-    transformer: { to: (v: number) => v, from: (v: string) => parseFloat(v) },
-  })
-  walletBalance!: number;
 
   /** Expo push token for background notifications */
   @Column({ type: 'varchar', nullable: true, default: null })
