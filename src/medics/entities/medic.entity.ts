@@ -76,6 +76,15 @@ export class Medic {
   })
   balance!: number;
 
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 30000,
+    transformer: { to: (v: number) => v, from: (v: string) => parseFloat(v) },
+  })
+  walletBalance!: number;
+
   /** Expo push token for background notifications */
   @Column({ type: 'varchar', nullable: true, default: null })
   pushToken!: string | null;
