@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-03-07 — Wallet system доработка (medic modal + admin UI)
+
+- **[medic]** `app/(tabs)/index.tsx` — заменён `Alert.alert` на полноценный `Modal` при ошибке INSUFFICIENT_WALLET: показывает текущий баланс, требуемую сумму, кнопку «Связаться с администратором» (открывает Telegram), кнопку «Закрыть»
+- **[medic]** `i18n/ru.json`, `i18n/uz.json` — добавлены ключи `wallet.insufficientDesc`, `wallet.current`, `wallet.required`, `wallet.contactAdmin`, `wallet.close`
+- **[admin]** `lib/api.ts` — добавлено поле `walletBalance` в `AdminMedic`, добавлена функция `topupMedicWallet(id, amount)`
+- **[admin]** `pages/Medics.tsx` — добавлена колонка «Кошелёк» с балансом (красный если < 10 000 UZS), кнопка «Пополнить» → Dialog с вводом суммы и подтверждением; добавлена карточка «Низкий кошелёк» в статистику
+- `tsc --noEmit` = 0 ошибок (admin + medic)
+
 ## 2026-03-06 — Railway deployment fix
 
 - **[backend]** Created `tsconfig.build.json` excluding `e2e/`, `test/`, `jest.config.ts`, `playwright.config.ts` — TypeScript now infers `rootDir=src`, outputting `dist/main.js` (not `dist/src/main.js`)

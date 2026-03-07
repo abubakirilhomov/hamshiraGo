@@ -14,6 +14,7 @@ export interface MedicUser {
   experienceYears: number;
   rating: number | null;
   balance: number;
+  walletBalance: number;
   isOnline: boolean;
   verificationStatus: VerificationStatus;
   facePhotoUrl: string | null;
