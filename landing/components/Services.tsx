@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { useLang } from "@/context/LangContext";
 import { IconSyringe, IconDroplet, IconActivity, IconHome } from "./Icons";
@@ -10,8 +10,10 @@ const SERVICE_ICONS = [IconSyringe, IconDroplet, IconActivity, IconHome];
 type ServiceItem = { emoji: string; title: string; desc: string; price: string };
 
 /* ── 3D flip card ────────────────────────────────────── */
-function FlipCard({ item, delay, inView, index }: {
+function FlipCard({ item, delay, inView, index, demoActive, features, featureIcons, downloadBtn }: {
   item: ServiceItem; delay: number; inView: boolean; index: number;
+  demoActive: boolean;
+  features: string[]; featureIcons: string[]; downloadBtn: string;
 }) {
   const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
   const [flipped, setFlipped] = useState(false);
@@ -19,11 +21,7 @@ function FlipCard({ item, delay, inView, index }: {
   const fromX = index % 2 === 0 ? -70 : 70;
   const fromRotY = index % 2 === 0 ? -15 : 15;
 
-  const features = [
-    ["⚡", "Быстро — до 30 минут"],
-    ["🔒", "Сертифицированный медик"],
-    ["💳", "Оплата онлайн"],
-  ];
+  const isFlipped = flipped || demoActive;
 
   return (
     <motion.div
@@ -33,12 +31,13 @@ function FlipCard({ item, delay, inView, index }: {
       style={{ perspective: "1200px", height: 320 }}
       onMouseEnter={() => setFlipped(true)}
       onMouseLeave={() => setFlipped(false)}
+      onClick={() => setFlipped(f => !f)}
     >
       {/* Inner — rotates */}
       <div style={{
         position: "relative", width: "100%", height: "100%",
         transformStyle: "preserve-3d",
-        transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+        transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
         transition: "transform 0.7s cubic-bezier(0.23, 1, 0.32, 1)",
       }}>
 
@@ -47,11 +46,9 @@ function FlipCard({ item, delay, inView, index }: {
           className="rounded-2xl overflow-hidden">
           <div className="h-full relative p-6 flex flex-col"
             style={{ background: "var(--card-bg)", backdropFilter: "blur(16px)", border: "1px solid var(--card-border)" }}>
-            {/* Shimmer */}
             <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
               style={{ background: "radial-gradient(circle at 50% 0%, rgba(13,148,136,0.14), transparent 60%)" }} />
             <div className="relative z-10 flex flex-col h-full">
-              {/* Icon */}
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300"
                 style={{ background: "linear-gradient(135deg, rgba(13,148,136,0.18), rgba(6,182,212,0.08))", border: "1px solid rgba(13,148,136,0.2)", color: "#0d9488" }}>
                 <Icon size={24} />
@@ -61,8 +58,7 @@ function FlipCard({ item, delay, inView, index }: {
               <div className="flex items-center justify-between mt-5 pt-4" style={{ borderTop: "1px solid var(--card-border)" }}>
                 <span className="text-sm font-semibold" style={{ color: "#0d9488" }}>{item.price}</span>
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-4)" }}>
-                  <span>Hover</span>
-                  <span style={{ fontSize: 10 }}>→</span>
+                  <span>→</span>
                 </div>
               </div>
             </div>
@@ -74,7 +70,6 @@ function FlipCard({ item, delay, inView, index }: {
           className="rounded-2xl overflow-hidden">
           <div className="h-full relative p-6 flex flex-col"
             style={{ background: "linear-gradient(145deg, rgba(13,148,136,0.22), rgba(6,182,212,0.12))", border: "1px solid rgba(13,148,136,0.3)", backdropFilter: "blur(20px)" }}>
-            {/* Back glow */}
             <div className="absolute inset-0 rounded-2xl pointer-events-none"
               style={{ background: "radial-gradient(circle at 50% 100%, rgba(13,148,136,0.2), transparent 60%)" }} />
             <div className="relative z-10 flex flex-col h-full">
@@ -86,9 +81,9 @@ function FlipCard({ item, delay, inView, index }: {
                 </div>
               </div>
               <div className="flex flex-col gap-2.5 flex-1">
-                {features.map(([ic, txt]) => (
-                  <div key={txt} className="flex items-center gap-2.5">
-                    <span className="text-sm">{ic}</span>
+                {features.map((txt, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="text-sm">{featureIcons[i]}</span>
                     <span className="text-sm" style={{ color: "var(--text-2)" }}>{txt}</span>
                   </div>
                 ))}
@@ -96,7 +91,7 @@ function FlipCard({ item, delay, inView, index }: {
               <a href="#download"
                 className="mt-5 w-full py-3 rounded-xl font-bold text-sm text-center transition-opacity hover:opacity-90"
                 style={{ background: "rgba(255,255,255,0.92)", color: "#0d1924" }}>
-                Скачать приложение →
+                {downloadBtn}
               </a>
             </div>
           </div>
@@ -111,6 +106,21 @@ export default function Services() {
   const { t } = useLang();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+  const [demoIndex, setDemoIndex] = useState<number | null>(null);
+  const demoShown = useRef(false);
+
+  // Auto-demo on mobile when section scrolls into view
+  useEffect(() => {
+    if (!inView || demoShown.current) return;
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return;
+    demoShown.current = true;
+    const t1 = setTimeout(() => setDemoIndex(1), 900);
+    const t2 = setTimeout(() => setDemoIndex(null), 2800);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [inView]);
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
     <section id="services" className="py-28 relative overflow-hidden" style={{ background: "var(--bg2)" }}>
@@ -130,13 +140,19 @@ export default function Services() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {t.services.list.map((s, i) => (
-            <FlipCard key={i} item={s} index={i} delay={i * 0.12} inView={inView} />
+            <FlipCard
+              key={i} item={s} index={i} delay={i * 0.12} inView={inView}
+              demoActive={demoIndex === i}
+              features={t.services.features}
+              featureIcons={t.services.featureIcons}
+              downloadBtn={t.services.downloadBtn}
+            />
           ))}
         </div>
 
         <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ delay: 0.8 }}
           className="text-center mt-6 text-xs" style={{ color: "var(--text-5)" }}>
-          Наведите на карточку, чтобы увидеть подробности
+          {isMobile ? t.services.hintMobile : t.services.hint}
         </motion.p>
       </div>
     </section>

@@ -57,6 +57,11 @@ export const translations = {
         { emoji: "❤️", title: "Давление и ЭКГ", desc: "Измерение артериального давления, пульса и ЭКГ", price: "от 50 000 UZS" },
         { emoji: "🏥", title: "Уход на дому", desc: "Долговременный профессиональный уход за пациентами", price: "от 200 000 UZS" },
       ],
+      features: ["Быстро — до 30 минут", "Сертифицированный медик", "Оплата онлайн"],
+      featureIcons: ["⚡", "🔒", "💳"],
+      hint: "Наведите на карточку, чтобы увидеть подробности",
+      hintMobile: "Нажмите на карточку, чтобы увидеть подробности",
+      downloadBtn: "Скачать приложение →",
     },
     features: {
       badge: "Наши преимущества",
@@ -99,8 +104,8 @@ export const translations = {
     },
     hero: {
       badge: "Uyda tibbiy yordam",
-      title1: "Hamshira",
-      title2: "30 daqiqada keladi",
+      title1: "Hamshira keladi",
+      title2: "30 daqiqada",
       subtitle:
         "Professional tibbiy xizmatlar to'g'ridan-to'g'ri uyingizga. In'ektsiya, tomchi, qon bosimi — tez, xavfsiz, 24/7.",
       appStore: "App Store",
@@ -148,6 +153,11 @@ export const translations = {
         { emoji: "❤️", title: "Qon bosimi va EKG", desc: "Arterial bosim, puls va EKGni o'lchash", price: "50 000 UZS dan" },
         { emoji: "🏥", title: "Uyda parvarish", desc: "Bemorlar uchun uzoq muddatli professional parvarish", price: "200 000 UZS dan" },
       ],
+      features: ["Tez — 30 daqiqa ichida", "Sertifikatlangan hamshira", "Onlayn to'lov"],
+      featureIcons: ["⚡", "🔒", "💳"],
+      hint: "Kartochkaga bosing, batafsil ko'ring",
+      hintMobile: "Kartochkaga bosing, batafsil ko'ring",
+      downloadBtn: "Ilovani yuklab olish →",
     },
     features: {
       badge: "Bizning afzalliklar",
