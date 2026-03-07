@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Linking,
   Pressable,
   ScrollView,
@@ -9,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import AppModal from '@/components/AppModal';
 import { useCallback, useEffect, useState } from 'react';
 import * as Location from 'expo-location';
@@ -49,6 +51,7 @@ export default function ProfileScreen() {
   const [disconnectingTg, setDisconnectingTg] = useState(false);
   const [logoutModal, setLogoutModal] = useState(false);
   const [tgDisconnectModal, setTgDisconnectModal] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [hasAlwaysLocation, setHasAlwaysLocation] = useState(true);
 
   useEffect(() => {
@@ -150,6 +153,42 @@ export default function ProfileScreen() {
     }
   };
 
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setUploadingPhoto(true);
+    try {
+      const asset = result.assets[0];
+      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const formData = new FormData();
+      formData.append('photo', { uri: asset.uri, name: `photo.${ext}`, type: `image/${ext}` } as any);
+
+      const API_BASE = (await import('@/constants/api')).API_BASE;
+      const res = await fetch(`${API_BASE}/medics/profile-photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Ошибка загрузки фото');
+      await refreshProfile();
+    } catch {
+      Alert.alert('Ошибка', 'Не удалось загрузить фото. Попробуйте ещё раз.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
@@ -188,9 +227,24 @@ export default function ProfileScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{medic.name.charAt(0).toUpperCase()}</Text>
-        </View>
+        <Pressable style={styles.avatarWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
+          {medic.profilePhotoUrl ? (
+            <Image source={{ uri: medic.profilePhotoUrl }} style={styles.avatarImg} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{medic.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          {uploadingPhoto ? (
+            <View style={styles.avatarBadge}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          ) : (
+            <View style={styles.avatarBadge}>
+              <FontAwesome name="camera" size={10} color="#fff" />
+            </View>
+          )}
+        </Pressable>
         <Text style={styles.name}>{medic.name}</Text>
         <Text style={styles.phone}>{medic.phone}</Text>
         {medic.rating != null && (
@@ -394,6 +448,19 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingBottom: 32,
   },
+  avatarWrap: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  avatarImg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
   avatar: {
     width: 80,
     height: 80,
@@ -401,7 +468,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   avatarText: { fontSize: 32, fontWeight: '700', color: '#fff' },
   name: { fontSize: 20, fontWeight: '700', color: '#fff' },

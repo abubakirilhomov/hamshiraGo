@@ -282,6 +282,20 @@ export default function AvailableOrdersScreen() {
         </Pressable>
       )}
 
+      {/* No profile photo banner */}
+      {medic?.verificationStatus === 'APPROVED' && !medic?.profilePhotoUrl && (
+        <Pressable
+          style={styles.nophotoBanner}
+          onPress={() => router.push('/(tabs)/profile')}
+        >
+          <FontAwesome name="camera" size={15} color="#92400e" />
+          <Text style={styles.nophotoText}>
+            Добавьте фото профиля — без него нельзя принимать заказы
+          </Text>
+          <FontAwesome name="chevron-right" size={11} color="#92400e" />
+        </Pressable>
+      )}
+
       {/* Offline banner */}
       {!medic?.isOnline && (
         <View style={styles.offlineBanner}>
@@ -462,6 +476,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#92400e',
   },
+
+  nophotoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fef3c720',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f59e0b40',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  nophotoText: { flex: 1, fontSize: 13, color: '#92400e', fontWeight: '500' },
 
   offlineBanner: {
     flexDirection: 'row',

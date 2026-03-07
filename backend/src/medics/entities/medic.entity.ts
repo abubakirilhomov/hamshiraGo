@@ -60,6 +60,10 @@ export class Medic {
   @Column({ type: 'varchar', length: 512, nullable: true, default: null })
   licensePhotoUrl!: string | null;
 
+  /** Public profile photo shown to clients on maps */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  profilePhotoUrl!: string | null;
+
   /** Reason shown to medic when rejected */
   @Column({ type: 'text', nullable: true, default: null })
   verificationRejectedReason!: string | null;

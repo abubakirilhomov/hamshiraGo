@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-03-08 — Этап 6: фото профиля медика
+
+- **[backend]** `medic.entity.ts` — добавлена колонка `profilePhotoUrl` (nullable varchar 512)
+- **[backend]** `medics.service.ts` — `profilePhotoUrl` добавлен в `toAuthResponse()` и `getProfile()`, добавлен метод `saveProfilePhotoUrl()`
+- **[backend]** `medics.controller.ts` — новый endpoint `POST /medics/profile-photo` (FileInterceptor, single file, Cloudinary upload в папку `hamshirago/medic-profiles`)
+- **[backend]** `orders.service.ts` — блокировка `acceptOrder` если `profilePhotoUrl` не загружен (`ForbiddenException`)
+- **[medic]** `AuthContext.tsx` — `profilePhotoUrl: string | null` добавлен в интерфейс `MedicUser`
+- **[medic]** `app/(tabs)/profile.tsx` — аватар медика заменён на фото профиля (если есть), нажатие открывает галерею для загрузки, индикатор загрузки, `expo-image-picker`
+- **[medic]** `app/(tabs)/index.tsx` — баннер "Добавьте фото профиля" для одобренных медиков без фото (ведёт на профиль)
+- **[mobile]** `app/order/track.tsx` — фото медика в карточке "Ваш медик" и на маркере карты (через `Image`, если `profilePhotoUrl` есть)
+- `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
+
 ## 2026-03-08 — Этап 5: баги + кастомные модалки
 
 - **[medic]** BUG-A1: Статы профиля переведены через i18n — `profile.statExperience/statCompleted/statRating/statBalance` (ru + uz) вместо хардкода на русском (`medic/app/(tabs)/profile.tsx`, `medic/i18n/*.json`)

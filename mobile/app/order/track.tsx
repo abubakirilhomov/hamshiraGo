@@ -3,6 +3,7 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -37,6 +38,7 @@ interface Medic {
   id: string;
   name: string;
   phone: string;
+  profilePhotoUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -601,7 +603,11 @@ export default function TrackOrderScreen() {
           <Text style={styles.sectionTitle}>Ваш медик</Text>
           <View style={styles.medicRow}>
             <View style={styles.medicAvatar}>
-              <FontAwesome name="user-md" size={22} color={Theme.primary} />
+              {order.medic.profilePhotoUrl ? (
+                <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicAvatarImg} />
+              ) : (
+                <FontAwesome name="user-md" size={22} color={Theme.primary} />
+              )}
             </View>
             <View style={styles.medicInfo}>
               <Text style={styles.medicName}>{order.medic.name}</Text>
@@ -688,7 +694,11 @@ export default function TrackOrderScreen() {
                       styles.medicMarkerDot,
                       order.status === 'CREATED' && { backgroundColor: '#f59e0b' },
                     ]}>
-                      <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                      {order.medic?.profilePhotoUrl ? (
+                        <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicMarkerImg} />
+                      ) : (
+                        <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                      )}
                     </View>
                   </AnimatedMedicMarker>
                 )}
@@ -1040,6 +1050,12 @@ const styles = StyleSheet.create({
     backgroundColor: `${Theme.primary}18`,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  medicAvatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   medicInfo: {
     flex: 1,
@@ -1148,6 +1164,11 @@ const styles = StyleSheet.create({
   markerEmoji: {
     fontSize: 18,
     lineHeight: 22,
+  },
+  medicMarkerImg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
 
   // Dispatch status banner

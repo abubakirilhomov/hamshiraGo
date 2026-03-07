@@ -105,6 +105,7 @@ export class MedicsService {
         verificationStatus: medic.verificationStatus,
         facePhotoUrl: medic.facePhotoUrl,
         licensePhotoUrl: medic.licensePhotoUrl,
+        profilePhotoUrl: medic.profilePhotoUrl,
         verificationRejectedReason: medic.verificationRejectedReason,
         onlineDisabledReason,
       },
@@ -144,12 +145,17 @@ export class MedicsService {
       verificationStatus: medic.verificationStatus,
       facePhotoUrl: medic.facePhotoUrl,
       licensePhotoUrl: medic.licensePhotoUrl,
+      profilePhotoUrl: medic.profilePhotoUrl,
       verificationRejectedReason: medic.verificationRejectedReason,
       latitude: medic.latitude,
       longitude: medic.longitude,
       telegramChatId: medic.telegramChatId,
       onlineDisabledReason,
     };
+  }
+
+  async saveProfilePhotoUrl(id: string, url: string): Promise<void> {
+    await this.medicRepo.update(id, { profilePhotoUrl: url });
   }
 
   // ── Documents upload ──────────────────────────────────────────────────────

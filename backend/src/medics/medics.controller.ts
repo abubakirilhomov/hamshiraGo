@@ -13,12 +13,13 @@ import {
   Post,
   Query,
   ServiceUnavailableException,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { MedicsService } from './medics.service';
@@ -142,6 +143,43 @@ export class MedicsController {
     ]);
 
     await this.medicsService.saveDocumentUrls(medicId, faceUrl, licenseUrl);
+  }
+
+  // ── Profile photo ─────────────────────────────────────────────────────────
+
+  @Post('profile-photo')
+  @UseGuards(MedicAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Загрузить фото профиля медика' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        if (!allowed.includes(extname(file.originalname).toLowerCase())) {
+          return cb(new BadRequestException('Only jpg/jpeg/png/webp files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadProfilePhoto(
+    @MedicId() medicId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('No file provided');
+    if (!this.cloudinaryService.isConfigured()) {
+      throw new ServiceUnavailableException('File storage is not configured on this server');
+    }
+    const url = await this.cloudinaryService.uploadBuffer(
+      file.buffer,
+      'hamshirago/medic-profiles',
+      `profile-${medicId}`,
+    );
+    await this.medicsService.saveProfilePhotoUrl(medicId, url);
   }
 
   // ── Admin endpoints ───────────────────────────────────────────────────────

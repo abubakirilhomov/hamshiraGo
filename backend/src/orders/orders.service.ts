@@ -289,6 +289,9 @@ export class OrdersService {
       );
     }
     if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked.');
+    if (!medic.profilePhotoUrl) {
+      throw new ForbiddenException('Please upload a profile photo before accepting orders.');
+    }
 
     const order = await this.findOne(orderId);
 
