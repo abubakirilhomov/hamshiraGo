@@ -24,6 +24,13 @@ async function bootstrap() {
   );
 
   const allowedOrigins = [
+    // Production domains
+    'https://hamshirago.uz',
+    'https://www.hamshirago.uz',
+    'https://app.hamshirago.uz',
+    'https://medic.hamshirago.uz',
+    'https://admin.hamshirago.uz',
+    // Vercel deployments (legacy)
     'https://hamshirago-web.vercel.app',
     'https://hamshirago-web-medic.vercel.app',
     'https://hamshirago-admin.vercel.app',

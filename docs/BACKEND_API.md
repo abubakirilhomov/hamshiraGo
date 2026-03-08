@@ -615,10 +615,13 @@ medicEarns  = netPrice - platformFee
 ## CORS
 
 Разрешённые origins:
-- `https://hamshirago-web.vercel.app`
-- `https://hamshirago-web-medic.vercel.app`
-- `http://localhost:3001` (локальная разработка)
-- `http://localhost:3002` (локальная разработка)
+- `https://hamshirago.uz` + `https://www.hamshirago.uz` (лендинг)
+- `https://app.hamshirago.uz` (веб-клиент)
+- `https://medic.hamshirago.uz` (веб-медик)
+- `https://admin.hamshirago.uz` (админка)
+- Vercel: `hamshirago-web.vercel.app`, `hamshirago-web-medic.vercel.app`, `hamshirago-admin.vercel.app`
+- Railway: `web-production-d365f.up.railway.app`, `admin-production-9727.up.railway.app`, `web-medic-production.up.railway.app`
+- `http://localhost:3000–3002`, `8081–8082` (локальная разработка)
 - Запросы без `Origin` (мобильные приложения, Postman, curl)
 
 ---
