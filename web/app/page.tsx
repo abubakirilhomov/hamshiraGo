@@ -21,6 +21,16 @@ const CATEGORY_META: Record<string, { icon: React.ElementType }> = {
   "Уход":       { icon: FaHeartbeat      },
 };
 
+const CATEGORY_UZ: Record<string, string> = {
+  "Уколы":      "In'ektsiyalar",
+  "Инъекции":   "In'ektsiyalar",
+  "Капельницы": "Tomchilar",
+  "Измерения":  "O'lchashlar",
+  "Анализы":    "Tahlillar",
+  "Перевязки":  "Bog'lamlar",
+  "Уход":       "Parvarish",
+};
+
 const TEAL = { color: "#0d9488", bg: "#f0fdfa" };
 const DEFAULT_META = { icon: FaMedkit };
 
@@ -33,6 +43,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [userInitials, setUserInitials] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   function loadServices() {
     setLoading(true);
@@ -63,14 +74,12 @@ export default function HomePage() {
   }, [router]);
 
   const q = search.trim().toLowerCase();
-  const filteredServices = q
-    ? services.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q)
-      )
-    : services;
+  const categories = [...new Set(services.map((s) => s.category))].sort((a, b) => a.localeCompare(b, "ru"));
+  const filteredServices = services.filter((s) => {
+    const matchSearch = !q || s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.category.toLowerCase().includes(q);
+    const matchCategory = !selectedCategory || s.category === selectedCategory;
+    return matchSearch && matchCategory;
+  });
 
   const grouped = filteredServices.reduce<Record<string, Service[]>>((acc, s) => {
     (acc[s.category] = acc[s.category] || []).push(s);
@@ -94,7 +103,7 @@ export default function HomePage() {
           {/* Top bar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <FaMedkit size={22} color="#fff" />
+              <img src="/logo.png" alt="HamshiraGo" style={{ width: 35, height: 35, borderRadius: 10, objectFit: "cover" }} />
               <span style={{ fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -198,6 +207,33 @@ export default function HomePage() {
           )}
         </div>
 
+        {/* Category filter chips */}
+        {!loading && categories.length > 0 && (
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 16, scrollbarWidth: "none" }}>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              style={{
+                flexShrink: 0, padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                border: selectedCategory === null ? "none" : "1px solid #e2e8f0",
+                background: selectedCategory === null ? "#0d9488" : "#fff",
+                color: selectedCategory === null ? "#fff" : "#64748b",
+              }}
+            >{t("home.allCategories")}</button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+                style={{
+                  flexShrink: 0, padding: "6px 14px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                  border: selectedCategory === cat ? "none" : "1px solid #e2e8f0",
+                  background: selectedCategory === cat ? "#0d9488" : "#fff",
+                  color: selectedCategory === cat ? "#fff" : "#64748b",
+                }}
+              >{language === "uz" ? (CATEGORY_UZ[cat] ?? cat) : cat}</button>
+            ))}
+          </div>
+        )}
+
         {/* Discount banner */}
         <div style={{
           background: "linear-gradient(135deg, #fef3c7, #fef9ec)",
@@ -259,7 +295,7 @@ export default function HomePage() {
                       <Icon size={14} color={TEAL.color} />
                     </div>
                     <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.2px" }}>
-                      {category}
+                      {language === "uz" ? (CATEGORY_UZ[category] ?? category) : category}
                     </h2>
                   </div>
 

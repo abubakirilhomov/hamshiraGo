@@ -41,6 +41,7 @@
   "home": {
     "search": "Xizmatlarni qidirish...",
     "all": "Barchasi",
+    "allCategories": "Barchasi",
     "other": "Boshqa",
     "loading": "Yuklanmoqda...",
     "errorLoad": "Xizmatlarni yuklashda xatolik",
@@ -62,6 +63,7 @@
   },
   "orders": {
     "title": "Mening buyurtmalarim",
+    "reorder": "Qayta buyurtma",
     "empty": "Hali buyurtmalar yo'q",
     "loading": "Yuklanmoqda...",
     "status": {

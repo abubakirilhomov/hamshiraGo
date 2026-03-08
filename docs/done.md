@@ -1,6 +1,44 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-08 — Landing: кнопка «Попробовать» + SEO-секция
+
+- **[landing]** `i18n/translations.ts` — добавлены `hero.try`, `hero.tryWeb` (RU+UZ); полная секция `seo` (intro, who×6, procedures×4, faq×7, areas×10, cta) на русском и узбекском
+- **[landing]** `components/Hero.tsx` — добавлена кнопка «Попробовать / Sinab ko'ring» с ссылкой `https://app.hamshirago.uz`, магнитный эффект, над store-кнопками
+- **[landing]** `components/Download.tsx` — добавлена кнопка «Попробовать» в веб-секцию
+- **[landing]** `components/SeoContent.tsx` — новый компонент: intro-абзац, 6 карточек «Кому подходит», 4 процедуры с ценами, 7 FAQ (accordion), 10 районов Ташкента, CTA-карточка → `app.hamshirago.uz`
+- **[landing]** `app/[lang]/page.tsx` — `<SeoContent />` добавлен между Features и Download
+- `npm run build` = 0 ошибок
+
+## 2026-03-08 — Landing SEO-фиксы (OG-картинка + html lang)
+
+- **[landing]** `app/layout.tsx` — упрощён до минимума (только импорт `globals.css`); `<html>/<body>/<ThemeProvider>` перенесены в lang-layout
+- **[landing]** `app/[lang]/layout.tsx` — `LangLayout` теперь возвращает `<html lang={lang}>` + `<body>` + `<ThemeProvider>`: Google видит правильный lang для `/ru` и `/uz`
+- **[landing]** OG URL исправлен: `/og.png` (несуществующий файл) → `${SITE_URL}/${lang}/opengraph-image` (динамический генератор); исправлено в `openGraph.images` и `twitter.images`
+- **[landing]** `themeColor: "#0d9488"` вынесен в `export const viewport: Viewport` (Next.js 16 API)
+- `npm run build` = 0 ошибок, 0 предупреждений
+
+---
+
 > Хронологический лог завершённых фич и исправлений.
+
+---
+
+## 2026-03-08 — Web: category filter + reorder + BUG 15
+
+- **[web]** `app/page.tsx` — добавлен горизонтальный скролл с фильтром по категориям (chips), локализация категорий UZ через `CATEGORY_UZ`
+- **[web]** `app/orders/page.tsx` — добавлена кнопка "Заказать снова" (reorder) для DONE/CANCELED заказов, переход на `/order/location?serviceId=...`
+- **[web]** `lib/api.ts`, `app/order/confirm/page.tsx` — BUG 15: убраны лишние поля `serviceTitle` и `priceAmount` из `CreateOrderDto` (бэкенд их не принимал)
+- **[web]** `i18n/ru.json`, `i18n/uz.json` — добавлены ключи `allCategories`, `reorder`
+
+---
+
+## 2026-03-08 — Admin i18n + PWA + логотип
+
+- **[admin]** `i18n/ru.json`, `i18n/uz.json` — добавлены все недостающие ключи для всех страниц: dashboard, medics, orders, clients, services, verification, reports, common.downloadApp
+- **[admin]** `pages/Dashboard.tsx`, `Medics.tsx`, `Orders.tsx`, `Clients.tsx`, `Services.tsx`, `Verification.tsx`, `Reports.tsx` — все строки переведены через `t()`, добавлен `useTranslation`
+- **[admin]** `components/AdminLayout.tsx` — добавлен PWA install button (`NavbarInstallButton` + `usePWAInstall`)
+- **[admin]** Logo — кастомный логотип заменён во всех проектах (admin sidebar, landing Navbar/Footer/Hero, web/web-medic SplashScreen/auth/header); favicon обновлён через `app/icon.png` и явный `<link rel="icon">` в layout.tsx
+- `npm run build` = 0 TypeScript ошибок
 
 ---
 
@@ -13,12 +51,16 @@
 - **[backend]** `client-errors/client-errors.module.ts` — модуль, зарегистрирован в `AppModule`
 - `tsc --noEmit` = 0 ошибок
 
+---
+
 ## 2026-03-08 — Этап 9: пуш-уведомления + персистентное уведомление
 
 - **[backend]** `orders.service.ts` — добавлены `MEDIC_PUSH_MESSAGES` + метод `notifyMedic()`: медик получает push при отмене клиентом (CANCELED) и подтверждении DONE
 - **[mobile]** `app/order/track.tsx` — персистентное локальное уведомление при активном заказе: появляется при уходе в фон, обновляется при смене статуса, исчезает при DONE/CANCELED. Использует `AppState` + `expo-notifications` с фиксированным `identifier`
 - **[medic]** `app/order/[id].tsx` — персистентное локальное уведомление при активном заказе (аналог mobile); добавлен WebSocket-слушатель `order_status` — медик видит статус CANCELED в реальном времени, если клиент отменил заказ
 - `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
+
+---
 
 ## 2026-03-08 — Этап 8: i18n услуг в mobile
 
@@ -27,6 +69,8 @@
 - **[mobile]** `components/ServiceCard.tsx` — "мин" → `t('service.min')` (RU: "мин" / UZ: "daq")
 - **[mobile]** `i18n/ru.json` + `i18n/uz.json` — добавлены секции `service` и `confirm`
 - `tsc --noEmit` = 0 ошибок
+
+---
 
 ## 2026-03-08 — Этап 6: фото профиля медика
 
@@ -40,6 +84,8 @@
 - **[mobile]** `app/order/track.tsx` — фото медика в карточке "Ваш медик" и на маркере карты (через `Image`, если `profilePhotoUrl` есть)
 - `tsc --noEmit` = 0 ошибок (backend + mobile + medic)
 
+---
+
 ## 2026-03-08 — Этап 5: баги + кастомные модалки
 
 - **[medic]** BUG-A1: Статы профиля переведены через i18n — `profile.statExperience/statCompleted/statRating/statBalance` (ru + uz) вместо хардкода на русском (`medic/app/(tabs)/profile.tsx`, `medic/i18n/*.json`)
@@ -49,6 +95,14 @@
 - **[medic]** `AppModal` внедрён: logout confirm, Telegram disconnect confirm, подтверждение принятия заказа
 - **[medic]** i18n: добавлен ключ `dispatch.confirmAccept` (ru + uz)
 - `tsc --noEmit` = 0 ошибок (mobile + medic)
+
+---
+
+## 2026-03-07 — Wallet system портирован в web-medic
+
+- **[web-medic]** `lib/api.ts` — добавлен обработчик 402 INSUFFICIENT_WALLET: создаёт Error с полями `required` и `current`
+- **[web-medic]** `app/page.tsx` — добавлены состояние `walletModal`, обработка в `acceptOrder` и `acceptInvite`, модальное окно с текущим балансом и требуемой суммой
+- **[web-medic]** `i18n/ru.json`, `i18n/uz.json` — добавлена секция `wallet.*` с ключами `insufficientTitle`, `insufficientDesc`, `current`, `required`, `contactAdmin`, `close`
 
 ## 2026-03-07 — Wallet system доработка (medic modal + admin UI)
 

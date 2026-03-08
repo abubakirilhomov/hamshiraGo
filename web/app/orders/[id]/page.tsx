@@ -10,7 +10,6 @@ const TrackingMap = dynamic(() => import("@/components/TrackingMap"), { ssr: fal
 import {
   FaArrowLeft,
   FaMapMarker,
-  FaMedkit,
   FaUserNurse,
   FaStar,
   FaPhone,
@@ -265,7 +264,7 @@ export default function OrderDetailPage() {
       <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 28px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <FaMedkit size={20} color="#fff" />
+          <img src="/logo.png" alt="HamshiraGo" style={{ width: 34, height: 34, borderRadius: 10, objectFit: "cover" }} />
           <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

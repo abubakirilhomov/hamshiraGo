@@ -37,9 +37,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-            <span className="text-white font-black text-lg">+</span>
-          </div>
+          <img src="/logo.png" alt="HamshiraGo" className="w-10 h-10 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-transform" />
           <span className="font-black text-lg tracking-tight" style={{ color: "var(--text-primary)" }}>
             Hamshira<span className="text-primary">Go</span>
           </span>

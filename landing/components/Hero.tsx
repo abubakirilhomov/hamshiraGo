@@ -36,7 +36,7 @@ function Phone() {
             <p style={{color:"rgba(255,255,255,0.3)",fontSize:10,fontWeight:500}}>Добро пожаловать</p>
             <p style={{color:"white",fontWeight:700,fontSize:15,letterSpacing:"-0.02em"}}>HamshiraGo</p>
           </div>
-          <div style={{width:36,height:36,borderRadius:12,background:"linear-gradient(135deg,#0d9488,#0891b2)",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:900,fontSize:16,boxShadow:"0 4px 12px rgba(13,148,136,0.3)"}}>+</div>
+          <img src="/logo.png" alt="HamshiraGo" style={{width:50,height:50,borderRadius:16,objectFit:"cover",boxShadow:"0 4px 12px rgba(13,148,136,0.3)"}} />
         </div>
         <div style={{margin:"0 20px 16px",padding:"10px 16px",borderRadius:16,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
           <span style={{color:"rgba(255,255,255,0.25)",fontSize:14}}>🔍</span>
@@ -175,7 +175,22 @@ export default function Hero() {
 
               {/* CTA buttons */}
               <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:1.45,duration:0.65}}
-                className="flex flex-wrap gap-3 mb-10">
+                className="flex flex-col gap-3 mb-10">
+
+                {/* Primary: Try web app */}
+                <motion.a href="https://app.hamshirago.uz" target="_blank" rel="noopener noreferrer"
+                  whileHover={{scale:1.03,y:-2}} whileTap={{scale:0.97}}
+                  className="flex items-center justify-center gap-3 px-7 py-4 rounded-2xl font-black text-white w-full sm:w-auto self-start"
+                  style={{background:"linear-gradient(135deg,#0d9488,#0891b2)",boxShadow:"0 8px 32px rgba(13,148,136,0.45),0 2px 8px rgba(0,0,0,0.2)",fontSize:17,letterSpacing:"-0.01em"}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                  </svg>
+                  {t.hero.try}
+                  <span style={{opacity:0.7,fontSize:13,fontWeight:500}}>— {t.hero.tryWeb}</span>
+                </motion.a>
+
+                {/* Store buttons row */}
+                <div className="flex flex-wrap gap-3">
                 <motion.a ref={b1.ref} href="#download" style={{x:b1.sx,y:b1.sy,background:"var(--text-primary)",boxShadow:"0 8px 32px var(--shadow),0 2px 8px rgba(0,0,0,0.2)",color:"var(--bg2)"}}
                   onMouseMove={b1.onMouseMove} onMouseLeave={b1.onMouseLeave}
                   className="flex items-center gap-3 px-6 py-4 rounded-2xl font-bold">
@@ -203,6 +218,7 @@ export default function Hero() {
                     <p style={{fontSize:15,fontWeight:900,lineHeight:1.3}}>Google Play</p>
                   </div>
                 </motion.a>
+                </div>
               </motion.div>
 
               {/* Social proof */}

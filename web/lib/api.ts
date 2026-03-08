@@ -171,9 +171,7 @@ export interface Medic {
 
 export interface CreateOrderDto {
   serviceId: string;
-  serviceTitle: string;
-  priceAmount: number;
-  discountAmount: number;
+  discountAmount?: number;
   location: {
     latitude: number;
     longitude: number;
@@ -183,7 +181,6 @@ export interface CreateOrderDto {
     phone: string;
   };
 }
-// Note: medicId не поддерживается бекендом в CreateOrderDto
 
 export type OrderStatus =
   | "CREATED"

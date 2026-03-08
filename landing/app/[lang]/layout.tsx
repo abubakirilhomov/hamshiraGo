@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { LangProvider } from "@/context/LangContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import type { Lang } from "@/i18n/translations";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hamshirago.uz";
@@ -134,6 +135,10 @@ const JSON_LD: Record<Lang, object> = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0d9488",
+};
+
 export async function generateStaticParams() {
   return [{ lang: "ru" }, { lang: "uz" }];
 }
@@ -170,7 +175,7 @@ export async function generateMetadata({
       locale: lang === "uz" ? "uz_UZ" : "ru_RU",
       images: [
         {
-          url: `${SITE_URL}/og.png`,
+          url: `${SITE_URL}/${lang}/opengraph-image`,
           width: 1200,
           height: 630,
           alt: m.ogTitle,
@@ -181,7 +186,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: m.ogTitle,
       description: m.ogDescription,
-      images: [`${SITE_URL}/og.png`],
+      images: [`${SITE_URL}/${lang}/opengraph-image`],
     },
     robots: {
       index: true,
@@ -206,12 +211,16 @@ export default async function LangLayout({
   const jsonLd = JSON_LD[lang];
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <LangProvider initialLang={lang}>{children}</LangProvider>
-    </>
+    <html lang={lang} data-theme="dark" suppressHydrationWarning>
+      <body>
+        <ThemeProvider>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          <LangProvider initialLang={lang}>{children}</LangProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

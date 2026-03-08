@@ -21,7 +21,7 @@ interface DispatchInvitePayload {
   expiresAt: string;
 }
 import { useRouter } from "next/navigation";
-import { FaMedkit, FaSignOutAlt, FaMapMarker, FaClock, FaRedo, FaToggleOn, FaToggleOff, FaUserCircle } from "react-icons/fa";
+import { FaSignOutAlt, FaMapMarker, FaClock, FaRedo, FaToggleOn, FaToggleOff, FaUserCircle } from "react-icons/fa";
 import { medicApi, WS_URL, Order, Medic, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, OrderStatus, formatPrice } from "@/lib/api";
 import { io, Socket } from "socket.io-client";
 import { unsubscribeWebPush } from "@/lib/webPush";
@@ -47,9 +47,10 @@ function playOrderAlert() {
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   const { text, bg } = ORDER_STATUS_COLOR[status];
+  const { t } = useTranslation();
   return (
     <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, color: text, background: bg, whiteSpace: "nowrap" }}>
-      {ORDER_STATUS_LABEL[status]}
+      {t(`order.status.${status}`)}
     </span>
   );
 }
@@ -66,6 +67,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<"available" | "my">("available");
   const [socketOk, setSocketOk] = useState(true);
   const [acceptError, setAcceptError] = useState("");
+  const [walletModal, setWalletModal] = useState<{ required: number; current: number } | null>(null);
   const [inactiveWarning, setInactiveWarning] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isOnlineRef = useRef(false);
@@ -262,6 +264,10 @@ export default function DashboardPage() {
       socketRef.current?.emit("subscribe_order", orderId);
       router.push(`/order/${orderId}`);
     } catch (err: unknown) {
+      if (err instanceof Error && err.message === "INSUFFICIENT_WALLET") {
+        setWalletModal({ required: (err as any).required, current: (err as any).current });
+        return;
+      }
       const msg = err instanceof Error ? err.message : t("common.error");
       setAcceptError(msg);
       setTimeout(() => setAcceptError(""), 5000);
@@ -284,6 +290,12 @@ export default function DashboardPage() {
       setInvite(null);
       router.push(`/order/${invite.orderId}`);
     } catch (err: unknown) {
+      if (err instanceof Error && err.message === "INSUFFICIENT_WALLET") {
+        setInvite(null);
+        setWalletModal({ required: (err as any).required, current: (err as any).current });
+        setInviteLoading(null);
+        return;
+      }
       alert(err instanceof Error ? err.message : t("common.error"));
       setInviteLoading(null);
     }
@@ -324,9 +336,7 @@ export default function DashboardPage() {
         <div className="dash-header-inner">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <FaMedkit size={20} color="#fff" />
-              </div>
+              <img src="/logo.png" alt="HamshiraGo" style={{ width: 50, height: 50, borderRadius: 15, objectFit: "cover" }} />
               <div>
                 <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{t("home.medicLabel")}</p>
                 <p style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>{medic?.name ?? "..."}</p>
@@ -680,6 +690,35 @@ export default function DashboardPage() {
                 {inviteLoading === "decline" ? t("home.inviteDeclining") : `✕ ${t("home.inviteDecline")}`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wallet insufficient funds modal */}
+      {walletModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 28, maxWidth: 380, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>💸</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", textAlign: "center" }}>{t("wallet.insufficientTitle")}</h3>
+            <p style={{ fontSize: 14, color: "#64748b", textAlign: "center", lineHeight: 1.6 }}>{t("wallet.insufficientDesc")}</p>
+            <div style={{ width: "100%", background: "#f8fafc", borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                <span style={{ color: "#64748b" }}>{t("wallet.current")}</span>
+                <span style={{ fontWeight: 700, color: "#ef4444" }}>{walletModal.current.toLocaleString("ru-RU")} {t("common.sum")}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                <span style={{ color: "#64748b" }}>{t("wallet.required")}</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{walletModal.required.toLocaleString("ru-RU")} {t("common.sum")}</span>
+              </div>
+            </div>
+            <a href="https://t.me/hamshirago_support" target="_blank" rel="noreferrer"
+              style={{ width: "100%", background: "#0088cc", color: "#fff", borderRadius: 12, padding: "13px", textAlign: "center", fontWeight: 700, fontSize: 15, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              ✈️ {t("wallet.contactAdmin")}
+            </a>
+            <button onClick={() => setWalletModal(null)}
+              style={{ width: "100%", background: "#f1f5f9", color: "#64748b", borderRadius: 12, padding: "13px", border: "none", fontWeight: 600, fontSize: 15, cursor: "pointer" }}>
+              {t("wallet.close")}
+            </button>
           </div>
         </div>
       )}

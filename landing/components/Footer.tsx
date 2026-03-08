@@ -11,9 +11,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-white font-black text-base">+</span>
-            </div>
+            <img src="/logo.png" alt="HamshiraGo" className="w-11 h-11 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-transform" />
             <span className="font-black text-base tracking-tight" style={{ color: "var(--text-primary)" }}>
               Hamshira<span className="text-primary">Go</span>
             </span>
