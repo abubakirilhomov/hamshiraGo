@@ -15,6 +15,7 @@ import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Medic } from '../medics/entities/medic.entity';
 
 const MEDIC_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
@@ -51,6 +52,7 @@ export class OrdersService {
     private usersService: UsersService,
     private servicesService: ServicesService,
     private dispatchService: DispatchService,
+    private appSettingsService: AppSettingsService,
     private dataSource: DataSource,
   ) {}
 
@@ -319,6 +321,21 @@ export class OrdersService {
 
     const order = await this.findOne(orderId);
 
+    // ── Paid mode: check wallet and deduct commission upfront ────────────────
+    const paidMode = await this.appSettingsService.isPaidMode();
+    if (paidMode) {
+      const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+      const fee = Math.round(netPrice * OrdersService.COMMISSION_RATE);
+      if (medic.balance < fee) {
+        const err: any = new ForbiddenException('Insufficient wallet balance');
+        err.code = 'INSUFFICIENT_WALLET';
+        err.required = fee;
+        err.current = medic.balance;
+        throw err;
+      }
+      await this.dataSource.manager.decrement(Medic, { id: medicId }, 'balance', fee);
+    }
+
     // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
     await this.dispatchService.onMedicAccept(orderId, medicId);
 
@@ -370,7 +387,9 @@ export class OrdersService {
     if (status === OrderStatus.DONE) {
       const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
       const fee = order.platformFee ?? 0;
-      const medicEarned = netPrice - fee;
+      // In paid mode the fee was already deducted at accept — credit full netPrice
+      const paidMode = await this.appSettingsService.isPaidMode();
+      const medicEarned = paidMode ? netPrice : netPrice - fee;
       await this.dataSource.transaction(async (manager) => {
         const result = await manager.update(
           Order,

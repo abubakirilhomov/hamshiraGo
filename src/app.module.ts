@@ -14,6 +14,8 @@ import { ServicesModule } from './services/services.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ClientErrorsModule } from './client-errors/client-errors.module';
+import { AppSettingsModule } from './app-settings/app-settings.module';
+import { TelegramBotModule } from './telegram/telegram-bot.module';
 
 @Module({
   imports: [
@@ -74,6 +76,8 @@ import { ClientErrorsModule } from './client-errors/client-errors.module';
     RealtimeModule,
     PaymentsModule,
     ClientErrorsModule,
+    AppSettingsModule,
+    TelegramBotModule,
   ],
   controllers: [AppController],
   providers: [
