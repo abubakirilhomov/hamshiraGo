@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-03-08 — Web: category filter + reorder + BUG 15
+
+- **[web]** `app/page.tsx` — добавлен горизонтальный скролл с фильтром по категориям (chips), локализация категорий UZ через `CATEGORY_UZ`
+- **[web]** `app/orders/page.tsx` — добавлена кнопка "Заказать снова" (reorder) для DONE/CANCELED заказов, переход на `/order/location?serviceId=...`
+- **[web]** `lib/api.ts`, `app/order/confirm/page.tsx` — BUG 15: убраны лишние поля `serviceTitle` и `priceAmount` из `CreateOrderDto` (бэкенд их не принимал)
+- **[web]** `i18n/ru.json`, `i18n/uz.json` — добавлены ключи `allCategories`, `reorder`
+
+---
+
 ## 2026-03-08 — Admin i18n + PWA + логотип
 
 - **[admin]** `i18n/ru.json`, `i18n/uz.json` — добавлены все недостающие ключи для всех страниц: dashboard, medics, orders, clients, services, verification, reports, common.downloadApp
