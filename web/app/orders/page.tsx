@@ -36,50 +36,61 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-function OrderCard({ order, onClick }: { order: Order; onClick: () => void }) {
+function OrderCard({ order, onClick, onReorder }: { order: Order; onClick: () => void; onReorder?: () => void }) {
+  const { t } = useTranslation();
   const date = new Date(order.created_at);
   const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
   const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        width: "100%", background: "#fff",
-        border: "1px solid #e2e8f0", borderRadius: 16,
-        padding: 16, marginBottom: 12,
-        cursor: "pointer", textAlign: "left",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-        transition: "box-shadow 150ms ease",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
-          {order.serviceTitle}
-        </span>
-        <StatusBadge status={order.status} />
-      </div>
+  const isDone = order.status === "DONE" || order.status === "CANCELED";
 
-      {order.location && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <FaMapMarker size={12} color="#94a3b8" />
-          <span style={{ fontSize: 13, color: "#64748b" }}>
-            {order.location.house}
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <button onClick={onClick} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", textAlign: "left", padding: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>
+            {order.serviceTitle}
+          </span>
+          <StatusBadge status={order.status} />
+        </div>
+
+        {order.location && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <FaMapMarker size={12} color="#94a3b8" />
+            <span style={{ fontSize: 13, color: "#64748b" }}>
+              {order.location.house}
+            </span>
+          </div>
+        )}
+
+        <div style={{ height: 1, background: "#f1f5f9", marginBottom: 10 }} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "#0d9488" }}>
+            {formatPrice(order.priceAmount - order.discountAmount)} UZS
+          </span>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>
+            {dateStr}, {timeStr}
           </span>
         </div>
+      </button>
+
+      {isDone && onReorder && (
+        <button
+          onClick={onReorder}
+          style={{
+            marginTop: 10, width: "100%", padding: "9px 0",
+            background: "#f0fdfa", border: "1px solid #99f6e4",
+            borderRadius: 10, fontSize: 13, fontWeight: 700,
+            color: "#0d9488", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}
+        >
+          <FaRedo size={12} />
+          {t("orders.reorder")}
+        </button>
       )}
-
-      <div style={{ height: 1, background: "#f1f5f9", marginBottom: 10 }} />
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: "#0d9488" }}>
-          {formatPrice(order.priceAmount - order.discountAmount)} UZS
-        </span>
-        <span style={{ fontSize: 12, color: "#94a3b8" }}>
-          {dateStr}, {timeStr}
-        </span>
-      </div>
-    </button>
+    </div>
   );
 }
 
@@ -337,7 +348,7 @@ export default function OrdersPage() {
                     {section.items
                       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                       .map((o) => (
-                        <OrderCard key={o.id} order={o} onClick={() => router.push(`/orders/${o.id}`)} />
+                        <OrderCard key={o.id} order={o} onClick={() => router.push(`/orders/${o.id}`)} onReorder={() => router.push(`/order/location?serviceId=${o.serviceId}`)} />
                       ))}
                   </div>
                 </div>
