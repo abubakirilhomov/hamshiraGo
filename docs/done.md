@@ -1,5 +1,24 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-08 — Landing: кнопка «Попробовать» + SEO-секция
+
+- **[landing]** `i18n/translations.ts` — добавлены `hero.try`, `hero.tryWeb` (RU+UZ); полная секция `seo` (intro, who×6, procedures×4, faq×7, areas×10, cta) на русском и узбекском
+- **[landing]** `components/Hero.tsx` — добавлена кнопка «Попробовать / Sinab ko'ring» с ссылкой `https://app.hamshirago.uz`, магнитный эффект, над store-кнопками
+- **[landing]** `components/Download.tsx` — добавлена кнопка «Попробовать» в веб-секцию
+- **[landing]** `components/SeoContent.tsx` — новый компонент: intro-абзац, 6 карточек «Кому подходит», 4 процедуры с ценами, 7 FAQ (accordion), 10 районов Ташкента, CTA-карточка → `app.hamshirago.uz`
+- **[landing]** `app/[lang]/page.tsx` — `<SeoContent />` добавлен между Features и Download
+- `npm run build` = 0 ошибок
+
+## 2026-03-08 — Landing SEO-фиксы (OG-картинка + html lang)
+
+- **[landing]** `app/layout.tsx` — упрощён до минимума (только импорт `globals.css`); `<html>/<body>/<ThemeProvider>` перенесены в lang-layout
+- **[landing]** `app/[lang]/layout.tsx` — `LangLayout` теперь возвращает `<html lang={lang}>` + `<body>` + `<ThemeProvider>`: Google видит правильный lang для `/ru` и `/uz`
+- **[landing]** OG URL исправлен: `/og.png` (несуществующий файл) → `${SITE_URL}/${lang}/opengraph-image` (динамический генератор); исправлено в `openGraph.images` и `twitter.images`
+- **[landing]** `themeColor: "#0d9488"` вынесен в `export const viewport: Viewport` (Next.js 16 API)
+- `npm run build` = 0 ошибок, 0 предупреждений
+
+---
+
 > Хронологический лог завершённых фич и исправлений.
 
 ---

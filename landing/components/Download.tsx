@@ -71,6 +71,30 @@ export default function Download() {
           {t.download.subtitle}
         </motion.p>
 
+        {/* Web app button */}
+        <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+          transition={{ delay: 0.25, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="flex justify-center mb-6">
+          <motion.a href="https://app.hamshirago.uz" target="_blank" rel="noopener noreferrer"
+            whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-white"
+            style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)", boxShadow: "0 12px 40px rgba(13,148,136,0.5)", fontSize: 18 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            </svg>
+            {t.hero.try}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </motion.a>
+        </motion.div>
+        <motion.p initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.35 }}
+          className="text-center text-sm mb-8" style={{ color: "var(--text-4)" }}>
+          {t.seo.cta.note}
+        </motion.p>
+
         {/* Store buttons */}
         <motion.div initial={{ opacity: 0, y: 40, scale: 0.9 }}
           animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
