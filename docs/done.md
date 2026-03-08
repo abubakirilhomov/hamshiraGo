@@ -42,6 +42,14 @@
 
 ---
 
+## 2026-03-08 — Этап 10: платный режим (backend + medic)
+
+- **[backend]** `app-settings/` — новый модуль: entity `app_settings` (singleton row), `AppSettingsService.isPaidMode()`, `GET /settings` (публичный), `PATCH /admin/settings` (AdminGuard)
+- **[backend]** `orders.service.ts` — `acceptOrder`: если `isPaidMode=true`, проверяет `balance >= platformFee`, списывает комиссию, иначе 402 INSUFFICIENT_WALLET
+- **[backend]** `orders.service.ts` — DONE: если `isPaidMode=true`, кредитует полный `netPrice` (комиссия уже списана при accept); иначе `netPrice - fee` как раньше
+- **[medic]** `app/(tabs)/profile.tsx` — баланс кошелька вынесен в отдельную карточку, всегда виден независимо от рейтинга
+- `tsc --noEmit` = 0 ошибок (backend + medic)
+
 ## 2026-03-08 — Этап 7: сплэш-экран mobile + medic
 
 - **[mobile]** `components/SplashOverlay.tsx` — кастомный сплэш: логотип (icon.png), "HamshiraGo", "by tezcode.ai"; фон `#f8fafc`

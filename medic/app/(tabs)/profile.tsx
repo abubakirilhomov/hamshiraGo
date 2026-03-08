@@ -326,24 +326,23 @@ export default function ProfileScreen() {
           <Text style={styles.statLabel}>{t('profile.statExperience')}</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>
-            {completedCount ?? '—'}
-          </Text>
+          <Text style={styles.statValue}>{completedCount ?? '—'}</Text>
           <Text style={styles.statLabel}>{t('profile.statCompleted')}</Text>
         </View>
-        {medic.rating != null ? (
+        {medic.rating != null && (
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{Number(medic.rating).toFixed(1)}</Text>
             <Text style={styles.statLabel}>{t('profile.statRating')}</Text>
           </View>
-        ) : (
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              {Number(medic.balance).toLocaleString('ru-RU')}
-            </Text>
-            <Text style={styles.statLabel}>{t('profile.statBalance')}</Text>
-          </View>
         )}
+      </View>
+
+      {/* Wallet balance — always visible */}
+      <View style={styles.walletCard}>
+        <Text style={styles.walletLabel}>{t('profile.statBalance')}</Text>
+        <Text style={styles.walletValue}>
+          {Number(medic.balance).toLocaleString('ru-RU')} UZS
+        </Text>
       </View>
 
       {/* Telegram */}
@@ -550,6 +549,20 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 20, fontWeight: '700', color: Theme.primary },
   statLabel: { fontSize: 12, color: Theme.textSecondary, marginTop: 2, textAlign: 'center' },
+  walletCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}25`,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  walletLabel: { fontSize: 14, fontWeight: '600', color: Theme.text },
+  walletValue: { fontSize: 16, fontWeight: '700', color: Theme.primary },
   tgHeader: {
     flexDirection: 'row',
     alignItems: 'center',
