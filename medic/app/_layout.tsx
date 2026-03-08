@@ -5,12 +5,13 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
 import { apiFetch } from '@/constants/api';
+import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import '@/i18n';
@@ -44,16 +45,21 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
   });
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) SplashScreen.hideAsync();
+    if (!loaded) return;
+    SplashScreen.hideAsync();
+    const timer = setTimeout(() => setShowSplash(false), 1500);
+    return () => clearTimeout(timer);
   }, [loaded]);
 
   if (!loaded) return null;
+  if (showSplash) return <SplashOverlay />;
 
   return (
     <LanguageProvider>

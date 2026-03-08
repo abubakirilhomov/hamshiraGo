@@ -42,6 +42,14 @@
 
 ---
 
+## 2026-03-08 — Этап 7: сплэш-экран mobile + medic
+
+- **[mobile]** `components/SplashOverlay.tsx` — кастомный сплэш: логотип (icon.png), "HamshiraGo", "by tezcode.ai"; фон `#f8fafc`
+- **[medic]** `components/SplashOverlay.tsx` — аналог, фон `#0d9488` (зелёный), текст белый
+- **[mobile]** `app/_layout.tsx` — после загрузки шрифтов нативный сплэш скрывается, показывается `SplashOverlay` на 1.5s, затем приложение
+- **[medic]** `app/_layout.tsx` — та же логика
+- `tsc --noEmit` = 0 ошибок
+
 ## 2026-03-08 — Этап 12: POST /client-errors (backend)
 
 - **[backend]** `client-errors/entities/client-error.entity.ts` — новая таблица `client_errors` (userId, appType, screen, message, stacktrace, meta)
