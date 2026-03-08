@@ -42,6 +42,16 @@
 
 ---
 
+## 2026-03-08 — Этап 11: Telegram deep link + webhook + канал
+
+- **[backend]** `telegram/telegram-bot.service.ts` — обработчик `/start {medicId}`: автоматически привязывает `chat_id` к медику, отправляет welcome-сообщение + ссылку на канал (`TELEGRAM_CHANNEL_LINK` env)
+- **[backend]** `telegram/telegram-bot.controller.ts` — `POST /telegram/webhook` (публичный, Telegram присылает обновления)
+- **[backend]** `telegram/telegram-bot.module.ts` — модуль, зарегистрирован в `AppModule`; webhook регистрируется автоматически при старте (`BACKEND_URL` env → `setWebhook`)
+- **[medic]** `app/(tabs)/profile.tsx` — кнопка "Подключить" открывает `tg://resolve?domain=hamshirago_medic_bot&start={medicId}` (fallback: https); бот получает ID и сам привязывает аккаунт
+- **[medic]** `app/(tabs)/profile.tsx` — баннер канала "Вы часть команды HamshiraGo!" → `t.me/hamshirago_medics`, виден когда Telegram подключён
+- `tsc --noEmit` = 0 ошибок (backend + medic)
+- **Env переменные для Railway**: `BACKEND_URL` (напр. `https://hamshirago-api.railway.app`), `TELEGRAM_CHANNEL_LINK` (ссылка на канал)
+
 ## 2026-03-08 — Этап 10: платный режим (backend + medic)
 
 - **[backend]** `app-settings/` — новый модуль: entity `app_settings` (singleton row), `AppSettingsService.isPaidMode()`, `GET /settings` (публичный), `PATCH /admin/settings` (AdminGuard)

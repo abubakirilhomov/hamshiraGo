@@ -31,7 +31,8 @@ import {
   stopBackgroundLocationUpdates,
 } from '@/utils/backgroundLocation';
 
-const TELEGRAM_BOT_LINK = 'https://t.me/hamshirago_medic_bot?start=connect';
+const TELEGRAM_BOT = 'hamshirago_medic_bot';
+const TELEGRAM_CHANNEL = 'https://t.me/hamshirago_medics'; // канал для медиков
 
 interface OrderCount { id: string; status: string; }
 
@@ -192,7 +193,12 @@ export default function ProfileScreen() {
   const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
-    Linking.openURL(TELEGRAM_BOT_LINK);
+    // Deep link: opens bot with /start {medicId} pre-filled — bot auto-links account
+    const deepLink = `tg://resolve?domain=${TELEGRAM_BOT}&start=${medic?.id ?? ''}`;
+    const webFallback = `https://t.me/${TELEGRAM_BOT}?start=${medic?.id ?? ''}`;
+    Linking.canOpenURL(deepLink)
+      .then((ok) => Linking.openURL(ok ? deepLink : webFallback))
+      .catch(() => Linking.openURL(webFallback));
   };
 
   const handleDisconnectTelegram = () => setTgDisconnectModal(true);
@@ -386,6 +392,21 @@ export default function ProfileScreen() {
         )}
       </View>
 
+      {/* Channel banner — shown once Telegram is connected */}
+      {medic.telegramChatId && (
+        <Pressable
+          style={({ pressed }) => [styles.channelBanner, pressed && { opacity: 0.88 }]}
+          onPress={() => Linking.openURL(TELEGRAM_CHANNEL)}
+        >
+          <Text style={styles.channelEmoji}>📢</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.channelTitle}>Вы часть команды HamshiraGo!</Text>
+            <Text style={styles.channelSub}>Подпишитесь на канал для медиков</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color="#0e7490" />
+        </Pressable>
+      )}
+
       {/* Language picker */}
       <View style={styles.card}>
         <Text style={styles.cardSectionTitle}>{t('language.title')}</Text>
@@ -563,6 +584,21 @@ const styles = StyleSheet.create({
   },
   walletLabel: { fontSize: 14, fontWeight: '600', color: Theme.text },
   walletValue: { fontSize: 16, fontWeight: '700', color: Theme.primary },
+  channelBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#e0f2fe',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  channelEmoji: { fontSize: 20 },
+  channelTitle: { fontSize: 14, fontWeight: '700', color: '#0c4a6e' },
+  channelSub: { fontSize: 12, color: '#0e7490', marginTop: 1 },
   tgHeader: {
     flexDirection: 'row',
     alignItems: 'center',
