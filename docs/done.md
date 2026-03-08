@@ -42,6 +42,13 @@
 
 ---
 
+## 2026-03-08 — Этап 14: конфигурация Store публикации
+
+- **[mobile]** `app.json` — добавлены `ios.bundleIdentifier: com.hamshirago.client`, `android.package`, `versionCode: 1`, `buildNumber: 1`, `owner`, `extra.eas.projectId` (placeholder)
+- **[mobile]** `eas.json` — создан: профили `development` / `preview` (APK) / `production` (AAB, autoIncrement), `submit.production` с секциями android + ios
+- **[medic]** `eas.json` — обновлён: добавлены `buildType`, `env`, `submit.production`
+- Ручные шаги задокументированы в `tasks.md` (EAS init, credentials, сторы, OTA, скриншоты)
+
 ## 2026-03-08 — Этап 11: Telegram deep link + webhook + канал
 
 - **[backend]** `telegram/telegram-bot.service.ts` — обработчик `/start {medicId}`: автоматически привязывает `chat_id` к медику, отправляет welcome-сообщение + ссылку на канал (`TELEGRAM_CHANNEL_LINK` env)

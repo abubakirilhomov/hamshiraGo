@@ -115,31 +115,20 @@
 
 ## 📋 Этап 14 — Store публикация (Абубакир)
 
-> Инструкция и подготовка — выполняется после стабилизации кода.
+### ✅ Конфигурация готова
+- [x] `mobile/app.json` — `ios.bundleIdentifier: com.hamshirago.client`, `android.package`, `versionCode: 1`, `buildNumber: 1`
+- [x] `mobile/eas.json` — профили `development`, `preview`, `production` (android: apk/aab)
+- [x] `medic/eas.json` — то же, обновлено с buildType и submit секцией
 
-### Play Store (Android)
-- [ ] `app.json` → `android.package`, `versionCode`, `versionName`
-- [ ] EAS Build: `eas build --platform android --profile production`
-- [ ] Подписать APK/AAB ключом (`eas credentials`)
-- [ ] Загрузить `.aab` в Google Play Console → Internal Testing → Production
-- [ ] Скриншоты (минимум 2, 16:9), иконка 512×512, Feature Graphic 1024×500
-- [ ] Privacy Policy URL (обязательно)
-- [ ] Заполнить контентный рейтинг (IARC)
-
-### App Store (iOS)
-- [ ] `app.json` → `ios.bundleIdentifier`, `ios.buildNumber`
-- [ ] Apple Developer аккаунт ($99/год)
-- [ ] EAS Build: `eas build --platform ios --profile production`
-- [ ] Certificates & Provisioning Profiles через `eas credentials`
-- [ ] Загрузить через Transporter или EAS Submit
-- [ ] App Store Connect: скриншоты для каждого размера (6.7", 6.1", 5.5"), описание на RU/UZ
-- [ ] TestFlight → Public Beta → Review → Production
-- [ ] Время ревью: ~24-72 часа
-
-### Общее
-- [ ] `eas.json` с профилями `development`, `preview`, `production`
-- [ ] OTA обновления через `expo-updates` для хотфиксов без ревью
-- [ ] Push certificates: APNs (iOS) и FCM (Android) в EAS / Expo dashboard
+### ⏳ Требует ручных действий
+- [ ] Создать EAS проект для `mobile`: `eas init` → вставить projectId в `mobile/app.json`
+- [ ] `eas credentials` — настроить подпись Android (keystore) и iOS (certificates)
+- [ ] Play Store: создать приложение `com.hamshirago.client`, загрузить AAB, скриншоты, Privacy Policy
+- [ ] App Store: Apple Developer аккаунт ($99/год), создать app `com.hamshirago.client` в App Store Connect
+- [ ] Push certificates: APNs (iOS) и FCM (Android) загрузить в EAS / Expo dashboard
+- [ ] OTA: установить `expo-updates` (`npx expo install expo-updates`) и добавить в plugins обоих app.json
+- [ ] Скриншоты: минимум 2 (16:9) для Google Play; 6.7", 6.1", 5.5" для App Store (RU + UZ)
+- [ ] Privacy Policy URL (обязательно для обоих сторов)
 
 ---
 
