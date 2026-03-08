@@ -68,9 +68,7 @@ function ConfirmForm() {
     setLoading(true);
     const body = {
       serviceId,
-      serviceTitle,
-      priceAmount:    price,
-      discountAmount: discount,
+      discountAmount: discount || undefined,
       location: {
         latitude:  lat,
         longitude: lng,
