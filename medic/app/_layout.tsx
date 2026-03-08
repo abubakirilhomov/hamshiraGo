@@ -6,7 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Linking } from 'react-native';
+import { Alert, AppState, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
@@ -40,6 +40,34 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+
+// Android requires explicit notification channels for sound/vibration to work
+if (Platform.OS === 'android') {
+  // New order invitation — максимальный приоритет, пробивает DND
+  Notifications.setNotificationChannelAsync('new_orders', {
+    name: 'Новый заказ',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'default',
+    vibrationPattern: [0, 500, 250, 500],
+    lightColor: '#0d9488',
+    bypassDnd: true,
+  });
+  // Status updates from client (CANCELED, DONE)
+  Notifications.setNotificationChannelAsync('order_updates', {
+    name: 'Статус заказа',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'default',
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#0d9488',
+  });
+  // Silent channel for persistent background status notification
+  Notifications.setNotificationChannelAsync('tracking_status', {
+    name: 'Активный заказ (фон)',
+    importance: Notifications.AndroidImportance.LOW,
+    sound: undefined,
+    vibrationPattern: undefined,
+  });
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({

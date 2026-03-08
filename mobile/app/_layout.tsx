@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -32,6 +33,25 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+
+// Android requires explicit notification channels for sound/vibration to work
+if (Platform.OS === 'android') {
+  // Status updates from medic (ACCEPTED, ON_THE_WAY, ARRIVED, DONE, CANCELED)
+  Notifications.setNotificationChannelAsync('order_updates', {
+    name: 'Статус заказа',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'default',
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#0d9488',
+  });
+  // Silent channel for persistent background status notification
+  Notifications.setNotificationChannelAsync('tracking_status', {
+    name: 'Трекинг (фон)',
+    importance: Notifications.AndroidImportance.LOW,
+    sound: undefined,
+    vibrationPattern: undefined,
+  });
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
