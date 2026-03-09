@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -37,7 +38,9 @@ export class AdminGuard implements CanActivate {
     const secret = this.config.get<string>('ADMIN_SECRET');
     if (secret) {
       const provided = req.headers['x-admin-secret'];
-      if (provided === secret) return true;
+      const s = Buffer.from(secret);
+      const p = Buffer.from(String(provided ?? ''));
+      if (s.length === p.length && crypto.timingSafeEqual(s, p)) return true;
     }
 
     throw new UnauthorizedException('Admin authentication required');

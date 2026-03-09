@@ -7,6 +7,8 @@ import OfflineBanner from "@/components/OfflineBanner";
 import InstallPrompt from "@/components/InstallPrompt";
 import { LanguageProvider } from "@/context/LanguageContext";
 
+const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app").replace(/\/$/, "");
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://web-production-d365f.up.railway.app";
 
 export const metadata: Metadata = {
@@ -50,6 +52,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="preconnect" href={API_HOST} />
+        <link rel="dns-prefetch" href={API_HOST} />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
         {/* Telegram Mini App SDK — должен грузиться первым */}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="https://telegram.org/js/telegram-web-app.js" />
