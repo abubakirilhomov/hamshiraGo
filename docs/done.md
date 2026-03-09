@@ -1,5 +1,10 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — SEO фиксы landing (JSON-LD image)
+
+- **[landing]** `app/[lang]/layout.tsx` — JSON-LD `MedicalBusiness.image`: заменён несуществующий `/og.png` на `/${lang}/opengraph-image` (динамический генератор)
+- `npm run build` = 0 ошибок ✅
+
 ## 2026-03-09 — Фиксы: галерея, env, уведомления, CORS, документация
 
 - **[medic]** `app/(tabs)/profile.tsx` — при отказе от доступа к галерее: если `canAskAgain=false` показывается алерт с кнопкой "Открыть настройки" (`Linking.openSettings()`), иначе — обычный алерт

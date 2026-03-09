@@ -48,7 +48,7 @@ const JSON_LD: Record<Lang, object> = {
         name: "HamshiraGo",
         url: `${SITE_URL}/ru`,
         description: "Профессиональные медицинские услуги на дому в Ташкенте — уколы, капельницы, измерение давления.",
-        image: `${SITE_URL}/og.png`,
+        image: `${SITE_URL}/ru/opengraph-image`,
         areaServed: { "@type": "City", name: "Ташкент", sameAs: "https://www.wikidata.org/wiki/Q269" },
         address: {
           "@type": "PostalAddress",
@@ -95,7 +95,7 @@ const JSON_LD: Record<Lang, object> = {
         name: "HamshiraGo",
         url: `${SITE_URL}/uz`,
         description: "Toshkentda professional tibbiy xizmatlar uyingizga — in'ektsiya, tomchi, qon bosimi.",
-        image: `${SITE_URL}/og.png`,
+        image: `${SITE_URL}/uz/opengraph-image`,
         areaServed: { "@type": "City", name: "Toshkent", sameAs: "https://www.wikidata.org/wiki/Q269" },
         address: {
           "@type": "PostalAddress",
