@@ -109,6 +109,16 @@ export const api = {
     nearby: (lat: number, lng: number) =>
       request<Medic[]>(`/medics/nearby?latitude=${lat}&longitude=${lng}`),
   },
+
+  payments: {
+    initiatePayment: (orderId: string, provider: PaymentProvider) =>
+      request<PaymentInitResponse>(`/payments/${orderId}/initiate`, {
+        method: "POST",
+        body: JSON.stringify({ provider }),
+      }),
+    getPaymentStatus: (orderId: string) =>
+      request<PaymentStatusResponse>(`/payments/${orderId}/status`),
+  },
 };
 
 // ─── Types ───────────────────────────────────────────────
@@ -149,6 +159,7 @@ export interface Order {
   serviceTitle: string;
   priceAmount: number;
   discountAmount: number;
+  platformFee?: number;
   status: OrderStatus;
   clientRating: number | null;
   created_at: string;
@@ -225,4 +236,32 @@ export const SERVICES_MAP: Record<string, { nameRu: string; priceMin: number; pr
 
 export function formatPrice(n: number): string {
   return n.toLocaleString("ru-RU");
+}
+
+// ─── Payment Types ────────────────────────────────────────
+
+export function reportClientError(message: string, stack?: string): void {
+  const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
+  fetch(`${BASE}/client-errors`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      stack,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      userAgent: typeof window !== "undefined" ? navigator.userAgent : undefined,
+    }),
+  }).catch(() => {}); // fire-and-forget, никогда не бросаем ошибку
+}
+
+export type PaymentProvider = "payme" | "click";
+
+export interface PaymentInitResponse {
+  paymentUrl: string;
+  paymentId: string;
+}
+
+export interface PaymentStatusResponse {
+  status: "PENDING" | "PAID" | "FAILED";
+  paymentUrl?: string;
 }

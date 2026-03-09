@@ -1,5 +1,17 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — web-medic: обработка dispatch_invite_expired
+
+- **[web-medic]** WebSocket событие `dispatch_invite_expired` — убирает заказ из списка доступных + показывает уведомление "Предложение заказа истекло"
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — web + web-medic: типы earnings и platformFee
+
+- **[web-medic]** `lib/api.ts` — `Medic` интерфейс: добавлено поле `earnings: number`
+- **[web]** `lib/api.ts` — `Order` интерфейс: добавлено поле `platformFee?: number`
+- **[web-medic]** `lib/api.ts` — `Order` интерфейс: добавлено поле `platformFee?: number`
+- `npm run build` = 0 ошибок (web ✅, web-medic ✅)
+
 ## 2026-03-09 — Рефакторинг mobile + medic: хуки, компоненты, типы (Этап 15)
 
 ### mobile/
@@ -43,6 +55,39 @@
 - **[backend]** `realtime/order-events.gateway.ts` — добавлены production домены в WebSocket CORS (`hamshirago.uz`, `app.`, `medic.`, `admin.`)
 - **[backend]** `app-settings/app-settings.service.ts` — 30-секундный TTL кэш для `get()`, инвалидируется при `patch()`
 - **[backend]** `utils/geo.ts` — создан общий модуль с функцией `haversineKm`; удалена дублированная реализация из `orders.service.ts`, `dispatch.service.ts`, `medics.service.ts`
+
+---
+
+## 2026-03-09 — admin: колонка Заработок в таблице медиков
+
+- **[admin]** `pages/Medics.tsx` — `AdminMedic` интерфейс: добавлено поле `earnings?: number`; колонка "Заработок" в таблице (после "Кошелёк")
+- **[admin]** `i18n/ru.json`, `uz.json` — ключ `medics.colEarnings`
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — admin: настройка commissionRate в Settings
+
+- **[admin]** `lib/api.ts` — `AppSettings` интерфейс: добавлено поле `commissionRate: number`
+- **[admin]** `pages/Settings.tsx` — слайдер commissionRate (1–50%), disabled когда isPaidMode выключен, сохранение через `updateSettings`
+- **[admin]** `i18n/ru.json`, `uz.json` — ключи `commissionRate`, `commissionRateDesc`, `commissionRateValue`, `commissionRateHint`, `toastRateSaved`
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — web + web-medic: логирование клиентских ошибок
+
+- **[web]** `lib/api.ts` — добавлена `reportClientError(message, stack)` → `POST /client-errors`
+- **[web]** `app/error.tsx`, `app/global-error.tsx` — вызов `reportClientError` при рендере ошибки
+- **[web-medic]** `lib/api.ts` — добавлена `reportClientError(message, stack)`
+- **[web-medic]** `app/error.tsx`, `app/global-error.tsx` — вызов `reportClientError` при рендере ошибки
+- `npm run build` = 0 ошибок (web ✅, web-medic ✅)
+
+## 2026-03-09 — web: платёжная интеграция Payme/Click
+
+- **[web]** `lib/api.ts` — добавлены `initiatePayment()`, `getPaymentStatus()`, типы `PaymentProvider`, `PaymentInitResponse`, `PaymentStatusResponse`
+- **[web]** `app/orders/[id]/page.tsx` — блок оплаты при статусе DONE: кнопки Payme и Click, redirect на paymentUrl
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — Backend: топап кошелька медика через admin
+
+- **[backend]** `medics/medics.controller.ts` — добавлен `POST /medics/admin/:id/topup` (AdminGuard, 204); вызывает `medicsService.addBalance(id, amount)`
 - `tsc --noEmit` = 0 ошибок ✅
 
 ## 2026-03-09 — Двойной баланс медика + настраиваемая комиссия
@@ -58,6 +103,12 @@
 - **[medic]** `app/(tabs)/profile.tsx` — два блока баланса рядом: "Рабочий депозит" (`balance`) и "Заработок" (`earnings`); новые стили `balancesRow`, `balanceHalf`, `earningsCard`, `earningsValue`, `walletHint`
 - **[docs]** `BACKEND_API.md` — задокументированы `GET/PATCH /settings` с `commissionRate`, таблица двух полей баланса медика
 - `tsc --noEmit` = 0 ошибок (backend ✅, medic ✅)
+
+## 2026-03-09 — web-medic: фото профиля медика
+
+- **[web-medic]** `lib/api.ts` — добавлено поле `profilePhotoUrl` в интерфейс `Medic`; добавлена функция `medicApi.photo.upload(file)` → `POST /medics/profile-photo`
+- **[web-medic]** `app/profile/page.tsx` — аватар теперь показывает `profilePhotoUrl` (если есть) или иконку; иконка 📷 открывает выбор файла; после загрузки профиль обновляется без перезагрузки страницы
+- `npm run build` = 0 ошибок ✅
 
 ## 2026-03-09 — SEO фиксы landing (JSON-LD image)
 

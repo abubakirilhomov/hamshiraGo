@@ -24,6 +24,7 @@ import {
   ORDER_STATUS_LABEL,
   ORDER_STATUS_COLOR,
   formatPrice,
+  PaymentProvider,
 } from "@/lib/api";
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -114,6 +115,8 @@ export default function OrderDetailPage() {
   const [ratingDone, setRatingDone] = useState(false);
   const [socketOk, setSocketOk] = useState(true);
   const [medicLocation, setMedicLocation] = useState<{ lat: number; lng: number; updatedAt: string } | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState<PaymentProvider | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID" | "FAILED" | null>(null);
   const [dispatchState, setDispatchState] = useState<{
     status: "searching" | "contacting" | "no_medics";
     candidateName?: string;
@@ -225,6 +228,26 @@ export default function OrderDetailPage() {
       alert(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setRatingLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (order?.status === "DONE") {
+      api.payments.getPaymentStatus(order.id)
+        .then((res) => setPaymentStatus(res.status))
+        .catch(() => { /* ignore — payment may not exist yet */ });
+    }
+  }, [order?.status, order?.id]);
+
+  async function handleInitiatePayment(provider: PaymentProvider) {
+    if (!order) return;
+    setPaymentLoading(provider);
+    try {
+      const res = await api.payments.initiatePayment(order.id, provider);
+      window.location.href = res.paymentUrl;
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Ошибка при создании платежа");
+      setPaymentLoading(null);
     }
   }
 
@@ -492,6 +515,63 @@ export default function OrderDetailPage() {
                 {ratingLoading && <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.saving")}</p>}
               </>
             )}
+          </div>
+        )}
+
+        {/* Payment block */}
+        {order.status === "DONE" && paymentStatus !== "PAID" && (
+          <div style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 12,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            border: "1.5px solid #0d948840",
+          }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
+              Оплата заказа
+            </p>
+            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+              Выберите удобный способ оплаты
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => handleInitiatePayment("payme")}
+                disabled={paymentLoading !== null}
+                style={{
+                  flex: 1,
+                  background: paymentLoading === "payme" ? "#94a3b8" : "#00A1E0",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "13px 12px",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: paymentLoading !== null ? "not-allowed" : "pointer",
+                  opacity: paymentLoading !== null && paymentLoading !== "payme" ? 0.5 : 1,
+                }}
+              >
+                {paymentLoading === "payme" ? "Загрузка..." : "Payme"}
+              </button>
+              <button
+                onClick={() => handleInitiatePayment("click")}
+                disabled={paymentLoading !== null}
+                style={{
+                  flex: 1,
+                  background: paymentLoading === "click" ? "#94a3b8" : "#F58220",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "13px 12px",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: paymentLoading !== null ? "not-allowed" : "pointer",
+                  opacity: paymentLoading !== null && paymentLoading !== "click" ? 0.5 : 1,
+                }}
+              >
+                {paymentLoading === "click" ? "Загрузка..." : "Click"}
+              </button>
+            </div>
           </div>
         )}
 
