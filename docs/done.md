@@ -10,6 +10,45 @@
 - **[backend]** `main.ts` — CORS whitelist: добавлены `hamshirago.uz`, `app.hamshirago.uz`, `medic.hamshirago.uz`, `admin.hamshirago.uz`
 - **[docs]** `STORE_PUBLISH.md` — создана инструкция по публикации в App Store и Google Play
 
+## 2026-03-09 — Security & UX улучшения
+
+- **[backend]** `admin.guard.ts` — B-NEW-1: замена `===` на `crypto.timingSafeEqual()` при проверке X-Admin-Secret (защита от timing-атаки)
+- **[admin]** `pages/Dashboard.tsx` — isPaidMode бейдж в шапке: показывает текущий режим (платный/бесплатный), ссылка на `/settings`
+- **[admin]** `src/main.tsx` — Sentry: добавлены `environment`, `release` (VITE_APP_VERSION), `beforeSend` (фильтр localhost), tracesSampleRate=0 в dev
+- **[admin]** `.env.example`, `.env` — добавлен `VITE_APP_VERSION=1.0.0`
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — Этап 10: Переключатель "Платный режим" в admin
+
+- **[admin]** `src/lib/api.ts` — добавлены `AppSettings` interface, `getSettings()`, `updateSettings()`
+- **[admin]** `src/pages/Settings.tsx` — новая страница: toggle "Платный режим" с инфо-блоком (что изменится), статус-бейдж текущего режима
+- **[admin]** `src/App.tsx` — маршрут `/settings` → `<Settings />`
+- **[admin]** `src/components/AdminSidebar.tsx` — пункт "Настройки" с иконкой `Settings2`
+- **[admin]** `i18n/ru.json`, `uz.json` — секция `settings.*` + ключ `nav.settings`
+- `npm run build` = 0 ошибок ✅
+
+## 2026-03-09 — Этап 12: PostHog аналитика + Этап 13: Lighthouse оптимизация
+
+- **[admin]** `src/main.tsx` — инициализация PostHog: `VITE_POSTHOG_KEY` + `VITE_POSTHOG_HOST`, отключён в dev-режиме
+- **[admin]** `src/App.tsx` — добавлен компонент `PageTracker` (useLocation + posthog.capture('$pageview') при смене маршрута)
+- **[admin]** `.env.example`, `.env` — добавлены `VITE_POSTHOG_KEY` и `VITE_POSTHOG_HOST`
+- **[web]** `app/layout.tsx` — `<link rel="preconnect">` и `<link rel="dns-prefetch">` для Railway API и Cloudinary
+- **[web-medic]** `app/layout.tsx` — аналогичные preconnect/dns-prefetch hints
+- **[web]** `next.config.ts` — добавлены: `compress: true`, `images.formats: ["avif","webp"]`, `images.remotePatterns: cloudinary`, `experimental.optimizePackageImports`
+- **[web-medic]** `next.config.ts` — аналогичные оптимизации
+- `npm run build` = 0 ошибок (admin ✅, web ✅, web-medic ✅)
+
+## 2026-03-09 — Этап 7: Сплэш "by tezcode.ai" + Этап 8: Admin UZ-поля услуг
+
+- **[web]** `components/SplashScreen.tsx` — добавлена строка "by tezcode.ai" под логотипом (малый шрифт, полупрозрачный)
+- **[web-medic]** `components/SplashScreen.tsx` — аналогично web
+- **[admin]** `src/components/SplashScreen.tsx` — создан новый компонент: логотип, "HamshiraGo", "Панель администратора", "by tezcode.ai", анимированные точки загрузки, fade-out через 2с
+- **[admin]** `src/App.tsx` — `<SplashScreen />` добавлен в дерево компонентов
+- **[admin]** `src/lib/api.ts` — добавлены поля `titleUz/descriptionUz/categoryUz` в `AdminService` и `ServiceFormData`; восстановлен недостающий экспорт `topupMedicWallet`
+- **[admin]** `src/pages/Services.tsx` — форма разделена на 2 блока 🇷🇺/🇺🇿; таблица получила колонку "Название (UZ)"; `emptyForm` + `openEdit` обновлены для UZ-полей
+- **[admin]** `src/i18n/ru.json`, `uz.json` — добавлены ключи `colTitleUz`, `labelTitleUz`, `labelDescUz`, `labelCategoryUz`
+- `npm run build` = 0 ошибок (web ✅, web-medic ✅, admin ✅)
+
 ## 2026-03-08 — Landing: кнопка «Попробовать» + SEO-секция
 
 - **[landing]** `i18n/translations.ts` — добавлены `hero.try`, `hero.tryWeb` (RU+UZ); полная секция `seo` (intro, who×6, procedures×4, faq×7, areas×10, cta) на русском и узбекском
