@@ -10,12 +10,19 @@ export class AppSettings {
   id!: string; // always 'singleton'
 
   /**
-   * When true: medic must have balance >= platformFee to accept an order.
-   * platformFee is deducted at accept; full netPrice is credited at DONE.
-   * When false: no wallet check; platformFee deducted at DONE as before.
+   * When true: medic must have balance >= fee to accept an order.
+   * Fee is deducted from balance at accept; netPrice is credited to earnings at DONE.
+   * When false: no wallet check, earnings are still credited at DONE.
    */
   @Column({ type: 'boolean', default: false })
   isPaidMode!: boolean;
+
+  /**
+   * Commission rate as integer percent (e.g. 10 = 10%).
+   * Deducted from medic's balance when they accept an order in paid mode.
+   */
+  @Column({ type: 'int', default: 10 })
+  commissionRate!: number;
 
   @UpdateDateColumn()
   updatedAt!: Date;

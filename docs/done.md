@@ -1,5 +1,19 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — Двойной баланс медика + настраиваемая комиссия
+
+- **[backend]** `medics/entities/medic.entity.ts` — добавлено поле `earnings` (decimal, nullable, default 0): заработанные деньги из выполненных заказов
+- **[backend]** `app-settings/entities/app-settings.entity.ts` — добавлено поле `commissionRate` (int, default 10): процент комиссии 1–50
+- **[backend]** `app-settings/dto/patch-settings.dto.ts` — оба поля (`isPaidMode`, `commissionRate`) теперь опциональны
+- **[backend]** `app-settings/app-settings.service.ts` — добавлены `patch(dto)` и `getCommissionRate()`
+- **[backend]** `app-settings/app-settings.controller.ts` — GET и PATCH возвращают оба поля; убран лишний импорт `JwtModule`
+- **[backend]** `orders/orders.service.ts` — удалён хардкод `COMMISSION_RATE=0.10`; `create()` и `acceptOrder()` используют `getCommissionRate()` из настроек; DONE теперь зачисляет `netPrice` в `earnings` (не в `balance`)
+- **[backend]** `medics/medics.service.ts` — `toAuthResponse()` и `getProfile()` возвращают `earnings`
+- **[medic]** `context/AuthContext.tsx` — `MedicUser` интерфейс: добавлено поле `earnings: number`
+- **[medic]** `app/(tabs)/profile.tsx` — два блока баланса рядом: "Рабочий депозит" (`balance`) и "Заработок" (`earnings`); новые стили `balancesRow`, `balanceHalf`, `earningsCard`, `earningsValue`, `walletHint`
+- **[docs]** `BACKEND_API.md` — задокументированы `GET/PATCH /settings` с `commissionRate`, таблица двух полей баланса медика
+- `tsc --noEmit` = 0 ошибок (backend ✅, medic ✅)
+
 ## 2026-03-09 — Фиксы: галерея, env, уведомления, CORS, документация
 
 - **[medic]** `app/(tabs)/profile.tsx` — при отказе от доступа к галерее: если `canAskAgain=false` показывается алерт с кнопкой "Открыть настройки" (`Linking.openSettings()`), иначе — обычный алерт

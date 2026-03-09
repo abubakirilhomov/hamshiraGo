@@ -354,12 +354,22 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      {/* Wallet balance — always visible */}
-      <View style={styles.walletCard}>
-        <Text style={styles.walletLabel}>{t('profile.statBalance')}</Text>
-        <Text style={styles.walletValue}>
-          {Number(medic.balance).toLocaleString('ru-RU')} UZS
-        </Text>
+      {/* Balances — always visible */}
+      <View style={styles.balancesRow}>
+        <View style={[styles.walletCard, styles.balanceHalf]}>
+          <Text style={styles.walletLabel}>{t('profile.balance')}</Text>
+          <Text style={styles.walletValue}>
+            {Number(medic.balance).toLocaleString('ru-RU')} UZS
+          </Text>
+          <Text style={styles.walletHint}>рабочий депозит</Text>
+        </View>
+        <View style={[styles.walletCard, styles.balanceHalf, styles.earningsCard]}>
+          <Text style={styles.walletLabel}>{t('profile.earnings')}</Text>
+          <Text style={[styles.walletValue, styles.earningsValue]}>
+            {Number(medic.earnings ?? 0).toLocaleString('ru-RU')} UZS
+          </Text>
+          <Text style={styles.walletHint}>заработано всего</Text>
+        </View>
       </View>
 
       {/* Telegram */}
@@ -581,10 +591,18 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 20, fontWeight: '700', color: Theme.primary },
   statLabel: { fontSize: 12, color: Theme.textSecondary, marginTop: 2, textAlign: 'center' },
-  walletCard: {
+  balancesRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  balanceHalf: { flex: 1, marginBottom: 0, marginHorizontal: 0, paddingHorizontal: 12, paddingVertical: 12 },
+  earningsCard: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#86efac40',
+  },
+  walletCard: {
     backgroundColor: `${Theme.primary}10`,
     borderRadius: 12,
     borderWidth: 1,
@@ -593,8 +611,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 16,
   },
-  walletLabel: { fontSize: 14, fontWeight: '600', color: Theme.text },
-  walletValue: { fontSize: 16, fontWeight: '700', color: Theme.primary },
+  walletLabel: { fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 4 },
+  walletValue: { fontSize: 17, fontWeight: '700', color: Theme.primary },
+  walletHint: { fontSize: 11, color: Theme.textSecondary, marginTop: 2 },
+  earningsValue: { color: '#16a34a' },
   channelBanner: {
     flexDirection: 'row',
     alignItems: 'center',

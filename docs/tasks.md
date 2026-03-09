@@ -93,6 +93,7 @@
 
 - [x] **[admin]** `[Диёр]` PostHog аналитика — трекинг страниц и действий в admin; интеграция через `VITE_POSTHOG_KEY` + `VITE_POSTHOG_HOST` ✅
 - [ ] **[admin]** `[Диёр]` Sentry дашборд — настроить алерты и release tracking (DSN уже в `.env`)
+- [ ] **[admin]** `[Диёр]` Добавить поле `commissionRate` (1–50%) в страницу настроек (`/settings`); API: `PATCH /settings { commissionRate: number }`; отображать текущий % рядом с переключателем режима
 - [x] **[backend]** `[Абубакир]` Эндпоинт `POST /client-errors` — клиент отправляет ошибки с userId, экраном, stacktrace ✅
 
 ---
