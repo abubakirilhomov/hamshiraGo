@@ -7,7 +7,6 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { AppSettingsService } from './app-settings.service';
 import { PatchSettingsDto } from './dto/patch-settings.dto';
@@ -16,19 +15,19 @@ import { PatchSettingsDto } from './dto/patch-settings.dto';
 export class AppSettingsController {
   constructor(private readonly service: AppSettingsService) {}
 
-  /** Public — mobile apps and web read current mode */
+  /** Public — mobile apps and web read current settings */
   @Get()
   async getSettings() {
     const s = await this.service.get();
-    return { isPaidMode: s.isPaidMode };
+    return { isPaidMode: s.isPaidMode, commissionRate: s.commissionRate };
   }
 
-  /** Admin only — toggle paid mode */
+  /** Admin only — update settings (isPaidMode and/or commissionRate) */
   @Patch()
   @HttpCode(HttpStatus.OK)
   @UseGuards(AdminGuard)
   async patchSettings(@Body() dto: PatchSettingsDto) {
-    const s = await this.service.setIsPaidMode(dto.isPaidMode);
-    return { isPaidMode: s.isPaidMode };
+    const s = await this.service.patch(dto);
+    return { isPaidMode: s.isPaidMode, commissionRate: s.commissionRate };
   }
 }

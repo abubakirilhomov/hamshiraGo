@@ -612,6 +612,49 @@ medicEarns  = netPrice - platformFee
 
 ---
 
+## App Settings — `GET /settings` / `PATCH /settings`
+
+### GET /settings — публичный
+
+Возвращает текущие настройки приложения.
+
+**Response:**
+```json
+{
+  "isPaidMode": false,
+  "commissionRate": 10
+}
+```
+
+### PATCH /settings — только Admin (`X-Admin-Secret` или JWT)
+
+Изменяет одно или оба поля.
+
+**Body (все поля опциональны):**
+```json
+{
+  "isPaidMode": true,
+  "commissionRate": 15
+}
+```
+- `isPaidMode` — boolean
+- `commissionRate` — int, 1–50 (процент комиссии с рабочего баланса медика при принятии заказа)
+
+**Response:** `{ isPaidMode, commissionRate }`
+
+---
+
+## Баланс медика (два поля)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `balance` | decimal | **Рабочий депозит** — снимается комиссия при acceptOrder (если isPaidMode=true); пополняется вручную через Admin |
+| `earnings` | decimal | **Заработок** — сумма всех выполненных заказов; зачисляется автоматически при DONE (netPrice) |
+
+Оба поля всегда видны медику в профиле и возвращаются в `GET /medics/profile`.
+
+---
+
 ## CORS
 
 Разрешённые origins:

@@ -36,8 +36,6 @@ const CLIENT_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
-  /** Platform commission rate — 10% of the net order price */
-  private static readonly COMMISSION_RATE = 0.10;
 
   constructor(
     @InjectRepository(Order)
@@ -109,7 +107,8 @@ export class OrdersService {
     }
 
     const netPrice = service.price - discountAmount;
-    const platformFee = Math.round(netPrice * OrdersService.COMMISSION_RATE);
+    const commissionRate = await this.appSettingsService.getCommissionRate();
+    const platformFee = Math.round(netPrice * commissionRate / 100);
 
     const order = this.orderRepo.create({
       clientId,
@@ -325,7 +324,8 @@ export class OrdersService {
     const paidMode = await this.appSettingsService.isPaidMode();
     if (paidMode) {
       const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-      const fee = Math.round(netPrice * OrdersService.COMMISSION_RATE);
+      const rate = await this.appSettingsService.getCommissionRate();
+      const fee = Math.round(netPrice * rate / 100);
       if (medic.balance < fee) {
         const err: any = new ForbiddenException('Insufficient wallet balance');
         err.code = 'INSUFFICIENT_WALLET';
@@ -383,13 +383,10 @@ export class OrdersService {
 
     const currentStatus = order.status;
 
-    // DONE: status update + balance credit in a single transaction
+    // DONE: status update + earnings credit in a single transaction
     if (status === OrderStatus.DONE) {
       const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-      const fee = order.platformFee ?? 0;
-      // In paid mode the fee was already deducted at accept — credit full netPrice
-      const paidMode = await this.appSettingsService.isPaidMode();
-      const medicEarned = paidMode ? netPrice : netPrice - fee;
+      // Credit full netPrice to earnings (commission was already deducted from balance at accept)
       await this.dataSource.transaction(async (manager) => {
         const result = await manager.update(
           Order,
@@ -399,7 +396,7 @@ export class OrdersService {
         if (!result.affected) {
           throw new BadRequestException('Status changed concurrently, please retry');
         }
-        await manager.increment(Medic, { id: medicId }, 'balance', medicEarned);
+        await manager.increment(Medic, { id: medicId }, 'earnings', netPrice);
       });
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it

@@ -80,6 +80,20 @@ export class Medic {
   })
   balance!: number;
 
+  /** Total money earned from completed orders (credited on DONE) */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+    nullable: true,
+    transformer: {
+      to: (v: number) => v,
+      from: (v: string | number | null) => (v == null ? 0 : parseFloat(String(v))),
+    },
+  })
+  earnings!: number;
+
   /** Expo push token for background notifications */
   @Column({ type: 'varchar', nullable: true, default: null })
   pushToken!: string | null;
