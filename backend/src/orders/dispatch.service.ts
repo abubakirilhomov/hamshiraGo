@@ -16,6 +16,7 @@ import { TelegramService } from '../common/telegram.service';
 import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { Medic } from '../medics/entities/medic.entity';
+import { haversineKm } from '../utils/geo';
 
 @Injectable()
 export class DispatchService implements OnApplicationBootstrap {
@@ -274,24 +275,12 @@ export class DispatchService implements OnApplicationBootstrap {
     const withDist = candidates
       .map((m) => ({
         medic: m,
-        dist: this.haversineKm(lat, lng, Number(m.latitude!), Number(m.longitude!)),
+        dist: haversineKm(lat, lng, Number(m.latitude!), Number(m.longitude!)),
       }))
       .filter(({ dist }) => dist <= this.DISPATCH_RADIUS_KM)
       .sort((a, b) => a.dist - b.dist);
 
     return withDist[0]?.medic ?? null;
-  }
-
-  private haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   private notifyAdmin(msg: string): void {

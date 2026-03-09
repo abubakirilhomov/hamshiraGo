@@ -8,17 +8,24 @@ const SINGLETON_ID = 'singleton';
 
 @Injectable()
 export class AppSettingsService {
+  private cache: { settings: AppSettings; expiresAt: number } | null = null;
+  private readonly CACHE_TTL_MS = 30_000;
+
   constructor(
     @InjectRepository(AppSettings)
     private readonly repo: Repository<AppSettings>,
   ) {}
 
   async get(): Promise<AppSettings> {
+    if (this.cache && Date.now() < this.cache.expiresAt) {
+      return this.cache.settings;
+    }
     let settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
     if (!settings) {
       settings = this.repo.create({ id: SINGLETON_ID, isPaidMode: false, commissionRate: 10 });
       await this.repo.save(settings);
     }
+    this.cache = { settings, expiresAt: Date.now() + this.CACHE_TTL_MS };
     return settings;
   }
 
@@ -27,6 +34,7 @@ export class AppSettingsService {
     if (dto.isPaidMode !== undefined) update.isPaidMode = dto.isPaidMode;
     if (dto.commissionRate !== undefined) update.commissionRate = dto.commissionRate;
     await this.repo.upsert(update as AppSettings, ['id']);
+    this.cache = null; // invalidate cache
     return this.get();
   }
 

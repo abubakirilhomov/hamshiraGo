@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './entities/order-status.enum';
 import { OrderLocation } from './entities/order-location.entity';
@@ -17,6 +17,7 @@ import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Medic } from '../medics/entities/medic.entity';
+import { haversineKm } from '../utils/geo';
 
 const MEDIC_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
   CANCELED: { title: '❌ Заказ отменён клиентом', body: 'Клиент отменил заказ. Вы можете принять другой.' },
@@ -175,7 +176,13 @@ export class OrdersService {
     if (order.status === OrderStatus.CREATED) {
       this.dispatchService.cancelDispatch(orderId).catch(() => {});
     }
-    await this.orderRepo.update(orderId, { status: OrderStatus.CANCELED });
+    const cancelResult = await this.orderRepo.update(
+      { id: orderId, status: In(cancellable) },
+      { status: OrderStatus.CANCELED },
+    );
+    if (!cancelResult.affected) {
+      throw new BadRequestException('Order status changed concurrently, cannot cancel');
+    }
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.CANCELED);
@@ -225,8 +232,20 @@ export class OrdersService {
         `Client cannot transition from "${order.status}" to "${dto.status}"`,
       );
     }
-    order.status = OrderStatus.DONE;
-    await this.orderRepo.save(order);
+    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+    await this.dataSource.transaction(async (manager) => {
+      const result = await manager.update(
+        Order,
+        { id, clientId, status: OrderStatus.SERVICE_STARTED },
+        { status: OrderStatus.DONE },
+      );
+      if (!result.affected) {
+        throw new BadRequestException('Order status has already changed, please refresh');
+      }
+      if (order.medicId) {
+        await manager.increment(Medic, { id: order.medicId }, 'earnings', netPrice);
+      }
+    });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
     const doneOrder = await this.findOne(id);
     this.notifyClient(doneOrder, OrderStatus.DONE);
@@ -280,7 +299,7 @@ export class OrdersService {
       .filter((o) => o.location?.latitude != null && o.location?.longitude != null)
       .map((o) => ({
         order: o,
-        distanceKm: this.haversineKm(
+        distanceKm: haversineKm(
           medicLat, medicLon,
           Number(o.location!.latitude),
           Number(o.location!.longitude),
@@ -290,18 +309,6 @@ export class OrdersService {
       .sort((a, b) => a.distanceKm - b.distanceKm);
 
     return withDistance.map(({ order }) => order);
-  }
-
-  private haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   /** Medic accepts a CREATED order → status becomes ASSIGNED */
@@ -326,14 +333,22 @@ export class OrdersService {
       const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
       const rate = await this.appSettingsService.getCommissionRate();
       const fee = Math.round(netPrice * rate / 100);
-      if (medic.balance < fee) {
+      // Atomic: deduct only if balance is sufficient (prevents race condition)
+      const deductResult = await this.dataSource
+        .createQueryBuilder()
+        .update(Medic)
+        .set({ balance: () => `balance - ${fee}` })
+        .where('id = :id', { id: medicId })
+        .andWhere('balance >= :fee', { fee })
+        .execute();
+      if (!deductResult.affected) {
+        const fresh = await this.medicsService.findById(medicId);
         const err: any = new ForbiddenException('Insufficient wallet balance');
         err.code = 'INSUFFICIENT_WALLET';
         err.required = fee;
-        err.current = medic.balance;
+        err.current = fresh?.balance ?? 0;
         throw err;
       }
-      await this.dataSource.manager.decrement(Medic, { id: medicId }, 'balance', fee);
     }
 
     // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED

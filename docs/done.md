@@ -1,5 +1,13 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — Архитектурные фиксы backend (race conditions, CORS, geo, cache)
+
+- **[backend]** `orders/orders.service.ts` — атомарное списание баланса (`UPDATE WHERE balance >= fee`, affected=0 → ошибка); `updateStatusByClient(DONE)` теперь зачисляет `earnings` в транзакции; `cancelOrder` использует `WHERE status IN (cancellable)` с проверкой `affected`
+- **[backend]** `realtime/order-events.gateway.ts` — добавлены production домены в WebSocket CORS (`hamshirago.uz`, `app.`, `medic.`, `admin.`)
+- **[backend]** `app-settings/app-settings.service.ts` — 30-секундный TTL кэш для `get()`, инвалидируется при `patch()`
+- **[backend]** `utils/geo.ts` — создан общий модуль с функцией `haversineKm`; удалена дублированная реализация из `orders.service.ts`, `dispatch.service.ts`, `medics.service.ts`
+- `tsc --noEmit` = 0 ошибок ✅
+
 ## 2026-03-09 — Двойной баланс медика + настраиваемая комиссия
 
 - **[backend]** `medics/entities/medic.entity.ts` — добавлено поле `earnings` (decimal, nullable, default 0): заработанные деньги из выполненных заказов

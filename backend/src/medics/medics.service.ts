@@ -19,6 +19,7 @@ import { VerifyMedicDto } from './dto/verify-medic.dto';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
+import { haversineKm } from '../utils/geo';
 
 const ONLINE_IDLE_LIMIT_MS = 5 * 60 * 60 * 1000; // 5 hours
 
@@ -364,20 +365,6 @@ export class MedicsService {
 
   // ── Nearby (used by client app) ───────────────────────────────────────────
 
-  private distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
-
   async findNearby(latitude: number, longitude: number, limit = 10): Promise<Medic[]> {
     await this.autoDisableStaleOnlineMedics();
 
@@ -409,7 +396,7 @@ export class MedicsService {
     return medics
       .map((m) => ({
         ...m,
-        distanceKm: this.distanceKm(latitude, longitude, Number(m.latitude!), Number(m.longitude!)),
+        distanceKm: haversineKm(latitude, longitude, Number(m.latitude!), Number(m.longitude!)),
       }))
       .filter(({ distanceKm }) => distanceKm <= MAX_KM)
       .sort((a, b) => a.distanceKm - b.distanceKm)
