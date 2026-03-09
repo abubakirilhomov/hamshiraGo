@@ -14,10 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
-
-type OrderStatus =
-  | 'CREATED' | 'ASSIGNED' | 'ACCEPTED' | 'ON_THE_WAY'
-  | 'ARRIVED' | 'SERVICE_STARTED' | 'DONE' | 'CANCELED';
+import { type OrderStatus, ACTIVE_STATUSES } from '@/types/order';
 
 interface Order {
   id: string;
@@ -41,10 +38,6 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   DONE: Theme.success,
   CANCELED: Theme.error,
 };
-
-const ACTIVE_STATUSES: OrderStatus[] = [
-  'ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED',
-];
 
 export default function MyOrdersScreen() {
   const { token } = useAuth();

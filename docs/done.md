@@ -1,5 +1,42 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — Рефакторинг mobile + medic: хуки, компоненты, типы (Этап 15)
+
+### mobile/
+- **[mobile]** `types/order.ts` — добавлены `OrderStatus`, `STATUS_LABEL`, `STATUS_COLOR`, `ACTIVE_STATUSES` (единый источник)
+- **[mobile]** `constants/config.ts` — `GPS_ACCURACY_THRESHOLD_METERS`, `FIRST_ORDER_DISCOUNT_RATE`, `ORDERS_PAGE_LIMIT`
+- **[mobile]** `hooks/useOrderTracking.ts` — WebSocket + order state + notifications + cancel/rating (из `track.tsx`)
+- **[mobile]** `hooks/useRoutePolyline.ts` — OSRM route fetching (из `track.tsx`)
+- **[mobile]** `hooks/useDispatchTimer.ts` — elapsed timer (из `track.tsx`)
+- **[mobile]** `components/RatingModal.tsx` — звёзды рейтинга (из `track.tsx`)
+- **[mobile]** `app/order/trackStyles.ts` — стили вынесены из `track.tsx`
+- **[mobile]** `app/order/track.tsx` — **1365 → 514 строк** (−63%) ✅
+- **[mobile]** `components/OrderCard.tsx` — извлечён из `two.tsx`
+- **[mobile]** `app/(tabs)/two.tsx` — дублирующиеся типы удалены, импорт из `types/order`
+- **[mobile]** `app/order/location.tsx` + `confirm.tsx` — magic numbers → `constants/config`
+- `tsc --noEmit` = 0 ошибок ✅
+
+### medic/
+- **[medic]** `types/order.ts` — `OrderStatus`, `OrderLocation`, `ACTIVE_STATUSES`, `MAP_ACTIVE_STATUSES`
+- **[medic]** `constants/config.ts` — интервалы, таймауты, `OSRM_URL`
+- **[medic]** `components/NewOrderBanner.tsx` — извлечён из `index.tsx`
+- **[medic]** `hooks/useMedicOrderFeed.ts` — WebSocket + orders feed (из `index.tsx`)
+- **[medic]** `app/(tabs)/index.tsx` — **649 → ~430 строк** ✅
+- **[medic]** `app/(tabs)/my-orders.tsx` — `OrderStatus` импортируется из `types/order`
+
+### Агент-файлы
+- **[docs]** `.claude/agents/engineering/mobile-developer.md` — соглашения для mobile/medic разработки
+- **[docs]** `.claude/agents/engineering/mobile-refactor.md` — гайд по рефакторингу больших экранов
+
+---
+
+## 2026-03-09 — Рефакторинг medic order/[id].tsx: разбивка на хуки
+
+- **[medic]** `medic/hooks/useMedicLocation.ts` — создан: foreground permission, интервальная отправка геолокации через WebSocket (`medic_location`), `startTracking` / `stopTracking`, импорт `LOCATION_EMIT_INTERVAL_MS` из `@/constants/config`
+- **[medic]** `medic/hooks/useMedicRoute.ts` — создан: получение маршрута OSRM, состояние `routeCoords` / `routeLoading`, тротлинг `ROUTE_FETCH_THROTTLE_MS`, таймаут `FETCH_TIMEOUT_MS`, `fetchRoute` / `resetRoute`
+- **[medic]** `medic/hooks/useOrderStatus.ts` — создан: начальная загрузка заказа, WebSocket подписка (`order_status`), `OrderDetail` / `NEXT_STATUS_MAP` экспортированы, `updateOrderStatus(cb)`, фоновые уведомления
+- **[medic]** `medic/app/order/[id].tsx` — переписан: 838 → ~310 строк; импортирует 3 хука; локальные типы удалены (используются `OrderStatus`, `OrderLocation`, `MAP_ACTIVE_STATUSES` из `@/types/order`); UI/UX не изменён
+
 ## 2026-03-09 — Архитектурные фиксы backend (race conditions, CORS, geo, cache)
 
 - **[backend]** `orders/orders.service.ts` — атомарное списание баланса (`UPDATE WHERE balance >= fee`, affected=0 → ошибка); `updateStatusByClient(DONE)` теперь зачисляет `earnings` в транзакции; `cancelOrder` использует `WHERE status IN (cancellable)` с проверкой `affected`

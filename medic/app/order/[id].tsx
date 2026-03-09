@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   Alert,
-  AppState,
   Linking,
   Platform,
   Pressable,
@@ -10,31 +9,28 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
-import { io, Socket } from 'socket.io-client';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
-import { API_BASE, apiFetch } from '@/constants/api';
-import { useAuth } from '@/context/AuthContext';
+import { MAP_ACTIVE_STATUSES, OrderStatus } from '@/types/order';
+import { useOrderStatus, NEXT_STATUS_MAP } from '@/hooks/useOrderStatus';
+import { useMedicLocation } from '@/hooks/useMedicLocation';
+import { useMedicRoute } from '@/hooks/useMedicRoute';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
-
-const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
-
-const MAP_ACTIVE_STATUSES: OrderStatus[] = ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED'];
 
 async function openInMaps(latitude: number, longitude: number) {
   const lat = latitude;
   const lng = longitude;
 
-  const yandexApp = Platform.OS === 'ios'
-    ? `yandexmaps://maps.yandex.ru/?pt=${lng},${lat}&z=16&l=map`
-    : `yandexmaps://maps.yandex.ru/?pt=${lng},${lat}&z=16`;
+  const yandexApp =
+    Platform.OS === 'ios'
+      ? `yandexmaps://maps.yandex.ru/?pt=${lng},${lat}&z=16&l=map`
+      : `yandexmaps://maps.yandex.ru/?pt=${lng},${lat}&z=16`;
 
   const yandexWeb = `https://maps.yandex.ru/?pt=${lng},${lat}&z=16&l=map`;
   const googleWeb = `https://maps.google.com/?q=${lat},${lng}`;
@@ -47,324 +43,103 @@ async function openInMaps(latitude: number, longitude: number) {
     }
   } catch {}
 
-  Alert.alert(
-    'Открыть в картах',
-    '',
-    [
-      { text: 'Яндекс Карты', onPress: () => Linking.openURL(yandexWeb) },
-      { text: 'Google Maps', onPress: () => Linking.openURL(googleWeb) },
-      { text: 'Отмена', style: 'cancel' },
-    ],
-  );
+  Alert.alert('Открыть в картах', '', [
+    { text: 'Яндекс Карты', onPress: () => Linking.openURL(yandexWeb) },
+    { text: 'Google Maps', onPress: () => Linking.openURL(googleWeb) },
+    { text: 'Отмена', style: 'cancel' },
+  ]);
 }
-
-type OrderStatus =
-  | 'CREATED' | 'ASSIGNED' | 'ACCEPTED' | 'ON_THE_WAY'
-  | 'ARRIVED' | 'SERVICE_STARTED' | 'DONE' | 'CANCELED';
-
-interface OrderLocation {
-  house: string;
-  floor: string | null;
-  apartment: string | null;
-  phone: string;
-  latitude: number;
-  longitude: number;
-}
-
-interface OrderDetail {
-  id: string;
-  serviceTitle: string;
-  serviceId: string;
-  priceAmount: number;
-  discountAmount: number;
-  platformFee: number;
-  status: OrderStatus;
-  location: OrderLocation | null;
-  created_at: string;
-}
-
-// STATUS_LABEL resolved via t('orders.status.*') in the component
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
-  CREATED: Theme.primary,
-  ASSIGNED: Theme.warning,
-  ACCEPTED: Theme.warning,
-  ON_THE_WAY: Theme.warning,
-  ARRIVED: Theme.warning,
+  CREATED:         Theme.primary,
+  ASSIGNED:        Theme.warning,
+  ACCEPTED:        Theme.warning,
+  ON_THE_WAY:      Theme.warning,
+  ARRIVED:         Theme.warning,
   SERVICE_STARTED: Theme.accent,
-  DONE: Theme.success,
-  CANCELED: Theme.error,
-};
-
-const MEDIC_NOTIF_ID = 'hamshirago-medic-order';
-const ACTIVE_MEDIC_STATUSES: OrderStatus[] = ['ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED'];
-
-function getMedicNotifContent(order: OrderDetail): { title: string; body: string } | null {
-  const addr = order.location?.house ?? '';
-  switch (order.status) {
-    case 'ASSIGNED':        return { title: '📋 Новый заказ назначен', body: `Услуга: ${order.serviceTitle}. Адрес: ${addr}` };
-    case 'ACCEPTED':        return { title: '✅ Заказ принят', body: `Вы приняли заказ. Адрес клиента: ${addr}` };
-    case 'ON_THE_WAY':      return { title: '🚗 Вы в пути', body: `Едете к клиенту. Адрес: ${addr}` };
-    case 'ARRIVED':         return { title: '📍 Вы прибыли', body: `Вы у клиента. Начните услугу.` };
-    case 'SERVICE_STARTED': return { title: '🩺 Услуга идёт', body: `Оказываете услугу: ${order.serviceTitle}` };
-    default: return null;
-  }
-}
-
-/** Next status transition map for medic (labels resolved in component via t()) */
-const NEXT_STATUS_MAP: Partial<Record<OrderStatus, { status: OrderStatus; labelKey: string }>> = {
-  ASSIGNED:        { status: 'ACCEPTED',        labelKey: 'orders.accepted' },
-  ACCEPTED:        { status: 'ON_THE_WAY',      labelKey: 'orders.onTheWay' },
-  ON_THE_WAY:      { status: 'ARRIVED',         labelKey: 'orders.arrived' },
-  ARRIVED:         { status: 'SERVICE_STARTED', labelKey: 'orders.startService' },
-  SERVICE_STARTED: { status: 'DONE',            labelKey: 'orders.completeOrder' },
+  DONE:            Theme.success,
+  CANCELED:        Theme.error,
 };
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { token } = useAuth();
   const { t } = useTranslation();
-  const router = useRouter();
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+
   const [updating, setUpdating] = useState(false);
-  const [locationDeniedWarned, setLocationDeniedWarned] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
-  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
-  const [routeLoading, setRouteLoading] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
-  const trackingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastRouteFetchRef = useRef(0);
   const mapRef = useRef<any>(null);
-  const orderRef = useRef<OrderDetail | null>(null);
 
-  const fetchOrder = useCallback(async () => {
-    try {
-      const data = await apiFetch<OrderDetail>(`/orders/${id}`, {
-        token: token ?? undefined,
-      });
-      setOrder(data);
-    } catch {
-      Alert.alert('Ошибка', 'Не удалось загрузить заказ');
-      router.back();
-    }
-  }, [id, token]);
+  // ── Hooks ──────────────────────────────────────────────────────────────────
+  const { order, loading, wsConnected, socketRef, updateOrderStatus } =
+    useOrderStatus(id);
 
+  const { routeCoords, routeLoading, fetchRoute, resetRoute } = useMedicRoute();
+
+  const { startTracking, stopTracking } = useMedicLocation({
+    orderId: id,
+    socketRef,
+    onLocationUpdate: setMedicPos,
+    onLastSentAt: setLastLocationSentAt,
+    onSentCountIncrement: () => setSentLocationCount((prev) => prev + 1),
+  });
+
+  // ── Location tracking: ON_THE_WAY only ────────────────────────────────────
   useEffect(() => {
-    setLoading(true);
-    fetchOrder().finally(() => setLoading(false));
-  }, [fetchOrder]);
-
-  useEffect(() => {
-    if (!token) return;
-    const socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-      reconnectionAttempts: 10,
-    });
-    socketRef.current = socket;
-    socket.on('connect', () => setSocketConnected(true));
-    socket.on('disconnect', () => setSocketConnected(false));
-    socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
-      if (payload.orderId === id) {
-        setOrder((prev) => prev ? { ...prev, status: payload.status } : prev);
-      }
-    });
-
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-      setSocketConnected(false);
-    };
-  }, [token, id]);
-
-  const emitCurrentLocation = useCallback(async () => {
-    if (!id || !socketRef.current || !socketRef.current.connected) return;
-    const perm = await Location.getForegroundPermissionsAsync();
-    if (perm.status !== 'granted') {
-      if (!locationDeniedWarned) {
-        setLocationDeniedWarned(true);
-        Alert.alert('Нет доступа к геолокации', 'Разрешите геолокацию, чтобы клиент видел ваш путь.');
-      }
-      return;
+    if (order?.status === 'ON_THE_WAY') {
+      startTracking();
+    } else {
+      stopTracking();
     }
-    const loc = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-    socketRef.current.emit('medic_location', {
-      orderId: id,
-      latitude: loc.coords.latitude,
-      longitude: loc.coords.longitude,
-    });
-    setLastLocationSentAt(new Date().toISOString());
-    setSentLocationCount((prev) => prev + 1);
-  }, [id, locationDeniedWarned]);
+    return () => stopTracking();
+  }, [order?.status, startTracking, stopTracking]);
 
-  // Send location every 5s while ON_THE_WAY
-  useEffect(() => {
-    const shouldTrack = order?.status === 'ON_THE_WAY';
-
-    if (!shouldTrack) {
-      if (trackingTimerRef.current) {
-        clearInterval(trackingTimerRef.current);
-        trackingTimerRef.current = null;
-      }
-      return;
-    }
-
-    emitCurrentLocation().catch(() => {});
-    trackingTimerRef.current = setInterval(() => {
-      emitCurrentLocation().catch(() => {});
-    }, 5000);
-
-    return () => {
-      if (trackingTimerRef.current) {
-        clearInterval(trackingTimerRef.current);
-        trackingTimerRef.current = null;
-      }
-    };
-  }, [order?.status, emitCurrentLocation]);
-
-  // Get medic location for the map when in active statuses (even if not ON_THE_WAY yet)
+  // ── Get initial medic position for map when in active statuses ────────────
   useEffect(() => {
     if (!order || !MAP_ACTIVE_STATUSES.includes(order.status)) return;
     Location.getForegroundPermissionsAsync().then((perm) => {
       if (perm.status !== 'granted') return;
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-        .then((loc) => setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }))
+        .then((loc) =>
+          setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }),
+        )
         .catch(() => {});
     });
   }, [order?.status]);
 
-  // Fetch OSRM road route medic → client
-  const fetchRoute = useCallback(async () => {
-    if (!medicPos || !order?.location) return;
-    if (order.location.latitude == null || order.location.longitude == null) return;
+  // ── Fetch OSRM route whenever medicPos changes ─────────────────────────────
+  useEffect(() => {
+    fetchRoute(medicPos, order?.location ?? null);
+  }, [medicPos, order?.location, fetchRoute]);
 
-    const now = Date.now();
-    if (now - lastRouteFetchRef.current < 12_000) return;
-    lastRouteFetchRef.current = now;
-
-    setRouteLoading(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const url = `${OSRM_URL}/${medicPos.longitude},${medicPos.latitude};${Number(order.location.longitude)},${Number(order.location.latitude)}?overview=full&geometries=geojson`;
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) return;
-      const data = await res.json() as {
-        routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
-      };
-      const coordinates = data?.routes?.[0]?.geometry?.coordinates ?? [];
-      if (!coordinates.length) return;
-      setRouteCoords(coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })));
-    } catch {
-      clearTimeout(timer);
-    } finally {
-      setRouteLoading(false);
+  // ── Reset route when leaving active map statuses ───────────────────────────
+  useEffect(() => {
+    if (order && !MAP_ACTIVE_STATUSES.includes(order.status)) {
+      resetRoute();
     }
-  }, [medicPos, order?.location]);
+  }, [order?.status, resetRoute]);
 
-  useEffect(() => {
-    fetchRoute();
-  }, [fetchRoute]);
-
-  // ── Persistent notification ──────────────────────────────────────────────
-  useEffect(() => { orderRef.current = order; }, [order]);
-
-  useEffect(() => {
-    if (order?.status === 'DONE' || order?.status === 'CANCELED') {
-      Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
-    }
-  }, [order?.status]);
-
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state) => {
-      const current = orderRef.current;
-      if (state === 'background' && current && ACTIVE_MEDIC_STATUSES.includes(current.status)) {
-        const content = getMedicNotifContent(current);
-        if (content) {
-          Notifications.scheduleNotificationAsync({
-            identifier: MEDIC_NOTIF_ID,
-            content: { title: content.title, body: content.body, sound: false, data: { orderId: current.id } },
-            trigger: null,
-          }).catch(() => {});
-        }
-      } else if (state === 'active') {
-        Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
-      }
-    });
-    return () => {
-      sub.remove();
-      Notifications.dismissNotificationAsync(MEDIC_NOTIF_ID).catch(() => {});
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-fit map when both positions are available
+  // ── Auto-fit map when both positions are available ─────────────────────────
   useEffect(() => {
     if (!mapRef.current || !medicPos || !order?.location?.latitude) return;
     mapRef.current.fitToCoordinates(
       [
         { latitude: medicPos.latitude, longitude: medicPos.longitude },
-        { latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) },
+        {
+          latitude: Number(order.location.latitude),
+          longitude: Number(order.location.longitude),
+        },
       ],
       { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: true },
     );
   }, [medicPos]);
 
-  const handleNextStatus = async () => {
-    if (!order) return;
-    const next = NEXT_STATUS_MAP[order.status];
-    if (!next) return;
+  const handleNextStatus = useCallback(() => {
+    updateOrderStatus((v) => setUpdating(v));
+  }, [updateOrderStatus]);
 
-    const isDone = next.status === 'DONE';
-    const nextLabel = t(next.labelKey);
-    const confirmMsg = isDone
-      ? `${t('orders.completeOrder')}?`
-      : `${nextLabel}?`;
-
-    Alert.alert(t('common.save'), confirmMsg, [
-      { text: t('common.back'), style: 'cancel' },
-      {
-        text: nextLabel,
-        style: isDone ? 'destructive' : 'default',
-        onPress: async () => {
-          setUpdating(true);
-          try {
-            const updated = await apiFetch<OrderDetail>(`/orders/${order.id}/medic-status`, {
-              method: 'PATCH',
-              token: token ?? undefined,
-              body: JSON.stringify({ status: next.status }),
-            });
-            setOrder(updated);
-            if (next.status === 'DONE') {
-              const net = updated.priceAmount - (updated.discountAmount ?? 0);
-              const fee = updated.platformFee ?? Math.round(net * 0.1);
-              const earned = net - fee;
-              Alert.alert(
-                `${t('orders.completeOrder')} ✓`,
-                `${t('orders.netEarnings')}:\n+${earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
-                [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
-              );
-            }
-          } catch (e: unknown) {
-            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
-          } finally {
-            setUpdating(false);
-          }
-        },
-      },
-    ]);
-  };
-
+  // ── Loading guard ──────────────────────────────────────────────────────────
   if (loading || !order) {
     return (
       <View style={styles.centered}>
@@ -373,6 +148,7 @@ export default function OrderDetailScreen() {
     );
   }
 
+  // ── Derived display values ─────────────────────────────────────────────────
   const statusColor = STATUS_COLOR[order.status];
   const nextStep = NEXT_STATUS_MAP[order.status];
   const netPrice = order.priceAmount - (order.discountAmount ?? 0);
@@ -382,29 +158,47 @@ export default function OrderDetailScreen() {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   });
 
-  const clientLat = order.location?.latitude != null ? Number(order.location.latitude) : null;
-  const clientLng = order.location?.longitude != null ? Number(order.location.longitude) : null;
-  const showMap = MapsModule && clientLat != null && clientLng != null &&
+  const clientLat =
+    order.location?.latitude != null ? Number(order.location.latitude) : null;
+  const clientLng =
+    order.location?.longitude != null ? Number(order.location.longitude) : null;
+  const showMap =
+    MapsModule &&
+    clientLat != null &&
+    clientLng != null &&
     MAP_ACTIVE_STATUSES.includes(order.status);
 
-  const mapInitialRegion = medicPos && clientLat != null && clientLng != null
-    ? {
-        latitude: (medicPos.latitude + clientLat) / 2,
-        longitude: (medicPos.longitude + clientLng) / 2,
-        latitudeDelta: Math.max(Math.abs(medicPos.latitude - clientLat) * 2.5, 0.01),
-        longitudeDelta: Math.max(Math.abs(medicPos.longitude - clientLng) * 2.5, 0.01),
-      }
-    : {
-        latitude: clientLat ?? 0,
-        longitude: clientLng ?? 0,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      };
+  const mapInitialRegion =
+    medicPos && clientLat != null && clientLng != null
+      ? {
+          latitude: (medicPos.latitude + clientLat) / 2,
+          longitude: (medicPos.longitude + clientLng) / 2,
+          latitudeDelta: Math.max(
+            Math.abs(medicPos.latitude - clientLat) * 2.5,
+            0.01,
+          ),
+          longitudeDelta: Math.max(
+            Math.abs(medicPos.longitude - clientLng) * 2.5,
+            0.01,
+          ),
+        }
+      : {
+          latitude: clientLat ?? 0,
+          longitude: clientLng ?? 0,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        };
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       {/* Status */}
-      <View style={[styles.statusBlock, { backgroundColor: `${statusColor}12`, borderColor: `${statusColor}30` }]}>
+      <View
+        style={[
+          styles.statusBlock,
+          { backgroundColor: `${statusColor}12`, borderColor: `${statusColor}30` },
+        ]}
+      >
         <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
         <Text style={[styles.statusLabel, { color: statusColor }]}>
           {t(`orders.status.${order.status}`)}
@@ -414,14 +208,23 @@ export default function OrderDetailScreen() {
       {order.status === 'ON_THE_WAY' && (
         <View style={styles.liveTrackingCard}>
           <View style={styles.liveTrackingRow}>
-            <View style={[styles.liveTrackingDot, { backgroundColor: socketConnected ? Theme.success : Theme.warning }]} />
+            <View
+              style={[
+                styles.liveTrackingDot,
+                { backgroundColor: wsConnected ? Theme.success : Theme.warning },
+              ]}
+            />
             <Text style={styles.liveTrackingText}>
-              {socketConnected ? 'Передаём геолокацию клиенту' : 'Подключаем live-трекинг...'}
+              {wsConnected
+                ? 'Передаём геолокацию клиенту'
+                : 'Подключаем live-трекинг...'}
             </Text>
           </View>
           {lastLocationSentAt && (
             <Text style={styles.liveTrackingMeta}>
-              Последняя отправка: {new Date(lastLocationSentAt).toLocaleTimeString('ru-RU')} · точек: {sentLocationCount}
+              Последняя отправка:{' '}
+              {new Date(lastLocationSentAt).toLocaleTimeString('ru-RU')} · точек:{' '}
+              {sentLocationCount}
             </Text>
           )}
         </View>
@@ -484,7 +287,10 @@ export default function OrderDetailScreen() {
           </View>
           {clientLat != null && clientLng != null && (
             <Pressable
-              style={({ pressed }) => [styles.mapsBtn, pressed && styles.mapsBtnPressed]}
+              style={({ pressed }) => [
+                styles.mapsBtn,
+                pressed && styles.mapsBtnPressed,
+              ]}
               onPress={() => openInMaps(clientLat!, clientLng!)}
             >
               <FontAwesome name="location-arrow" size={15} color="#fff" />
@@ -509,10 +315,16 @@ export default function OrderDetailScreen() {
                 if (medicPos && clientLat != null && clientLng != null) {
                   mapRef.current?.fitToCoordinates(
                     [
-                      { latitude: medicPos.latitude, longitude: medicPos.longitude },
+                      {
+                        latitude: medicPos.latitude,
+                        longitude: medicPos.longitude,
+                      },
                       { latitude: clientLat, longitude: clientLng },
                     ],
-                    { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: false },
+                    {
+                      edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+                      animated: false,
+                    },
                   );
                 }
               }}
@@ -550,7 +362,10 @@ export default function OrderDetailScreen() {
                     routeCoords.length > 1
                       ? routeCoords
                       : [
-                          { latitude: medicPos.latitude, longitude: medicPos.longitude },
+                          {
+                            latitude: medicPos.latitude,
+                            longitude: medicPos.longitude,
+                          },
                           { latitude: clientLat!, longitude: clientLng! },
                         ]
                   }
@@ -559,6 +374,7 @@ export default function OrderDetailScreen() {
                 />
               )}
             </MapsModule.default>
+
             {routeLoading && (
               <View style={styles.mapLoadingOverlay}>
                 <ActivityIndicator color={Theme.primary} />
@@ -639,7 +455,9 @@ function Row({
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={[styles.rowValue, valueColor ? { color: valueColor } : {}]}>{value}</Text>
+      <Text style={[styles.rowValue, valueColor ? { color: valueColor } : {}]}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -647,7 +465,12 @@ function Row({
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
   content: { padding: 16, paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Theme.background,
+  },
   statusBlock: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -667,11 +490,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: `${Theme.primary}25`,
   },
-  liveTrackingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  liveTrackingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   liveTrackingDot: { width: 8, height: 8, borderRadius: 4 },
   liveTrackingText: { fontSize: 13, fontWeight: '600', color: Theme.text },
   liveTrackingMeta: { marginTop: 6, fontSize: 12, color: Theme.textSecondary },
@@ -684,10 +503,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 0,
   },
-  cardTitle: { fontSize: 12, fontWeight: '700', color: Theme.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  cardTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
   serviceTitle: { fontSize: 18, fontWeight: '700', color: Theme.text },
   divider: { height: 1, backgroundColor: Theme.border, marginVertical: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   rowLabel: { fontSize: 14, color: Theme.textSecondary },
   rowValue: { fontSize: 14, fontWeight: '600', color: Theme.text },
   finalRow: {
@@ -701,7 +532,12 @@ const styles = StyleSheet.create({
   },
   finalLabel: { fontSize: 14, fontWeight: '600', color: Theme.text },
   finalValue: { fontSize: 17, fontWeight: '700', color: Theme.primary },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
   locationText: { fontSize: 15, color: Theme.text, flex: 1 },
   callBtn: {
     flexDirection: 'row',
@@ -726,13 +562,8 @@ const styles = StyleSheet.create({
   mapsBtnPressed: { opacity: 0.9 },
   mapsBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
-  // ── Map ──────────────────────────────────────────────────────────────────────
-  mapWrap: {
-    height: 240,
-    borderRadius: 10,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
+  // ── Map ───────────────────────────────────────────────────────────────────
+  mapWrap: { height: 240, borderRadius: 10, overflow: 'hidden', marginBottom: 10 },
   mapLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.72)',
@@ -740,11 +571,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  mapLoadingText: {
-    fontSize: 12,
-    color: Theme.primary,
-    fontWeight: '600',
-  },
+  mapLoadingText: { fontSize: 12, color: Theme.primary, fontWeight: '600' },
   map: { width: '100%', height: '100%' },
   mapLegend: {
     flexDirection: 'row',
@@ -752,26 +579,10 @@ const styles = StyleSheet.create({
     gap: 14,
     flexWrap: 'wrap',
   },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendLabel: {
-    fontSize: 12,
-    color: Theme.textSecondary,
-    fontWeight: '600',
-  },
-  waitingGps: {
-    fontSize: 12,
-    color: Theme.textSecondary,
-    marginLeft: 4,
-  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { fontSize: 12, color: Theme.textSecondary, fontWeight: '600' },
+  waitingGps: { fontSize: 12, color: Theme.textSecondary, marginLeft: 4 },
   clientDot: {
     width: 34,
     height: 34,
@@ -802,12 +613,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  markerEmoji: {
-    fontSize: 17,
-    lineHeight: 21,
-  },
+  markerEmoji: { fontSize: 17, lineHeight: 21 },
 
-  // ── Action button ─────────────────────────────────────────────────────────────
+  // ── Action button ─────────────────────────────────────────────────────────
   actionBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 14,
