@@ -1,5 +1,15 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — Фиксы: галерея, env, уведомления, CORS, документация
+
+- **[medic]** `app/(tabs)/profile.tsx` — при отказе от доступа к галерее: если `canAskAgain=false` показывается алерт с кнопкой "Открыть настройки" (`Linking.openSettings()`), иначе — обычный алерт
+- **[mobile]** `constants/api.ts` — `API_BASE` читается из `EXPO_PUBLIC_API_BASE` env, fallback на Railway URL; добавлены `.env` и `.env.example`
+- **[medic]** `constants/api.ts` — то же самое
+- **[mobile]** `app/_layout.tsx` — Android notification channels: `order_updates` (HIGH, звук+вибро), `tracking_status` (LOW, тихий)
+- **[medic]** `app/_layout.tsx` — Android notification channels: `new_orders` (MAX, bypassDnd), `order_updates` (HIGH), `tracking_status` (LOW)
+- **[backend]** `main.ts` — CORS whitelist: добавлены `hamshirago.uz`, `app.hamshirago.uz`, `medic.hamshirago.uz`, `admin.hamshirago.uz`
+- **[docs]** `STORE_PUBLISH.md` — создана инструкция по публикации в App Store и Google Play
+
 ## 2026-03-08 — Landing: кнопка «Попробовать» + SEO-секция
 
 - **[landing]** `i18n/translations.ts` — добавлены `hero.try`, `hero.tryWeb` (RU+UZ); полная секция `seo` (intro, who×6, procedures×4, faq×7, areas×10, cta) на русском и узбекском
