@@ -155,9 +155,20 @@ export default function ProfileScreen() {
   };
 
   const handlePickPhoto = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках.');
+      if (canAskAgain) {
+        Alert.alert('Нет доступа', 'Разрешите доступ к галерее чтобы загрузить фото профиля.');
+      } else {
+        Alert.alert(
+          'Нет доступа к галерее',
+          'Вы запретили доступ. Откройте настройки и разрешите доступ к фото.',
+          [
+            { text: 'Отмена', style: 'cancel' },
+            { text: 'Открыть настройки', onPress: () => Linking.openSettings() },
+          ],
+        );
+      }
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
