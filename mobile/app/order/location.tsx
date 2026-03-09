@@ -18,13 +18,12 @@ import { Theme } from '@/constants/Theme';
 import type { OrderAddress } from '@/types/order';
 import { getServiceById, type ServiceId } from '@/types/services';
 import { useAuth } from '@/context/AuthContext';
+import { GPS_ACCURACY_THRESHOLD_METERS } from '@/constants/config';
 
 const LocationMapComponent =
   Platform.OS === 'web'
     ? () => null
     : require('@/components/LocationMap').LocationMap;
-
-const WEAK_GPS_ACCURACY_METERS = 25;
 
 export default function OrderLocationScreen() {
   const { serviceId } = useLocalSearchParams<{ serviceId?: string }>();
@@ -43,7 +42,7 @@ export default function OrderLocationScreen() {
     phone: '',
   });
 
-  const isWeakGps = accuracyMeters != null && accuracyMeters > WEAK_GPS_ACCURACY_METERS;
+  const isWeakGps = accuracyMeters != null && accuracyMeters > GPS_ACCURACY_THRESHOLD_METERS;
   const displayCoords = pin ?? coords;
 
   const fetchLocation = useCallback(async () => {

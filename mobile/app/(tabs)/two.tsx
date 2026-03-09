@@ -8,63 +8,17 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { io, Socket } from 'socket.io-client';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { API_BASE, apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { OrderStatus, ACTIVE_STATUSES } from '@/types/order';
+import { ORDERS_PAGE_LIMIT } from '@/constants/config';
+import OrderCard, { OrderCardItem } from '@/components/OrderCard';
 
-type OrderStatus =
-  | 'CREATED'
-  | 'ASSIGNED'
-  | 'ACCEPTED'
-  | 'ON_THE_WAY'
-  | 'ARRIVED'
-  | 'SERVICE_STARTED'
-  | 'DONE'
-  | 'CANCELED';
-
-interface OrderLocation {
-  house: string;
-  floor: string | null;
-  apartment: string | null;
-  phone: string;
-}
-
-interface Order {
-  id: string;
-  serviceTitle: string;
-  priceAmount: number;
-  discountAmount: number;
-  status: OrderStatus;
-  location: OrderLocation | null;
-  created_at: string;
-}
-
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  CREATED: 'Создан',
-  ASSIGNED: 'Назначен',
-  ACCEPTED: 'Принят',
-  ON_THE_WAY: 'В пути',
-  ARRIVED: 'Прибыл',
-  SERVICE_STARTED: 'Оказывается услуга',
-  DONE: 'Выполнен',
-  CANCELED: 'Отменён',
-};
-
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  CREATED: Theme.primary,
-  ASSIGNED: Theme.warning,
-  ACCEPTED: Theme.warning,
-  ON_THE_WAY: Theme.warning,
-  ARRIVED: Theme.warning,
-  SERVICE_STARTED: Theme.accent,
-  DONE: Theme.success,
-  CANCELED: Theme.error,
-};
-
-const ACTIVE_STATUSES: OrderStatus[] = ['CREATED', 'ASSIGNED', 'ACCEPTED', 'ON_THE_WAY', 'ARRIVED', 'SERVICE_STARTED'];
+type Order = OrderCardItem;
 
 export default function OrdersScreen() {
   const { token, logout } = useAuth();
@@ -77,7 +31,7 @@ export default function OrdersScreen() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: Order[] }>('/orders?limit=50', { token: token ?? undefined });
+      const res = await apiFetch<{ data: Order[] }>(`/orders?limit=${ORDERS_PAGE_LIMIT}`, { token: token ?? undefined });
       const data = res.data;
       setOrders(data);
       setError(null);
@@ -193,61 +147,6 @@ export default function OrdersScreen() {
   );
 }
 
-function OrderCard({ order, isActive }: { order: Order; isActive: boolean }) {
-  const router = useRouter();
-  const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
-  const statusColor = STATUS_COLOR[order.status] ?? Theme.textSecondary;
-  const date = new Date(order.created_at);
-  const dateStr = date.toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-      onPress={() => isActive
-        ? router.push({ pathname: '/order/track', params: { orderId: order.id } })
-        : undefined
-      }
-    >
-      <View style={styles.cardHeader}>
-        <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {STATUS_LABEL[order.status]}
-          </Text>
-        </View>
-      </View>
-
-      {order.location && (
-        <View style={styles.cardRow}>
-          <FontAwesome name="map-marker" size={13} color={Theme.textSecondary} />
-          <Text style={styles.cardRowText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-            {order.location.house}
-            {order.location.floor ? `, эт. ${order.location.floor}` : ''}
-            {order.location.apartment ? `, кв. ${order.location.apartment}` : ''}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.cardFooter}>
-        <Text style={styles.price}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
-        <View style={styles.cardFooterRight}>
-          <Text style={styles.date} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-            {dateStr}
-          </Text>
-          {isActive && (
-            <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
-          )}
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -324,65 +223,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  card: {
-    backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Theme.border,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    gap: 8,
-  },
-  serviceTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Theme.text,
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-  },
-  cardRowText: {
-    fontSize: 13,
-    flex: 1,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: Theme.border,
-  },
-  cardFooterRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Theme.primary,
-  },
-  date: {
-    fontSize: 12,
   },
 });

@@ -9,6 +9,7 @@ import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { FIRST_ORDER_DISCOUNT_RATE } from '@/constants/config';
 
 interface CatalogService {
   id: string;
@@ -18,8 +19,6 @@ interface CatalogService {
   durationMinutes: number | null;
   category: string | null;
 }
-
-const FIRST_ORDER_DISCOUNT_RATE = 0.10; // 10%
 
 export default function OrderConfirmScreen() {
   const router = useRouter();

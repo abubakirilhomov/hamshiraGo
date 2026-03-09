@@ -118,6 +118,41 @@
 
 ---
 
+---
+
+## ✅ Этап 15 — Mobile рефакторинг (Абубакир)
+
+### Выполнено — mobile/
+- [x] `types/order.ts` — добавлены `OrderStatus`, `STATUS_LABEL`, `STATUS_COLOR`, `ACTIVE_STATUSES`
+- [x] `constants/config.ts` — созданы: `GPS_ACCURACY_THRESHOLD_METERS`, `FIRST_ORDER_DISCOUNT_RATE`, `ORDERS_PAGE_LIMIT`, и др.
+- [x] `components/OrderCard.tsx` — извлечён из `two.tsx`
+- [x] `hooks/useOrderTracking.ts` — WebSocket + order state из `track.tsx`
+- [x] `hooks/useRoutePolyline.ts` — OSRM route из `track.tsx`
+- [x] `hooks/useDispatchTimer.ts` — таймер elapsed из `track.tsx`
+- [x] `components/RatingModal.tsx` — звёзды рейтинга из `track.tsx`
+- [x] `app/order/trackStyles.ts` — стили из `track.tsx`
+- [x] `app/order/track.tsx` — 1365 → 514 строк ✅
+- [x] `app/(tabs)/two.tsx` — удалены дублирующиеся типы, использует `OrderCard`
+- [x] `app/order/location.tsx` и `confirm.tsx` — magic numbers → `constants/config`
+
+### Выполнено — medic/
+- [x] `types/order.ts` — `OrderStatus`, `OrderLocation`, `ACTIVE_STATUSES`, `MAP_ACTIVE_STATUSES`
+- [x] `constants/config.ts` — интервалы, таймауты, URL
+- [x] `components/NewOrderBanner.tsx` — извлечён из `index.tsx`
+- [x] `hooks/useMedicOrderFeed.ts` — WebSocket + orders feed из `index.tsx`
+- [x] `hooks/useMedicLocation.ts` — location tracking из `order/[id].tsx`
+- [x] `hooks/useMedicRoute.ts` — OSRM route из `order/[id].tsx`
+- [x] `hooks/useOrderStatus.ts` — order fetch + WS из `order/[id].tsx`
+- [x] `app/(tabs)/index.tsx` — 649 → ~200 строк ✅
+- [x] `app/order/[id].tsx` — 838 → ~300 строк ✅
+- [x] `app/(tabs)/my-orders.tsx` — импорт `OrderStatus` из `types/order`
+
+### Агент-файлы
+- [x] `.claude/agents/engineering/mobile-developer.md`
+- [x] `.claude/agents/engineering/mobile-refactor.md`
+
+---
+
 ## 💡 Идеи / V2
 
 - [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
