@@ -1,32 +1,27 @@
 # HamshiraGo — Выполненные задачи
 
-## 2026-03-09 — Self-hosted OSRM (Абубакир)
+## 2026-03-10 — Self-hosted OSRM (Абубакир)
 
 - **[osrm]** `osrm/Dockerfile` — создан сервис на базе `osrm/osrm-backend`, данные Узбекистана с Geofabrik, MLD алгоритм, порт 5000
 - **[medic]** `constants/config.ts` — `OSRM_URL` читает `EXPO_PUBLIC_OSRM_URL` env var, fallback на публичный сервер
 - **[mobile]** `hooks/useRoutePolyline.ts` — аналогично читает `EXPO_PUBLIC_OSRM_URL`
 
-## 2026-03-09 — BUG-1 fix + Performance Audit (Абубакир)
+## 2026-03-10 — Performance оптимизации + аудит (Диёр)
 
-- **[backend]** `orders/orders.service.ts` — BUG-1: `acceptOrder` переписан с транзакцией; атомарный `UPDATE WHERE status=CREATED` первым, затем списание комиссии в той же транзакции → rollback при недостаточном балансе, race condition устранён
-- **[backend]** `orders/orders.service.ts` — `findAvailable`: добавлен `take: 50` для защиты от full table scan
-- **[backend]** `orders/entities/dispatch-attempt.entity.ts` — добавлены `@Index()` на `orderId` и `medicId` (-90% времени dispatch queries)
-- **[backend]** `orders/dispatch.service.ts` — NO_MEDICS auto-retry: `setTimeout(advanceDispatch, 5min)` после уведомления клиента
+- **[web-medic]** `app/page.tsx` — убран `setInterval(fetchOrders, 15000)` (polling). Теперь доступные заказы приходят через WebSocket `new_order` (уже был подключён). При reconnect — одиночный REST запрос для sync.
+- **[admin]** `pages/Dashboard.tsx` — `recharts` переведён на `React.lazy` + `Suspense`. Initial bundle −~400KB.
+- **[admin]** `pages/Reports.tsx` — то же: `recharts` lazy-loaded.
+- **[BUG-28]** `web/app/orders/[id]/page.tsx` — `unsubscribe_order` уже эмитится в cleanup (баг уже был исправлен ранее).
+- **[docs]** `docs/PERFORMANCE_AUDIT.md` — создан полный аудит производительности и безопасности.
 
-## 2026-03-09 — Backend: безопасность и производительность (Cloudinary + Payme)
+## 2026-03-09 — Backend: BUG-1 fix + Performance + Security (Абубакир)
 
-- **[backend]** `common/cloudinary.service.ts` — `uploadBuffer` теперь гонится с 30-секундным таймаутом через `Promise.race`; зависшие загрузки бросают `Error('Cloudinary upload timeout (30s)')`
-- **[backend]** `payments/payme.service.ts` — добавлены `validateIp(ip)` (публичный) и `isPaymeIp(ip)` (приватный); в продакшне IP вне диапазона `185.8.212.0/24` отклоняется с `ForbiddenException`
-- **[backend]** `payments/payments.controller.ts` — webhook `POST /payments/payme` передаёт `req.ip` в `paymeService.validateIp()` после проверки Basic-auth
-
-## 2026-03-09 — Backend: NO_MEDICS auto-retry через 5 минут
-
-- **[backend]** `orders/dispatch.service.ts` — в `handleNoMedics`, ветка `if (attemptCount > 0)`: после `notifyAdmin(...)` добавлен `setTimeout` на 5 минут, который автоматически повторяет `advanceDispatch()` для заказа
-
-## 2026-03-09 — Backend: производительность dispatch_attempts и findAvailable
-
-- **[backend]** `orders/entities/dispatch-attempt.entity.ts` — добавлены `@Index()` на колонки `orderId` и `medicId`, `Index` добавлен в импорты TypeORM
-- **[backend]** `orders/orders.service.ts` — `findAvailable()`: добавлен `take: 50` для предотвращения полного сканирования таблицы
+- **[backend]** `orders/orders.service.ts` — `acceptOrder` атомарный с транзакцией, race condition устранён; `findAvailable` добавлен `take: 50`
+- **[backend]** `orders/entities/dispatch-attempt.entity.ts` — `@Index()` на `orderId` и `medicId`
+- **[backend]** `orders/dispatch.service.ts` — NO_MEDICS auto-retry через 5 мин
+- **[backend]** `common/cloudinary.service.ts` — `Promise.race` 30s timeout на upload
+- **[backend]** `payments/payme.service.ts` — IP whitelist `185.8.212.0/24` в продакшне
+- **[backend]** `payments/payments.controller.ts` — webhook передаёт `req.ip` в `validateIp()`
 
 ## 2026-03-09 — web-medic: обработка dispatch_invite_expired
 

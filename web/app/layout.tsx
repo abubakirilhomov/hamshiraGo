@@ -9,7 +9,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 
 const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app").replace(/\/$/, "");
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://web-production-d365f.up.railway.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.hamshirago.uz";
 
 export const metadata: Metadata = {
   title: {
