@@ -258,7 +258,12 @@ export default function TrackOrderScreen() {
       {isCanceled && (
         <View style={styles.canceledBanner}>
           <FontAwesome name="times-circle" size={18} color={Theme.error} />
-          <Text style={styles.canceledText}>Заказ отменён</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.canceledText}>Заказ отменён</Text>
+            {!!order.cancelReason && (
+              <Text style={styles.canceledReason}>{order.cancelReason}</Text>
+            )}
+          </View>
         </View>
       )}
 

@@ -18,6 +18,7 @@ export interface OrderCardItem {
   priceAmount: number;
   discountAmount: number;
   status: OrderStatus;
+  cancelReason?: string | null;
   location: OrderLocation | null;
   created_at: string;
 }
@@ -49,10 +50,17 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
     >
       <View style={styles.cardHeader}>
         <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {STATUS_LABEL[order.status]}
-          </Text>
+        <View style={styles.statusBadgeWrap}>
+          <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {STATUS_LABEL[order.status]}
+            </Text>
+          </View>
+          {order.status === 'CANCELED' && !!order.cancelReason && (
+            <Text style={styles.cancelReasonText} numberOfLines={2}>
+              {order.cancelReason}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -103,6 +111,11 @@ const styles = StyleSheet.create({
     color: Theme.text,
     flex: 1,
   },
+  statusBadgeWrap: {
+    alignItems: 'flex-end',
+    gap: 4,
+    flexShrink: 1,
+  },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -111,6 +124,12 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  cancelReasonText: {
+    fontSize: 11,
+    color: '#6b7280',
+    textAlign: 'right',
+    maxWidth: 140,
   },
   cardRow: {
     flexDirection: 'row',

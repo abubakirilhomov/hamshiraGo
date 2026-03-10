@@ -1,6 +1,24 @@
 # HamshiraGo — Выполненные задачи
 
-## 2026-03-10 — Self-hosted OSRM (Абубакир)
+## 2026-03-09 — Cancellation reason feature (backend)
+
+- **[backend]** `orders/entities/order.entity.ts` — добавлено поле `cancelReason` (nullable varchar 500)
+- **[backend]** `orders/dto/cancel-order.dto.ts` — создан DTO с `reason?` (`@IsOptional @IsString @MaxLength(500)`)
+- **[backend]** `orders/orders.service.ts` — `cancelOrder`/`adminCancelOrder` сохраняют причину, включают в push
+- **[backend]** `orders/orders.controller.ts` — эндпоинты cancel принимают `CancelOrderDto`
+- **[backend]** `orders/dispatch.service.ts` — авто-отмена сохраняет `cancelReason: 'Нет доступных медиков в вашем районе'`
+
+## 2026-03-09 — mobile: причина отмены + BUG-17, connection pool, JWT, Map TTL
+
+- **[mobile]** `hooks/useOrderTracking.ts` — добавлено поле `cancelReason?` в интерфейс `Order`
+- **[mobile]** `app/order/track.tsx` — показывает причину отмены при статусе CANCELED
+- **[mobile]** `components/OrderCard.tsx` — показывает причину отмены под бейджем
+- **[backend]** `orders/orders.service.ts` — BUG-17: push ошибки логируются вместо тихого проглатывания
+- **[backend]** `app.module.ts` — TypeORM connection pool `extra: { max:10, min:2 }`
+- **[backend]** `auth/auth.module.ts` — JWT expiry `1d` (было `7d`), env `JWT_EXPIRES_IN`
+- **[backend]** `realtime/order-events.gateway.ts` — `clientOrderRooms` TTL cleanup каждые 5 мин
+
+## 2026-03-09 — Self-hosted OSRM (Абубакир)
 
 - **[osrm]** `osrm/Dockerfile` — создан сервис на базе `osrm/osrm-backend`, данные Узбекистана с Geofabrik, MLD алгоритм, порт 5000
 - **[medic]** `constants/config.ts` — `OSRM_URL` читает `EXPO_PUBLIC_OSRM_URL` env var, fallback на публичный сервер

@@ -316,6 +316,11 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: Theme.error,
   },
+  canceledReason: {
+    fontSize: 13,
+    color: Theme.textSecondary,
+    marginTop: 3,
+  },
 
   // Buttons
   cancelBtn: {

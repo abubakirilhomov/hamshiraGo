@@ -25,6 +25,7 @@ export interface Order {
   discountAmount: number;
   status: OrderStatus;
   dispatchStatus?: 'SEARCHING' | 'NO_MEDICS' | 'ASSIGNED' | 'FAILED' | null;
+  cancelReason?: string | null;
   clientRating: number | null;
   medic?: Medic | null;
   location: {

@@ -65,6 +65,7 @@ import { TelegramBotModule } from './telegram/telegram-bot.module';
         database: process.env.DB_NAME ?? 'hamshira_go',
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV !== 'production',
+        extra: { max: 10, min: 2, idleTimeoutMillis: 30000 },
       }),
     }),
     CommonModule,

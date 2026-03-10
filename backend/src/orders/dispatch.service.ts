@@ -186,6 +186,7 @@ export class DispatchService implements OnApplicationBootstrap {
       await this.orderRepo.update(order.id, {
         status: OrderStatus.CANCELED,
         dispatchStatus: 'FAILED',
+        cancelReason: 'Нет доступных медиков в вашем районе',
       });
       this.gateway.emitOrderStatus(order.id, OrderStatus.CANCELED);
 
