@@ -12,4 +12,6 @@ export const PERMISSION_REMINDER_INTERVAL_MS = 5 * 60_000; // 5 min
 export const ONLINE_IDLE_LIMIT_H = 5;                  // auto-offline after 5h idle
 
 // OSRM
-export const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
+export const OSRM_URL =
+  process.env.EXPO_PUBLIC_OSRM_URL?.replace(/\/$/, '') ||
+  'https://router.project-osrm.org/route/v1/driving';

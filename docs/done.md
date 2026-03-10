@@ -1,5 +1,11 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — Self-hosted OSRM (Абубакир)
+
+- **[osrm]** `osrm/Dockerfile` — создан сервис на базе `osrm/osrm-backend`, данные Узбекистана с Geofabrik, MLD алгоритм, порт 5000
+- **[medic]** `constants/config.ts` — `OSRM_URL` читает `EXPO_PUBLIC_OSRM_URL` env var, fallback на публичный сервер
+- **[mobile]** `hooks/useRoutePolyline.ts` — аналогично читает `EXPO_PUBLIC_OSRM_URL`
+
 ## 2026-03-09 — BUG-1 fix + Performance Audit (Абубакир)
 
 - **[backend]** `orders/orders.service.ts` — BUG-1: `acceptOrder` переписан с транзакцией; атомарный `UPDATE WHERE status=CREATED` первым, затем списание комиссии в той же транзакции → rollback при недостаточном балансе, race condition устранён
