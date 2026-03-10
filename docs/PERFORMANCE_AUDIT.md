@@ -10,11 +10,11 @@
 
 | # | Проблема | Файл | Почему рухнет |
 |---|----------|------|---------------|
-| 1 | **`findAvailable()` грузит ВСЕ CREATED заказы без лимита** | `backend/src/orders/orders.service.ts:282` | При 500+ заказах — полный table scan + `medicsService.findById()` вне цикла, но `orders.find({where:{status:CREATED}})` без `take` вернёт все строки. Каждые 15 сек медик делает этот запрос. |
-| 2 | **`dispatch_attempts` без индексов на `orderId`/`medicId`** | `backend/src/orders/entities/dispatch-attempt.entity.ts` | `getActivePendingAttempt()`, `onApplicationBootstrap()` и `advanceDispatch()` делают `find({where:{orderId, result:PENDING}})` — полный scan таблицы при росте. При 100+ заказах/день = 1000+ записей без индекса. |
-| 3 | **Cloudinary upload без timeout** | `backend/src/common/cloudinary.service.ts:47` | `uploadBuffer()` создаёт Promise без AbortController/timeout. Если Cloudinary тормозит — NestJS worker thread зависает навсегда. При 10 одновременных загрузках = 10 зависших потоков. |
-| 4 | **Polling вместо WebSocket в web-medic** | `web-medic/app/page.tsx:147` | `pollInterval = setInterval(fetchOrders, 15000)` — при 50 медиках онлайн = 3-4 req/сек постоянно на `/orders/medic/available`. Каждый запрос грузит все CREATED заказы (проблема #1). |
-| 5 | **`appSettingsService.getCommissionRate()` без кэша** | `backend/src/orders/orders.service.ts:111` | При каждом создании заказа и каждом `acceptOrder()` делается запрос к `app_settings` таблице. При высокой нагрузке — лишние DB запросы. |
+| 1 | ✅ **`findAvailable()` грузит ВСЕ CREATED заказы без лимита** — ИСПРАВЛЕНО (`take: 50`) | `backend/src/orders/orders.service.ts` | — |
+| 2 | ✅ **`dispatch_attempts` без индексов на `orderId`/`medicId`** — ИСПРАВЛЕНО (`@Index()`) | `backend/src/orders/entities/dispatch-attempt.entity.ts` | — |
+| 3 | ✅ **Cloudinary upload без timeout** — ИСПРАВЛЕНО (`Promise.race` 30s) | `backend/src/common/cloudinary.service.ts` | — |
+| 4 | **Polling вместо WebSocket в web-medic** | `web-medic/app/page.tsx:147` | Зона Диёра |
+| 5 | **`appSettingsService.getCommissionRate()` без кэша** | `backend/src/orders/orders.service.ts` | Уже кэшируется 30с в `AppSettingsService` ✅ |
 
 ---
 
@@ -28,7 +28,7 @@
 | 4 | **Location update каждые 30 сек via REST** | `web-medic/app/page.tsx:139` | `locationInterval = setInterval(updateLocation, 30000)` вместо WebSocket. При 50 медиках = ~1.7 REST req/сек на `PATCH /medics/location`. Можно через уже открытый socket. |
 | 5 | **Нет pagination в `findAvailable()`** | `backend/src/orders/orders.service.ts:282` | `orders.find({where:{status:CREATED}})` без `take/skip`. Если CREATED заказов 50+ (пиковая нагрузка) — клиент получает их все, фронт рендерит все. |
 | 6 | **`synchronize: true` в dev (риск для staging)** | `backend/src/app.module.ts:67` | `synchronize: process.env.NODE_ENV !== 'production'`. Если staging задеплоен без `NODE_ENV=production` — TypeORM может изменить схему в реальной БД при deploy. |
-| 7 | **Dispatch timeout 60с, нет авто-retry для NO_MEDICS** | `backend/src/orders/dispatch.service.ts:157` | Когда все медики заняты → `dispatchStatus=NO_MEDICS`. Заказ висит навсегда, клиент не знает когда попробовать снова. Нужен retry через 5-10 мин. |
+| 7 | ✅ **Dispatch timeout 60с, нет авто-retry для NO_MEDICS** — ИСПРАВЛЕНО (retry 5 мин) | `backend/src/orders/dispatch.service.ts` | — |
 
 ---
 
@@ -53,7 +53,7 @@
 |---|-----------|------|------|
 | 1 | **JWT default 7 дней без отзыва токенов** | `backend/src/auth/auth.module.ts:22` | Если токен скомпрометирован (XSS/leak) — действует 7 дней. Нет blacklist. Admin JWT — 7 дней с полным доступом к панели. Рекомендация: `JWT_EXPIRES_IN=1d` для клиентов, `12h` для admin. |
 | 2 | **JWT в localStorage (XSS-уязвимость)** | `web-medic/lib/api.ts:6`, `web/lib/api.ts` | `localStorage.getItem("medic_token")` — любой JS на странице (XSS, CDN компрометация) получает токен. Критично для admin (BUG-33). Решение: HttpOnly cookie. |
-| 3 | **Payme webhook без IP whitelist** | `backend/src/payments/payme.service.ts:30` | Проверяет только Basic auth. Если PAYME_MERCHANT_KEY попадёт в лог/trace — любой может вызвать webhook и подтвердить платёж. Нужна проверка IP: `185.8.212.0/24` (Payme IP range). |
+| 3 | ✅ **Payme webhook без IP whitelist** — ИСПРАВЛЕНО (`185.8.212.0/24` в prod) | `backend/src/payments/payme.service.ts` | — |
 | 4 | **Click webhook: потенциальный race condition** | `backend/src/payments/click.service.ts` | Prepare + Complete приходят независимо. Если Complete придёт дважды (сеть) — проверка на idempotency критична. Нужно убедиться, что `payment.status = PAID` не устанавливается дважды. |
 | 5 | **Admin токен роль не проверяется при WebSocket** | `backend/src/realtime/order-events.gateway.ts:69` | `role === 'admin' → return true` без проверки что токен действительно выдан для admin. Если у клиента JWT с `role:admin` (не должно быть, но JWT секрет утёк) — полный доступ. |
 | 6 | **Rate limit не применяется к WebSocket** | `backend/src/app.module.ts:51` | ThrottlerGuard применяется к HTTP. WebSocket события (`medic_location`, `subscribe_order`) не throttle-ятся. Можно засыпать сервер `medic_location` событиями. |

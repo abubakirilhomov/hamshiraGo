@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
 
+const CLOUDINARY_TIMEOUT_MS = 30_000;
+
 @Injectable()
 export class CloudinaryService implements OnModuleInit {
   private readonly logger = new Logger(CloudinaryService.name);
@@ -44,7 +46,7 @@ export class CloudinaryService implements OnModuleInit {
     folder: string,
     publicId?: string,
   ): Promise<string> {
-    return new Promise((resolve, reject) => {
+    const uploadPromise = new Promise<string>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
@@ -64,6 +66,15 @@ export class CloudinaryService implements OnModuleInit {
 
       Readable.from(buffer).pipe(uploadStream);
     });
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('Cloudinary upload timeout (30s)')),
+        CLOUDINARY_TIMEOUT_MS,
+      ),
+    );
+
+    return Promise.race([uploadPromise, timeoutPromise]);
   }
 
   /** Delete an asset by its Cloudinary public_id */

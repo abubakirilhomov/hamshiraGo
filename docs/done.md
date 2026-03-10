@@ -1,5 +1,27 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-09 — BUG-1 fix + Performance Audit (Абубакир)
+
+- **[backend]** `orders/orders.service.ts` — BUG-1: `acceptOrder` переписан с транзакцией; атомарный `UPDATE WHERE status=CREATED` первым, затем списание комиссии в той же транзакции → rollback при недостаточном балансе, race condition устранён
+- **[backend]** `orders/orders.service.ts` — `findAvailable`: добавлен `take: 50` для защиты от full table scan
+- **[backend]** `orders/entities/dispatch-attempt.entity.ts` — добавлены `@Index()` на `orderId` и `medicId` (-90% времени dispatch queries)
+- **[backend]** `orders/dispatch.service.ts` — NO_MEDICS auto-retry: `setTimeout(advanceDispatch, 5min)` после уведомления клиента
+
+## 2026-03-09 — Backend: безопасность и производительность (Cloudinary + Payme)
+
+- **[backend]** `common/cloudinary.service.ts` — `uploadBuffer` теперь гонится с 30-секундным таймаутом через `Promise.race`; зависшие загрузки бросают `Error('Cloudinary upload timeout (30s)')`
+- **[backend]** `payments/payme.service.ts` — добавлены `validateIp(ip)` (публичный) и `isPaymeIp(ip)` (приватный); в продакшне IP вне диапазона `185.8.212.0/24` отклоняется с `ForbiddenException`
+- **[backend]** `payments/payments.controller.ts` — webhook `POST /payments/payme` передаёт `req.ip` в `paymeService.validateIp()` после проверки Basic-auth
+
+## 2026-03-09 — Backend: NO_MEDICS auto-retry через 5 минут
+
+- **[backend]** `orders/dispatch.service.ts` — в `handleNoMedics`, ветка `if (attemptCount > 0)`: после `notifyAdmin(...)` добавлен `setTimeout` на 5 минут, который автоматически повторяет `advanceDispatch()` для заказа
+
+## 2026-03-09 — Backend: производительность dispatch_attempts и findAvailable
+
+- **[backend]** `orders/entities/dispatch-attempt.entity.ts` — добавлены `@Index()` на колонки `orderId` и `medicId`, `Index` добавлен в импорты TypeORM
+- **[backend]** `orders/orders.service.ts` — `findAvailable()`: добавлен `take: 50` для предотвращения полного сканирования таблицы
+
 ## 2026-03-09 — web-medic: обработка dispatch_invite_expired
 
 - **[web-medic]** WebSocket событие `dispatch_invite_expired` — убирает заказ из списка доступных + показывает уведомление "Предложение заказа истекло"

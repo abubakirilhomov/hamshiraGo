@@ -5,10 +5,12 @@ import {
   Param,
   Body,
   Headers,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaymentsService } from './payments.service';
@@ -42,12 +44,14 @@ export class PaymentsController {
 
   @Post('payme')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Payme JSON-RPC webhook (Basic auth)' })
+  @ApiOperation({ summary: 'Payme JSON-RPC webhook (Basic auth + IP whitelist)' })
   async paymeWebhook(
     @Headers('authorization') auth: string,
+    @Req() req: Request,
     @Body() body: { method: string; params: Record<string, unknown>; id?: number },
   ) {
     this.paymeService.validateAuth(auth);
+    this.paymeService.validateIp(req.ip);
     const result = await this.paymeService.handleRpc(body.method, body.params ?? {}) as Record<string, unknown>;
     return { jsonrpc: '2.0', id: body.id ?? null, ...result };
   }

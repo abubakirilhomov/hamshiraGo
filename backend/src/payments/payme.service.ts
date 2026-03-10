@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -34,6 +34,25 @@ export class PaymeService {
     if (provided !== expected) {
       throw new UnauthorizedException('Invalid Payme credentials');
     }
+  }
+
+  /** Check that the request IP belongs to the Payme range (185.8.212.0/24).
+   *  In production, non-Payme IPs are rejected with 403. */
+  validateIp(ip: string | undefined): void {
+    if (this.config.get<string>('NODE_ENV') !== 'production') return;
+    if (!this.isPaymeIp(ip ?? '')) {
+      throw new ForbiddenException('Forbidden');
+    }
+  }
+
+  /** Returns true when `ip` falls inside 185.8.212.0/24 */
+  private isPaymeIp(ip: string): boolean {
+    // Strip IPv6-mapped IPv4 prefix if present (e.g. "::ffff:185.8.212.5")
+    const normalized = ip.replace(/^::ffff:/, '');
+    const parts = normalized.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((p) => isNaN(p))) return false;
+    // 185.8.212.0/24 → first three octets must be 185, 8, 212
+    return parts[0] === 185 && parts[1] === 8 && parts[2] === 212;
   }
 
   /** Build Payme checkout URL */

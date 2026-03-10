@@ -47,11 +47,9 @@
 
 ## KRITIK (7 ta bug)
 
-### BUG 1 ❌ ОТКРЫТ: Buyurtma qabul qilishda race condition
-- **Fayl:** `backend/src/orders/orders.service.ts:278-299`
-- **Muammo:** Ikkita medik bir vaqtda bitta buyurtmani qabul qilishi mumkin. `acceptOrder` metodi buyurtmani o'qiydi, `status !== CREATED` tekshiradi, keyin yangilaydi. O'qish va yozish orasida ikkita medik bir vaqtda tekshiruvdan o'tishi mumkin.
-- **Ta'siri:** Ikki marta tayinlash — ikkinchi medik birinchisini qayta yozadi.
-- **Yechim:** Atomik `UPDATE orders SET medicId=?, status='ASSIGNED' WHERE id=? AND status='CREATED'` ishlatish.
+### BUG 1 ✅ ИСПРАВЛЕНО: Buyurtma qabul qilishda race condition
+- **Fayl:** `backend/src/orders/orders.service.ts`
+- **Tuzatish:** `acceptOrder` DB транзакциясига ўтказилди. Аввал атомик `UPDATE WHERE status=CREATED` — агар бошқа медик олиб кетса, `BadRequestException`. Кейин balance списание (транзакция доирасида). Баланс камлигида транзакция rollback бўлади, буюртма CREATED бўлиб қолади.
 
 ### BUG 2 ✅ ИСПРАВЛЕНО (Этап 1): Autentifikatsiyasiz status yangilash
 - **Fayl:** `backend/src/orders/orders.controller.ts:76-80`

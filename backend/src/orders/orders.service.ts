@@ -283,6 +283,7 @@ export class OrdersService {
       where: { status: OrderStatus.CREATED },
       relations: { location: true },
       order: { created_at: 'ASC' },
+      take: 50,
     });
 
     const medic = await this.medicsService.findById(medicId);
@@ -327,41 +328,47 @@ export class OrdersService {
 
     const order = await this.findOne(orderId);
 
-    // ── Paid mode: check wallet and deduct commission upfront ────────────────
-    const paidMode = await this.appSettingsService.isPaidMode();
-    if (paidMode) {
-      const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-      const rate = await this.appSettingsService.getCommissionRate();
-      const fee = Math.round(netPrice * rate / 100);
-      // Atomic: deduct only if balance is sufficient (prevents race condition)
-      const deductResult = await this.dataSource
-        .createQueryBuilder()
-        .update(Medic)
-        .set({ balance: () => `balance - ${fee}` })
-        .where('id = :id', { id: medicId })
-        .andWhere('balance >= :fee', { fee })
-        .execute();
-      if (!deductResult.affected) {
-        const fresh = await this.medicsService.findById(medicId);
-        const err: any = new ForbiddenException('Insufficient wallet balance');
-        err.code = 'INSUFFICIENT_WALLET';
-        err.required = fee;
-        err.current = fresh?.balance ?? 0;
-        throw err;
-      }
-    }
-
-    // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
+    // Validate dispatch invite first (before touching any money or order state)
     await this.dispatchService.onMedicAccept(orderId, medicId);
 
-    // Atomic update: only succeeds if order is still CREATED (prevents race condition)
-    const result = await this.orderRepo.update(
-      { id: orderId, status: OrderStatus.CREATED },
-      { medicId, status: OrderStatus.ASSIGNED },
-    );
-    if (!result.affected) {
-      throw new BadRequestException('Order is no longer available');
-    }
+    const paidMode = await this.appSettingsService.isPaidMode();
+    const commissionRate = paidMode ? await this.appSettingsService.getCommissionRate() : 0;
+
+    // ── Transaction: assign order first, then deduct commission ─────────────
+    // Order update happens first (WHERE status=CREATED) — if two medics race,
+    // only one succeeds. If balance is insufficient, the whole transaction rolls
+    // back and the order reverts to CREATED automatically.
+    await this.dataSource.transaction(async (manager) => {
+      const result = await manager.update(
+        Order,
+        { id: orderId, status: OrderStatus.CREATED },
+        { medicId, status: OrderStatus.ASSIGNED },
+      );
+      if (!result.affected) {
+        throw new BadRequestException('Order is no longer available');
+      }
+
+      if (paidMode) {
+        const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+        const fee = Math.round(netPrice * commissionRate / 100);
+        const deductResult = await manager
+          .createQueryBuilder()
+          .update(Medic)
+          .set({ balance: () => `balance - ${fee}` })
+          .where('id = :id', { id: medicId })
+          .andWhere('balance >= :fee', { fee })
+          .execute();
+        if (!deductResult.affected) {
+          const fresh = await this.medicsService.findById(medicId);
+          const err: any = new ForbiddenException('Insufficient wallet balance');
+          err.code = 'INSUFFICIENT_WALLET';
+          err.required = fee;
+          err.current = fresh?.balance ?? 0;
+          throw err;
+        }
+      }
+    });
+
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.ASSIGNED);
