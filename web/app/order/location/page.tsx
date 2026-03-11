@@ -32,15 +32,43 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   }
 }
 
-async function forwardGeocode(query: string, signal: AbortSignal): Promise<{ lat: number; lng: number } | null> {
+interface GeocodeResult {
+  lat: number;
+  lng: number;
+  address: string | null;
+}
+
+async function forwardGeocode(query: string, signal: AbortSignal): Promise<GeocodeResult | null> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=ru&countrycodes=uz`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=ru&countrycodes=uz&addressdetails=1`,
       { signal }
     );
-    const data = await res.json() as Array<{ lat: string; lon: string }>;
+    const data = await res.json() as Array<{
+      lat: string;
+      lon: string;
+      address?: {
+        road?: string;
+        house_number?: string;
+        suburb?: string;
+        quarter?: string;
+        neighbourhood?: string;
+        city?: string;
+        town?: string;
+        village?: string;
+      };
+    }>;
     if (!data.length) return null;
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    const item = data[0];
+    const a = item.address ?? {};
+    const parts = [
+      a.road,
+      a.house_number,
+      a.suburb ?? a.quarter ?? a.neighbourhood,
+      a.city ?? a.town ?? a.village,
+    ].filter(Boolean);
+    const address = parts.length >= 2 ? parts.join(", ") : null;
+    return { lat: parseFloat(item.lat), lng: parseFloat(item.lon), address };
   } catch {
     return null;
   }
@@ -201,8 +229,11 @@ function LocationForm() {
         addressFromMapRef.current = true; // prevent re-trigger
         setLat(result.lat);
         setLng(result.lng);
+        if (result.address) {
+          setAddress(result.address);
+        }
       }
-    }, 800);
+    }, 3000);
 
     return () => {
       if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
