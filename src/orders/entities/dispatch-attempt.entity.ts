@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Medic } from '../../medics/entities/medic.entity';
@@ -21,9 +22,11 @@ export class DispatchAttempt {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
   @Column({ type: 'uuid' })
   orderId!: string;
 
+  @Index()
   @Column({ type: 'uuid' })
   medicId!: string;
 

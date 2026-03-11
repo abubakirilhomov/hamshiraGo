@@ -6,7 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -47,12 +47,13 @@ export type MedicLocationPayload = {
     credentials: true,
   },
 })
-export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(OrderEventsGateway.name);
   private clientOrderRooms = new Map<string, Set<string>>(); // socketId -> Set of orderIds
+  private readonly clientConnectedAt = new Map<string, number>();
 
   constructor(
     @InjectRepository(Order)
@@ -60,6 +61,18 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
+
+  onModuleInit() {
+    setInterval(() => {
+      const cutoff = Date.now() - 30 * 60 * 1000;
+      for (const [socketId, connectedAt] of this.clientConnectedAt.entries()) {
+        if (connectedAt < cutoff) {
+          this.clientOrderRooms.delete(socketId);
+          this.clientConnectedAt.delete(socketId);
+        }
+      }
+    }, 5 * 60 * 1000);
+  }
 
   private async canAccessOrderRoom(
     userId: string,
@@ -110,6 +123,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
         // Personal room for targeted dispatch invites
         client.join(`medic:${payload.sub}`);
       }
+      this.clientConnectedAt.set(client.id, Date.now());
       this.logger.log(`Client connected: ${client.id} user=${payload.sub} role=${payload.role}`);
     } catch {
       client.disconnect();
@@ -118,6 +132,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
 
   handleDisconnect(client: any) {
     this.clientOrderRooms.delete(client.id);
+    this.clientConnectedAt.delete(client.id);
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 

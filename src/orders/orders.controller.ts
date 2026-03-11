@@ -17,6 +17,7 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { RateOrderDto } from './dto/rate-order.dto';
+import { CancelOrderDto } from './dto/cancel-order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MedicAuthGuard } from '../auth/guards/medic-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -70,8 +71,12 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Клиент отменяет заказ' })
-  cancelOrder(@Param('id') id: string, @ClientId() clientId: string) {
-    return this.ordersService.cancelOrder(id, clientId);
+  cancelOrder(
+    @Param('id') id: string,
+    @ClientId() clientId: string,
+    @Body() dto: CancelOrderDto,
+  ) {
+    return this.ordersService.cancelOrder(id, clientId, dto.reason);
   }
 
   /** Client rates the medic after order is DONE */
@@ -175,7 +180,7 @@ export class OrdersController {
   @Patch('admin/:id/cancel')
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
-  adminCancelOrder(@Param('id') id: string) {
-    return this.ordersService.adminCancelOrder(id);
+  adminCancelOrder(@Param('id') id: string, @Body() dto: CancelOrderDto) {
+    return this.ordersService.adminCancelOrder(id, dto.reason);
   }
 }

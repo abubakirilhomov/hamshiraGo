@@ -95,7 +95,7 @@ export class OrdersService {
       data: { orderId: order.id, status },
       channelId: 'order_updates',
       priority: 'high',
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Push failed:', err));
   }
 
   async create(clientId: string, dto: CreateOrderDto): Promise<Order> {
@@ -163,7 +163,7 @@ export class OrdersService {
   }
 
   /** Client cancels their own order — only allowed while CREATED or ASSIGNED */
-  async cancelOrder(orderId: string, clientId: string): Promise<Order> {
+  async cancelOrder(orderId: string, clientId: string, reason?: string): Promise<Order> {
     const order = await this.findOne(orderId);
     if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
     const cancellable: OrderStatus[] = [OrderStatus.CREATED, OrderStatus.ASSIGNED];
@@ -176,9 +176,10 @@ export class OrdersService {
     if (order.status === OrderStatus.CREATED) {
       this.dispatchService.cancelDispatch(orderId).catch(() => {});
     }
+    const cancelReason = reason ?? 'Отменено клиентом';
     const cancelResult = await this.orderRepo.update(
       { id: orderId, status: In(cancellable) },
-      { status: OrderStatus.CANCELED },
+      { status: OrderStatus.CANCELED, cancelReason },
     );
     if (!cancelResult.affected) {
       throw new BadRequestException('Order status changed concurrently, cannot cancel');
@@ -186,7 +187,20 @@ export class OrdersService {
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.CANCELED);
-    this.notifyMedic(updated, OrderStatus.CANCELED);
+    // Notify medic with cancellation reason
+    if (updated.medicId) {
+      const medic = await this.medicsService.findById(updated.medicId);
+      if (medic?.pushToken) {
+        this.pushService.send([medic.pushToken], {
+          title: '❌ Заказ отменён клиентом',
+          body: cancelReason,
+          sound: 'default',
+          data: { orderId: updated.id, status: OrderStatus.CANCELED },
+          channelId: 'order_updates',
+          priority: 'high',
+        }).catch((err) => this.logger.error('Push failed:', err));
+      }
+    }
     return updated;
   }
 
@@ -283,6 +297,7 @@ export class OrdersService {
       where: { status: OrderStatus.CREATED },
       relations: { location: true },
       order: { created_at: 'ASC' },
+      take: 50,
     });
 
     const medic = await this.medicsService.findById(medicId);
@@ -327,41 +342,47 @@ export class OrdersService {
 
     const order = await this.findOne(orderId);
 
-    // ── Paid mode: check wallet and deduct commission upfront ────────────────
-    const paidMode = await this.appSettingsService.isPaidMode();
-    if (paidMode) {
-      const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-      const rate = await this.appSettingsService.getCommissionRate();
-      const fee = Math.round(netPrice * rate / 100);
-      // Atomic: deduct only if balance is sufficient (prevents race condition)
-      const deductResult = await this.dataSource
-        .createQueryBuilder()
-        .update(Medic)
-        .set({ balance: () => `balance - ${fee}` })
-        .where('id = :id', { id: medicId })
-        .andWhere('balance >= :fee', { fee })
-        .execute();
-      if (!deductResult.affected) {
-        const fresh = await this.medicsService.findById(medicId);
-        const err: any = new ForbiddenException('Insufficient wallet balance');
-        err.code = 'INSUFFICIENT_WALLET';
-        err.required = fee;
-        err.current = fresh?.balance ?? 0;
-        throw err;
-      }
-    }
-
-    // Validate that this medic has an active dispatch invite, clear timer, mark ACCEPTED
+    // Validate dispatch invite first (before touching any money or order state)
     await this.dispatchService.onMedicAccept(orderId, medicId);
 
-    // Atomic update: only succeeds if order is still CREATED (prevents race condition)
-    const result = await this.orderRepo.update(
-      { id: orderId, status: OrderStatus.CREATED },
-      { medicId, status: OrderStatus.ASSIGNED },
-    );
-    if (!result.affected) {
-      throw new BadRequestException('Order is no longer available');
-    }
+    const paidMode = await this.appSettingsService.isPaidMode();
+    const commissionRate = paidMode ? await this.appSettingsService.getCommissionRate() : 0;
+
+    // ── Transaction: assign order first, then deduct commission ─────────────
+    // Order update happens first (WHERE status=CREATED) — if two medics race,
+    // only one succeeds. If balance is insufficient, the whole transaction rolls
+    // back and the order reverts to CREATED automatically.
+    await this.dataSource.transaction(async (manager) => {
+      const result = await manager.update(
+        Order,
+        { id: orderId, status: OrderStatus.CREATED },
+        { medicId, status: OrderStatus.ASSIGNED },
+      );
+      if (!result.affected) {
+        throw new BadRequestException('Order is no longer available');
+      }
+
+      if (paidMode) {
+        const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+        const fee = Math.round(netPrice * commissionRate / 100);
+        const deductResult = await manager
+          .createQueryBuilder()
+          .update(Medic)
+          .set({ balance: () => `balance - ${fee}` })
+          .where('id = :id', { id: medicId })
+          .andWhere('balance >= :fee', { fee })
+          .execute();
+        if (!deductResult.affected) {
+          const fresh = await this.medicsService.findById(medicId);
+          const err: any = new ForbiddenException('Insufficient wallet balance');
+          err.code = 'INSUFFICIENT_WALLET';
+          err.required = fee;
+          err.current = fresh?.balance ?? 0;
+          throw err;
+        }
+      }
+    });
+
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
     const updated = await this.findOne(orderId);
     this.notifyClient(updated, OrderStatus.ASSIGNED);
@@ -470,7 +491,7 @@ export class OrdersService {
   }
 
   /** Admin force-cancels any order regardless of current status */
-  async adminCancelOrder(orderId: string): Promise<Order> {
+  async adminCancelOrder(orderId: string, reason?: string): Promise<Order> {
     const order = await this.findOne(orderId);
     if (order.status === OrderStatus.DONE || order.status === OrderStatus.CANCELED) {
       throw new BadRequestException(`Order is already ${order.status}`);
@@ -478,11 +499,30 @@ export class OrdersService {
     if (order.status === OrderStatus.CREATED) {
       this.dispatchService.cancelDispatch(orderId).catch(() => {});
     }
+    const cancelReason = reason ?? 'Отменено администратором';
     order.status = OrderStatus.CANCELED;
+    order.cancelReason = cancelReason;
     await this.orderRepo.save(order);
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.CANCELED);
+    // Notify client with cancellation reason
+    const expoToken = await this.usersService.getPushToken(updated.clientId);
+    if (expoToken) {
+      await this.pushService.send([expoToken], {
+        title: '❌ Заказ отменён',
+        body: cancelReason,
+        sound: 'default',
+        data: { orderId: updated.id, status: OrderStatus.CANCELED },
+        channelId: 'order_updates',
+        priority: 'high',
+      });
+    }
+    await this.webPushService.sendToSubscriber('client', updated.clientId, {
+      title: '❌ Заказ отменён',
+      body: cancelReason,
+      data: { orderId: updated.id, status: OrderStatus.CANCELED },
+      url: `/orders/${updated.id}`,
+    });
     return updated;
   }
 }

@@ -242,6 +242,16 @@ export class MedicsController {
     return this.medicsService.blockMedic(id, body.isBlocked ?? true);
   }
 
+  @Post('admin/:id/topup')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async topupWallet(
+    @Param('id') id: string,
+    @Body('amount') amount: number,
+  ): Promise<void> {
+    await this.medicsService.addBalance(id, amount);
+  }
+
   // ── Push token (Expo) ────────────────────────────────────────────────────
 
   @Patch('push-token')

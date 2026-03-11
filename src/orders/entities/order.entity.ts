@@ -58,6 +58,10 @@ export class Order {
   @Column({ type: 'varchar', length: 50, nullable: true, default: null })
   dispatchStatus!: 'SEARCHING' | 'ASSIGNED' | 'NO_MEDICS' | 'FAILED' | null;
 
+  /** Reason for cancellation — set when status transitions to CANCELED */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  cancelReason?: string | null;
+
   /** Rating left by client after order completion (1-5), null if not rated yet */
   @Column({ type: 'smallint', nullable: true, default: null })
   clientRating!: number | null;

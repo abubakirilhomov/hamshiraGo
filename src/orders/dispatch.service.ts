@@ -174,11 +174,19 @@ export class DispatchService implements OnApplicationBootstrap {
           .catch(() => {});
       }
       this.notifyAdmin(`⚠️ Нет медиков для заказа #${order.id.slice(0, 8)}`);
+
+      // Auto-retry in 5 minutes
+      setTimeout(() => {
+        this.advanceDispatch(order.id).catch((err) =>
+          this.logger.warn(`NO_MEDICS retry failed for order ${order.id}: ${String(err)}`),
+        );
+      }, 5 * 60 * 1000);
     } else {
       // Zero attempts — no medics at all in radius → auto-cancel
       await this.orderRepo.update(order.id, {
         status: OrderStatus.CANCELED,
         dispatchStatus: 'FAILED',
+        cancelReason: 'Нет доступных медиков в вашем районе',
       });
       this.gateway.emitOrderStatus(order.id, OrderStatus.CANCELED);
 
