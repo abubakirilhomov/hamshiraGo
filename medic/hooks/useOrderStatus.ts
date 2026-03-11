@@ -62,7 +62,7 @@ function getMedicNotifContent(
 export const NEXT_STATUS_MAP: Partial<
   Record<OrderStatus, { status: OrderStatus; labelKey: string }>
 > = {
-  ASSIGNED:        { status: 'ACCEPTED',        labelKey: 'orders.accepted' },
+  // ASSIGNED → ACCEPTED is handled automatically in [id].tsx (no button needed)
   ACCEPTED:        { status: 'ON_THE_WAY',      labelKey: 'orders.onTheWay' },
   ON_THE_WAY:      { status: 'ARRIVED',         labelKey: 'orders.arrived' },
   ARRIVED:         { status: 'SERVICE_STARTED', labelKey: 'orders.startService' },
