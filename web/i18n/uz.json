@@ -166,7 +166,10 @@
     "mapHint": "Xaritaga bosing yoki markerni suring",
     "searching": "Qidirilmoqda...",
     "enterAddress": "Manzilni kiriting",
-    "enterPhone": "Telefon raqamini kiriting"
+    "enterPhone": "Telefon raqamini kiriting",
+    "gpsBlocked": "Joylashuv bloklangan",
+    "gpsBlockedTitle": "Joylashuvga ruxsat bloklangan",
+    "gpsBlockedHint": "Brauzer sozlamalarini oching → Ruxsatlar → Joylashuv va ushbu sayt uchun ruxsat bering. Yoki manzilni qo'lda kiriting."
   },
   "profile": {
     "title": "Mening profilim",

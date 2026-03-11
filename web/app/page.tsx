@@ -95,6 +95,12 @@ export default function HomePage() {
         @media (min-width: 540px) { .services-grid { grid-template-columns: 1fr 1fr; } }
         .svc-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.09) !important; transform: translateY(-1px); }
         .svc-card { transition: box-shadow 150ms ease, transform 150ms ease; }
+        .header-brand-text { display: inline; }
+        .header-orders-text { display: inline; }
+        @media (max-width: 420px) {
+          .header-brand-text { display: none; }
+          .header-orders-text { display: none; }
+        }
       `}</style>
 
       {/* Header */}
@@ -104,7 +110,7 @@ export default function HomePage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <img src="/logo.png" alt="HamshiraGo" style={{ width: 35, height: 35, borderRadius: 10, objectFit: "cover" }} />
-              <span style={{ fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
+              <span className="header-brand-text" style={{ fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {/* Language switcher */}
@@ -137,7 +143,7 @@ export default function HomePage() {
                   display: "flex", alignItems: "center", gap: 6,
                 }}
               >
-                <FaListAlt size={12} /> {t("home.myOrders")}
+                <FaListAlt size={12} /> <span className="header-orders-text">{t("home.myOrders")}</span>
               </button>
               <button
                 onClick={() => router.push("/profile")}

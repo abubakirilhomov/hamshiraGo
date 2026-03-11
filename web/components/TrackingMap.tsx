@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface TrackingMapProps {
   clientLat: number;
@@ -27,6 +27,8 @@ export default function TrackingMap({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const routeLayerRef = useRef<any>(null);
   const lastRouteFetchRef = useRef(0);
+  const routeLoadedRef = useRef(false);
+  const [eta, setEta] = useState<{ minutes: number; distanceKm: number } | null>(null);
 
   // Init map once
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function TrackingMap({
       const medicIcon = L.divIcon({
         html: `<div style="width:42px;height:42px;background:#fff;border:3px solid #0d9488;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(13,148,136,0.35);overflow:hidden;">${medicInner}</div>`,
         iconSize: [42, 42],
-        iconAnchor: [21, 42],
+        iconAnchor: [21, 21],
         className: "",
       });
       const medicMarker = L.marker([medicLat, medicLng], { icon: medicIcon })
@@ -115,9 +117,16 @@ export default function TrackingMap({
         const url = `${osrmBase}/${medicLng},${medicLat};${clientLng},${clientLat}?overview=full&geometries=geojson`;
         const res = await fetch(url);
         if (cancelled || !res.ok) return;
-        const data = await res.json() as { routes?: Array<{ geometry?: { coordinates?: [number, number][] } }> };
-        const coords = data?.routes?.[0]?.geometry?.coordinates ?? [];
+        const data = await res.json() as { routes?: Array<{ geometry?: { coordinates?: [number, number][] }; duration?: number; distance?: number }> };
+        const route = data?.routes?.[0];
+        const coords = route?.geometry?.coordinates ?? [];
         if (!coords.length || cancelled || !mapRef.current) return;
+        if (route?.duration != null && route?.distance != null) {
+          setEta({
+            minutes: Math.ceil(route.duration / 60),
+            distanceKm: Math.round(route.distance / 100) / 10,
+          });
+        }
 
         const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
 
@@ -127,6 +136,14 @@ export default function TrackingMap({
         routeLayerRef.current = L.polyline(latLngs, {
           color: "#0d9488", weight: 4, opacity: 0.85,
         }).addTo(mapRef.current);
+
+        // Подгоняем карту под маршрут только при первой загрузке
+        if (!routeLoadedRef.current) {
+          routeLoadedRef.current = true;
+          try {
+            mapRef.current.fitBounds(routeLayerRef.current.getBounds(), { padding: [40, 40] });
+          } catch { /* ignore */ }
+        }
       } catch { /* OSRM unavailable — silently skip */ }
     });
 
@@ -137,7 +154,23 @@ export default function TrackingMap({
   return (
     <>
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <div ref={containerRef} style={{ width: "100%", height: "100%", borderRadius: "inherit" }} />
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <div ref={containerRef} style={{ width: "100%", height: "100%", borderRadius: "inherit" }} />
+        {eta && (
+          <div style={{
+            position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)",
+            zIndex: 1000, background: "rgba(255,255,255,0.95)",
+            borderRadius: 12, padding: "8px 18px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+            display: "flex", alignItems: "center", gap: 12,
+            pointerEvents: "none",
+          }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#0d9488" }}>🕐 {eta.minutes} мин</span>
+            <span style={{ width: 1, height: 18, background: "#e2e8f0", display: "inline-block" }} />
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{eta.distanceKm} км</span>
+          </div>
+        )}
+      </div>
     </>
   );
 }

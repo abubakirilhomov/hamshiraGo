@@ -35,7 +35,16 @@ export default function ServicePage() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "#94a3b8", fontSize: 15 }}>Загружаем...</p>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            border: "3px solid #e2e8f0", borderTopColor: "#0d9488",
+            animation: "spin 0.8s linear infinite",
+            margin: "0 auto 12px",
+          }} />
+          <p style={{ color: "#94a3b8", fontSize: 14 }}>Загружаем...</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }

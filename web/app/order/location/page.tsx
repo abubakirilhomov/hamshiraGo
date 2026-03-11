@@ -32,6 +32,20 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   }
 }
 
+async function forwardGeocode(query: string, signal: AbortSignal): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&accept-language=ru&countrycodes=uz`,
+      { signal }
+    );
+    const data = await res.json() as Array<{ lat: string; lon: string }>;
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}
+
 function LocationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,6 +68,12 @@ function LocationForm() {
   const resolvedRef = useRef(false);
 
   const [error, setError] = useState("");
+  const [gpsBlocked, setGpsBlocked] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const geocodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const geocodeAbortRef = useRef<AbortController | null>(null);
+  // track if current address came from GPS/map (skip forward geocode for those)
+  const addressFromMapRef = useRef(false);
 
   const applyCoords = useCallback(async (latitude: number, longitude: number, accuracy?: number) => {
     resolvedRef.current = true;
@@ -62,13 +82,17 @@ function LocationForm() {
     if (accuracy !== undefined) setGpsAccuracy(Math.round(accuracy));
     setGpsLoading(false);
     const detected = await reverseGeocode(latitude, longitude);
-    if (detected) setAddress(detected);
+    if (detected) {
+      addressFromMapRef.current = true;
+      setAddress(detected);
+    }
   }, []);
 
   const getLocation = useCallback(() => {
     resolvedRef.current = false;
     setGpsLoading(true);
     setError("");
+    setGpsBlocked(false);
 
     const hardTimeout = setTimeout(() => {
       if (!resolvedRef.current) {
@@ -109,32 +133,91 @@ function LocationForm() {
       setGpsLoading(false);
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (outerTimeout) clearTimeout(outerTimeout);
-        applyCoords(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-      },
-      () => {
-        if (outerTimeout) clearTimeout(outerTimeout);
-        if (!resolvedRef.current) {
+
+    const doRequest = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (outerTimeout) clearTimeout(outerTimeout);
+          applyCoords(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+        },
+        (err) => {
+          if (outerTimeout) clearTimeout(outerTimeout);
+          if (!resolvedRef.current) {
+            resolvedRef.current = true;
+            // err.code === 1 means PERMISSION_DENIED
+            if (err.code === 1) {
+              setGpsBlocked(true);
+            } else {
+              setError(t("location.enterAddress"));
+            }
+            setGpsLoading(false);
+          }
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    };
+
+    // Check permission state first so we can show a targeted message
+    if (typeof navigator.permissions?.query === "function") {
+      navigator.permissions.query({ name: "geolocation" }).then((result) => {
+        if (result.state === "denied") {
+          if (outerTimeout) clearTimeout(outerTimeout);
           resolvedRef.current = true;
-          setError(t("location.enterAddress"));
+          setGpsBlocked(true);
           setGpsLoading(false);
+        } else {
+          doRequest();
         }
-      },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-    );
+      }).catch(() => doRequest());
+    } else {
+      doRequest();
+    }
   }, [applyCoords, t]);
 
   useEffect(() => {
     getLocation();
   }, [getLocation]);
 
+  // Forward geocode: when user manually types address → move map
+  useEffect(() => {
+    if (addressFromMapRef.current) {
+      // Address was set by GPS/map drag — don't geocode back
+      addressFromMapRef.current = false;
+      return;
+    }
+    const q = address.trim();
+    if (q.length < 5) return;
+
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+    if (geocodeAbortRef.current) geocodeAbortRef.current.abort();
+
+    geocodeTimerRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      geocodeAbortRef.current = controller;
+      setGeocoding(true);
+      const result = await forwardGeocode(q, controller.signal);
+      setGeocoding(false);
+      if (result) {
+        addressFromMapRef.current = true; // prevent re-trigger
+        setLat(result.lat);
+        setLng(result.lng);
+      }
+    }, 800);
+
+    return () => {
+      if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address]);
+
   async function handleMapMove(newLat: number, newLng: number) {
     setLat(newLat);
     setLng(newLng);
     const detected = await reverseGeocode(newLat, newLng);
-    if (detected) setAddress(detected);
+    if (detected) {
+      addressFromMapRef.current = true;
+      setAddress(detected);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -225,6 +308,23 @@ function LocationForm() {
             {t("location.goodGPS", { m: gpsAccuracy })}
           </div>
         )}
+        {gpsBlocked && (
+          <div style={{
+            background: "#fff7ed", border: "1.5px solid #fed7aa",
+            borderRadius: 12, padding: "12px 14px", marginBottom: 12,
+            display: "flex", alignItems: "flex-start", gap: 10,
+          }}>
+            <FaExclamationTriangle size={16} color="#ea580c" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#ea580c", marginBottom: 4 }}>
+                {t("location.gpsBlockedTitle")}
+              </p>
+              <p style={{ fontSize: 12, color: "#9a3412", lineHeight: 1.5 }}>
+                {t("location.gpsBlockedHint")}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Map */}
         <div style={{
@@ -276,15 +376,25 @@ function LocationForm() {
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <label style={labelStyle}>{t("location.street")}</label>
-                <input
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  onFocus={() => setFocusedField("address")}
-                  onBlur={() => setFocusedField(null)}
-                  placeholder={t("location.placeholder")}
-                  required
-                  style={fieldStyle("address")}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    onFocus={() => setFocusedField("address")}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder={t("location.placeholder")}
+                    required
+                    style={{ ...fieldStyle("address"), paddingRight: geocoding ? 40 : undefined }}
+                  />
+                  {geocoding && (
+                    <div style={{
+                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                      width: 16, height: 16,
+                      border: "2px solid #e2e8f0", borderTopColor: "#0d9488",
+                      borderRadius: "50%", animation: "spin 0.7s linear infinite",
+                    }} />
+                  )}
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
