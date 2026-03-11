@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { OrderStatus } from '@/types/order';
 import type { MedicLocation } from '@/hooks/useOrderTracking';
 
-const OSRM_ROUTE_URL =
-  process.env.EXPO_PUBLIC_OSRM_URL?.replace(/\/$/, '') ||
-  'https://router.project-osrm.org/route/v1/driving';
+// EXPO_PUBLIC_OSRM_URL = base URL only (e.g. https://osrm.railway.app)
+const _osrmBase =
+  process.env.EXPO_PUBLIC_OSRM_URL?.replace(/\/$/, '') || 'https://router.project-osrm.org';
+const OSRM_ROUTE_URL = `${_osrmBase}/route/v1/driving`;
 
 type OrderLocation = {
   latitude?: number | null;
