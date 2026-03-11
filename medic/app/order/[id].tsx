@@ -90,9 +90,9 @@ export default function OrderDetailScreen() {
     onSentCountIncrement: () => setSentLocationCount((prev) => prev + 1),
   });
 
-  // ── Location tracking: ON_THE_WAY only ────────────────────────────────────
+  // ── Location tracking: ACCEPTED and ON_THE_WAY ───────────────────────────
   useEffect(() => {
-    if (order?.status === 'ON_THE_WAY') {
+    if (order?.status === 'ON_THE_WAY' || order?.status === 'ACCEPTED') {
       startTracking();
     } else {
       stopTracking();
@@ -100,18 +100,23 @@ export default function OrderDetailScreen() {
     return () => stopTracking();
   }, [order?.status, startTracking, stopTracking]);
 
-  // ── Get initial medic position for map when in active statuses ────────────
+  // ── Get initial medic position + emit once to client ─────────────────────
   useEffect(() => {
     if (!order || !MAP_ACTIVE_STATUSES.includes(order.status)) return;
     Location.getForegroundPermissionsAsync().then((perm) => {
       if (perm.status !== 'granted') return;
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-        .then((loc) =>
-          setMedicPos({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }),
-        )
+        .then((loc) => {
+          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          setMedicPos(pos);
+          // Emit to client so they see medic position even before ON_THE_WAY
+          if (socketRef.current?.connected && order.id) {
+            socketRef.current.emit('medic_location', { orderId: order.id, ...pos });
+          }
+        })
         .catch(() => {});
     });
-  }, [order?.status]);
+  }, [order?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fetch OSRM route whenever medicPos changes ─────────────────────────────
   useEffect(() => {

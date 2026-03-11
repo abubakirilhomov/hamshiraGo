@@ -352,7 +352,7 @@ export default function TrackOrderScreen() {
                 coordinate={{ latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) }}
                 title="Вы здесь"
                 description="Адрес вызова"
-                tracksViewChanges={order.status === 'CREATED' && !!dispatchState}
+                tracksViewChanges={false}
                 anchor={{ x: 0.5, y: 0.5 }}
               >
                 <View style={styles.clientMarkerWrap}>
