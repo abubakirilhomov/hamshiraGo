@@ -1,5 +1,12 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-11 — cancelReason отображение на веб-клиентах
+
+- **[web]** `lib/api.ts` — добавлен `cancelReason?: string | null` в `Order` interface
+- **[web]** `app/orders/[id]/page.tsx` — `StatusStepper` показывает `cancelReason` под надписью "Отменён"
+- **[web-medic]** `lib/api.ts` — добавлен `cancelReason?: string | null` в `Order` interface
+- **[web-medic]** `app/order/[id]/page.tsx` — блок CANCELED показывает причину отмены + кнопку домой
+
 ## 2026-03-09 — Cancellation reason feature (backend)
 
 - **[backend]** `orders/entities/order.entity.ts` — добавлено поле `cancelReason` (nullable varchar 500)

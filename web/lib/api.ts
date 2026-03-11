@@ -161,6 +161,7 @@ export interface Order {
   discountAmount: number;
   platformFee?: number;
   status: OrderStatus;
+  cancelReason?: string | null;
   clientRating: number | null;
   created_at: string;
   updated_at: string;

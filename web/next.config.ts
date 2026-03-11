@@ -14,6 +14,17 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["framer-motion", "recharts", "lucide-react"],
   },
+  async headers() {
+    return [
+      {
+        // HTML страницы — не кэшировать, чтобы после редеплоя браузер брал свежую версию
+        source: "/((?!_next/static|_next/image|favicon.ico).*)",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSentryConfig(nextConfig, {

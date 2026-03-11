@@ -45,11 +45,14 @@ const STATUS_FLOW: OrderStatus[] = [
   "CREATED", "ASSIGNED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED", "DONE",
 ];
 
-function StatusStepper({ current, canceledLabel }: { current: OrderStatus; canceledLabel: string }) {
+function StatusStepper({ current, canceledLabel, cancelReason }: { current: OrderStatus; canceledLabel: string; cancelReason?: string | null }) {
   if (current === "CANCELED") {
     return (
       <div style={{ background: "#ef444412", borderRadius: 12, padding: "12px 16px", textAlign: "center" }}>
         <p style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>{canceledLabel}</p>
+        {cancelReason && (
+          <p style={{ fontSize: 13, color: "#ef4444", marginTop: 6, opacity: 0.8 }}>{cancelReason}</p>
+        )}
       </div>
     );
   }
@@ -322,7 +325,7 @@ export default function OrderDetailPage() {
         {/* Status stepper */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
           <p style={sectionLabel}>{t("order.orderStatus")}</p>
-          <StatusStepper current={order.status} canceledLabel={t("order.canceled")} />
+          <StatusStepper current={order.status} canceledLabel={t("order.canceled")} cancelReason={order.cancelReason} />
         </div>
 
         {/* Medic */}
