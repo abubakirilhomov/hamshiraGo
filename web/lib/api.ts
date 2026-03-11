@@ -179,6 +179,7 @@ export interface Medic {
   latitude: number | null;
   longitude: number | null;
   distanceKm?: number;
+  profilePhotoUrl?: string | null;
 }
 
 export interface CreateOrderDto {

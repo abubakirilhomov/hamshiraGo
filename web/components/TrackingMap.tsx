@@ -8,6 +8,7 @@ interface TrackingMapProps {
   medicLat: number;
   medicLng: number;
   medicName: string;
+  medicPhotoUrl?: string | null;
 }
 
 export default function TrackingMap({
@@ -16,11 +17,16 @@ export default function TrackingMap({
   medicLat,
   medicLng,
   medicName,
+  medicPhotoUrl,
 }: TrackingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
-  const medicMarkerRef = useRef<unknown>(null);
-  const lineRef = useRef<unknown>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const medicMarkerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const routeLayerRef = useRef<any>(null);
+  const lastRouteFetchRef = useRef(0);
 
   // Init map once
   useEffect(() => {
@@ -55,24 +61,20 @@ export default function TrackingMap({
         .addTo(map)
         .bindPopup("Ваш адрес");
 
-      // Medic marker
+      // Medic marker — photo or first letter
+      const medicInner = medicPhotoUrl
+        ? `<img src="${medicPhotoUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" />`
+        : `<span style="font-size:17px;font-weight:700;color:#0d9488;line-height:1;">${medicName.charAt(0).toUpperCase()}</span>`;
       const medicIcon = L.divIcon({
-        html: `<div style="width:38px;height:38px;background:#fff;border:3px solid #0d9488;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(13,148,136,0.35);font-size:18px;">👩‍⚕️</div>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 38],
+        html: `<div style="width:42px;height:42px;background:#fff;border:3px solid #0d9488;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(13,148,136,0.35);overflow:hidden;">${medicInner}</div>`,
+        iconSize: [42, 42],
+        iconAnchor: [21, 42],
         className: "",
       });
       const medicMarker = L.marker([medicLat, medicLng], { icon: medicIcon })
         .addTo(map)
         .bindPopup(medicName);
       medicMarkerRef.current = medicMarker;
-
-      // Dashed line
-      const line = L.polyline(
-        [[clientLat, clientLng], [medicLat, medicLng]],
-        { color: "#0d9488", weight: 2.5, dashArray: "6 6", opacity: 0.7 }
-      ).addTo(map);
-      lineRef.current = line;
 
       map.fitBounds([[clientLat, clientLng], [medicLat, medicLng]], { padding: [40, 40] });
       mapRef.current = map;
@@ -81,24 +83,56 @@ export default function TrackingMap({
     return () => {
       mounted = false;
       if (mapRef.current) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (mapRef.current as any).remove();
+        mapRef.current.remove();
         mapRef.current = null;
         medicMarkerRef.current = null;
-        lineRef.current = null;
+        routeLayerRef.current = null;
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update medic position on prop change
+  // Update medic marker + fetch OSRM route when medic moves
   useEffect(() => {
-    if (!mapRef.current || !medicMarkerRef.current || !lineRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (medicMarkerRef.current as any).setLatLng([medicLat, medicLng]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (lineRef.current as any).setLatLngs([[clientLat, clientLng], [medicLat, medicLng]]);
-  }, [medicLat, medicLng, clientLat, clientLng]);
+    if (!mapRef.current) return;
+    let cancelled = false;
+
+    import("leaflet").then(async (L) => {
+      if (cancelled || !mapRef.current) return;
+
+      // Move marker
+      if (medicMarkerRef.current) {
+        medicMarkerRef.current.setLatLng([medicLat, medicLng]);
+      }
+
+      // Fetch OSRM route (throttled to every 5 sec)
+      const now = Date.now();
+      if (now - lastRouteFetchRef.current < 5_000) return;
+      lastRouteFetchRef.current = now;
+
+      try {
+        const osrmBase = (process.env.NEXT_PUBLIC_OSRM_URL ?? "https://router.project-osrm.org/route/v1/driving").replace(/\/$/, "");
+        const url = `${osrmBase}/${medicLng},${medicLat};${clientLng},${clientLat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        if (cancelled || !res.ok) return;
+        const data = await res.json() as { routes?: Array<{ geometry?: { coordinates?: [number, number][] } }> };
+        const coords = data?.routes?.[0]?.geometry?.coordinates ?? [];
+        if (!coords.length || cancelled || !mapRef.current) return;
+
+        const latLngs = coords.map(([lng, lat]) => [lat, lng] as [number, number]);
+
+        if (routeLayerRef.current) {
+          try { mapRef.current.removeLayer(routeLayerRef.current); } catch { /* ignore */ }
+        }
+        routeLayerRef.current = L.polyline(latLngs, {
+          color: "#0d9488", weight: 4, opacity: 0.85,
+        }).addTo(mapRef.current);
+      } catch { /* OSRM unavailable — silently skip */ }
+    });
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [medicLat, medicLng]);
 
   return (
     <>

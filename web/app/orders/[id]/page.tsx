@@ -399,6 +399,7 @@ export default function OrderDetailPage() {
                 medicLat={medicLocation.lat}
                 medicLng={medicLocation.lng}
                 medicName={order.medic?.name ?? t("order.nurse")}
+                medicPhotoUrl={order.medic?.profilePhotoUrl}
               />
             </div>
           </div>
