@@ -208,11 +208,33 @@ export class DispatchService implements OnApplicationBootstrap {
     }
   }
 
-  /** Called when medic accepts the invite — validates attempt, clears timer */
+  /** Called when medic accepts the invite — or self-claims from available orders list.
+   *  If a PENDING invite exists for this medic → mark it ACCEPTED (normal dispatch flow).
+   *  If no invite → self-claim: cancel any other medic's pending timer/invite and proceed.
+   *  Race condition safety is guaranteed by the atomic UPDATE WHERE status=CREATED in acceptOrder.
+   */
   async onMedicAccept(orderId: string, medicId: string): Promise<void> {
-    const attempt = await this.getActivePendingAttempt(orderId, medicId);
+    const attempt = await this.attemptRepo.findOne({
+      where: { orderId, medicId, result: DispatchResult.PENDING },
+    });
+
+    // Always clear the dispatch timer for this order (no-op if none)
     this.clearTimer(orderId);
-    await this.attemptRepo.update(attempt.id, { result: DispatchResult.ACCEPTED });
+
+    if (attempt) {
+      // Normal dispatch flow: invited medic accepted
+      await this.attemptRepo.update(attempt.id, { result: DispatchResult.ACCEPTED });
+    } else {
+      // Self-claim from available orders list: cancel any other pending invite
+      await this.attemptRepo
+        .createQueryBuilder()
+        .update()
+        .set({ result: DispatchResult.TIMEOUT })
+        .where('"orderId" = :orderId', { orderId })
+        .andWhere('result = :result', { result: DispatchResult.PENDING })
+        .execute();
+    }
+
     await this.orderRepo.update(orderId, { dispatchStatus: 'ASSIGNED' });
   }
 
