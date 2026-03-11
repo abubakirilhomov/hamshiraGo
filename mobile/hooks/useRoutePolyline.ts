@@ -45,9 +45,16 @@ export function useRoutePolyline(
 
     try {
       const url = `${OSRM_ROUTE_URL}/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'HamshiraGo/1.0 (medical home visit app, uz)' },
+      });
       clearTimeout(timer);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn(`[OSRM] ${res.status} ${res.statusText} — retry in 3s`);
+        lastRouteFetchAtRef.current = now - 9_000; // allow retry in 3s
+        return;
+      }
       const data = await res.json() as {
         routes?: Array<{ geometry?: { coordinates?: [number, number][] } }>;
       };
@@ -56,9 +63,10 @@ export function useRoutePolyline(
       setRouteCoords(
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
-    } catch {
+    } catch (err) {
       clearTimeout(timer);
-      // Keep previous route on network/API errors
+      console.warn('[OSRM] fetch error:', err);
+      lastRouteFetchAtRef.current = now - 9_000; // allow retry in 3s
     }
   }, [medicLocation, orderLocation, orderStatus]);
 
