@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { io, Socket } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,24 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Send location to backend (so dispatch can find this medic) ───────────────
+  const pushLocation = useCallback(async () => {
+    if (!token) return;
+    try {
+      const perm = await Location.getForegroundPermissionsAsync();
+      if (perm.status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      await apiFetch('/medics/location', {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }),
+      });
+    } catch {
+      // silent — don't block UI
+    }
+  }, [token]);
 
   // ── Fetch orders ────────────────────────────────────────────────────────────
 
@@ -94,7 +113,11 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
     });
     socketRef.current = socket;
 
-    socket.on('connect', () => setWsConnected(true));
+    socket.on('connect', () => {
+      setWsConnected(true);
+      // Send location immediately on connect so dispatch can find this medic
+      pushLocation();
+    });
     socket.on('disconnect', () => setWsConnected(false));
 
     socket.on('new_order', (order: AvailableOrder) => {
@@ -133,11 +156,15 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
       setInvite((prev) => (prev?.orderId === payload.orderId ? null : prev));
     });
 
+    // Update location every 2 minutes so dispatch stays aware of medic position
+    locationIntervalRef.current = setInterval(pushLocation, 2 * 60 * 1000);
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
     };
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token, pushLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Accept order ─────────────────────────────────────────────────────────────
 
