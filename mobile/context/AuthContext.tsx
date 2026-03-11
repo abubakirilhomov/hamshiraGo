@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { apiFetch } from '@/constants/api';
+import { apiFetch, setUnauthorizedHandler } from '@/constants/api';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
@@ -80,6 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ]).catch(() => {});
     setState({ user: null, token: null, isLoading: false });
   };
+
+  // Register global 401 handler — auto-logout on expired/invalid token
+  const logoutRef = useRef(logout);
+  useEffect(() => { logoutRef.current = logout; });
+  useEffect(() => {
+    setUnauthorizedHandler(() => logoutRef.current());
+  }, []);
 
   return (
     <AuthContext.Provider value={{ ...state, login, register, logout }}>
