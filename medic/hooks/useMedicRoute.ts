@@ -44,9 +44,16 @@ export function useMedicRoute() {
         `${Number(location.longitude)},${Number(location.latitude)}` +
         `?overview=full&geometries=geojson`;
 
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'HamshiraGo/1.0 (medical home visit app, uz)' },
+      });
       clearTimeout(timer);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn(`[OSRM] ${res.status} ${res.statusText} — retry in 3s`);
+        lastRouteFetchRef.current = now - (ROUTE_FETCH_THROTTLE_MS - 3_000);
+        return;
+      }
 
       const data = (await res.json()) as OsrmResponse;
       const coordinates = data?.routes?.[0]?.geometry?.coordinates ?? [];
@@ -55,8 +62,10 @@ export function useMedicRoute() {
       setRouteCoords(
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
-    } catch {
+    } catch (err) {
       clearTimeout(timer);
+      console.warn('[OSRM] fetch error:', err);
+      lastRouteFetchRef.current = now - (ROUTE_FETCH_THROTTLE_MS - 3_000);
     } finally {
       setRouteLoading(false);
     }
