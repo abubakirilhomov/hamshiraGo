@@ -1,7 +1,8 @@
 /**
  * useMedicLocation — foreground location tracking for the medic.
- * Emits location to WebSocket (medic_location event) every LOCATION_EMIT_INTERVAL_MS
- * while the order status is ON_THE_WAY. Falls back to nothing if socket is disconnected.
+ * Uses watchPositionAsync (OS-level geofencing) for battery efficiency.
+ * Emits location to WebSocket (medic_location event) on movement or every 4s.
+ * Falls back to nothing if socket is disconnected.
  *
  * Returns: { startTracking, stopTracking }
  */
@@ -10,7 +11,6 @@ import { useCallback, useRef, type MutableRefObject } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Socket } from 'socket.io-client';
-import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
 
 interface UseMedicLocationOptions {
   orderId: string | undefined;
@@ -27,55 +27,56 @@ export function useMedicLocation({
   onLastSentAt,
   onSentCountIncrement,
 }: UseMedicLocationOptions) {
-  const trackingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const watchRef = useRef<Location.LocationSubscription | null>(null);
   const locationDeniedWarnedRef = useRef(false);
 
-  const emitCurrentLocation = useCallback(async () => {
-    if (!orderId || !socketRef.current || !socketRef.current.connected) return;
+  const startTracking = useCallback(() => {
+    if (watchRef.current) return; // already tracking
 
-    const perm = await Location.getForegroundPermissionsAsync();
-    if (perm.status !== 'granted') {
-      if (!locationDeniedWarnedRef.current) {
-        locationDeniedWarnedRef.current = true;
-        Alert.alert(
-          'Нет доступа к геолокации',
-          'Разрешите геолокацию, чтобы клиент видел ваш путь.',
-        );
+    Location.getForegroundPermissionsAsync().then((perm) => {
+      if (perm.status !== 'granted') {
+        if (!locationDeniedWarnedRef.current) {
+          locationDeniedWarnedRef.current = true;
+          Alert.alert('Нет доступа к геолокации', 'Разрешите геолокацию, чтобы клиент видел ваш путь.');
+        }
+        return;
       }
-      return;
-    }
 
-    const loc = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+      // Emit one position immediately
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then((loc) => {
+          if (!orderId || !socketRef.current?.connected) return;
+          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          onLocationUpdate?.(pos);
+          socketRef.current!.emit('medic_location', { orderId, ...pos });
+          onLastSentAt?.(new Date().toISOString());
+          onSentCountIncrement?.();
+        })
+        .catch(() => {});
+
+      Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 4000,      // min 4s between updates
+          distanceInterval: 10,    // or 10m movement
+        },
+        (loc) => {
+          if (!orderId || !socketRef.current?.connected) return;
+          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          onLocationUpdate?.(pos);
+          socketRef.current!.emit('medic_location', { orderId, ...pos });
+          onLastSentAt?.(new Date().toISOString());
+          onSentCountIncrement?.();
+        },
+      ).then((sub) => {
+        watchRef.current = sub;
+      }).catch(() => {});
     });
-
-    const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-    onLocationUpdate?.(pos);
-
-    socketRef.current.emit('medic_location', {
-      orderId,
-      latitude: loc.coords.latitude,
-      longitude: loc.coords.longitude,
-    });
-
-    onLastSentAt?.(new Date().toISOString());
-    onSentCountIncrement?.();
   }, [orderId, socketRef, onLocationUpdate, onLastSentAt, onSentCountIncrement]);
 
-  const startTracking = useCallback(() => {
-    if (trackingTimerRef.current) return; // already tracking
-
-    emitCurrentLocation().catch(() => {});
-    trackingTimerRef.current = setInterval(() => {
-      emitCurrentLocation().catch(() => {});
-    }, LOCATION_EMIT_INTERVAL_MS);
-  }, [emitCurrentLocation]);
-
   const stopTracking = useCallback(() => {
-    if (trackingTimerRef.current) {
-      clearInterval(trackingTimerRef.current);
-      trackingTimerRef.current = null;
-    }
+    watchRef.current?.remove();
+    watchRef.current = null;
   }, []);
 
   return { startTracking, stopTracking };

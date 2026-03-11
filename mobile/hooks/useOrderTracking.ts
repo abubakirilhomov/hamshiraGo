@@ -51,6 +51,7 @@ export type DispatchStatus = 'searching' | 'contacting' | 'no_medics';
 export type DispatchState = {
   status: DispatchStatus;
   candidateName?: string;
+  candidatePhoto?: string | null;
   candidateLat?: number | null;
   candidateLng?: number | null;
 } | null;
@@ -69,6 +70,7 @@ type DispatchUpdatePayload = {
   status: DispatchStatus;
   medic?: {
     name: string;
+    profilePhotoUrl?: string | null;
     latitude: number | null;
     longitude: number | null;
     rating: number | null;
@@ -198,6 +200,7 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
       setDispatchState({
         status: payload.status,
         candidateName: payload.medic?.name,
+        candidatePhoto: payload.medic?.profilePhotoUrl,
         candidateLat: payload.medic?.latitude,
         candidateLng: payload.medic?.longitude,
       });
@@ -227,6 +230,7 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
       setDispatchState((prev) => ({
         status: 'contacting',
         candidateName: payload.medicName,
+        candidatePhoto: prev?.candidatePhoto,
         candidateLat: prev?.candidateLat,
         candidateLng: prev?.candidateLng,
       }));

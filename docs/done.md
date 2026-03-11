@@ -1,5 +1,10 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-11 — dispatch_update includes profilePhotoUrl
+
+- **[backend]** `orders/dispatch.service.ts` — dispatch_update event now includes `profilePhotoUrl` for candidate medic
+- **[backend]** `realtime/order-events.gateway.ts` — emitDispatchUpdate type updated with profilePhotoUrl
+
 ## 2026-03-11 — cancelReason отображение на веб-клиентах
 
 - **[web]** `lib/api.ts` — добавлен `cancelReason?: string | null` в `Order` interface

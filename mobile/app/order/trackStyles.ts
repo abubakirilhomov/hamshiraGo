@@ -369,6 +369,32 @@ export const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  // Candidate medic banner (dispatch contacting)
+  candidateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Theme.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Theme.border,
+    padding: 14,
+    marginBottom: 10,
+  },
+  candidateAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: `${Theme.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  candidateAvatarImg: { width: 48, height: 48, borderRadius: 24 },
+  candidateInfo: { flex: 1 },
+  candidateName: { fontSize: 15, fontWeight: '700', color: Theme.text },
+  candidateSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
+
   // Rating (submitted display)
   ratingDoneRow: {
     flexDirection: 'row',

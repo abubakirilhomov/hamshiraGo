@@ -139,6 +139,7 @@ export class DispatchService implements OnApplicationBootstrap {
         latitude: medic.latitude != null ? Number(medic.latitude) : null,
         longitude: medic.longitude != null ? Number(medic.longitude) : null,
         rating: medic.rating != null ? Number(medic.rating) : null,
+        profilePhotoUrl: medic.profilePhotoUrl ?? null,
       },
     });
 

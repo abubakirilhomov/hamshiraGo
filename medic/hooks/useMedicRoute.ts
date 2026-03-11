@@ -22,6 +22,7 @@ export function useMedicRoute() {
   const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteFetchRef = useRef(0);
+  const hasInitialRouteRef = useRef(false);
 
   const fetchRoute = useCallback(async (
     medicPos: LatLng | null,
@@ -34,7 +35,7 @@ export function useMedicRoute() {
     if (now - lastRouteFetchRef.current < ROUTE_FETCH_THROTTLE_MS) return;
     lastRouteFetchRef.current = now;
 
-    setRouteLoading(true);
+    if (!hasInitialRouteRef.current) setRouteLoading(true);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -62,6 +63,7 @@ export function useMedicRoute() {
       setRouteCoords(
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
+      hasInitialRouteRef.current = true;
     } catch (err) {
       clearTimeout(timer);
       console.warn('[OSRM] fetch error:', err);
@@ -74,6 +76,7 @@ export function useMedicRoute() {
   const resetRoute = useCallback(() => {
     setRouteCoords([]);
     lastRouteFetchRef.current = 0;
+    hasInitialRouteRef.current = false;
   }, []);
 
   return { routeCoords, routeLoading, fetchRoute, resetRoute };

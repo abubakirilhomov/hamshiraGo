@@ -17,6 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { MAP_ACTIVE_STATUSES, OrderStatus } from '@/types/order';
 import { useOrderStatus, NEXT_STATUS_MAP } from '@/hooks/useOrderStatus';
+import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/constants/api';
 import { useMedicLocation } from '@/hooks/useMedicLocation';
 import { useMedicRoute } from '@/hooks/useMedicRoute';
 
@@ -64,12 +66,15 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const { token } = useAuth();
 
   const [updating, setUpdating] = useState(false);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
   const mapRef = useRef<any>(null);
+  const hasFittedMapRef = useRef(false);
+  const autoAcceptedRef = useRef(false);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { order, loading, wsConnected, socketRef, updateOrderStatus } =
@@ -117,12 +122,15 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     if (order && !MAP_ACTIVE_STATUSES.includes(order.status)) {
       resetRoute();
+      hasFittedMapRef.current = false;
     }
   }, [order?.status, resetRoute]);
 
-  // ── Auto-fit map when both positions are available ─────────────────────────
+  // ── Auto-fit map — only once on first GPS fix ──────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !medicPos || !order?.location?.latitude) return;
+    if (hasFittedMapRef.current) return; // only fit once
+    hasFittedMapRef.current = true;
     mapRef.current.fitToCoordinates(
       [
         { latitude: medicPos.latitude, longitude: medicPos.longitude },
@@ -134,6 +142,17 @@ export default function OrderDetailScreen() {
       { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: true },
     );
   }, [medicPos]);
+
+  // ── Auto-advance ASSIGNED → ACCEPTED on page load ─────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'ASSIGNED' || autoAcceptedRef.current || !order?.id) return;
+    autoAcceptedRef.current = true;
+    apiFetch(`/orders/${order.id}/medic-status`, {
+      method: 'PATCH',
+      token: token ?? undefined,
+      body: JSON.stringify({ status: 'ACCEPTED' }),
+    }).catch(() => { autoAcceptedRef.current = false; }); // reset on failure so user can retry
+  }, [order?.status, order?.id, token]);
 
   const handleNextStatus = useCallback(() => {
     updateOrderStatus((v) => setUpdating(v));

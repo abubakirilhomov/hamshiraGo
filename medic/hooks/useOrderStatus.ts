@@ -140,49 +140,44 @@ export function useOrderStatus(orderId: string | undefined) {
       if (!next) return;
 
       const isDone = next.status === 'DONE';
-      const nextLabel = t(next.labelKey);
-      const confirmMsg = isDone
-        ? `${t('orders.completeOrder')}?`
-        : `${nextLabel}?`;
 
-      Alert.alert(t('common.save'), confirmMsg, [
-        { text: t('common.back'), style: 'cancel' },
-        {
-          text: nextLabel,
-          style: isDone ? 'destructive' : 'default',
-          onPress: async () => {
-            updatingCb(true);
-            try {
-              const updated = await apiFetch<OrderDetail>(
-                `/orders/${order.id}/medic-status`,
-                {
-                  method: 'PATCH',
-                  token: token ?? undefined,
-                  body: JSON.stringify({ status: next.status }),
-                },
-              );
-              setOrder(updated);
-              if (next.status === 'DONE') {
-                const net = updated.priceAmount - (updated.discountAmount ?? 0);
-                const fee = updated.platformFee ?? Math.round(net * 0.1);
-                const earned = net - fee;
-                Alert.alert(
-                  `${t('orders.completeOrder')} ✓`,
-                  `${t('orders.netEarnings')}:\n+${earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
-                  [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
-                );
-              }
-            } catch (e: unknown) {
-              Alert.alert(
-                t('common.error'),
-                e instanceof Error ? e.message : t('common.error'),
-              );
-            } finally {
-              updatingCb(false);
-            }
-          },
-        },
-      ]);
+      const doUpdate = async () => {
+        updatingCb(true);
+        try {
+          const updated = await apiFetch<OrderDetail>(
+            `/orders/${order.id}/medic-status`,
+            {
+              method: 'PATCH',
+              token: token ?? undefined,
+              body: JSON.stringify({ status: next.status }),
+            },
+          );
+          setOrder(updated);
+          if (next.status === 'DONE') {
+            const net = updated.priceAmount - (updated.discountAmount ?? 0);
+            const fee = updated.platformFee ?? Math.round(net * 0.1);
+            const earned = net - fee;
+            Alert.alert(
+              `${t('orders.completeOrder')} ✓`,
+              `${t('orders.netEarnings')}:\n+${earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
+              [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
+            );
+          }
+        } catch (e: unknown) {
+          Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+        } finally {
+          updatingCb(false);
+        }
+      };
+
+      if (isDone) {
+        Alert.alert(t('common.save'), `${t('orders.completeOrder')}?`, [
+          { text: t('common.back'), style: 'cancel' },
+          { text: t('orders.completeOrder'), style: 'destructive', onPress: doUpdate },
+        ]);
+      } else {
+        doUpdate();
+      }
     },
     [order, token, t, router],
   );

@@ -236,6 +236,23 @@ export default function TrackOrderScreen() {
         <Text style={styles.priceText}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
       </View>
 
+      {/* Candidate medic banner (shown during dispatch contacting) */}
+      {order.status === 'CREATED' && dispatchState?.status === 'contacting' && dispatchState.candidateName && (
+        <View style={styles.candidateBanner}>
+          <View style={styles.candidateAvatar}>
+            {dispatchState.candidatePhoto
+              ? <Image source={{ uri: dispatchState.candidatePhoto }} style={styles.candidateAvatarImg} />
+              : <FontAwesome name="user-md" size={22} color={Theme.primary} />
+            }
+          </View>
+          <View style={styles.candidateInfo}>
+            <Text style={styles.candidateName}>{dispatchState.candidateName}</Text>
+            <Text style={styles.candidateSubtitle}>Рассматривает ваш заказ...</Text>
+          </View>
+          <ActivityIndicator size="small" color={Theme.primary} />
+        </View>
+      )}
+
       {/* Dispatch status banner */}
       {order.status === 'CREATED' && dispatchState && (
         <View style={[styles.dispatchBanner, dispatchState.status === 'no_medics' && styles.dispatchBannerWaiting]}>
@@ -330,12 +347,6 @@ export default function TrackOrderScreen() {
                 latitudeDelta: 0.025,
                 longitudeDelta: 0.025,
               }}
-              region={medicLocation ? {
-                latitude: (Number(order.location.latitude) + medicLocation.latitude) / 2,
-                longitude: (Number(order.location.longitude) + medicLocation.longitude) / 2,
-                latitudeDelta: 0.025,
-                longitudeDelta: 0.025,
-              } : undefined}
             >
               <TrackMapComponent.Marker
                 coordinate={{ latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) }}

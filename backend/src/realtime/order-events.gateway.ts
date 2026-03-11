@@ -205,7 +205,19 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   }
 
   /** Notify the client (order room) about current dispatch state */
-  emitDispatchUpdate(orderId: string, payload: Record<string, unknown>) {
+  emitDispatchUpdate(
+    orderId: string,
+    payload: {
+      status: string;
+      medic?: {
+        name: string;
+        latitude: number | null;
+        longitude: number | null;
+        rating: number | null;
+        profilePhotoUrl?: string | null;
+      } | null;
+    },
+  ) {
     this.server.to(`order:${orderId}`).emit('dispatch_update', { orderId, ...payload });
   }
 
