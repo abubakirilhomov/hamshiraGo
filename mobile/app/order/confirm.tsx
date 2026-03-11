@@ -41,18 +41,20 @@ export default function OrderConfirmScreen() {
   }>();
 
   useEffect(() => {
-    if (!params.serviceId) return;
-    Promise.all([
-      apiFetch<CatalogService>(`/services/${params.serviceId}`),
-      apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined }),
-    ])
-      .then(([svc, ordersResp]) => {
-        setService(svc);
-        setIsFirstOrder(ordersResp.total === 0);
-      })
+    if (!params.serviceId) {
+      setLoadingService(false);
+      return;
+    }
+    // Fetch service and order count independently — order count failure must not block service display
+    apiFetch<CatalogService>(`/services/${params.serviceId}`)
+      .then((svc) => setService(svc))
       .catch(() => {})
       .finally(() => setLoadingService(false));
-  }, [params.serviceId]);
+
+    apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined })
+      .then((resp) => setIsFirstOrder((resp?.total ?? 1) === 0))
+      .catch(() => {}); // on failure, isFirstOrder stays false — no discount shown
+  }, [params.serviceId, token]);
 
   const basePrice = service?.price ?? 0;
   const discountAmount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
@@ -101,8 +103,17 @@ export default function OrderConfirmScreen() {
 
   if (!service) {
     return (
-      <View style={styles.centered}>
-        <Text>{t('confirm.notFound')}</Text>
+      <View style={[styles.centered, { backgroundColor: Theme.background }]}>
+        <FontAwesome name="exclamation-circle" size={40} color={Theme.textSecondary} />
+        <Text style={{ marginTop: 12, fontSize: 16, color: Theme.textSecondary, textAlign: 'center' }}>
+          {t('confirm.notFound')}
+        </Text>
+        <Pressable
+          style={[styles.button, styles.primaryButton, { marginTop: 20, paddingHorizontal: 32 }]}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.primaryButtonText}>{t('common.back')}</Text>
+        </Pressable>
       </View>
     );
   }
