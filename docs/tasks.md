@@ -153,9 +153,68 @@
 
 ---
 
+---
+
+## ✅ Этап 16 — Полевые баги + фичи (2026-03-11/12)
+
+- [x] BUG-1 race condition — транзакция в `acceptOrder` ✅
+- [x] Performance audit backend — 5 проблем закрыты ✅
+- [x] Self-hosted OSRM на Railway ✅
+- [x] Cancel reason — backend + mobile UI ✅
+- [x] Auto-logout на 401 (token expiry) ✅
+- [x] Dispatch invite не приходил — `pushLocation` при коннекте ✅
+- [x] "Принять" из списка — self-claim без invite ✅
+- [x] Медик не виден клиенту — tracking с ACCEPTED ✅
+- [x] Метка клиента прыгала — `tracksViewChanges=false` ✅
+- [x] Черный экран "услуга не найдена" — раздельные fetches ✅
+- [x] OSRM 400 — base URL без `/route/v1/driving` ✅
+- [x] Zoom сломан — убран `region` prop, `fitToCoordinates` 1 раз ✅
+- [x] Перегрев — `watchPositionAsync` вместо `setInterval` ✅
+- [x] Двойное принятие — убран ASSIGNED из NEXT_STATUS_MAP ✅
+- [x] Отзыв (текст) после заказа — backend + RatingModal ✅
+- [x] GPS accuracy → `High` для навигации ✅
+
+---
+
+## 🐛 Активные баги (найдены 2026-03-12)
+
+### HIGH
+- [ ] **`pushLocation` не останавливается** — 2-минутный интервал в `useMedicOrderFeed` продолжает работать когда медик на активном заказе. Конфликтует с `useMedicLocation`. Нужно stopInterval при навигации на заказ — `medic/hooks/useMedicOrderFeed.ts`
+- [ ] **`cancelOrder` без причины** — `mobile/hooks/useOrderTracking.ts:284` шлёт POST без body. Бэкенд теперь принимает `reason` — нужно показать пользователю поле при отмене
+- [ ] **`autoAcceptedRef` no-retry UI** — если auto-advance ASSIGNED→ACCEPTED упал (сеть), пользователь видит пустой экран без кнопки (ASSIGNED убран из NEXT_STATUS_MAP). Нужен fallback: показать кнопку после 5с таймаута — `medic/app/order/[id].tsx`
+
+### MEDIUM
+- [ ] **Двойной emit при ACCEPTED** — `startTracking` (в `useMedicLocation`) и initial position effect в `[id].tsx` оба шлют `medic_location` одновременно при ACCEPTED. Не критично, но лишний трафик
+- [ ] **`clientReview` не показывается медику** — бэкенд теперь хранит отзыв, но `medic/app/order/[id].tsx` не отображает его. Медик должен видеть оценку + отзыв клиента
+- [ ] **OSRM timeout** — при слабом соединении 8s timeout жёсткий. Можно увеличить до 12s и добавить retry с экспоненциальным backoff
+
+### LOW
+- [ ] **`pushLocation` использует `Accuracy.Balanced`** — для dispatch достаточно, но для первого отображения на карте лучше `High` — `medic/hooks/useMedicOrderFeed.ts`
+- [ ] **История заказов без пагинации на экране** — `/orders` возвращает paginated данные, но mobile показывает только первую страницу без кнопки "загрузить ещё"
+
+---
+
+## 📋 Новые задачи (Этап 17)
+
+### Абубакир (backend + mobile/medic)
+- [ ] Показывать отзыв клиента медику в `medic/app/order/[id].tsx` — после DONE показывать `order.clientRating` + `order.clientReview`
+- [ ] Кнопка fallback при неудаче auto-advance (ASSIGNED timeout 5с) — `medic/app/order/[id].tsx`
+- [ ] Остановить `pushLocation` интервал когда медик принял заказ — `useMedicOrderFeed.ts`
+- [ ] Показывать причину отмены в `medic/app/order/[id].tsx` — уже есть `cancelReason` на бэке
+
+### Store публикация (финальный шаг)
+- [ ] `eas init` → projectId в `mobile/app.json`
+- [ ] `expo-updates` install + настройка
+- [ ] EAS credentials (keystore Android, APNs iOS)
+- [ ] Скриншоты + Privacy Policy
+
+---
+
 ## 💡 Идеи / V2
 
 - [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
 - [ ] Аналитика в admin: графики заказов, выручка, топ медики
 - [ ] Фильтр услуг по категории на главном экране mobile/web
 - [ ] Повторный заказ (кнопка "Заказать снова" в истории)
+- [ ] История платежей клиента: `GET /payments/my`
+- [ ] Редактирование профиля: `PATCH /auth/profile`, `PATCH /medics/profile`
