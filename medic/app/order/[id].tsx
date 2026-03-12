@@ -94,10 +94,8 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     if (order?.status === 'ON_THE_WAY' || order?.status === 'ACCEPTED') {
       startTracking();
-    } else {
-      stopTracking();
     }
-    return () => stopTracking();
+    return stopTracking;
   }, [order?.status, startTracking, stopTracking]);
 
   // ── Get initial medic position + emit once to client ─────────────────────

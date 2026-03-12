@@ -29,12 +29,18 @@ export function useMedicLocation({
 }: UseMedicLocationOptions) {
   const watchRef = useRef<Location.LocationSubscription | null>(null);
   const locationDeniedWarnedRef = useRef(false);
+  const startingRef = useRef(false); // set BEFORE async work to prevent re-entry
 
   const startTracking = useCallback(() => {
-    if (watchRef.current) return; // already tracking
+    if (watchRef.current || startingRef.current) return; // guard against concurrent calls
+    startingRef.current = true;
 
     Location.getForegroundPermissionsAsync().then((perm) => {
+      // If stopTracking was called while we were waiting for permissions, abort
+      if (!startingRef.current) return;
+
       if (perm.status !== 'granted') {
+        startingRef.current = false;
         if (!locationDeniedWarnedRef.current) {
           locationDeniedWarnedRef.current = true;
           Alert.alert('Нет доступа к геолокации', 'Разрешите геолокацию, чтобы клиент видел ваш путь.');
@@ -45,7 +51,7 @@ export function useMedicLocation({
       // Emit one position immediately
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
-          if (!orderId || !socketRef.current?.connected) return;
+          if (!startingRef.current || !orderId || !socketRef.current?.connected) return;
           const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           onLocationUpdate?.(pos);
           socketRef.current!.emit('medic_location', { orderId, ...pos });
@@ -56,9 +62,9 @@ export function useMedicLocation({
 
       Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.High,  // ~10m — precise enough for routing
+          accuracy: Location.Accuracy.High,
           timeInterval: 4000,
-          distanceInterval: 8,               // update every 8m moved
+          distanceInterval: 8,
         },
         (loc) => {
           if (!orderId || !socketRef.current?.connected) return;
@@ -69,12 +75,18 @@ export function useMedicLocation({
           onSentCountIncrement?.();
         },
       ).then((sub) => {
+        if (!startingRef.current) {
+          // stopTracking was called before subscription resolved — remove immediately
+          sub.remove();
+          return;
+        }
         watchRef.current = sub;
-      }).catch(() => {});
+      }).catch(() => { startingRef.current = false; });
     });
   }, [orderId, socketRef, onLocationUpdate, onLastSentAt, onSentCountIncrement]);
 
   const stopTracking = useCallback(() => {
+    startingRef.current = false; // prevent pending async from completing
     watchRef.current?.remove();
     watchRef.current = null;
   }, []);

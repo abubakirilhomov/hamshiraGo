@@ -1,5 +1,21 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-12 — Bug fixes: BUG-03, BUG-12, BUG-17
+
+- **[fix]** BUG-03: `medic/app/order/[id].tsx` — location tracking useEffect: removed `else stopTracking()` branch, cleanup now uses `return stopTracking` directly to avoid double-stop when status is non-tracking
+- **[fix]** BUG-12: `mobile/hooks/useOrderTracking.ts` — `order_status` handler clears `pollingRef.current` interval before disconnecting on DONE/CANCELED
+- **[fix]** BUG-17: `medic/hooks/useOrderStatus.ts` — WebSocket useEffect now guards on `!orderId` in addition to `!token`; `fetchOrder` useCallback also guards on `!orderId` to prevent requests with undefined orderId
+
+## 2026-03-12 — BUG-20 + BUG-21: earnings overstated fix + rating transaction fix
+
+- **[backend]** `orders/orders.service.ts` — BUG-20: `updateStatusByClient` now credits medic with `netPrice - platformFee` instead of full `netPrice`, correcting 10% earnings overstatement
+- **[backend]** `orders/orders.service.ts` — BUG-21: `rateOrder` now wraps both `order.clientRating` update and medic rating recalculation in a single `dataSource.transaction`, preventing split-brain if process crashes between the two writes
+
+## 2026-03-12 — BUG-01 & BUG-02: subscription leak + concurrent call guard in useMedicLocation
+
+- **[fix]** `medic/hooks/useMedicLocation.ts` — BUG-01: added `startingRef` set synchronously before async work; `.then(sub => ...)` now calls `sub.remove()` immediately if `startingRef.current` is false when the subscription resolves, preventing a leaked subscription when `stopTracking` runs before `.then()` fires
+- **[fix]** `medic/hooks/useMedicLocation.ts` — BUG-02: guard changed from `if (watchRef.current) return` to `if (watchRef.current || startingRef.current) return` to block concurrent `startTracking` calls before `watchRef.current` is set asynchronously; `stopTracking` resets `startingRef.current = false` to cancel any in-flight async chain
+
 ## 2026-03-11 — dispatch_update includes profilePhotoUrl
 
 - **[backend]** `orders/dispatch.service.ts` — dispatch_update event now includes `profilePhotoUrl` for candidate medic

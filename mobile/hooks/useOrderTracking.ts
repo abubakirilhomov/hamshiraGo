@@ -190,6 +190,10 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
         setDispatchState(null);
       }
       if (payload.status === 'DONE' || payload.status === 'CANCELED') {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
         // Refetch full order so medic field is populated for the rating block
         fetchOrder().finally(() => socket.disconnect());
       }

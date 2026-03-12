@@ -87,6 +87,7 @@ export function useOrderStatus(orderId: string | undefined) {
 
   // ── Fetch order ──────────────────────────────────────────────────────────────
   const fetchOrder = useCallback(async () => {
+    if (!orderId) return;
     try {
       const data = await apiFetch<OrderDetail>(`/orders/${orderId}`, {
         token: token ?? undefined,
@@ -105,7 +106,7 @@ export function useOrderStatus(orderId: string | undefined) {
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!token) return;
+    if (!token || !orderId) return;
 
     const socket = io(API_BASE, {
       transports: ['websocket', 'polling'],
