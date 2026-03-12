@@ -43,7 +43,7 @@ export function useMedicLocation({
       }
 
       // Emit one position immediately
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
           if (!orderId || !socketRef.current?.connected) return;
           const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
@@ -56,9 +56,9 @@ export function useMedicLocation({
 
       Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 4000,      // min 4s between updates
-          distanceInterval: 10,    // or 10m movement
+          accuracy: Location.Accuracy.High,  // ~10m — precise enough for routing
+          timeInterval: 4000,
+          distanceInterval: 8,               // update every 8m moved
         },
         (loc) => {
           if (!orderId || !socketRef.current?.connected) return;

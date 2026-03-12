@@ -214,7 +214,7 @@ export class OrdersService {
     // Atomic: only saves if rating is still NULL (prevents concurrent double-rating)
     const rateResult = await this.orderRepo.update(
       { id: orderId, clientRating: IsNull() },
-      { clientRating: dto.rating },
+      { clientRating: dto.rating, clientReview: dto.review ?? null },
     );
     if (!rateResult.affected) throw new BadRequestException('Order already rated');
 

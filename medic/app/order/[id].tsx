@@ -105,7 +105,7 @@ export default function OrderDetailScreen() {
     if (!order || !MAP_ACTIVE_STATUSES.includes(order.status)) return;
     Location.getForegroundPermissionsAsync().then((perm) => {
       if (perm.status !== 'granted') return;
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
           const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           setMedicPos(pos);

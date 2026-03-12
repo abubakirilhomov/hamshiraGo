@@ -107,7 +107,7 @@ interface UseOrderTrackingResult {
   medicLocation: MedicLocation | null;
   ratingSubmitting: boolean;
   cancelOrder: () => Promise<void>;
-  submitRating: (stars: number) => Promise<void>;
+  submitRating: (stars: number, review?: string) => Promise<void>;
   fetchOrder: () => Promise<void>;
 }
 
@@ -293,14 +293,14 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
   }, [orderId, token, router]);
 
   // ── Submit rating ─────────────────────────────────────────────────────────────
-  const submitRating = useCallback(async (stars: number) => {
+  const submitRating = useCallback(async (stars: number, review?: string) => {
     if (!orderId || !token || ratingSubmitting) return;
     setRatingSubmitting(true);
     try {
       const updated = await apiFetch<Order>(`/orders/${orderId}/rate`, {
         method: 'POST',
         token,
-        body: JSON.stringify({ rating: stars }),
+        body: JSON.stringify({ rating: stars, ...(review ? { review } : {}) }),
       });
       setOrder(updated);
     } catch (e: unknown) {

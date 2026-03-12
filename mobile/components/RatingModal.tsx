@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
@@ -7,7 +7,7 @@ import { Theme } from '@/constants/Theme';
 interface RatingModalProps {
   visible: boolean;
   submitting: boolean;
-  onSubmit: (stars: number) => void;
+  onSubmit: (stars: number, review?: string) => void;
   onClose?: () => void;
 }
 
@@ -17,8 +17,14 @@ export default function RatingModal({
   onSubmit,
 }: RatingModalProps) {
   const [pendingRating, setPendingRating] = useState(0);
+  const [review, setReview] = useState('');
 
   if (!visible) return null;
+
+  const handleSubmit = () => {
+    if (pendingRating === 0) return;
+    onSubmit(pendingRating, review.trim() || undefined);
+  };
 
   return (
     <View style={styles.card}>
@@ -42,13 +48,23 @@ export default function RatingModal({
           </Pressable>
         ))}
       </View>
+      <TextInput
+        style={styles.reviewInput}
+        value={review}
+        onChangeText={setReview}
+        placeholder="Оставьте отзыв (необязательно)"
+        placeholderTextColor={Theme.textSecondary}
+        multiline
+        maxLength={1000}
+        editable={!submitting}
+      />
       <Pressable
         style={({ pressed }) => [
           styles.submitRatingBtn,
           pendingRating === 0 && styles.submitRatingDisabled,
           pressed && pendingRating > 0 && { opacity: 0.8 },
         ]}
-        onPress={() => pendingRating > 0 && onSubmit(pendingRating)}
+        onPress={handleSubmit}
         disabled={submitting || pendingRating === 0}
       >
         {submitting
@@ -93,6 +109,17 @@ const styles = StyleSheet.create({
   starBtn: {
     alignItems: 'center',
     padding: 4,
+  },
+  reviewInput: {
+    borderWidth: 1,
+    borderColor: Theme.border,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: Theme.text,
+    minHeight: 72,
+    textAlignVertical: 'top',
+    backgroundColor: Theme.background,
   },
   submitRatingBtn: {
     backgroundColor: Theme.primary,
