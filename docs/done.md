@@ -1,5 +1,38 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-13 — Перегрев: throttle GPS emit в useMedicLocation
+
+- **[fix]** `medic/hooks/useMedicLocation.ts` — добавлен JS-level throttle `lastEmitRef` (Android игнорирует `timeInterval` в `watchPositionAsync` и шлёт тысячи GPS-фиксов в секунду); socket emit не чаще `LOCATION_EMIT_INTERVAL_MS` (5с); `distanceInterval` увеличен 8м→15м; карта обновляется на каждый фикс, emit — throttled
+
+## 2026-03-13 — Убрано двойное принятие заказа медиком
+
+- **[backend]** `orders/orders.service.ts` — `acceptOrder` теперь ставит статус ACCEPTED вместо ASSIGNED (пропускает промежуточный шаг)
+- **[medic]** `medic/app/order/[id].tsx` — убраны: auto-advance useEffect, autoAcceptFailed state, 5с timeout, fallback SwipeButton для ASSIGNED
+
+## 2026-03-13 — SwipeActionButton для medic (UX)
+
+- **[ux]** `medic/components/SwipeActionButton.tsx` — создан swipe-to-confirm компонент (Animated + PanResponder + haptic)
+- **[ux]** `medic/app/order/[id].tsx` — кнопка "следующий статус" и fallback "Принять заказ" заменены на SwipeActionButton
+
+## 2026-03-13 — Этап 17: 4 бага medic (A, C, D, E)
+
+- **[fix]** `medic/hooks/useMedicOrderFeed.ts` — Задача A: в `acceptOrder` после успешного принятия добавлен `clearInterval(locationIntervalRef.current)` — 2-минутный pushLocation интервал останавливается при переходе на экран заказа
+- **[fix]** `medic/app/order/[id].tsx` — Задача C: добавлен `autoAcceptFailed` state; в `.catch` auto-advance ASSIGNED→ACCEPTED устанавливается флаг; добавлен useEffect с 5с setTimeout как доп. fallback; в рендере показывается кнопка "Принять заказ" если `order.status === 'ASSIGNED' && autoAcceptFailed`
+- **[fix]** `medic/app/order/[id].tsx` — Задача D: из initial position effect убран `socketRef.current.emit('medic_location', ...)` — двойной emit устранён, остался только `setMedicPos(pos)` для карты
+- **[fix]** `medic/hooks/useOrderStatus.ts` — Задача E шаг 1: в `OrderDetail` добавлены поля `clientRating`, `clientReview`, `cancelReason`
+- **[fix]** `medic/hooks/useOrderStatus.ts` — Задача E шаг 2: в `order_status` WS-обработчике при DONE/CANCELED вызывается `fetchOrder()` для получения полных данных
+- **[fix]** `medic/app/order/[id].tsx` — Задача E шаг 3: после блока `completedNote` добавлен рендер рейтинга со звёздами + текст отзыва клиента (DONE) и причина отмены (CANCELED)
+
+## 2026-03-13 — BUG fix: cancelOrder без причины (mobile)
+
+- **[fix]** `mobile/hooks/useOrderTracking.ts` — `cancelOrder` принимает `reason?: string`, передаёт `{ reason }` в body POST-запроса; тип в `UseOrderTrackingResult` обновлён
+- **[fix]** `mobile/app/order/track.tsx` — добавлен `cancelReason` state, TextInput для ввода причины показывается поверх контента когда открыт cancelModal; `confirmCancel` передаёт `cancelReason.trim() || undefined`; `onClose` и кнопка "Нет" сбрасывают `cancelReason`
+
+## 2026-03-13 — OSRM timeout + retry с exponential backoff (medic)
+
+- **[feat]** `medic/constants/config.ts` — `FETCH_TIMEOUT_MS` увеличен с 8000 до 12000
+- **[feat]** `medic/hooks/useMedicRoute.ts` — добавлен `retryCountRef`; при AbortError (timeout) exponential backoff 3s/6s/12s; при успехе и `resetRoute` счётчик сбрасывается
+
 ## 2026-03-12 — Bug fixes: BUG-03, BUG-12, BUG-17
 
 - **[fix]** BUG-03: `medic/app/order/[id].tsx` — location tracking useEffect: removed `else stopTracking()` branch, cleanup now uses `return stopTracking` directly to avoid double-stop when status is non-tracking

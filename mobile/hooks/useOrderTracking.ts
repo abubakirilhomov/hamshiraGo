@@ -106,7 +106,7 @@ interface UseOrderTrackingResult {
   dispatchState: DispatchState;
   medicLocation: MedicLocation | null;
   ratingSubmitting: boolean;
-  cancelOrder: () => Promise<void>;
+  cancelOrder: (reason?: string) => Promise<void>;
   submitRating: (stars: number, review?: string) => Promise<void>;
   fetchOrder: () => Promise<void>;
 }
@@ -288,10 +288,11 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Cancel order ──────────────────────────────────────────────────────────────
-  const cancelOrder = useCallback(async () => {
+  const cancelOrder = useCallback(async (reason?: string) => {
     await apiFetch(`/orders/${orderId}/cancel`, {
       method: 'POST',
       token: token ?? undefined,
+      ...(reason ? { body: JSON.stringify({ reason }) } : {}),
     });
     router.replace('/(tabs)/two');
   }, [orderId, token, router]);

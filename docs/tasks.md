@@ -179,14 +179,13 @@
 ## 🐛 Активные баги (найдены 2026-03-12)
 
 ### HIGH
-- [ ] **`pushLocation` не останавливается** — 2-минутный интервал в `useMedicOrderFeed` продолжает работать когда медик на активном заказе. Конфликтует с `useMedicLocation`. Нужно stopInterval при навигации на заказ — `medic/hooks/useMedicOrderFeed.ts`
-- [ ] **`cancelOrder` без причины** — `mobile/hooks/useOrderTracking.ts:284` шлёт POST без body. Бэкенд теперь принимает `reason` — нужно показать пользователю поле при отмене
-- [ ] **`autoAcceptedRef` no-retry UI** — если auto-advance ASSIGNED→ACCEPTED упал (сеть), пользователь видит пустой экран без кнопки (ASSIGNED убран из NEXT_STATUS_MAP). Нужен fallback: показать кнопку после 5с таймаута — `medic/app/order/[id].tsx`
+- [x] **`pushLocation` не останавливается** — ✅ исправлено (Этап 17): clearInterval в acceptOrder
+- [x] **`cancelOrder` без причины** — исправлено: хук передаёт `reason` в body, track.tsx показывает TextInput при отмене ✅
+- [x] **`autoAcceptedRef` no-retry UI** — ✅ убрано (двойное принятие устранено на уровне backend: acceptOrder теперь ставит ACCEPTED напрямую)
 
 ### MEDIUM
-- [ ] **Двойной emit при ACCEPTED** — `startTracking` (в `useMedicLocation`) и initial position effect в `[id].tsx` оба шлют `medic_location` одновременно при ACCEPTED. Не критично, но лишний трафик
-- [ ] **`clientReview` не показывается медику** — бэкенд теперь хранит отзыв, но `medic/app/order/[id].tsx` не отображает его. Медик должен видеть оценку + отзыв клиента
-- [ ] **OSRM timeout** — при слабом соединении 8s timeout жёсткий. Можно увеличить до 12s и добавить retry с экспоненциальным backoff
+- [x] **Двойной emit при ACCEPTED** — ✅ исправлено (Этап 17): убран socket.emit из initial position effect
+- [x] **`clientReview` не показывается медику** — ✅ исправлено (Этап 17): показывается рейтинг + отзыв + причина отмены
 
 ### LOW
 - [ ] **`pushLocation` использует `Accuracy.Balanced`** — для dispatch достаточно, но для первого отображения на карте лучше `High` — `medic/hooks/useMedicOrderFeed.ts`
@@ -194,19 +193,39 @@
 
 ---
 
-## 📋 Новые задачи (Этап 17)
+## ✅ Этап 17 — ВЫПОЛНЕН (2026-03-13, Абубакир)
 
-### Абубакир (backend + mobile/medic)
-- [ ] Показывать отзыв клиента медику в `medic/app/order/[id].tsx` — после DONE показывать `order.clientRating` + `order.clientReview`
-- [ ] Кнопка fallback при неудаче auto-advance (ASSIGNED timeout 5с) — `medic/app/order/[id].tsx`
-- [ ] Остановить `pushLocation` интервал когда медик принял заказ — `useMedicOrderFeed.ts`
-- [ ] Показывать причину отмены в `medic/app/order/[id].tsx` — уже есть `cancelReason` на бэке
+- [x] Показывать отзыв клиента медику в `medic/app/order/[id].tsx` — рейтинг + текст отзыва после DONE ✅
+- [x] Кнопка fallback при неудаче auto-advance (ASSIGNED timeout 5с) — `medic/app/order/[id].tsx` ✅
+- [x] Остановить `pushLocation` интервал когда медик принял заказ — `useMedicOrderFeed.ts` ✅
+- [x] Показывать причину отмены в `medic/app/order/[id].tsx` — блок при CANCELED ✅
+- [x] `cancelOrder` без причины — mobile передаёт `reason` в body + TextInput в modal ✅
+- [x] Двойной emit `medic_location` при ACCEPTED — убран дублирующий emit из initial position effect ✅
+- [x] OSRM timeout — увеличен до 12s, добавлен exponential backoff retry ✅
 
 ### Store публикация (финальный шаг)
 - [ ] `eas init` → projectId в `mobile/app.json`
 - [ ] `expo-updates` install + настройка
 - [ ] EAS credentials (keystore Android, APNs iOS)
 - [ ] Скриншоты + Privacy Policy
+
+---
+
+## 📋 Этап 18 — Веб-адаптация (Диёр)
+
+> Бэкенд изменение: `POST /orders/:id/accept` теперь сразу ставит статус **ACCEPTED** (минуя ASSIGNED).
+> Статус ASSIGNED больше не приходит клиенту при принятии медиком заказа из списка или dispatch invite.
+
+### web/ (`app/orders/[id]/page.tsx`, `lib/api.ts`)
+
+- [ ] **StatusStepper** — убрать `"ASSIGNED"` из массива шагов (строка 45). Новый порядок: `CREATED → ACCEPTED → ON_THE_WAY → ARRIVED → SERVICE_STARTED → DONE`. Клиент теперь видит сразу "Медик принял" без промежуточного "Назначен"
+- [ ] **`canCancel`** — убрать `ASSIGNED` из условия отмены (строка 284): `order.status === "CREATED"` (только CREATED, т.к. ASSIGNED больше не наступает)
+- [ ] **STATUS_LABELS** в `lib/api.ts` — `ASSIGNED: "Назначен"` можно оставить для совместимости (старые заказы в БД могут иметь этот статус), но из stepper убрать
+
+### web-medic/ (`lib/api.ts`, страница заказа)
+
+- [ ] **NEXT_STATUS_MAP** в `lib/api.ts` строка 235 — убрать строку `ASSIGNED: { status: "ACCEPTED", label: "Подтвердить принятие", ... }`. Медик больше не видит кнопку "Подтвердить принятие" — бэкенд ставит ACCEPTED напрямую
+- [ ] Убедиться что статус ASSIGNED не отображается как активный шаг в UI web-medic (если есть stepper)
 
 ---
 

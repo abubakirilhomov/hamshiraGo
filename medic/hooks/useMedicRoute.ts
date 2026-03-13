@@ -23,6 +23,7 @@ export function useMedicRoute() {
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteFetchRef = useRef(0);
   const hasInitialRouteRef = useRef(false);
+  const retryCountRef = useRef(0);
 
   const fetchRoute = useCallback(async (
     medicPos: LatLng | null,
@@ -64,10 +65,19 @@ export function useMedicRoute() {
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
       hasInitialRouteRef.current = true;
+      retryCountRef.current = 0;
     } catch (err) {
       clearTimeout(timer);
-      console.warn('[OSRM] fetch error:', err);
-      lastRouteFetchRef.current = now - (ROUTE_FETCH_THROTTLE_MS - 3_000);
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      if (isTimeout) {
+        retryCountRef.current = Math.min(retryCountRef.current + 1, 3);
+        const backoff = 3_000 * retryCountRef.current;
+        console.warn(`[OSRM] timeout — retry in ${backoff / 1000}s`);
+        lastRouteFetchRef.current = now - (ROUTE_FETCH_THROTTLE_MS - backoff);
+      } else {
+        console.warn('[OSRM] fetch error:', err);
+        lastRouteFetchRef.current = now - (ROUTE_FETCH_THROTTLE_MS - 3_000);
+      }
     } finally {
       setRouteLoading(false);
     }
@@ -77,6 +87,7 @@ export function useMedicRoute() {
     setRouteCoords([]);
     lastRouteFetchRef.current = 0;
     hasInitialRouteRef.current = false;
+    retryCountRef.current = 0;
   }, []);
 
   return { routeCoords, routeLoading, fetchRoute, resetRoute };

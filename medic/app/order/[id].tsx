@@ -17,10 +17,9 @@ import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
 import { MAP_ACTIVE_STATUSES, OrderStatus } from '@/types/order';
 import { useOrderStatus, NEXT_STATUS_MAP } from '@/hooks/useOrderStatus';
-import { useAuth } from '@/context/AuthContext';
-import { apiFetch } from '@/constants/api';
 import { useMedicLocation } from '@/hooks/useMedicLocation';
 import { useMedicRoute } from '@/hooks/useMedicRoute';
+import { SwipeActionButton } from '@/components/SwipeActionButton';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
@@ -66,15 +65,12 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const { token } = useAuth();
-
   const [updating, setUpdating] = useState(false);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
   const mapRef = useRef<any>(null);
   const hasFittedMapRef = useRef(false);
-  const autoAcceptedRef = useRef(false);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { order, loading, wsConnected, socketRef, updateOrderStatus } =
@@ -82,12 +78,14 @@ export default function OrderDetailScreen() {
 
   const { routeCoords, routeLoading, fetchRoute, resetRoute } = useMedicRoute();
 
+  const incrementSentCount = useCallback(() => setSentLocationCount((prev) => prev + 1), []);
+
   const { startTracking, stopTracking } = useMedicLocation({
     orderId: id,
     socketRef,
     onLocationUpdate: setMedicPos,
     onLastSentAt: setLastLocationSentAt,
-    onSentCountIncrement: () => setSentLocationCount((prev) => prev + 1),
+    onSentCountIncrement: incrementSentCount,
   });
 
   // ── Location tracking: ACCEPTED and ON_THE_WAY ───────────────────────────
@@ -98,7 +96,7 @@ export default function OrderDetailScreen() {
     return stopTracking;
   }, [order?.status, startTracking, stopTracking]);
 
-  // ── Get initial medic position + emit once to client ─────────────────────
+  // ── Get initial medic position for map display ────────────────────────────
   useEffect(() => {
     if (!order || !MAP_ACTIVE_STATUSES.includes(order.status)) return;
     Location.getForegroundPermissionsAsync().then((perm) => {
@@ -107,10 +105,6 @@ export default function OrderDetailScreen() {
         .then((loc) => {
           const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
           setMedicPos(pos);
-          // Emit to client so they see medic position even before ON_THE_WAY
-          if (socketRef.current?.connected && order.id) {
-            socketRef.current.emit('medic_location', { orderId: order.id, ...pos });
-          }
         })
         .catch(() => {});
     });
@@ -145,17 +139,6 @@ export default function OrderDetailScreen() {
       { edgePadding: { top: 50, right: 50, bottom: 50, left: 50 }, animated: true },
     );
   }, [medicPos]);
-
-  // ── Auto-advance ASSIGNED → ACCEPTED on page load ─────────────────────────
-  useEffect(() => {
-    if (order?.status !== 'ASSIGNED' || autoAcceptedRef.current || !order?.id) return;
-    autoAcceptedRef.current = true;
-    apiFetch(`/orders/${order.id}/medic-status`, {
-      method: 'PATCH',
-      token: token ?? undefined,
-      body: JSON.stringify({ status: 'ACCEPTED' }),
-    }).catch(() => { autoAcceptedRef.current = false; }); // reset on failure so user can retry
-  }, [order?.status, order?.id, token]);
 
   const handleNextStatus = useCallback(() => {
     updateOrderStatus((v) => setUpdating(v));
@@ -359,7 +342,7 @@ export default function OrderDetailScreen() {
                 tracksViewChanges={false}
               >
                 <View style={styles.clientDot}>
-                  <Text style={styles.markerEmoji}>🏠</Text>
+                  <FontAwesome name="home" size={16} color="#fff" />
                 </View>
               </MapsModule.Marker>
 
@@ -372,7 +355,7 @@ export default function OrderDetailScreen() {
                   tracksViewChanges={false}
                 >
                   <View style={styles.medicDot}>
-                    <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
+                    <FontAwesome name="user-md" size={16} color="#fff" />
                   </View>
                 </MapsModule.Marker>
               )}
@@ -422,31 +405,19 @@ export default function OrderDetailScreen() {
         </View>
       )}
 
-      {/* Next action button */}
-      {nextStep && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionBtn,
-            nextStep.status === 'DONE' && styles.actionBtnDone,
-            pressed && styles.actionBtnPressed,
-            updating && styles.actionBtnDisabled,
-          ]}
-          onPress={handleNextStatus}
+      {/* Next action button — swipe to confirm */}
+      {nextStep && !updating && (
+        <SwipeActionButton
+          label={t(nextStep.labelKey)}
+          color={nextStep.status === 'DONE' ? Theme.success : Theme.primary}
+          onConfirm={handleNextStatus}
           disabled={updating}
-        >
-          {updating ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <FontAwesome
-                name={nextStep.status === 'DONE' ? 'check-circle' : 'arrow-right'}
-                size={18}
-                color="#fff"
-              />
-              <Text style={styles.actionBtnText}>{t(nextStep.labelKey)}</Text>
-            </>
-          )}
-        </Pressable>
+        />
+      )}
+      {nextStep && updating && (
+        <View style={[styles.actionBtn, { backgroundColor: nextStep.status === 'DONE' ? Theme.success : Theme.primary }]}>
+          <ActivityIndicator color="#fff" />
+        </View>
       )}
 
       {(order.status === 'DONE' || order.status === 'CANCELED') && (
@@ -461,6 +432,34 @@ export default function OrderDetailScreen() {
           </Text>
         </View>
       )}
+
+      {order.status === 'DONE' && order.clientRating != null && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Оценка клиента</Text>
+          <View style={{ flexDirection: 'row', gap: 4, marginBottom: order.clientReview ? 8 : 0 }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <FontAwesome
+                key={star}
+                name={star <= (order.clientRating ?? 0) ? 'star' : 'star-o'}
+                size={20}
+                color="#f59e0b"
+              />
+            ))}
+          </View>
+          {order.clientReview ? (
+            <Text style={{ fontSize: 14, color: Theme.text, fontStyle: 'italic' }}>
+              "{order.clientReview}"
+            </Text>
+          ) : null}
+        </View>
+      )}
+
+      {order.status === 'CANCELED' && order.cancelReason ? (
+        <View style={[styles.card, { borderColor: `${Theme.error}30` }]}>
+          <Text style={styles.cardTitle}>Причина отмены</Text>
+          <Text style={{ fontSize: 14, color: Theme.error }}>{order.cancelReason}</Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -606,9 +605,9 @@ const styles = StyleSheet.create({
   legendLabel: { fontSize: 12, color: Theme.textSecondary, fontWeight: '600' },
   waitingGps: { fontSize: 12, color: Theme.textSecondary, marginLeft: 4 },
   clientDot: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
@@ -616,14 +615,14 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   medicDot: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#16a34a',
     alignItems: 'center',
     justifyContent: 'center',
@@ -631,11 +630,10 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  markerEmoji: { fontSize: 17, lineHeight: 21 },
 
   // ── Action button ─────────────────────────────────────────────────────────
   actionBtn: {

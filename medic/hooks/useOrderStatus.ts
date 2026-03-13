@@ -28,6 +28,9 @@ export interface OrderDetail {
   status: OrderStatus;
   location: OrderLocation | null;
   created_at: string;
+  clientRating?: number | null;
+  clientReview?: string | null;
+  cancelReason?: string | null;
 }
 
 // ── Notification helpers ───────────────────────────────────────────────────────
@@ -123,6 +126,9 @@ export function useOrderStatus(orderId: string | undefined) {
     socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
       if (payload.orderId === orderId) {
         setOrder((prev) => (prev ? { ...prev, status: payload.status } : prev));
+        if (payload.status === 'DONE' || payload.status === 'CANCELED') {
+          fetchOrder();
+        }
       }
     });
 
@@ -131,7 +137,7 @@ export function useOrderStatus(orderId: string | undefined) {
       socketRef.current = null;
       setWsConnected(false);
     };
-  }, [token, orderId]);
+  }, [token, orderId, fetchOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Status update ────────────────────────────────────────────────────────────
   const updateOrderStatus = useCallback(

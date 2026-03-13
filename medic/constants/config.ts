@@ -3,7 +3,7 @@
 // Location tracking
 export const LOCATION_EMIT_INTERVAL_MS = 5_000;       // emit medic location every 5s
 export const ROUTE_FETCH_THROTTLE_MS = 12_000;         // min gap between OSRM calls
-export const FETCH_TIMEOUT_MS = 8_000;                 // abort fetch after 8s
+export const FETCH_TIMEOUT_MS = 12_000;                // abort fetch after 12s
 export const BACKGROUND_LOCATION_INTERVAL_MS = 60_000; // background location every 60s
 export const BACKGROUND_LOCATION_DISTANCE_M = 100;     // or every 100m
 

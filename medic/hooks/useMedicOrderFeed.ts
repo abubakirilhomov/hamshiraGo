@@ -177,6 +177,10 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
         token: token ?? undefined,
       });
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
+        locationIntervalRef.current = null;
+      }
     } catch (e: unknown) {
       setAcceptError(e instanceof Error ? e.message : t('common.error'));
     }

@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  TextInput,
   View,
 } from 'react-native';
 import AppModal from '@/components/AppModal';
@@ -68,6 +69,7 @@ export default function TrackOrderScreen() {
   const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const {
     order,
@@ -186,7 +188,7 @@ export default function TrackOrderScreen() {
   const confirmCancel = async () => {
     setCancelModal(false);
     try {
-      await cancelOrder();
+      await cancelOrder(cancelReason.trim() || undefined);
     } catch (e: unknown) {
       setCancelError(e instanceof Error ? e.message : 'Не удалось отменить');
     }
@@ -476,15 +478,28 @@ export default function TrackOrderScreen() {
       )}
     </ScrollView>
 
+    {cancelModal && (
+      <View style={{ position: 'absolute', bottom: 80, left: 16, right: 16, backgroundColor: Theme.surface, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Theme.border, zIndex: 10 }}>
+        <TextInput
+          placeholder="Причина отмены (необязательно)"
+          placeholderTextColor={Theme.textSecondary}
+          value={cancelReason}
+          onChangeText={setCancelReason}
+          style={{ fontSize: 14, color: Theme.text, paddingVertical: 8 }}
+          maxLength={200}
+        />
+      </View>
+    )}
+
     <AppModal
       visible={cancelModal}
       title="Отменить заказ?"
       message="Вы уверены, что хотите отменить заказ?"
       buttons={[
-        { text: 'Нет', style: 'cancel', onPress: () => setCancelModal(false) },
+        { text: 'Нет', style: 'cancel', onPress: () => { setCancelModal(false); setCancelReason(''); } },
         { text: 'Отменить', style: 'destructive', onPress: confirmCancel },
       ]}
-      onClose={() => setCancelModal(false)}
+      onClose={() => { setCancelModal(false); setCancelReason(''); }}
     />
 
     <AppModal

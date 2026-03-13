@@ -334,7 +334,7 @@ export class OrdersService {
     return withDistance.map(({ order }) => order);
   }
 
-  /** Medic accepts a CREATED order → status becomes ASSIGNED */
+  /** Medic accepts a CREATED order → status becomes ACCEPTED (skips ASSIGNED) */
   async acceptOrder(orderId: string, medicId: string): Promise<Order> {
     const medic = await this.medicsService.findById(medicId);
     if (!medic) throw new ForbiddenException('Medic not found');
@@ -364,7 +364,7 @@ export class OrdersService {
       const result = await manager.update(
         Order,
         { id: orderId, status: OrderStatus.CREATED },
-        { medicId, status: OrderStatus.ASSIGNED },
+        { medicId, status: OrderStatus.ACCEPTED },
       );
       if (!result.affected) {
         throw new BadRequestException('Order is no longer available');
@@ -391,9 +391,9 @@ export class OrdersService {
       }
     });
 
-    this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
+    this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ACCEPTED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.ASSIGNED);
+    this.notifyClient(updated, OrderStatus.ACCEPTED);
     return updated;
   }
 

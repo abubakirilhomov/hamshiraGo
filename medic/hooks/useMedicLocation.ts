@@ -11,6 +11,7 @@ import { useCallback, useRef, type MutableRefObject } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { Socket } from 'socket.io-client';
+import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
 
 interface UseMedicLocationOptions {
   orderId: string | undefined;
@@ -30,6 +31,7 @@ export function useMedicLocation({
   const watchRef = useRef<Location.LocationSubscription | null>(null);
   const locationDeniedWarnedRef = useRef(false);
   const startingRef = useRef(false); // set BEFORE async work to prevent re-entry
+  const lastEmitRef = useRef(0);    // JS-level throttle (Android ignores timeInterval)
 
   const startTracking = useCallback(() => {
     if (watchRef.current || startingRef.current) return; // guard against concurrent calls
@@ -63,13 +65,17 @@ export function useMedicLocation({
       Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 4000,
-          distanceInterval: 8,
+          timeInterval: LOCATION_EMIT_INTERVAL_MS,
+          distanceInterval: 15, // минимум 15м между фиксами
         },
         (loc) => {
           if (!orderId || !socketRef.current?.connected) return;
+          // JS-level throttle: Android игнорирует timeInterval и шлёт фиксы каждые мс
+          const now = Date.now();
           const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-          onLocationUpdate?.(pos);
+          onLocationUpdate?.(pos); // карта обновляется всегда (дёшево)
+          if (now - lastEmitRef.current < LOCATION_EMIT_INTERVAL_MS) return;
+          lastEmitRef.current = now;
           socketRef.current!.emit('medic_location', { orderId, ...pos });
           onLastSentAt?.(new Date().toISOString());
           onSentCountIncrement?.();
@@ -87,6 +93,7 @@ export function useMedicLocation({
 
   const stopTracking = useCallback(() => {
     startingRef.current = false; // prevent pending async from completing
+    lastEmitRef.current = 0;
     watchRef.current?.remove();
     watchRef.current = null;
   }, []);
