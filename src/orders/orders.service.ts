@@ -211,22 +211,29 @@ export class OrdersService {
     if (order.status !== OrderStatus.DONE) throw new BadRequestException('Can only rate a completed order');
     if (!order.medicId) throw new BadRequestException('No medic assigned to this order');
 
-    // Atomic: only saves if rating is still NULL (prevents concurrent double-rating)
-    const rateResult = await this.orderRepo.update(
-      { id: orderId, clientRating: IsNull() },
-      { clientRating: dto.rating },
-    );
-    if (!rateResult.affected) throw new BadRequestException('Order already rated');
-
-    // Recalculate medic's weighted average rating
+    // Fetch medic before transaction so we can calculate new rating
     const medic = await this.medicsService.findById(order.medicId);
-    if (medic) {
-      const currentCount = medic.reviewCount ?? 0;
-      const currentRating = Number(medic.rating ?? 0);
-      const newCount = currentCount + 1;
-      const newRating = Number(((currentRating * currentCount + dto.rating) / newCount).toFixed(2));
-      await this.medicsService.updateRating(order.medicId, newRating, newCount);
-    }
+
+    // Wrap both the order rating update and medic rating recalculation in a single
+    // transaction so a crash between the two steps cannot leave them inconsistent.
+    await this.dataSource.transaction(async (manager) => {
+      // Atomic: only saves if rating is still NULL (prevents concurrent double-rating)
+      const rateResult = await manager.update(
+        Order,
+        { id: orderId, clientRating: IsNull() },
+        { clientRating: dto.rating, clientReview: dto.review ?? null },
+      );
+      if (!rateResult.affected) throw new BadRequestException('Order already rated');
+
+      // Recalculate medic's weighted average rating inline (mirrors medicsService.updateRating)
+      if (medic) {
+        const currentCount = medic.reviewCount ?? 0;
+        const currentRating = Number(medic.rating ?? 0);
+        const newCount = currentCount + 1;
+        const newRating = Number(((currentRating * currentCount + dto.rating) / newCount).toFixed(2));
+        await manager.update(Medic, { id: order.medicId }, { rating: newRating, reviewCount: newCount });
+      }
+    });
 
     return this.findOne(orderId);
   }
@@ -247,6 +254,7 @@ export class OrdersService {
       );
     }
     const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+    const medicEarnings = netPrice - (order.platformFee ?? 0);
     await this.dataSource.transaction(async (manager) => {
       const result = await manager.update(
         Order,
@@ -257,7 +265,7 @@ export class OrdersService {
         throw new BadRequestException('Order status has already changed, please refresh');
       }
       if (order.medicId) {
-        await manager.increment(Medic, { id: order.medicId }, 'earnings', netPrice);
+        await manager.increment(Medic, { id: order.medicId }, 'earnings', medicEarnings);
       }
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
@@ -326,7 +334,7 @@ export class OrdersService {
     return withDistance.map(({ order }) => order);
   }
 
-  /** Medic accepts a CREATED order → status becomes ASSIGNED */
+  /** Medic accepts a CREATED order → status becomes ACCEPTED (skips ASSIGNED) */
   async acceptOrder(orderId: string, medicId: string): Promise<Order> {
     const medic = await this.medicsService.findById(medicId);
     if (!medic) throw new ForbiddenException('Medic not found');
@@ -356,7 +364,7 @@ export class OrdersService {
       const result = await manager.update(
         Order,
         { id: orderId, status: OrderStatus.CREATED },
-        { medicId, status: OrderStatus.ASSIGNED },
+        { medicId, status: OrderStatus.ACCEPTED },
       );
       if (!result.affected) {
         throw new BadRequestException('Order is no longer available');
@@ -383,9 +391,9 @@ export class OrdersService {
       }
     });
 
-    this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ASSIGNED);
+    this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ACCEPTED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.ASSIGNED);
+    this.notifyClient(updated, OrderStatus.ACCEPTED);
     return updated;
   }
 

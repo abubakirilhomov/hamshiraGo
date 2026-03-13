@@ -66,6 +66,10 @@ export class Order {
   @Column({ type: 'smallint', nullable: true, default: null })
   clientRating!: number | null;
 
+  /** Optional text review left by client */
+  @Column({ type: 'varchar', length: 1000, nullable: true, default: null })
+  clientReview!: string | null;
+
   @Index()
   @CreateDateColumn()
   created_at!: Date;
