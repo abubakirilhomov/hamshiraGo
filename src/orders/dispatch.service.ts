@@ -176,12 +176,14 @@ export class DispatchService implements OnApplicationBootstrap {
       }
       this.notifyAdmin(`⚠️ Нет медиков для заказа #${order.id.slice(0, 8)}`);
 
-      // Auto-retry in 5 minutes
-      setTimeout(() => {
+      // Auto-retry in 5 minutes — store in this.timers so cancelOrder can clear it
+      const retryTimer = setTimeout(() => {
+        this.timers.delete(order.id);
         this.advanceDispatch(order.id).catch((err) =>
           this.logger.warn(`NO_MEDICS retry failed for order ${order.id}: ${String(err)}`),
         );
       }, 5 * 60 * 1000);
+      this.timers.set(order.id, retryTimer);
     } else {
       // Zero attempts — no medics at all in radius → auto-cancel
       await this.orderRepo.update(order.id, {

@@ -74,6 +74,8 @@ async function bootstrap() {
   await seedServices(dataSource);
 
   const port = process.env.PORT ?? 3000;
+  // Railway runs behind a reverse proxy — trust first hop so req.ip returns real client IP
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   await app.listen(port);
   app.get(Logger).log(`HamshiraGo API running on port ${port}`);
 }

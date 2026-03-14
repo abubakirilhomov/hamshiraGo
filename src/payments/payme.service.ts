@@ -123,7 +123,8 @@ export class PaymeService {
     if (order.status === OrderStatus.CANCELED) return this.rpcError(ERR_CANNOT_PERFORM, 'Order is cancelled');
 
     const amountUzs = this.tiyinToUzs(amountTiyin ?? 0);
-    if (order.priceAmount !== null && amountUzs !== order.priceAmount) {
+    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+    if (amountUzs !== netPrice) {
       return this.rpcError(ERR_WRONG_AMOUNT, 'Wrong amount');
     }
 

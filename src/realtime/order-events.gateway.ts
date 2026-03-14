@@ -20,6 +20,7 @@ export type MedicLocationPayload = {
   medicId: string;
   latitude: number;
   longitude: number;
+  heading?: number | null;
   updatedAt: string;
   source?: 'socket' | 'rest';
 };
@@ -175,7 +176,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   @SubscribeMessage('medic_location')
   async handleMedicLocation(
     client: any,
-    payload: { orderId: string; latitude: number; longitude: number },
+    payload: { orderId: string; latitude: number; longitude: number; heading?: number | null },
   ) {
     if ((client as any).role !== 'medic') return;
     if (!payload?.orderId) return;
@@ -190,6 +191,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       payload.latitude,
       payload.longitude,
       'socket',
+      payload.heading ?? null,
     );
   }
 
@@ -227,12 +229,14 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     latitude: number,
     longitude: number,
     source: 'socket' | 'rest' = 'socket',
+    heading: number | null = null,
   ) {
     const payload: MedicLocationPayload = {
       orderId,
       medicId,
       latitude,
       longitude,
+      heading,
       updatedAt: new Date().toISOString(),
       source,
     };
