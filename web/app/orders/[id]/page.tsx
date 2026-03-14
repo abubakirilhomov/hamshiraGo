@@ -42,7 +42,7 @@ function StatusBadge({ status }: { status: OrderStatus }) {
 }
 
 const STATUS_FLOW: OrderStatus[] = [
-  "CREATED", "ASSIGNED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED", "DONE",
+  "CREATED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED", "DONE",
 ];
 
 function StatusStepper({ current, canceledLabel, cancelReason }: { current: OrderStatus; canceledLabel: string; cancelReason?: string | null }) {
@@ -281,7 +281,7 @@ export default function OrderDetailPage() {
   const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
   const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const finalPrice = order.priceAmount - order.discountAmount;
-  const canCancel = order.status === "CREATED" || order.status === "ASSIGNED";
+  const canCancel = order.status === "CREATED";
   const canConfirmDone = order.status === "SERVICE_STARTED";
 
   return (
@@ -333,8 +333,13 @@ export default function OrderDetailPage() {
           <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
             <p style={sectionLabel}>{t("order.nurse")}</p>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg, #0d9488, #0f766e)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <FaUserNurse size={24} color="#fff" />
+              <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "2px solid #0d9488" }}>
+                {order.medic.profilePhotoUrl
+                  ? <img src={order.medic.profilePhotoUrl} alt={order.medic.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0d9488, #0f766e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 700, color: "#fff" }}>
+                      {order.medic.name.charAt(0).toUpperCase()}
+                    </div>
+                }
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{order.medic.name}</p>
@@ -384,7 +389,7 @@ export default function OrderDetailPage() {
         {medicLocation &&
           order.location?.latitude != null &&
           order.location?.longitude != null &&
-          ["ASSIGNED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED"].includes(order.status) && (
+          ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED"].includes(order.status) && (
           <div style={{ background: "#fff", borderRadius: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", overflow: "hidden" }}>
             <div style={{ padding: "12px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <p style={sectionLabel}>{t("order.medicOnMap")}</p>

@@ -1,5 +1,14 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-14 — Этап 18: веб-адаптация + BUG 32/33 (Диёр)
+
+- **[web]** `app/orders/[id]/page.tsx` — убран `"ASSIGNED"` из `STATUS_FLOW` (шаги теперь: `CREATED → ACCEPTED → ON_THE_WAY → ARRIVED → SERVICE_STARTED → DONE`)
+- **[web]** `app/orders/[id]/page.tsx` — `canCancel` теперь только `"CREATED"` (ASSIGNED больше не наступает)
+- **[web]** `app/orders/[id]/page.tsx` — убран `"ASSIGNED"` из условия показа карты медика
+- **[web-medic]** `lib/api.ts` — удалена строка `ASSIGNED → ACCEPTED ("Подтвердить принятие")` из `NEXT_STATUS`
+- **[fix]** `admin/src/components/AdminLayout.tsx` — BUG 32: добавлена периодическая проверка токена каждые 60с через `setInterval` + `useState(hasAdminSecret())` → авто-logout при истечении JWT
+- **[note]** BUG 33 (JWT localStorage XSS) — частично: auto-logout при истёкшем токене; полный фикс = httpOnly cookies на бэкенде
+
 ## 2026-03-13 — Перегрев: throttle GPS emit в useMedicLocation
 
 - **[fix]** `medic/hooks/useMedicLocation.ts` — добавлен JS-level throttle `lastEmitRef` (Android игнорирует `timeInterval` в `watchPositionAsync` и шлёт тысячи GPS-фиксов в секунду); socket emit не чаще `LOCATION_EMIT_INTERVAL_MS` (5с); `distanceInterval` увеличен 8м→15м; карта обновляется на каждый фикс, emit — throttled
