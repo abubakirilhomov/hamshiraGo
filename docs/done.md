@@ -1,5 +1,21 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-14 — Bearings fix: медик по правильной полосе (шаги 1-3)
+
+- **[fix]** `medic/hooks/useMedicLocation.ts` — `heading` добавлен в pos объект emit и onLocationUpdate callback
+- **[fix]** `backend/src/realtime/order-events.gateway.ts` — `heading` добавлен в MedicLocationPayload, принимается от медика и передаётся клиенту
+- **[fix]** `medic/hooks/useMedicRoute.ts` — OSRM-запрос с `bearings` и `radiuses=25` — маршрут строится по правильной полосе
+- **[fix]** `medic/app/order/[id].tsx` — тип medicPos расширен полем `heading`
+
+## 2026-03-14 — Backend критичные фиксы (N1, N2, N4, N5, N6)
+
+- **[fix]** `payments/payme.service.ts` — N1: `checkPerformTransaction` теперь сравнивает с `netPrice = priceAmount - discountAmount`; заказы со скидкой корректно оплачиваются
+- **[fix]** `payments/click.service.ts` — N1: аналогичный фикс для Click
+- **[fix]** `main.ts` — N4: добавлен `trust proxy 1` — Payme IP-whitelist теперь работает на Railway
+- **[fix]** `auth/auth.controller.ts` — N6: `@Throttle({ ttl: 900_000, limit: 5 })` на `/auth/admin/login`
+- **[fix]** `orders/dispatch.service.ts` — N2: NO_MEDICS retry-таймер сохраняется в `this.timers` — очищается при отмене заказа
+- **[fix]** `medics/medics.service.ts` — N5: `findCandidatesForDispatch` ограничен `.take(50)`
+
 ## 2026-03-14 — Этап 18: веб-адаптация + BUG 32/33 (Диёр)
 
 - **[web]** `app/orders/[id]/page.tsx` — убран `"ASSIGNED"` из `STATUS_FLOW` (шаги теперь: `CREATED → ACCEPTED → ON_THE_WAY → ARRIVED → SERVICE_STARTED → DONE`)

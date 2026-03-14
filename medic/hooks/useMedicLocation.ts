@@ -16,7 +16,7 @@ import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
 interface UseMedicLocationOptions {
   orderId: string | undefined;
   socketRef: MutableRefObject<Socket | null>;
-  onLocationUpdate?: (pos: { latitude: number; longitude: number }) => void;
+  onLocationUpdate?: (pos: { latitude: number; longitude: number; heading: number | null }) => void;
   onLastSentAt?: (iso: string) => void;
   onSentCountIncrement?: () => void;
 }
@@ -54,7 +54,11 @@ export function useMedicLocation({
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
           if (!startingRef.current || !orderId || !socketRef.current?.connected) return;
-          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          const pos = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            heading: loc.coords.heading ?? null,
+          };
           onLocationUpdate?.(pos);
           socketRef.current!.emit('medic_location', { orderId, ...pos });
           onLastSentAt?.(new Date().toISOString());
@@ -72,7 +76,11 @@ export function useMedicLocation({
           if (!orderId || !socketRef.current?.connected) return;
           // JS-level throttle: Android игнорирует timeInterval и шлёт фиксы каждые мс
           const now = Date.now();
-          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          const pos = {
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+            heading: loc.coords.heading ?? null,
+          };
           onLocationUpdate?.(pos); // карта обновляется всегда (дёшево)
           if (now - lastEmitRef.current < LOCATION_EMIT_INTERVAL_MS) return;
           lastEmitRef.current = now;

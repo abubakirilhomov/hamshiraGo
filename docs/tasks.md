@@ -19,19 +19,19 @@
 ## 🐛 Открытые баги
 
 ### 🔴 КРИТИЧНО — Абубакир (backend) — найдено аудитом 2026-03-14
-- [ ] **N1** — `payme.service.ts:126` + `click.service.ts:78`: `CheckPerformTransaction` сравнивает сумму с `priceAmount`, нужно `priceAmount - discountAmount` — заказы со скидкой не оплачиваются
-- [ ] **N4** — `main.ts`: добавить `app.set('trust proxy', 1)` — без этого Payme IP-whitelist блокирует все webhooks на Railway
-- [ ] **N6** — `auth/auth.controller.ts:115`: добавить `@Throttle({ default: { ttl: 900_000, limit: 5 } })` на `/auth/admin/login` — сейчас глобальный лимит 120 req/min (брутфорс)
+- [x] **N1** — `payme.service.ts:126` + `click.service.ts:78`: `CheckPerformTransaction` сравнивает сумму с `priceAmount`, нужно `priceAmount - discountAmount` — заказы со скидкой не оплачиваются
+- [x] **N4** — `main.ts`: добавить `app.set('trust proxy', 1)` — без этого Payme IP-whitelist блокирует все webhooks на Railway
+- [x] **N6** — `auth/auth.controller.ts:115`: добавить `@Throttle({ default: { ttl: 900_000, limit: 5 } })` на `/auth/admin/login` — сейчас глобальный лимит 120 req/min (брутфорс)
 
 ### 🟡 ВАЖНО — Абубакир (backend)
-- [ ] **N2** — `dispatch.service.ts:179`: NO_MEDICS retry `setTimeout` не хранится в `this.timers` — при отмене заказа таймер висит в памяти
-- [ ] **N5** — `medics/medics.service.ts:350`: `findCandidatesForDispatch` без `.take()` — при росте базы загружает всех медиков
+- [x] **N2** — `dispatch.service.ts:179`: NO_MEDICS retry `setTimeout` не хранится в `this.timers` — при отмене заказа таймер висит в памяти
+- [x] **N5** — `medics/medics.service.ts:350`: `findCandidatesForDispatch` без `.take()` — при росте базы загружает всех медиков
 
 ### 🟡 Карта — встречная полоса (bearings fix) — Абубакир
 > Диёр уже исправил web-medic. Нужно сделать для нативного medic и backend.
-- [ ] **Шаг 1** — `medic/hooks/useMedicLocation.ts`: добавить `heading: loc.coords.heading ?? null` в объект emit `medic_location`
-- [ ] **Шаг 2** — `backend/src/realtime/order-events.gateway.ts`: пробросить `heading` из payload `medic_location` клиенту
-- [ ] **Шаг 3** — `medic/hooks/useMedicRoute.ts`: добавить `bearings=${heading},45` и `radiuses=25` в OSRM-запрос
+- [x] **Шаг 1** — `medic/hooks/useMedicLocation.ts`: добавить `heading: loc.coords.heading ?? null` в объект emit `medic_location`
+- [x] **Шаг 2** — `backend/src/realtime/order-events.gateway.ts`: пробросить `heading` из payload `medic_location` клиенту
+- [x] **Шаг 3** — `medic/hooks/useMedicRoute.ts`: добавить `bearings=${heading},45` и `radiuses=25` в OSRM-запрос
 - [ ] **Шаг 4** — `web/components/TrackingMap.tsx` + `web/app/orders/[id]/page.tsx`: принять `heading` из WS-события и передать в OSRM (после шагов 1-2)
 
 ### LOW — Абубакир (mobile/medic)

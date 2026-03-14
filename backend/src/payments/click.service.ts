@@ -75,7 +75,8 @@ export class ClickService {
     }
 
     const amount = parseFloat(dto.amount);
-    if (order.priceAmount !== null && Math.round(amount) !== order.priceAmount) {
+    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+    if (Math.round(amount) !== netPrice) {
       return { error: -2, error_note: 'Incorrect parameter amount' };
     }
 

@@ -66,7 +66,7 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const [updating, setUpdating] = useState(false);
-  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
   const mapRef = useRef<any>(null);
@@ -103,7 +103,7 @@ export default function OrderDetailScreen() {
       if (perm.status !== 'granted') return;
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
-          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+          const pos = { latitude: loc.coords.latitude, longitude: loc.coords.longitude, heading: null };
           setMedicPos(pos);
         })
         .catch(() => {});

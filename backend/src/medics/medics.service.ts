@@ -360,6 +360,7 @@ export class MedicsService {
       qb.andWhere('medic.id NOT IN (:...excluded)', { excluded: excludedIds });
     }
 
+    qb.take(50);
     return qb.getMany();
   }
 

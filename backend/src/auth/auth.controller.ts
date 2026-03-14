@@ -112,6 +112,7 @@ export class AuthController {
    * Validates ADMIN_USERNAME + ADMIN_PASSWORD from env,
    * returns a short-lived JWT with role "admin".
    */
+  @Throttle({ default: { ttl: 900_000, limit: 5 } })
   @Post('admin/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин администратора' })

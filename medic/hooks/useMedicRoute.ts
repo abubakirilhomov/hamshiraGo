@@ -12,6 +12,7 @@ import type { OrderLocation } from '@/types/order';
 interface LatLng {
   latitude: number;
   longitude: number;
+  heading?: number | null;
 }
 
 interface OsrmResponse {
@@ -41,10 +42,15 @@ export function useMedicRoute() {
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
+      const heading = medicPos.heading;
+      const hasHeading = heading != null && Number.isFinite(heading);
+      const bearingsParam = hasHeading
+        ? `&bearings=${Math.round(heading!)},45;0,180`
+        : '';
       const url =
         `${OSRM_URL}/${medicPos.longitude},${medicPos.latitude};` +
         `${Number(location.longitude)},${Number(location.latitude)}` +
-        `?overview=full&geometries=geojson`;
+        `?overview=full&geometries=geojson&radiuses=25;25${bearingsParam}`;
 
       const res = await fetch(url, {
         signal: controller.signal,
