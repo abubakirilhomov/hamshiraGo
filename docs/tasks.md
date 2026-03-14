@@ -32,7 +32,7 @@
 - [x] **Шаг 1** — `medic/hooks/useMedicLocation.ts`: добавить `heading: loc.coords.heading ?? null` в объект emit `medic_location`
 - [x] **Шаг 2** — `backend/src/realtime/order-events.gateway.ts`: пробросить `heading` из payload `medic_location` клиенту
 - [x] **Шаг 3** — `medic/hooks/useMedicRoute.ts`: добавить `bearings=${heading},45` и `radiuses=25` в OSRM-запрос
-- [ ] **Шаг 4** — `web/components/TrackingMap.tsx` + `web/app/orders/[id]/page.tsx`: принять `heading` из WS-события и передать в OSRM (после шагов 1-2)
+- [x] **Шаг 4** — `web/components/TrackingMap.tsx` + `web/app/orders/[id]/page.tsx`: принять `heading` из WS-события и передать в OSRM ✅
 
 ### LOW — Абубакир (mobile/medic)
 - [ ] **`pushLocation` использует `Accuracy.Balanced`** — для первого отображения на карте лучше `High` — `medic/hooks/useMedicOrderFeed.ts`

@@ -117,7 +117,7 @@ export default function OrderDetailPage() {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingDone, setRatingDone] = useState(false);
   const [socketOk, setSocketOk] = useState(true);
-  const [medicLocation, setMedicLocation] = useState<{ lat: number; lng: number; updatedAt: string } | null>(null);
+  const [medicLocation, setMedicLocation] = useState<{ lat: number; lng: number; heading?: number | null; updatedAt: string } | null>(null);
   const [paymentLoading, setPaymentLoading] = useState<PaymentProvider | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID" | "FAILED" | null>(null);
   const [dispatchState, setDispatchState] = useState<{
@@ -165,9 +165,9 @@ export default function OrderDetailPage() {
       }
     });
 
-    socket.on("medic_location", (payload: { orderId: string; latitude: number; longitude: number; updatedAt: string }) => {
+    socket.on("medic_location", (payload: { orderId: string; latitude: number; longitude: number; heading?: number | null; updatedAt: string }) => {
       if (payload.orderId !== id) return;
-      setMedicLocation({ lat: payload.latitude, lng: payload.longitude, updatedAt: payload.updatedAt });
+      setMedicLocation({ lat: payload.latitude, lng: payload.longitude, heading: payload.heading, updatedAt: payload.updatedAt });
     });
 
     return () => { socket.emit("unsubscribe_order", id); socket.disconnect(); };
@@ -405,6 +405,7 @@ export default function OrderDetailPage() {
                 medicLng={medicLocation.lng}
                 medicName={order.medic?.name ?? t("order.nurse")}
                 medicPhotoUrl={order.medic?.profilePhotoUrl}
+                heading={medicLocation.heading}
               />
             </div>
           </div>

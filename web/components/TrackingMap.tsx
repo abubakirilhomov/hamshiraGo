@@ -9,6 +9,7 @@ interface TrackingMapProps {
   medicLng: number;
   medicName: string;
   medicPhotoUrl?: string | null;
+  heading?: number | null;
 }
 
 export default function TrackingMap({
@@ -18,6 +19,7 @@ export default function TrackingMap({
   medicLng,
   medicName,
   medicPhotoUrl,
+  heading,
 }: TrackingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,7 +116,10 @@ export default function TrackingMap({
 
       try {
         const osrmBase = (process.env.NEXT_PUBLIC_OSRM_URL ?? "https://router.project-osrm.org/route/v1/driving").replace(/\/$/, "");
-        const url = `${osrmBase}/${medicLng},${medicLat};${clientLng},${clientLat}?overview=full&geometries=geojson`;
+        const bearingsParam = heading != null && !isNaN(heading)
+          ? `&bearings=${Math.round(heading)},45;`
+          : "";
+        const url = `${osrmBase}/${medicLng},${medicLat};${clientLng},${clientLat}?overview=full&geometries=geojson&radiuses=25;${bearingsParam}`;
         const res = await fetch(url);
         if (cancelled || !res.ok) return;
         const data = await res.json() as { routes?: Array<{ geometry?: { coordinates?: [number, number][] }; duration?: number; distance?: number }> };
