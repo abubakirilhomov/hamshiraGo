@@ -139,11 +139,17 @@ export default function SeoContent() {
                     <path d="M12 5v14M5 12h14"/>
                   </svg>
                 </button>
-                {open === i && (
+                <div
+                  style={{
+                    maxHeight: open === i ? 400 : 0,
+                    overflow: "hidden",
+                    transition: "max-height 0.3s ease",
+                  }}
+                >
                   <div className="px-6 pb-5">
                     <p className="text-sm leading-relaxed" style={{ color: "var(--text-3)" }}>{item.a}</p>
                   </div>
-                )}
+                </div>
               </motion.div>
             ))}
           </div>
