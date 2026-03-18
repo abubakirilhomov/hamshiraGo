@@ -1,5 +1,15 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-18
+
+- **[fix]** `web/components/SplashScreen.tsx` — логотип больше не пульсирует (убрана анимация `splash-pulse`), теперь плавный fade-in; убирает эффект "песочных часов" при открытии клиентского web-приложения
+- **[feat]** `web-medic/app/page.tsx` — в модальном окне принятия заказа добавлены: мини-карта (Leaflet, тот же Map компонент), расстояние до клиента (haversine); UI приведён в соответствие с нативным medic-приложением
+- **[seo]** `landing/components/SeoContent.tsx` — FAQ аккордеон: ответы всегда в DOM (CSS max-height вместо conditional render), Google теперь индексирует все ответы + FAQPage schema работает
+- **[seo]** `landing/components/Hero.tsx` — добавлен скрытый `<h1>` с полным текстом для поисковиков; анимированные `<h1>` → `<div>`, Google видит чистый заголовок
+- **[seo]** `landing/app/[lang]/layout.tsx` — расширены keywords: добавлены 20+ long-tail запросов (по районам, по процедурам, на RU и UZ)
+- **[seo]** `landing/app/[lang]/[service]/page.tsx` — созданы 8 страниц услуг (4 RU + 4 UZ): укол/ukol, капельница/tomchi, давление+ЭКГ/qon bosimi, уход/parvarish; каждая со своими meta, JSON-LD (MedicalProcedure + FAQPage + BreadcrumbList), hreflang
+- **[seo]** `landing/app/sitemap.ts` — sitemap расширен: 2 → 10 URL (добавлены 8 страниц услуг с hreflang alternates)
+
 ## 2026-03-14 — Bearings fix: медик по правильной полосе (шаги 1-3)
 
 - **[fix]** `medic/hooks/useMedicLocation.ts` — `heading` добавлен в pos объект emit и onLocationUpdate callback

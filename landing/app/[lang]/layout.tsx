@@ -20,7 +20,7 @@ const META: Record<Lang, {
     description:
       "Вызовите медика на дом в Ташкенте: уколы, капельницы, измерение давления, ЭКГ. Верифицированные медики приедут за 30 минут. Работаем 24/7. Оплата через Payme и Click.",
     keywords:
-      "медик на дому Ташкент, медсестра на дому Ташкент, укол на дому Ташкент, капельница на дому Ташкент, вызов медика на дом, медицинская помощь на дому Узбекистан, hamshira, uyda tibbiy yordam",
+      "медик на дому Ташкент, медсестра на дому Ташкент, укол на дому Ташкент, капельница на дому Ташкент, вызов медика на дом, медицинская помощь на дому Узбекистан, медсестра укол дома, вызов медсестры на дом Ташкент, внутримышечный укол на дому, капельница глюкоза на дому, уход за больным на дому Ташкент, медсестра на дом цена, укол антибиотик на дому, процедурная медсестра на дом, медик на дом Юнусабад, медик на дом Чиланзар, медик на дом Мирзо-Улугбек, медицинская сестра на дом 24/7, hamshira uyga chaqirish, HamshiraGo",
     ogTitle: "HamshiraGo — Медик на дому за 30 минут",
     ogDescription:
       "Закажите медика на дом в Ташкенте через приложение. Быстро, безопасно, круглосуточно.",
@@ -31,7 +31,7 @@ const META: Record<Lang, {
     description:
       "Toshkentda uyga hamshira chaqiring: in'ektsiya, tomchi, qon bosimi, EKG. Tasdiqlangan hamshiralar 30 daqiqada keladi. 24/7 ishlaydi. Payme va Click orqali to'lov.",
     keywords:
-      "uyda hamshira Toshkent, hamshira chaqirish, uyga tibbiy yordam, uyda ukol Toshkent, uyda tomchilatish Toshkent, tibbiy xizmat uyga, медик на дому Ташкент, HamshiraGo",
+      "uyda hamshira Toshkent, hamshira chaqirish, uyga tibbiy yordam, uyda ukol Toshkent, uyda tomchilatish Toshkent, tibbiy xizmat uyga, hamshira uyga narxi, Yunusobodda uyda hamshira, Chilonzorda uyda hamshira, uyda parvarish Toshkent, vena ichiga tomchi uyda, mushak ukoli uyda, shifokor chaqirish, medik na domu Tashkent, HamshiraGo",
     ogTitle: "HamshiraGo — Uyda hamshira 30 daqiqada",
     ogDescription:
       "Toshkentda ilovalar orqali uyga hamshira chaqiring. Tez, xavfsiz, 24/7.",

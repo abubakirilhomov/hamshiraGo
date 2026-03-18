@@ -141,8 +141,12 @@ export default function Hero() {
                 {t.hero.badge}
               </motion.div>
 
+              {/* Hidden H1 for SEO — visible animated version uses div below */}
+              <h1 style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0, pointerEvents: "none" }}>
+                {t1} {t2}
+              </h1>
               <div style={{perspective:"600px",marginBottom:4}}>
-                <h1 className="font-black tracking-tight" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05,color:"var(--text-primary)"}}>
+                <div className="font-black tracking-tight" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05,color:"var(--text-primary)"}}>
                   {t1.split(" ").map((word,wi)=>(
                     <span key={wi} style={{display:"inline-block",whiteSpace:"nowrap"}}>
                       {word.split("").map((ch,ci)=>(
@@ -152,10 +156,10 @@ export default function Hero() {
                       {wi < t1.split(" ").length-1 && <span style={{display:"inline-block"}}>&nbsp;</span>}
                     </span>
                   ))}
-                </h1>
+                </div>
               </div>
               <div style={{perspective:"600px",marginBottom:28}}>
-                <h1 className="font-black tracking-tight grad-text-anim" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05}}>
+                <div className="font-black tracking-tight grad-text-anim" style={{fontSize:"clamp(40px,5.5vw,76px)",lineHeight:1.05}}>
                   {t2.split(" ").map((word,wi)=>(
                     <span key={wi} style={{display:"inline-block",whiteSpace:"nowrap"}}>
                       {word.split("").map((ch,ci)=>(
@@ -165,7 +169,7 @@ export default function Hero() {
                       {wi < t2.split(" ").length-1 && <span style={{display:"inline-block"}}>&nbsp;</span>}
                     </span>
                   ))}
-                </h1>
+                </div>
               </div>
 
               <motion.p initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:1.25,duration:0.7}}

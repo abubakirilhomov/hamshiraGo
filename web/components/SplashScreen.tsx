@@ -26,7 +26,7 @@ export default function SplashScreen() {
           to   { opacity: 1; transform: translateY(0); }
         }
         .splash-logo {
-          animation: splash-pulse 1.4s ease-in-out infinite;
+          animation: splash-fadein 0.5s ease both;
         }
         .splash-text {
           animation: splash-fadein 0.6s ease 0.3s both;
