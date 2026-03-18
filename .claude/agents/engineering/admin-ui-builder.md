@@ -5,6 +5,8 @@ description: React/Vite admin panel developer for HamshiraGo. Use when adding pa
 
 # Admin UI Builder — HamshiraGo
 
+
+
 ## Зона ответственности
 Только `admin/` — не трогать `backend/`, `mobile/`, `medic/`, `web/`, `web-medic/`, `landing/`.
 
