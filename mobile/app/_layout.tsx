@@ -12,6 +12,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
+import { SocketProvider } from '@/context/SocketContext';
 import { registerPushToken } from '@/utils/registerPushToken';
 import '@/i18n';
 
@@ -77,7 +78,9 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <SocketProvider>
+          <RootLayoutNav />
+        </SocketProvider>
       </AuthProvider>
     </LanguageProvider>
   );

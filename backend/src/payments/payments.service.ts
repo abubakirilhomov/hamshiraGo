@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Payment } from './entities/payment.entity';
@@ -17,6 +17,12 @@ export class PaymentsService {
     private clickService: ClickService,
     private dataSource: DataSource,
   ) {}
+
+  async verifyOrderOwnership(orderId: string, userId: string): Promise<void> {
+    const order = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!order) throw new NotFoundException(`Order ${orderId} not found`);
+    if (order.clientId !== userId) throw new ForbiddenException('Not your order');
+  }
 
   async initiatePayment(orderId: string): Promise<{
     paymeUrl: string;

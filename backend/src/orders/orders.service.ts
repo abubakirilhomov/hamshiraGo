@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, IsNull, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './entities/order-status.enum';
 import { OrderLocation } from './entities/order-location.entity';
@@ -106,31 +106,40 @@ export class OrdersService {
     if (discountAmount > service.price) {
       throw new BadRequestException('Discount cannot exceed the service price');
     }
+    // TODO: validate discountAmount against a real promo-code/coupon system
+    // Safety cap: client-supplied discount cannot exceed 20% of service price
+    const maxDiscount = Math.round(service.price * 0.20);
+    if (discountAmount > maxDiscount) {
+      throw new BadRequestException('Discount cannot exceed 20% of the service price');
+    }
 
     const netPrice = service.price - discountAmount;
     const commissionRate = await this.appSettingsService.getCommissionRate();
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
-    const order = this.orderRepo.create({
-      clientId,
-      serviceId: service.id,
-      serviceTitle: service.title,     // snapshot from catalog
-      priceAmount: service.price,      // price locked from catalog, client cannot override
-      discountAmount,
-      platformFee,
-      status: OrderStatus.CREATED,
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const order = manager.create(Order, {
+        clientId,
+        serviceId: service.id,
+        serviceTitle: service.title,     // snapshot from catalog
+        priceAmount: service.price,      // price locked from catalog, client cannot override
+        discountAmount,
+        platformFee,
+        status: OrderStatus.CREATED,
+      });
+      const savedOrder = await manager.save(Order, order);
+      const location = manager.create(OrderLocation, {
+        orderId: savedOrder.id,
+        latitude: dto.location.latitude,
+        longitude: dto.location.longitude,
+        house: dto.location.house,
+        floor: dto.location.floor ?? null,
+        apartment: dto.location.apartment ?? null,
+        phone: dto.location.phone,
+      });
+      await manager.save(OrderLocation, location);
+      return savedOrder;
     });
-    const saved = await this.orderRepo.save(order);
-    const location = this.locationRepo.create({
-      orderId: saved.id,
-      latitude: dto.location.latitude,
-      longitude: dto.location.longitude,
-      house: dto.location.house,
-      floor: dto.location.floor ?? null,
-      apartment: dto.location.apartment ?? null,
-      phone: dto.location.phone,
-    });
-    await this.locationRepo.save(location);
     const fullOrder = await this.findOne(saved.id);
 
     // Start automatic dispatch (Yandex-taxi-style push-based assignment)
@@ -150,6 +159,16 @@ export class OrdersService {
     return order;
   }
 
+  /** Internal use only — no medic JOIN (status checks, dispatch, post-update fetches) */
+  async findOneBasic(id: string): Promise<Order> {
+    const order = await this.orderRepo.findOne({
+      where: { id },
+      relations: { location: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    return order;
+  }
+
   async findOneForActor(
     id: string,
     actorId: string,
@@ -164,7 +183,7 @@ export class OrdersService {
 
   /** Client cancels their own order — only allowed while CREATED or ASSIGNED */
   async cancelOrder(orderId: string, clientId: string, reason?: string): Promise<Order> {
-    const order = await this.findOne(orderId);
+    const order = await this.findOneBasic(orderId);
     if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
     const cancellable: OrderStatus[] = [OrderStatus.CREATED, OrderStatus.ASSIGNED];
     if (!cancellable.includes(order.status)) {
@@ -186,7 +205,7 @@ export class OrdersService {
     }
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.CANCELED);
+    this.notifyClient(updated, OrderStatus.CANCELED).catch((err) => console.error('Notify error:', err));
     // Notify medic with cancellation reason
     if (updated.medicId) {
       const medic = await this.medicsService.findById(updated.medicId);
@@ -206,7 +225,7 @@ export class OrdersService {
 
   /** Client rates the medic after order is DONE */
   async rateOrder(orderId: string, clientId: string, dto: RateOrderDto): Promise<Order> {
-    const order = await this.findOne(orderId);
+    const order = await this.findOneBasic(orderId);
     if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
     if (order.status !== OrderStatus.DONE) throw new BadRequestException('Can only rate a completed order');
     if (!order.medicId) throw new BadRequestException('No medic assigned to this order');
@@ -243,7 +262,7 @@ export class OrdersService {
     clientId: string,
     dto: UpdateOrderStatusDto,
   ): Promise<Order> {
-    const order = await this.findOne(id);
+    const order = await this.findOneBasic(id);
     if (order.clientId !== clientId) {
       throw new ForbiddenException('Not your order');
     }
@@ -254,7 +273,7 @@ export class OrdersService {
       );
     }
     const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-    const medicEarnings = netPrice - (order.platformFee ?? 0);
+    // Credit full netPrice — commission was already deducted from balance at accept-time
     await this.dataSource.transaction(async (manager) => {
       const result = await manager.update(
         Order,
@@ -265,13 +284,13 @@ export class OrdersService {
         throw new BadRequestException('Order status has already changed, please refresh');
       }
       if (order.medicId) {
-        await manager.increment(Medic, { id: order.medicId }, 'earnings', medicEarnings);
+        await manager.increment(Medic, { id: order.medicId }, 'earnings', netPrice);
       }
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
     const doneOrder = await this.findOne(id);
-    this.notifyClient(doneOrder, OrderStatus.DONE);
-    this.notifyMedic(doneOrder, OrderStatus.DONE);
+    this.notifyClient(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
+    this.notifyMedic(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
     return doneOrder;
   }
 
@@ -301,6 +320,11 @@ export class OrdersService {
    * sorted by distance (nearest first). If the medic has no location, all orders are shown.
    */
   async findAvailable(medicId: string): Promise<Order[]> {
+    const medic = await this.medicsService.findById(medicId);
+    if (!medic || medic.verificationStatus !== 'APPROVED' || medic.isBlocked) {
+      return [];
+    }
+
     const orders = await this.orderRepo.find({
       where: { status: OrderStatus.CREATED },
       relations: { location: true },
@@ -308,8 +332,7 @@ export class OrdersService {
       take: 50,
     });
 
-    const medic = await this.medicsService.findById(medicId);
-    if (!medic || medic.latitude == null || medic.longitude == null) {
+    if (medic.latitude == null || medic.longitude == null) {
       // No location data — return all orders (fallback)
       return orders;
     }
@@ -348,7 +371,7 @@ export class OrdersService {
       throw new ForbiddenException('Please upload a profile photo before accepting orders.');
     }
 
-    const order = await this.findOne(orderId);
+    const order = await this.findOneBasic(orderId);
 
     // Validate dispatch invite first (before touching any money or order state)
     await this.dispatchService.onMedicAccept(orderId, medicId);
@@ -376,7 +399,8 @@ export class OrdersService {
         const deductResult = await manager
           .createQueryBuilder()
           .update(Medic)
-          .set({ balance: () => `balance - ${fee}` })
+          .set({ balance: () => 'balance - :fee' })
+          .setParameter('fee', fee)
           .where('id = :id', { id: medicId })
           .andWhere('balance >= :fee', { fee })
           .execute();
@@ -393,7 +417,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ACCEPTED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.ACCEPTED);
+    this.notifyClient(updated, OrderStatus.ACCEPTED).catch((err) => console.error('Notify error:', err));
     return updated;
   }
 
@@ -408,7 +432,7 @@ export class OrdersService {
     medicId: string,
     status: OrderStatus,
   ): Promise<Order> {
-    const order = await this.findOne(orderId);
+    const order = await this.findOneBasic(orderId);
     if (order.medicId !== medicId) throw new ForbiddenException('Order not assigned to you');
 
     const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
@@ -455,7 +479,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, status);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, status);
+    this.notifyClient(updated, status).catch((err) => console.error('Notify error:', err));
     return updated;
   }
 
@@ -500,17 +524,17 @@ export class OrdersService {
 
   /** Admin force-cancels any order regardless of current status */
   async adminCancelOrder(orderId: string, reason?: string): Promise<Order> {
-    const order = await this.findOne(orderId);
-    if (order.status === OrderStatus.DONE || order.status === OrderStatus.CANCELED) {
-      throw new BadRequestException(`Order is already ${order.status}`);
-    }
-    if (order.status === OrderStatus.CREATED) {
-      this.dispatchService.cancelDispatch(orderId).catch(() => {});
-    }
     const cancelReason = reason ?? 'Отменено администратором';
-    order.status = OrderStatus.CANCELED;
-    order.cancelReason = cancelReason;
-    await this.orderRepo.save(order);
+    // Atomic update: only cancel if not already DONE or CANCELED
+    const cancelResult = await this.orderRepo.update(
+      { id: orderId, status: Not(In([OrderStatus.DONE, OrderStatus.CANCELED])) },
+      { status: OrderStatus.CANCELED, cancelReason },
+    );
+    if (!cancelResult.affected) {
+      throw new BadRequestException('Order is already DONE or CANCELED, or not found');
+    }
+    // Best-effort cancel dispatch (may have already been CREATED)
+    this.dispatchService.cancelDispatch(orderId).catch(() => {});
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
     // Notify client with cancellation reason

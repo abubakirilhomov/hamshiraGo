@@ -7,6 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Order } from '../../orders/entities/order.entity';
 
 @Entity('users')
@@ -21,6 +22,7 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   name!: string | null;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255 })
   passwordHash!: string;
 

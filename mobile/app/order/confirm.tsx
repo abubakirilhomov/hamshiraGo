@@ -57,6 +57,9 @@ export default function OrderConfirmScreen() {
   }, [params.serviceId, token]);
 
   const basePrice = service?.price ?? 0;
+  // TODO: discount should be validated server-side (see BE-L7).
+  // Client computes it for display purposes only; the backend must
+  // independently verify eligibility and cap the amount.
   const discountAmount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
   const finalPrice = basePrice - discountAmount;
 

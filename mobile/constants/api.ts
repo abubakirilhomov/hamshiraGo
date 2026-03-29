@@ -13,14 +13,18 @@ export async function apiFetch<T>(
   options?: RequestInit & { token?: string },
 ): Promise<T> {
   const { token, ...rest } = options ?? {};
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
   const res = await fetch(`${API_BASE}${path}`, {
     ...rest,
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(rest.headers ?? {}),
     },
   });
+  clearTimeout(timeoutId);
   if (!res.ok) {
     if (res.status === 401) {
       _onUnauthorized?.();

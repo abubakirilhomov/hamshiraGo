@@ -18,11 +18,12 @@ export class CreateClientErrorDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @MaxLength(2000)
   message?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(10000)
   stacktrace?: string;
 
   @IsOptional()

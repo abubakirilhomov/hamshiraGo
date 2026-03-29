@@ -5,13 +5,12 @@ import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
+import { OSRM_URL } from '@/constants/config';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
-
-const OSRM_URL = 'https://router.project-osrm.org/route/v1/driving';
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
@@ -68,12 +67,18 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
     if (!invite) return;
     const update = () => {
       const ms = new Date(invite.expiresAt).getTime() - Date.now();
-      setSecondsLeft(Math.max(0, Math.ceil(ms / 1000)));
+      const left = Math.max(0, Math.ceil(ms / 1000));
+      setSecondsLeft(left);
+      if (left === 0) {
+        clearInterval(interval);
+        // Auto-dismiss after a short delay so the user sees "expired" state
+        setTimeout(() => onDismiss(), 2000);
+      }
     };
     update();
     const interval = setInterval(update, 500);
     return () => clearInterval(interval);
-  }, [invite]);
+  }, [invite, onDismiss]);
 
   // Get medic's current location for distance + map
   useEffect(() => {
@@ -152,7 +157,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       });
       onDismiss();
     } catch (e: unknown) {
-      Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отклонить заказ');
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('orders.declineError'));
       setLoading(null);
     }
   };
@@ -168,8 +173,8 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
   const addressParts = loc
     ? [
         loc.house,
-        loc.floor ? `эт. ${loc.floor}` : null,
-        loc.apartment ? `кв. ${loc.apartment}` : null,
+        loc.floor ? `${t('orders.floor')} ${loc.floor}` : null,
+        loc.apartment ? `${t('orders.apartment')} ${loc.apartment}` : null,
       ].filter(Boolean)
     : [];
 
@@ -202,16 +207,16 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             <Text style={[styles.timerNumber, isUrgent && styles.timerNumberUrgent, isExpired && styles.timerNumberExpired]}>
               {secondsLeft}
             </Text>
-            <Text style={styles.timerSec}>сек</Text>
+            <Text style={styles.timerSec}>{t('orders.sec')}</Text>
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle}>
-              {isExpired ? 'Время истекло' : '🚨 Новый заказ рядом!'}
+              {isExpired ? t('orders.timeExpired') : `🚨 ${t('orders.newOrderNearby')}`}
             </Text>
             <Text style={styles.headerSubtitle}>
               {isExpired
-                ? 'Заказ передан другому медику'
-                : `Ответьте в течение ${secondsLeft} секунд`}
+                ? t('orders.orderPassedToAnother')
+                : t('orders.respondWithin', { seconds: secondsLeft })}
             </Text>
           </View>
         </View>
@@ -224,17 +229,17 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
           </View>
           <View style={styles.divider} />
 
-          <InfoRow label="Стоимость" value={`${netPrice.toLocaleString('ru-RU')} UZS`} valueStyle={styles.priceValue} />
+          <InfoRow label={t('orders.cost')} value={`${netPrice.toLocaleString('ru-RU')} UZS`} valueStyle={styles.priceValue} />
 
           {loc && (
             <>
               {addressParts.length > 0 && (
-                <InfoRow label="Адрес" value={addressParts.join(', ')} />
+                <InfoRow label={t('orders.address')} value={addressParts.join(', ')} />
               )}
-              <InfoRow label="Телефон" value={loc.phone} />
+              <InfoRow label={t('orders.phone')} value={loc.phone} />
               {distanceKm != null && (
                 <InfoRow
-                  label="Расстояние"
+                  label={t('orders.distance')}
                   value={distanceKm < 1
                     ? `~${Math.round(distanceKm * 1000)} м`
                     : `~${distanceKm.toFixed(1)} км`}
@@ -258,7 +263,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
                 {/* Client marker — blue */}
                 <MapsModule.Marker
                   coordinate={{ latitude: clientLat!, longitude: clientLng! }}
-                  title="Клиент"
+                  title={t('orders.client')}
                   anchor={{ x: 0.5, y: 0.5 }}
                   tracksViewChanges={false}
                 >
@@ -271,7 +276,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
                 {medicPos && (
                   <MapsModule.Marker
                     coordinate={medicPos}
-                    title="Вы"
+                    title={t('orders.you')}
                     anchor={{ x: 0.5, y: 0.5 }}
                     tracksViewChanges={false}
                   >
@@ -297,19 +302,19 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
               {routeLoading && (
                 <View style={styles.mapLoadingOverlay}>
                   <ActivityIndicator color={Theme.primary} size="small" />
-                  <Text style={styles.mapLoadingText}>Строим маршрут...</Text>
+                  <Text style={styles.mapLoadingText}>{t('orders.buildingRoute')}</Text>
                 </View>
               )}
             </View>
             <View style={styles.mapLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
-                <Text style={styles.legendLabel}>Клиент</Text>
+                <Text style={styles.legendLabel}>{t('orders.client')}</Text>
               </View>
               {medicPos && (
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#dc2626' }]} />
-                  <Text style={styles.legendLabel}>Вы</Text>
+                  <Text style={styles.legendLabel}>{t('orders.you')}</Text>
                 </View>
               )}
             </View>
@@ -333,7 +338,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             ) : (
               <>
                 <FontAwesome name="check-circle" size={20} color="#fff" />
-                <Text style={styles.acceptBtnText}>Принять заказ</Text>
+                <Text style={styles.acceptBtnText}>{t('orders.acceptOrder')}</Text>
               </>
             )}
           </Pressable>
@@ -353,7 +358,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             ) : (
               <>
                 <FontAwesome name="times-circle" size={20} color={Theme.error} />
-                <Text style={styles.declineBtnText}>Отклонить</Text>
+                <Text style={styles.declineBtnText}>{t('orders.declineOrder')}</Text>
               </>
             )}
           </Pressable>

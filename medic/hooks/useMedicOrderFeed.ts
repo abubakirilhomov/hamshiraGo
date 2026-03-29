@@ -3,10 +3,10 @@ import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
-import { io, Socket } from 'socket.io-client';
 import { useTranslation } from 'react-i18next';
-import { API_BASE, apiFetch } from '@/constants/api';
+import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useSharedSocket } from '@/context/SocketContext';
 import type { DispatchInvitePayload } from '@/components/OrderInviteModal';
 import type { OrderLocation } from '@/types/order';
 
@@ -44,37 +44,38 @@ export interface UseMedicOrderFeedReturn {
 
 export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
   const { token } = useAuth();
+  const { socket, connected: wsConnected } = useSharedSocket();
   const { t } = useTranslation();
 
   const [orders, setOrders] = useState<AvailableOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [wsConnected, setWsConnected] = useState(false);
   const [bannerOrder, setBannerOrder] = useState<AvailableOrder | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [invite, setInvite] = useState<DispatchInvitePayload | null>(null);
   const [acceptModal, setAcceptModal] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tokenRef = useRef(token);
+  useEffect(() => { tokenRef.current = token; }, [token]);
 
   // ── Send location to backend (so dispatch can find this medic) ───────────────
   const pushLocation = useCallback(async () => {
-    if (!token) return;
+    if (!tokenRef.current) return;
     try {
       const perm = await Location.getForegroundPermissionsAsync();
       if (perm.status !== 'granted') return;
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       await apiFetch('/medics/location', {
         method: 'PATCH',
-        token,
+        token: tokenRef.current,
         body: JSON.stringify({ latitude: loc.coords.latitude, longitude: loc.coords.longitude }),
       });
     } catch {
       // silent — don't block UI
     }
-  }, [token]);
+  }, []);
 
   // ── Fetch orders ────────────────────────────────────────────────────────────
 
@@ -97,30 +98,18 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
     fetchOrders().finally(() => setLoading(false));
   }, [fetchOrders]);
 
-  // ── WebSocket ───────────────────────────────────────────────────────────────
+  // ── WebSocket (uses shared socket from SocketContext) ────────────────────────
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !socket) return;
 
     // Request notification permission (for dev build / Android in Expo Go)
     Notifications.requestPermissionsAsync().catch(() => {});
 
-    const socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-    });
-    socketRef.current = socket;
+    // Send location immediately so dispatch can find this medic
+    if (wsConnected) pushLocation();
 
-    socket.on('connect', () => {
-      setWsConnected(true);
-      // Send location immediately on connect so dispatch can find this medic
-      pushLocation();
-    });
-    socket.on('disconnect', () => setWsConnected(false));
-
-    socket.on('new_order', (order: AvailableOrder) => {
+    const onNewOrder = (order: AvailableOrder) => {
       // Add to list if not already present
       setOrders((prev) => {
         if (prev.some((o) => o.id === order.id)) return prev;
@@ -136,7 +125,7 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
       // 3) System notification with sound (works in dev build; partial in Expo Go Android)
       Notifications.scheduleNotificationAsync({
         content: {
-          title: '🚨 Новый заказ!',
+          title: '\u{1F6A8} Новый заказ!',
           body: `${order.serviceTitle} — ${(order.priceAmount - (order.discountAmount ?? 0)).toLocaleString('ru-RU')} UZS`,
           sound: 'default',
           data: { orderId: order.id },
@@ -144,27 +133,32 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
         },
         trigger: null,
       }).catch(() => {}); // silently fail in Expo Go
-    });
+    };
 
     // ── Dispatch invite (push-based assignment) ──────────────────────────────
-    socket.on('dispatch_invite', (payload: DispatchInvitePayload) => {
+    const onDispatchInvite = (payload: DispatchInvitePayload) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       setInvite(payload);
-    });
+    };
 
-    socket.on('dispatch_invite_expired', (payload: { orderId: string }) => {
+    const onDispatchExpired = (payload: { orderId: string }) => {
       setInvite((prev) => (prev?.orderId === payload.orderId ? null : prev));
-    });
+    };
+
+    socket.on('new_order', onNewOrder);
+    socket.on('dispatch_invite', onDispatchInvite);
+    socket.on('dispatch_invite_expired', onDispatchExpired);
 
     // Update location every 2 minutes so dispatch stays aware of medic position
     locationIntervalRef.current = setInterval(pushLocation, 2 * 60 * 1000);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('new_order', onNewOrder);
+      socket.off('dispatch_invite', onDispatchInvite);
+      socket.off('dispatch_invite_expired', onDispatchExpired);
       if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
     };
-  }, [token, pushLocation]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token, socket, wsConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Accept order ─────────────────────────────────────────────────────────────
 
@@ -177,12 +171,11 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
         token: token ?? undefined,
       });
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      if (locationIntervalRef.current) {
-        clearInterval(locationIntervalRef.current);
-        locationIntervalRef.current = null;
-      }
+      // NOTE: Don't clear locationIntervalRef here — location pushes are useful
+      // even during an active order (dispatch visibility, medic tracking).
     } catch (e: unknown) {
       setAcceptError(e instanceof Error ? e.message : t('common.error'));
+      throw e; // re-throw so callers (e.g. confirmAccept) know it failed
     }
   }, [token, t]);
 

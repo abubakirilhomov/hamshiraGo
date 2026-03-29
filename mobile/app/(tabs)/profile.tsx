@@ -33,14 +33,24 @@ export default function ProfileScreen() {
   const { user, token, logout } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
-  const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [doneOrders, setDoneOrders] = useState(0);
+  const [activeOrders, setActiveOrders] = useState(0);
   const [logoutModal, setLogoutModal] = useState(false);
 
   useEffect(() => {
     if (!token) return;
-    apiFetch<PagedOrders>('/orders?limit=100', { token })
-      .then((res) => setOrders(res.data))
-      .catch(() => {});
+    // Fetch minimal data: limit=1 just to get `total` from pagination metadata
+    // TODO: replace with dedicated `/orders/stats` endpoint when available (see BE ideas)
+    Promise.all([
+      apiFetch<PagedOrders>('/orders?limit=1', { token }),
+      apiFetch<PagedOrders>('/orders?limit=1&status=DONE', { token }).catch(() => null),
+      apiFetch<PagedOrders>('/orders?limit=1&status=CREATED,ASSIGNED,ACCEPTED,ON_THE_WAY,ARRIVED,SERVICE_STARTED', { token }).catch(() => null),
+    ]).then(([allRes, doneRes, activeRes]) => {
+      setTotalOrders(allRes.total ?? allRes.data.length);
+      setDoneOrders(doneRes?.total ?? doneRes?.data.length ?? 0);
+      setActiveOrders(activeRes?.total ?? activeRes?.data.length ?? 0);
+    }).catch(() => {});
   }, [token]);
 
   const handleLogout = () => setLogoutModal(true);
@@ -50,10 +60,6 @@ export default function ProfileScreen() {
   const initials = user.name
     ? user.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
     : user.phone.slice(-2);
-
-  const totalOrders = orders.length;
-  const doneOrders = orders.filter((o) => STATUS_DONE.includes(o.status)).length;
-  const activeOrders = orders.filter((o) => STATUS_ACTIVE.includes(o.status)).length;
 
   return (
     <>

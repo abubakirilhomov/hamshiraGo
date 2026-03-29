@@ -20,7 +20,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<void>;
   register: (phone: string, password: string, name?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

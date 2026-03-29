@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 
@@ -16,6 +17,7 @@ export default function RatingModal({
   submitting,
   onSubmit,
 }: RatingModalProps) {
+  const { t } = useTranslation();
   const [pendingRating, setPendingRating] = useState(0);
   const [review, setReview] = useState('');
 
@@ -28,9 +30,9 @@ export default function RatingModal({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionTitle}>Оцените медика</Text>
+      <Text style={styles.sectionTitle}>{t('rating.rateMedic')}</Text>
       <Text style={styles.ratingHint} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-        Нажмите на звезду чтобы выбрать оценку
+        {t('rating.tapStar')}
       </Text>
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((star) => (
@@ -52,7 +54,7 @@ export default function RatingModal({
         style={styles.reviewInput}
         value={review}
         onChangeText={setReview}
-        placeholder="Оставьте отзыв (необязательно)"
+        placeholder={t('rating.reviewPlaceholder')}
         placeholderTextColor={Theme.textSecondary}
         multiline
         maxLength={1000}
@@ -70,7 +72,7 @@ export default function RatingModal({
         {submitting
           ? <ActivityIndicator color="#fff" size="small" />
           : <Text style={styles.submitRatingText}>
-              {pendingRating === 0 ? 'Выберите оценку' : `Отправить — ${pendingRating} ★`}
+              {pendingRating === 0 ? t('rating.selectRating') : t('rating.submit', { stars: pendingRating })}
             </Text>
         }
       </Pressable>

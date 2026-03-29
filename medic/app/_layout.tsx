@@ -14,6 +14,7 @@ import { apiFetch } from '@/constants/api';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
+import { SocketProvider } from '@/context/SocketContext';
 import '@/i18n';
 import {
   hasBackgroundLocationPermission,
@@ -92,7 +93,9 @@ export default function RootLayout() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <SocketProvider>
+          <RootLayoutNav />
+        </SocketProvider>
       </AuthProvider>
     </LanguageProvider>
   );

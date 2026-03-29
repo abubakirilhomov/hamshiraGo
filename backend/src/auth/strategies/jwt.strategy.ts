@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -28,10 +28,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (payload.role === 'medic') {
       const medic = await this.medicsService.findById(payload.sub);
       if (!medic) throw new UnauthorizedException();
+      if (medic.isBlocked) throw new ForbiddenException('Account blocked');
       return { id: medic.id, role: 'medic' as const };
     }
     const user = await this.usersService.findById(payload.sub);
     if (!user) throw new UnauthorizedException();
+    if (user.isBlocked) throw new ForbiddenException('Account blocked');
     return { id: user.id, role: 'client' as const };
   }
 }

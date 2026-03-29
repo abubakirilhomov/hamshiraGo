@@ -9,11 +9,12 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect } from 'expo-router';
-import { io, Socket } from 'socket.io-client';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
-import { API_BASE, apiFetch } from '@/constants/api';
+import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 import { OrderStatus, ACTIVE_STATUSES } from '@/types/order';
 import { ORDERS_PAGE_LIMIT } from '@/constants/config';
 import OrderCard, { OrderCardItem } from '@/components/OrderCard';
@@ -21,55 +22,57 @@ import OrderCard, { OrderCardItem } from '@/components/OrderCard';
 type Order = OrderCardItem;
 
 export default function OrdersScreen() {
+  const { t } = useTranslation();
   const { token, logout } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const { socket } = useSocket();
   const subscribedRef = useRef<Set<string>>(new Set());
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (offset = 0) => {
     try {
-      const res = await apiFetch<{ data: Order[] }>(`/orders?limit=${ORDERS_PAGE_LIMIT}`, { token: token ?? undefined });
+      const res = await apiFetch<{ data: Order[]; total: number }>(
+        `/orders?limit=${ORDERS_PAGE_LIMIT}&offset=${offset}`,
+        { token: token ?? undefined },
+      );
       const data = res.data;
-      setOrders(data);
+      if (offset === 0) {
+        setOrders(data);
+      } else {
+        setOrders((prev) => [...prev, ...data]);
+      }
+      setHasMore(offset + data.length < res.total);
       setError(null);
       return data;
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Ошибка загрузки');
+      setError(e instanceof Error ? e.message : t('orders.loadError'));
       return [];
     }
   }, [token]);
 
-  // ── WebSocket: subscribe to active orders ───────────────────────────────────
+  // ── WebSocket: listen for order status updates on the shared socket ─────────
   useEffect(() => {
-    if (!token) return;
+    if (!socket) return;
 
-    const socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-    });
-    socketRef.current = socket;
-
-    socket.on('order_status', ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
+    const handler = ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
       );
-    });
+    };
+    socket.on('order_status', handler);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('order_status', handler);
       subscribedRef.current.clear();
     };
-  }, [token]);
+  }, [socket]);
 
   // Subscribe to each active order once it appears in the list
   useEffect(() => {
-    const socket = socketRef.current;
     if (!socket) return;
     orders.forEach((o) => {
       if (ACTIVE_STATUSES.includes(o.status) && !subscribedRef.current.has(o.id)) {
@@ -77,7 +80,7 @@ export default function OrdersScreen() {
         subscribedRef.current.add(o.id);
       }
     });
-  }, [orders]);
+  }, [orders, socket]);
 
   useEffect(() => {
     setLoading(true);
@@ -93,9 +96,16 @@ export default function OrdersScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchOrders();
+    await fetchOrders(0);
     setRefreshing(false);
   }, [fetchOrders]);
+
+  const onEndReached = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    await fetchOrders(orders.length);
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, orders.length, fetchOrders]);
 
   if (loading) {
     return (
@@ -108,7 +118,7 @@ export default function OrdersScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Мои заказы</Text>
+        <Text style={styles.headerTitle}>{t('orders.myOrders')}</Text>
         <Pressable onPress={logout} style={styles.logoutBtn}>
           <FontAwesome name="sign-out" size={18} color={Theme.textSecondary} />
         </Pressable>
@@ -118,7 +128,7 @@ export default function OrdersScreen() {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable onPress={() => fetchOrders()} style={styles.retryBtn}>
-            <Text style={styles.retryText}>Повторить</Text>
+            <Text style={styles.retryText}>{t('orders.retry')}</Text>
           </Pressable>
         </View>
       )}
@@ -134,14 +144,17 @@ export default function OrdersScreen() {
           !error ? (
             <View style={styles.empty}>
               <FontAwesome name="clipboard" size={48} color={Theme.border} />
-              <Text style={styles.emptyTitle}>Заказов пока нет</Text>
+              <Text style={styles.emptyTitle}>{t('orders.emptyTitle')}</Text>
               <Text style={styles.emptyHint} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-                Выберите услугу на главной и оформите первый заказ
+                {t('orders.emptyHint')}
               </Text>
             </View>
           ) : null
         }
         renderItem={({ item }) => <OrderCard order={item} isActive={ACTIVE_STATUSES.includes(item.status)} />}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={Theme.primary} /> : null}
       />
     </View>
   );

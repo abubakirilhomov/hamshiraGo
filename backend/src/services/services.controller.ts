@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -25,8 +26,10 @@ export class ServicesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.servicesService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const service = await this.servicesService.findOne(id);
+    if (!service) throw new NotFoundException('Service not found');
+    return service;
   }
 
   // ── Admin (X-Admin-Secret) ────────────────────────────────────────────────

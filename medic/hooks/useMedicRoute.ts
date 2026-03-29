@@ -23,6 +23,7 @@ export function useMedicRoute() {
   const [routeCoords, setRouteCoords] = useState<LatLng[]>([]);
   const [routeLoading, setRouteLoading] = useState(false);
   const lastRouteFetchRef = useRef(0);
+  const lastRoutePosRef = useRef<{ latitude: number; longitude: number } | null>(null);
   const hasInitialRouteRef = useRef(false);
   const retryCountRef = useRef(0);
 
@@ -35,6 +36,18 @@ export function useMedicRoute() {
 
     const now = Date.now();
     if (now - lastRouteFetchRef.current < ROUTE_FETCH_THROTTLE_MS) return;
+
+    // Skip if medic hasn't moved 200m since last fetch (except first fetch)
+    if (hasInitialRouteRef.current && lastRoutePosRef.current) {
+      const dlat = medicPos.latitude - lastRoutePosRef.current.latitude;
+      const dlng = medicPos.longitude - lastRoutePosRef.current.longitude;
+      // Approximate: 1 degree lat ~ 111km, 1 degree lng ~ 111km * cos(lat)
+      const latM = dlat * 111_000;
+      const lngM = dlng * 111_000 * Math.cos((medicPos.latitude * Math.PI) / 180);
+      const distM = Math.sqrt(latM * latM + lngM * lngM);
+      if (distM < 200) return;
+    }
+
     lastRouteFetchRef.current = now;
 
     if (!hasInitialRouteRef.current) setRouteLoading(true);
@@ -71,6 +84,7 @@ export function useMedicRoute() {
         coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
       );
       hasInitialRouteRef.current = true;
+      lastRoutePosRef.current = { latitude: medicPos.latitude, longitude: medicPos.longitude };
       retryCountRef.current = 0;
     } catch (err) {
       clearTimeout(timer);
@@ -92,6 +106,7 @@ export function useMedicRoute() {
   const resetRoute = useCallback(() => {
     setRouteCoords([]);
     lastRouteFetchRef.current = 0;
+    lastRoutePosRef.current = null;
     hasInitialRouteRef.current = false;
     retryCountRef.current = 0;
   }, []);

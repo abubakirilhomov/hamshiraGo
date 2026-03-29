@@ -9,11 +9,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { io, Socket } from 'socket.io-client';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { API_BASE, apiFetch } from '@/constants/api';
+import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useSharedSocket } from '@/context/SocketContext';
 import type { OrderStatus, OrderLocation } from '@/types/order';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -76,14 +76,14 @@ export const NEXT_STATUS_MAP: Partial<
 
 export function useOrderStatus(orderId: string | undefined) {
   const { token } = useAuth();
+  const { socket, connected: wsConnected } = useSharedSocket();
   const { t } = useTranslation();
   const router = useRouter();
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
   const orderRef = useRef<OrderDetail | null>(null);
+  const fetchOrderRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // Keep orderRef in sync for AppState handler (avoids stale closure)
   useEffect(() => { orderRef.current = order; }, [order]);
@@ -102,42 +102,33 @@ export function useOrderStatus(orderId: string | undefined) {
     }
   }, [orderId, token, router]);
 
+  // Keep fetchOrderRef in sync to avoid socket effect re-runs
+  useEffect(() => { fetchOrderRef.current = fetchOrder; }, [fetchOrder]);
+
   useEffect(() => {
     setLoading(true);
     fetchOrder().finally(() => setLoading(false));
   }, [fetchOrder]);
 
-  // ── WebSocket ────────────────────────────────────────────────────────────────
+  // ── WebSocket (uses shared socket from SocketContext) ────────────────────────
   useEffect(() => {
-    if (!token || !orderId) return;
+    if (!socket || !orderId) return;
 
-    const socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-      reconnectionAttempts: 10,
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => setWsConnected(true));
-    socket.on('disconnect', () => setWsConnected(false));
-    socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
+    const onOrderStatus = (payload: { orderId: string; status: OrderStatus }) => {
       if (payload.orderId === orderId) {
         setOrder((prev) => (prev ? { ...prev, status: payload.status } : prev));
         if (payload.status === 'DONE' || payload.status === 'CANCELED') {
-          fetchOrder();
+          fetchOrderRef.current();
         }
       }
-    });
+    };
+
+    socket.on('order_status', onOrderStatus);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
-      setWsConnected(false);
+      socket.off('order_status', onOrderStatus);
     };
-  }, [token, orderId, fetchOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [socket, orderId]);
 
   // ── Status update ────────────────────────────────────────────────────────────
   const updateOrderStatus = useCallback(
@@ -229,5 +220,5 @@ export function useOrderStatus(orderId: string | undefined) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { order, loading, wsConnected, socketRef, updateOrderStatus, fetchOrder };
+  return { order, loading, wsConnected, updateOrderStatus, fetchOrder };
 }

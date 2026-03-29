@@ -11,6 +11,7 @@ interface Props {
   visible: boolean;
   title?: string;
   message?: string;
+  children?: React.ReactNode;
   buttons?: AppModalButton[];
   onClose?: () => void;
 }
@@ -29,7 +30,7 @@ interface Props {
  *     onClose={() => setShow(false)}
  *   />
  */
-export default function AppModal({ visible, title, message, buttons, onClose }: Props) {
+export default function AppModal({ visible, title, message, children, buttons, onClose }: Props) {
   const btns: AppModalButton[] = buttons?.length
     ? buttons
     : [{ text: 'OK', style: 'default', onPress: onClose }];
@@ -46,6 +47,7 @@ export default function AppModal({ visible, title, message, buttons, onClose }: 
         <View style={styles.box} onStartShouldSetResponder={() => true}>
           {title ? <Text style={styles.title}>{title}</Text> : null}
           {message ? <Text style={styles.message}>{message}</Text> : null}
+          {children}
 
           <View style={[styles.btnRow, btns.length > 2 && styles.btnRowColumn]}>
             {btns.map((btn, i) => (

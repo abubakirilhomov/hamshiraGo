@@ -354,7 +354,8 @@ export class MedicsService {
       .andWhere('medic.verificationStatus = :status', { status: 'APPROVED' })
       .andWhere('medic.isBlocked = false')
       .andWhere('medic.latitude IS NOT NULL')
-      .andWhere('medic.longitude IS NOT NULL');
+      .andWhere('medic.longitude IS NOT NULL')
+      .andWhere('medic.profilePhotoUrl IS NOT NULL');
 
     if (excludedIds.length > 0) {
       qb.andWhere('medic.id NOT IN (:...excluded)', { excluded: excludedIds });

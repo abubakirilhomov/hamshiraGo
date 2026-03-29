@@ -1,5 +1,87 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-29 (LOW bugs BE-L1..L7)
+
+- **[fix]** BE-L1: Added `findOneBasic(id)` without medic JOIN for internal use; all internal callers (cancelOrder, rateOrder, updateStatusByClient, updateStatusByMedic, acceptOrder) now use it — `orders.service.ts`
+- **[fix]** BE-L2: Stored interval handle in `cleanupInterval` class property; implemented `OnModuleDestroy` to call `clearInterval` — `order-events.gateway.ts`
+- **[fix]** BE-L3: Created `BlockUserDto` with `@IsBoolean() isBlocked` for admin block endpoint — `auth/dto/block-user.dto.ts`, `auth.controller.ts`
+- **[fix]** BE-L4: Added `.catch(err => console.error('Notify error:', err))` to all fire-and-forget `notifyClient`/`notifyMedic` calls — `orders.service.ts`
+- **[fix]** BE-L5: `GET /services/:id` now throws `NotFoundException` when service is null instead of returning 200 — `services.controller.ts`
+- **[fix]** BE-L6: `broadcastToAll` processes recipients in chunks of 20 with 100ms delay between chunks — `telegram.service.ts`
+- **[fix]** BE-L7: `discountAmount` capped at 20% of service price with `BadRequestException`; TODO comment for future promo-code validation — `orders.service.ts`
+
+## 2026-03-29 (LOW bugs MOB-L1..L5, MED-L1..L3)
+
+- **[fix]** MOB-L1: Replaced `pin` dep in `fetchLocation` useCallback with `initialPinSetRef` ref to eliminate infinite loop — `mobile/app/order/location.tsx`
+- **[fix]** MOB-L2: Removed unused `getServiceById` import and `service` variable (dead code) — `mobile/app/order/location.tsx`
+- **[fix]** MOB-L3: Wrapped native `LocationMap` with `React.memo` to prevent MapView re-renders on address keystrokes — `mobile/app/order/location.tsx`
+- **[fix]** MOB-L4: Removed duplicate `setNotificationChannelAsync('order_updates')` from `registerPushToken.ts`; channel setup kept only in `_layout.tsx` — `mobile/utils/registerPushToken.ts`
+- **[fix]** MOB-L5: Changed `logout` type from `() => void` to `() => Promise<void>` in `AuthContextType` interface — `mobile/context/AuthContext.tsx`
+- **[fix]** MED-L1: Added two `useEffect` hooks to sync `faceUri`/`licenseUri` state when `medic.facePhotoUrl`/`licensePhotoUrl` updates after profile refresh — `medic/app/verification.tsx`
+- **[fix]** MED-L2: Replaced dynamic `(await import('@/constants/api')).API_BASE` with static `API_BASE` import at top of file — `medic/app/(tabs)/profile.tsx`
+- **[fix]** MED-L3: Stored `token` in `tokenRef`, `pushLocation` now uses `tokenRef.current` with empty `useCallback` deps; removed `pushLocation` from socket effect deps to prevent unnecessary reconnects — `medic/hooks/useMedicOrderFeed.ts`
+
+## 2026-03-28 (medic MEDIUM bugs MED-M1..M9)
+
+- **[fix]** MED-M1: Replaced all hardcoded Russian strings with `t()` i18n calls — `app/(tabs)/index.tsx`, `profile.tsx`, `order/[id].tsx`, `verification.tsx`, `components/OrderInviteModal.tsx`, `app/(tabs)/my-orders.tsx`
+- **[fix]** MED-M2: OrderInviteModal auto-dismisses after 2s when countdown reaches 0 — `components/OrderInviteModal.tsx`
+- **[fix]** MED-M3: Reset `startingRef.current = false` after watchPositionAsync succeeds — `hooks/useMedicLocation.ts`
+- **[fix]** MED-M4: Replaced hardcoded OSRM URL with import from `@/constants/config` — `components/OrderInviteModal.tsx`
+- **[fix]** MED-M5: Added error state and retry UI to my-orders fetch — `app/(tabs)/my-orders.tsx`
+- **[fix]** MED-M6: Profile uses `?status=DONE&limit=1` + `total` instead of fetching 100 orders — `app/(tabs)/profile.tsx`
+- **[fix]** MED-M7: NewOrderBanner uses `onDismissRef` + `order.id` in effect deps to avoid stale closure — `components/NewOrderBanner.tsx`
+- **[fix]** MED-M8: OSRM throttle increased from 12s to 30s + skip if medic moved <200m — `constants/config.ts`, `hooks/useMedicRoute.ts`
+- **[fix]** MED-M9: Added `reconnectionAttempts: 15` to SocketContext — `context/SocketContext.tsx`
+- **[i18n]** Added `common.close` key to ru.json and uz.json
+
+## 2026-03-28 (backend MEDIUM bugs BE-M1..M12)
+
+- **[fix]** BE-M9: Added composite `@Index(['orderId', 'medicId', 'result'])` on DispatchAttempt entity — `backend/src/orders/entities/dispatch-attempt.entity.ts`
+- **[fix]** BE-M10: Replaced hardcoded WebSocket CORS origins with shared `ALLOWED_ORIGINS` from `cors.config.ts` — `backend/src/realtime/order-events.gateway.ts`
+- **[fix]** BE-M11: Fixed Cloudinary timeout leak — `clearTimeout` via `.finally()` on Promise.race — `backend/src/common/cloudinary.service.ts`
+- **[verified]** BE-M1..M8, BE-M12: Already fixed in prior commits (forbidNonWhitelisted, Payme refund state=-2, synchronize:false, pool max:20, dispatch recovery, findAvailable guard, WS caches, GetStatement take:1000)
+
+## 2026-03-28 (mobile HIGH bugs MOB-H1..H5)
+
+- **[verified]** MOB-H1: `submitRating` already uses `ratingSubmittingRef` guard, `ratingSubmitting` not in useCallback deps — no changes needed — `mobile/hooks/useOrderTracking.ts`
+- **[fix]** MOB-H2: Replaced all hardcoded Russian strings with i18n `t()` calls on track, orders, and rating screens — Uzbek users now see correct translations — `mobile/app/order/track.tsx`, `mobile/app/(tabs)/two.tsx`, `mobile/components/RatingModal.tsx`
+- **[fix]** MOB-H3: Removed deprecated `STATUS_LABEL` object with hardcoded Russian — `OrderCard` already uses `getStatusLabel(t)` — `mobile/types/order.ts`
+- **[verified]** MOB-H4: `OrderCard.onPress` already navigates to track screen for all order statuses — no changes needed — `mobile/components/OrderCard.tsx`
+- **[fix]** MOB-H5: `cancelOrder` removed `if (result)` guard — `apiFetch` returns undefined on 204 success, so navigation was skipped; now navigation always runs after successful await — `mobile/hooks/useOrderTracking.ts`
+
+## 2026-03-28 (backend HIGH security fixes)
+
+- **[fix]** BE-H9: Added `@MaxLength(10000)` to `stacktrace` and `@MaxLength(2000)` to `message` in `CreateClientErrorDto` — prevents database bloat via public endpoint — `backend/src/client-errors/dto/create-client-error.dto.ts`
+- **[fix]** BE-H10: Added `@Exclude()` on `passwordHash` in both `Medic` and `User` entities, enabled `ClassSerializerInterceptor` globally — prevents password hash leaking in API responses — `backend/src/medics/entities/medic.entity.ts`, `backend/src/users/entities/user.entity.ts`, `backend/src/main.ts`
+- **[fix]** BE-H11: Telegram `/start {medicId}` now rejects linking if medic already has a different `telegramChatId` — prevents hijacking another medic's notifications — `backend/src/telegram/telegram-bot.service.ts`
+- **[verified]** BE-H1 through BE-H8: Already fixed in codebase — `isBlocked` check in JWT strategy, payment ownership verification, Click IP whitelist, admin topup validation, push token MaxLength, order creation transaction, dispatch profilePhotoUrl check
+
+## 2026-03-28 (medic HIGH fixes)
+
+- **[fix]** MED-H1: Removed `clearInterval` from `acceptOrder` — location interval continues running so medic stays visible to dispatch after completing an order — `medic/hooks/useMedicOrderFeed.ts`
+- **[fix]** MED-H2: 401 now shows Alert before logout instead of silent auto-logout — medic sees "Session expired" message, gets chance to understand what happened — `medic/constants/api.ts`
+- **[fix]** MED-H3: Used `fetchOrderRef` pattern to remove `fetchOrder` from WebSocket effect deps — prevents socket reconnect loop caused by `router` changing on every render — `medic/hooks/useOrderStatus.ts`
+- **[fix]** MED-H4: Wrapped `confirmAccept` in try/catch — navigation to order screen only happens if `acceptOrder` succeeds; `acceptOrder` now re-throws after setting error state — `medic/app/(tabs)/index.tsx`, `medic/hooks/useMedicOrderFeed.ts`
+- **[verified]** MED-H5: `.env` already in root `.gitignore` (lines 38-39), not tracked by git — no changes needed
+
+## 2026-03-28 (medic critical fixes)
+
+- **[fix]** MED-C1: Устранены двойные WebSocket-соединения в medic app — создан единый `SocketProvider`/`SocketContext`, `useMedicOrderFeed` и `useOrderStatus` используют общий сокет вместо создания собственных `io()` — `medic/context/SocketContext.tsx`, `medic/hooks/useMedicOrderFeed.ts`, `medic/hooks/useOrderStatus.ts`, `medic/hooks/useMedicLocation.ts`, `medic/app/order/[id].tsx`, `medic/app/_layout.tsx`
+- **[fix]** MED-C2: Исправлен stale closure в `SwipeActionButton` — `onConfirm` теперь хранится в ref, PanResponder вызывает `onConfirmRef.current()` вместо замыкания первого рендера — `medic/components/SwipeActionButton.tsx`
+
+## 2026-03-28
+
+- **[fix]** MOB-C1: Каталог `/services` теперь запрашивается с auth token — предотвращает ложный auto-logout на 401 — `mobile/app/(tabs)/index.tsx`
+- **[fix]** MOB-C2: Устранены двойные WebSocket-соединения — создан единый `SocketProvider`/`SocketContext`, orders list и track screen используют общий сокет — `mobile/context/SocketContext.tsx`, `mobile/app/(tabs)/two.tsx`, `mobile/hooks/useOrderTracking.ts`, `mobile/app/_layout.tsx`
+- **[fix]** MOB-C3: Добавлен TODO-комментарий о необходимости серверной валидации `discountAmount` (связан с BE-L7) — `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-C4: Добавлена валидация телефона — проверка формата +998XXXXXXXXX или минимум 9 цифр — `mobile/app/order/location.tsx`
+- **[fix]** MOB-C5: `registerPushToken` теперь логирует явное предупреждение при placeholder EAS projectId — `mobile/utils/registerPushToken.ts`
+- **[fix]** BE-C1: Унифицировано начисление `earnings` медику — оба пути (client DONE и medic DONE) теперь используют `netPrice` — `orders.service.ts`
+- **[fix]** BE-C2: SQL-инъекция в balance deduction — заменена строковая интерполяция на `.setParameter('fee', fee)` — `orders.service.ts`
+- **[fix]** BE-C3: Race condition в `adminCancelOrder` — заменён read-then-write на атомарный `update()` с `Not(In([DONE, CANCELED]))` — `orders.service.ts`
+- **[fix]** BE-C4: Telegram webhook authentication — добавлена проверка `X-Telegram-Bot-Api-Secret-Token` + `secret_token` в setWebhook — `telegram-bot.controller.ts`, `telegram-bot.service.ts`
+- **[fix]** BE-C5: Payme auth timing attack — заменён `!==` на `crypto.timingSafeEqual` — `payme.service.ts`
+
 ## 2026-03-18
 
 - **[fix]** `web/components/SplashScreen.tsx` — логотип больше не пульсирует (убрана анимация `splash-pulse`), теперь плавный fade-in; убирает эффект "песочных часов" при открытии клиентского web-приложения

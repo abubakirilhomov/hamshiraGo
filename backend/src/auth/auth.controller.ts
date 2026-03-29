@@ -23,11 +23,9 @@ import { AdminGuard } from './guards/admin.guard';
 import { ClientId } from './decorators/client-id.decorator';
 import { UsersService } from '../users/users.service';
 import { WebPushService } from '../realtime/web-push.service';
-
-interface WebPushSubscriptionBody {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-}
+import { PushTokenDto } from '../common/dto/push-token.dto';
+import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
+import { BlockUserDto } from './dto/block-user.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -63,7 +61,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Сохранить Expo push-token клиента' })
   @ApiResponse({ status: 204, description: 'Токен сохранён' })
-  async savePushToken(@ClientId() clientId: string, @Body() body: { token: string }) {
+  async savePushToken(@ClientId() clientId: string, @Body() body: PushTokenDto) {
     if (body?.token) await this.usersService.savePushToken(clientId, body.token);
   }
 
@@ -82,7 +80,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Сохранить Web Push подписку клиента' })
   async saveWebPushSubscription(
     @ClientId() clientId: string,
-    @Body() body: WebPushSubscriptionBody,
+    @Body() body: WebPushSubscriptionDto,
     @Headers('user-agent') userAgent?: string,
   ) {
     await this.webPushService.saveSubscription({
@@ -127,8 +125,8 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Заблокировать / разблокировать клиента' })
-  blockUser(@Param('id') id: string, @Body() body: { isBlocked: boolean }) {
-    return this.usersService.blockUser(id, body.isBlocked ?? true);
+  blockUser(@Param('id') id: string, @Body() body: BlockUserDto) {
+    return this.usersService.blockUser(id, body.isBlocked);
   }
 
   @Get('admin/users')

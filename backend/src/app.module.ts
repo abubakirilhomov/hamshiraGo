@@ -64,8 +64,8 @@ import { TelegramBotModule } from './telegram/telegram-bot.module';
         password: process.env.DB_PASSWORD ?? 'postgres',
         database: process.env.DB_NAME ?? 'hamshira_go',
         autoLoadEntities: true,
-        synchronize: process.env.NODE_ENV !== 'production',
-        extra: { max: 10, min: 2, idleTimeoutMillis: 30000 },
+        synchronize: false, // Always false — use TypeORM migrations for schema changes
+        extra: { max: 20, min: 2, idleTimeoutMillis: 30000 },
       }),
     }),
     CommonModule,

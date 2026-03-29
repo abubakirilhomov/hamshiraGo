@@ -2,6 +2,7 @@ import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { Payment } from './entities/payment.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
@@ -31,7 +32,11 @@ export class PaymeService {
     const key = this.config.get<string>('PAYME_MERCHANT_KEY', '');
     const expected = Buffer.from(`Paycom:${key}`).toString('base64');
     const provided = (authHeader ?? '').replace(/^Basic\s+/i, '').trim();
-    if (provided !== expected) {
+    const expectedBuf = Buffer.from(expected);
+    const providedBuf = Buffer.from(provided);
+    // Constant-time comparison to prevent timing attacks
+    if (expectedBuf.length !== providedBuf.length ||
+        !crypto.timingSafeEqual(expectedBuf, providedBuf)) {
       throw new UnauthorizedException('Invalid Payme credentials');
     }
   }
@@ -215,21 +220,19 @@ export class PaymeService {
     const payment = await this.findPaymentByProviderTxId(id);
     if (!payment) return this.rpcError(ERR_OBJECT_NOT_FOUND, 'Transaction not found');
 
-    if (payment.providerState === 2) {
-      // Already performed — cannot cancel
-      return this.rpcError(ERR_CANNOT_PERFORM, 'Cannot cancel performed transaction');
-    }
-
-    if (payment.providerState === -1) {
+    if (payment.providerState === -1 || payment.providerState === -2) {
       return this.rpcOk({
         transaction: payment.id,
         cancel_time: payment.cancelTime!.getTime(),
-        state: -1,
+        state: payment.providerState,
       });
     }
 
-    payment.status = payment.providerState === 1 ? 'cancelled' : 'failed';
-    payment.providerState = -1;
+    // state 2 (performed) -> state -2 (refund after perform)
+    // state 1 (created)   -> state -1 (cancelled before perform)
+    const newState = payment.providerState === 2 ? -2 : -1;
+    payment.status = payment.providerState === 2 ? 'cancelled' : (payment.providerState === 1 ? 'cancelled' : 'failed');
+    payment.providerState = newState;
     payment.cancelTime = new Date();
     payment.reason = reason ?? null;
     await this.paymentRepo.save(payment);
@@ -237,7 +240,7 @@ export class PaymeService {
     return this.rpcOk({
       transaction: payment.id,
       cancel_time: payment.cancelTime.getTime(),
-      state: -1,
+      state: newState,
     });
   }
 
@@ -268,6 +271,7 @@ export class PaymeService {
         provider: 'payme',
         createdAt: Between(new Date(from), new Date(to)),
       },
+      take: 1000,
     });
 
     const transactions = payments.map((p) => ({

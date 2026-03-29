@@ -14,16 +14,19 @@ export type OrderStatus =
   | 'DONE'
   | 'CANCELED';
 
-export const STATUS_LABEL: Record<OrderStatus, string> = {
-  CREATED: 'Создан',
-  ASSIGNED: 'Назначен',
-  ACCEPTED: 'Принят',
-  ON_THE_WAY: 'В пути',
-  ARRIVED: 'Прибыл',
-  SERVICE_STARTED: 'Оказывается услуга',
-  DONE: 'Выполнен',
-  CANCELED: 'Отменён',
-};
+/** Returns localized status labels using i18n `t` function */
+export function getStatusLabel(t: (key: string) => string): Record<OrderStatus, string> {
+  return {
+    CREATED: t('order.status.CREATED'),
+    ASSIGNED: t('order.status.ASSIGNED'),
+    ACCEPTED: t('order.status.ACCEPTED'),
+    ON_THE_WAY: t('order.status.ON_THE_WAY'),
+    ARRIVED: t('order.status.ARRIVED'),
+    SERVICE_STARTED: t('order.status.SERVICE_STARTED'),
+    DONE: t('order.status.DONE'),
+    CANCELED: t('order.status.CANCELED'),
+  };
+}
 
 export const STATUS_COLOR: Record<OrderStatus, string> = {
   CREATED: '#009B8D',   // Theme.primary

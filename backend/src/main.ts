@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import helmet from 'helmet';
@@ -7,6 +7,7 @@ import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { seedServices } from './services/services.seed';
+import { ALLOWED_ORIGINS } from './common/cors.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -19,37 +20,17 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
+      forbidNonWhitelisted: true,
       transform: true,
     }),
   );
 
-  const allowedOrigins = [
-    // Production domains
-    'https://hamshirago.uz',
-    'https://www.hamshirago.uz',
-    'https://app.hamshirago.uz',
-    'https://medic.hamshirago.uz',
-    'https://admin.hamshirago.uz',
-    // Vercel deployments (legacy)
-    'https://hamshirago-web.vercel.app',
-    'https://hamshirago-web-medic.vercel.app',
-    'https://hamshirago-admin.vercel.app',
-    // Railway deployments
-    'https://web-production-d365f.up.railway.app',
-    'https://admin-production-9727.up.railway.app',
-    'https://web-medic-production.up.railway.app',
-    // Allow local dev for both web apps
-    'http://localhost:3001',
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://localhost:8081',
-    'http://localhost:8082',
-  ];
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" not allowed`));
     },
     credentials: true,

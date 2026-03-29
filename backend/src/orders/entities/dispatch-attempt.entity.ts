@@ -18,6 +18,7 @@ export enum DispatchResult {
 }
 
 @Entity('dispatch_attempts')
+@Index(['orderId', 'medicId', 'result'])
 export class DispatchAttempt {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

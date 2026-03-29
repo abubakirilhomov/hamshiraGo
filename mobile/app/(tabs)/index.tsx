@@ -7,6 +7,7 @@ import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { ServiceCard } from '@/components/ServiceCard';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface CatalogService {
   id: string;
@@ -24,11 +25,12 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
   const { language } = useLanguage();
+  const { token } = useAuth();
 
   const loadServices = () => {
     setLoading(true);
     setError(null);
-    apiFetch<CatalogService[]>('/services')
+    apiFetch<CatalogService[]>('/services', { token: token ?? undefined })
       .then(setServices)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : t('common.error')))
       .finally(() => setLoading(false));
@@ -36,7 +38,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadServices();
-  }, []);
+  }, [language]);
 
   const getTitle = (s: CatalogService) =>
     language === 'uz' && s.titleUz ? s.titleUz : s.title;

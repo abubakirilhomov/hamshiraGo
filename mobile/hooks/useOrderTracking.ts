@@ -1,10 +1,10 @@
 import { Alert, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { useRouter } from 'expo-router';
-import { API_BASE, apiFetch } from '@/constants/api';
+import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useSocket } from '@/context/SocketContext';
 import type { OrderStatus } from '@/types/order';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -114,18 +114,18 @@ interface UseOrderTrackingResult {
 export function useOrderTracking(orderId: string | undefined): UseOrderTrackingResult {
   const router = useRouter();
   const { token } = useAuth();
+  const { socket, connected: wsConnected } = useSocket();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
   const [dispatchState, setDispatchState] = useState<DispatchState>(null);
   const [medicLocation, setMedicLocation] = useState<MedicLocation | null>(null);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
 
-  const socketRef = useRef<Socket | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const orderRef = useRef<Order | null>(null);
   const wsConnectedRef = useRef(false);
+  const ratingSubmittingRef = useRef(false);
 
   // Keep refs in sync
   useEffect(() => { orderRef.current = order; }, [order]);
@@ -160,33 +160,28 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
     }
   }, [orderId, token]);
 
-  // ── WebSocket ───────────────────────────────────────────────────────────────
+  // ── Initial fetch ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!orderId || !token) return;
-
     setLoading(true);
     fetchOrder().finally(() => setLoading(false));
+  }, [orderId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-    });
-    socketRef.current = socket;
+  // ── WebSocket: subscribe to events on the shared socket ────────────────────
+  useEffect(() => {
+    if (!orderId || !socket) return;
 
-    socket.on('connect', () => {
-      setWsConnected(true);
+    // Subscribe when socket connects (or is already connected)
+    if (socket.connected) {
       socket.emit('subscribe_order', orderId);
-    });
+    }
+    const onConnect = () => socket.emit('subscribe_order', orderId);
+    socket.on('connect', onConnect);
 
-    socket.on('disconnect', () => setWsConnected(false));
-
-    socket.on('order_status', (payload: { orderId: string; status: OrderStatus }) => {
+    const onOrderStatus = (payload: { orderId: string; status: OrderStatus }) => {
       if (payload.orderId !== orderId) return;
       setOrder((prev) => (prev ? { ...prev, status: payload.status } : prev));
       if (payload.status === 'ASSIGNED') {
-        // Medic accepted — clear dispatch overlay and reset route so it refetches
         setDispatchState(null);
       }
       if (payload.status === 'DONE' || payload.status === 'CANCELED') {
@@ -194,12 +189,11 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
           clearInterval(pollingRef.current);
           pollingRef.current = null;
         }
-        // Refetch full order so medic field is populated for the rating block
-        fetchOrder().finally(() => socket.disconnect());
+        fetchOrder();
       }
-    });
+    };
 
-    socket.on('dispatch_update', (payload: DispatchUpdatePayload) => {
+    const onDispatchUpdate = (payload: DispatchUpdatePayload) => {
       if (payload.orderId !== orderId) return;
       setDispatchState({
         status: payload.status,
@@ -208,7 +202,6 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
         candidateLat: payload.medic?.latitude,
         candidateLng: payload.medic?.longitude,
       });
-      // Show candidate medic on the map
       if (payload.medic?.latitude != null && payload.medic?.longitude != null) {
         setMedicLocation({
           latitude: Number(payload.medic.latitude),
@@ -217,9 +210,9 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
           source: 'socket',
         });
       }
-    });
+    };
 
-    socket.on('medic_location', (payload: MedicLocationPayload) => {
+    const onMedicLocation = (payload: MedicLocationPayload) => {
       if (payload.orderId !== orderId) return;
       setMedicLocation({
         latitude: payload.latitude,
@@ -227,9 +220,9 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
         updatedAt: payload.updatedAt,
         source: payload.source,
       });
-    });
+    };
 
-    socket.on('dispatch_invite', (payload: { orderId: string; medicName?: string }) => {
+    const onDispatchInvite = (payload: { orderId: string; medicName?: string }) => {
       if (payload.orderId !== orderId) return;
       setDispatchState((prev) => ({
         status: 'contacting',
@@ -238,12 +231,18 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
         candidateLat: prev?.candidateLat,
         candidateLng: prev?.candidateLng,
       }));
-    });
+    };
 
-    socket.on('dispatch_invite_expired', (payload: { orderId: string }) => {
+    const onDispatchInviteExpired = (payload: { orderId: string }) => {
       if (payload.orderId !== orderId) return;
       setDispatchState((prev) => (prev ? { ...prev, status: 'searching' } : prev));
-    });
+    };
+
+    socket.on('order_status', onOrderStatus);
+    socket.on('dispatch_update', onDispatchUpdate);
+    socket.on('medic_location', onMedicLocation);
+    socket.on('dispatch_invite', onDispatchInvite);
+    socket.on('dispatch_invite_expired', onDispatchInviteExpired);
 
     // Polling fallback every 20s (in case WS fails)
     pollingRef.current = setInterval(() => {
@@ -252,10 +251,15 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
 
     return () => {
       socket.emit('unsubscribe_order', orderId);
-      socket.disconnect();
+      socket.off('connect', onConnect);
+      socket.off('order_status', onOrderStatus);
+      socket.off('dispatch_update', onDispatchUpdate);
+      socket.off('medic_location', onMedicLocation);
+      socket.off('dispatch_invite', onDispatchInvite);
+      socket.off('dispatch_invite_expired', onDispatchInviteExpired);
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [orderId, token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orderId, socket]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Dismiss notification when order ends ─────────────────────────────────────
   useEffect(() => {
@@ -299,7 +303,8 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
 
   // ── Submit rating ─────────────────────────────────────────────────────────────
   const submitRating = useCallback(async (stars: number, review?: string) => {
-    if (!orderId || !token || ratingSubmitting) return;
+    if (!orderId || !token || ratingSubmittingRef.current) return;
+    ratingSubmittingRef.current = true;
     setRatingSubmitting(true);
     try {
       const updated = await apiFetch<Order>(`/orders/${orderId}/rate`, {
@@ -311,9 +316,10 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
     } catch (e: unknown) {
       Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отправить оценку');
     } finally {
+      ratingSubmittingRef.current = false;
       setRatingSubmitting(false);
     }
-  }, [orderId, token, ratingSubmitting]);
+  }, [orderId, token]);
 
   return {
     order,

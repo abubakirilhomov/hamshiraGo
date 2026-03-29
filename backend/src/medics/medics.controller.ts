@@ -34,11 +34,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { WebPushService } from '../realtime/web-push.service';
 import { CloudinaryService } from '../common/cloudinary.service';
-
-interface WebPushSubscriptionBody {
-  endpoint: string;
-  keys: { p256dh: string; auth: string };
-}
+import { PushTokenDto } from '../common/dto/push-token.dto';
+import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 
 @ApiTags('medics')
 @Controller('medics')
@@ -249,6 +246,9 @@ export class MedicsController {
     @Param('id') id: string,
     @Body('amount') amount: number,
   ): Promise<void> {
+    if (!amount || !Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Amount must be a positive number');
+    }
     await this.medicsService.addBalance(id, amount);
   }
 
@@ -257,7 +257,7 @@ export class MedicsController {
   @Patch('push-token')
   @UseGuards(MedicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async savePushToken(@MedicId() medicId: string, @Body() body: { token: string }) {
+  async savePushToken(@MedicId() medicId: string, @Body() body: PushTokenDto) {
     if (body?.token) await this.medicsService.savePushToken(medicId, body.token);
   }
 
@@ -285,7 +285,7 @@ export class MedicsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async saveWebPushSubscription(
     @MedicId() medicId: string,
-    @Body() body: WebPushSubscriptionBody,
+    @Body() body: WebPushSubscriptionDto,
     @Headers('user-agent') userAgent?: string,
   ) {
     await this.webPushService.saveSubscription({

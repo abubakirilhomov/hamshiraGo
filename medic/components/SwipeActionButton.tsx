@@ -5,7 +5,7 @@
  * Корректно работает внутри ScrollView — захватывает только горизонтальные жесты.
  */
 
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   PanResponder,
@@ -37,6 +37,8 @@ export function SwipeActionButton({
   const containerWidth = useRef(0);
   const triggeredRef = useRef(false);
   const completedRef = useRef(false);
+  const onConfirmRef = useRef(onConfirm);
+  useEffect(() => { onConfirmRef.current = onConfirm; }, [onConfirm]);
 
   const maxTranslate = () =>
     Math.max(0, containerWidth.current - THUMB_SIZE - PADDING * 2);
@@ -93,7 +95,7 @@ export function SwipeActionButton({
         if (triggeredRef.current) {
           completedRef.current = true;
           snapForward(() => {
-            onConfirm();
+            onConfirmRef.current();
             setTimeout(() => {
               completedRef.current = false;
               triggeredRef.current = false;

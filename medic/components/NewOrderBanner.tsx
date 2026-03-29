@@ -13,8 +13,13 @@ interface Props {
 export default function NewOrderBanner({ order, onAccept, onDismiss }: Props) {
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(-120)).current;
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
+    // Reset animation for new order
+    translateY.setValue(-120);
+
     // Slide in
     Animated.spring(translateY, {
       toValue: 0,
@@ -29,11 +34,11 @@ export default function NewOrderBanner({ order, onAccept, onDismiss }: Props) {
         toValue: -120,
         duration: 300,
         useNativeDriver: true,
-      }).start(onDismiss);
+      }).start(() => onDismissRef.current());
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [order.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
 

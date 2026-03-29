@@ -25,10 +25,16 @@ export function useRoutePolyline(
 ): UseRoutePolylineResult {
   const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const lastRouteFetchAtRef = useRef(0);
+  const medicLocationRef = useRef(medicLocation);
+  const orderLocationRef = useRef(orderLocation);
+  medicLocationRef.current = medicLocation;
+  orderLocationRef.current = orderLocation;
 
   const fetchRoute = useCallback(async () => {
-    if (!orderLocation || !medicLocation) return;
-    if (orderLocation.latitude == null || orderLocation.longitude == null) return;
+    const medLoc = medicLocationRef.current;
+    const ordLoc = orderLocationRef.current;
+    if (!ordLoc || !medLoc) return;
+    if (ordLoc.latitude == null || ordLoc.longitude == null) return;
     // Only fetch road route when medic is actively on the way (not during dispatch search)
     if (orderStatus === 'CREATED') return;
 
@@ -36,10 +42,10 @@ export function useRoutePolyline(
     if (now - lastRouteFetchAtRef.current < 12_000) return;
     lastRouteFetchAtRef.current = now;
 
-    const fromLng = medicLocation.longitude;
-    const fromLat = medicLocation.latitude;
-    const toLng = Number(orderLocation.longitude);
-    const toLat = Number(orderLocation.latitude);
+    const fromLng = medLoc.longitude;
+    const fromLat = medLoc.latitude;
+    const toLng = Number(ordLoc.longitude);
+    const toLat = Number(ordLoc.latitude);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
@@ -69,11 +75,16 @@ export function useRoutePolyline(
       console.warn('[OSRM] fetch error:', err);
       lastRouteFetchAtRef.current = now - 9_000; // allow retry in 3s
     }
-  }, [medicLocation, orderLocation, orderStatus]);
+  }, [orderStatus]);
 
   useEffect(() => {
     fetchRoute();
   }, [fetchRoute]);
+
+  // Re-fetch when medic location changes (fetchRoute reads from ref, so we just call it)
+  useEffect(() => {
+    if (medicLocation) fetchRoute();
+  }, [medicLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetRoute = useCallback(() => {
     setRouteCoords([]);

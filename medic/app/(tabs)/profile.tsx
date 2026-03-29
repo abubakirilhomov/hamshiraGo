@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
-import { apiFetch } from '@/constants/api';
+import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import type { Language } from '@/i18n';
@@ -37,9 +37,9 @@ const TELEGRAM_CHANNEL = 'https://t.me/hamshirago_medics'; // канал для 
 interface OrderCount { id: string; status: string; }
 
 const VERIFICATION_CONFIG = {
-  PENDING:  { label: 'Ожидает проверки', color: '#f59e0b', icon: 'clock-o' as const,     bg: '#fef3c720', border: '#f59e0b40' },
-  APPROVED: { label: 'Верифицирован',    color: '#10b981', icon: 'check-circle' as const, bg: '#d1fae520', border: '#10b98140' },
-  REJECTED: { label: 'Отклонено',        color: '#ef4444', icon: 'times-circle' as const, bg: '#fee2e220', border: '#ef444440' },
+  PENDING:  { labelKey: 'verification.statusPending',  color: '#f59e0b', icon: 'clock-o' as const,     bg: '#fef3c720', border: '#f59e0b40' },
+  APPROVED: { labelKey: 'verification.statusApproved',  color: '#10b981', icon: 'check-circle' as const, bg: '#d1fae520', border: '#10b98140' },
+  REJECTED: { labelKey: 'verification.statusRejected',  color: '#ef4444', icon: 'times-circle' as const, bg: '#fee2e220', border: '#ef444440' },
 };
 
 export default function ProfileScreen() {
@@ -57,8 +57,8 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!token) return;
-    apiFetch<{ data: OrderCount[] }>('/orders/medic/my?limit=100', { token })
-      .then((res) => setCompletedCount(res.data.filter((o) => o.status === 'DONE').length))
+    apiFetch<{ data: OrderCount[]; total: number }>('/orders/medic/my?status=DONE&limit=1', { token })
+      .then((res) => setCompletedCount(res.total ?? res.data.length))
       .catch(() => {});
   }, [token]);
 
@@ -94,7 +94,7 @@ export default function ProfileScreen() {
       if (value) {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Нет доступа к геолокации', 'Разрешите геолокацию, чтобы перейти в онлайн.');
+          Alert.alert(t('profile.noLocationAccess'), t('profile.allowLocationOnline'));
           return;
         }
 
@@ -110,8 +110,8 @@ export default function ProfileScreen() {
         } catch {
           // Do not block online mode if background tracking isn't available on this runtime/build.
           Alert.alert(
-            'Фоновая геолокация недоступна',
-            'Онлайн-режим включён, но фоновое отслеживание пока неактивно. Откройте настройки и разрешите доступ "Всегда".',
+            t('profile.bgLocationUnavailable'),
+            t('profile.bgLocationUnavailableMsg'),
           );
         }
       } else {
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
         stopBackgroundLocationUpdates().catch(() => {});
         setHasAlwaysLocation(false);
       }
-      Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось обновить статус');
+      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('profile.errorUpdateStatus'));
     } finally {
       setTogglingOnline(false);
     }
@@ -145,12 +145,12 @@ export default function ProfileScreen() {
       setHasAlwaysLocation(granted);
       if (!granted) {
         Alert.alert(
-          'Разрешение не выдано',
-          'Нужно выбрать "Всегда", иначе клиент может видеть устаревшее местоположение.',
+          t('profile.permissionNotGranted'),
+          t('profile.permissionNotGrantedMsg'),
         );
       }
     } catch {
-      Alert.alert('Ошибка', 'Не удалось запросить разрешение на фоновую геолокацию');
+      Alert.alert(t('common.error'), t('profile.errorPermission'));
     }
   };
 
@@ -158,14 +158,14 @@ export default function ProfileScreen() {
     const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       if (canAskAgain) {
-        Alert.alert('Нет доступа', 'Разрешите доступ к галерее чтобы загрузить фото профиля.');
+        Alert.alert(t('profile.noGalleryAccess'), t('profile.allowGalleryAccess'));
       } else {
         Alert.alert(
-          'Нет доступа к галерее',
-          'Вы запретили доступ. Откройте настройки и разрешите доступ к фото.',
+          t('profile.noGalleryAccessTitle'),
+          t('profile.noGalleryAccessMsg'),
           [
-            { text: 'Отмена', style: 'cancel' },
-            { text: 'Открыть настройки', onPress: () => Linking.openSettings() },
+            { text: t('profile.cancel'), style: 'cancel' },
+            { text: t('profile.openSettings'), onPress: () => Linking.openSettings() },
           ],
         );
       }
@@ -186,16 +186,15 @@ export default function ProfileScreen() {
       const formData = new FormData();
       formData.append('photo', { uri: asset.uri, name: `photo.${ext}`, type: `image/${ext}` } as any);
 
-      const API_BASE = (await import('@/constants/api')).API_BASE;
       const res = await fetch(`${API_BASE}/medics/profile-photo`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      if (!res.ok) throw new Error('Ошибка загрузки фото');
+      if (!res.ok) throw new Error(t('profile.photoUploadError'));
       await refreshProfile();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось загрузить фото. Попробуйте ещё раз.');
+      Alert.alert(t('common.error'), t('profile.photoUploadError'));
     } finally {
       setUploadingPhoto(false);
     }
@@ -225,7 +224,7 @@ export default function ProfileScreen() {
       });
       await refreshProfile();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось отключить Telegram');
+      Alert.alert(t('common.error'), t('profile.errorTelegramDisconnect'));
     } finally {
       setDisconnectingTg(false);
     }
@@ -279,11 +278,11 @@ export default function ProfileScreen() {
       >
         <FontAwesome name={vConfig.icon} size={20} color={vConfig.color} />
         <View style={styles.verifyTexts}>
-          <Text style={[styles.verifyTitle, { color: vConfig.color }]}>{vConfig.label}</Text>
+          <Text style={[styles.verifyTitle, { color: vConfig.color }]}>{t(vConfig.labelKey)}</Text>
           <Text style={styles.verifyHint}>
             {vStatus === 'APPROVED'
-              ? 'Аккаунт подтверждён — вы можете принимать заказы'
-              : 'Нажмите чтобы загрузить документы'}
+              ? t('profile.verifiedHint')
+              : t('profile.verifyHint')}
           </Text>
         </View>
         <FontAwesome name="chevron-right" size={13} color={vConfig.color} />
@@ -296,12 +295,12 @@ export default function ProfileScreen() {
             <View style={[styles.dot, { backgroundColor: medic.isOnline ? Theme.success : Theme.textSecondary }]} />
             <View>
               <Text style={styles.onlineLabel}>
-                {medic.isOnline ? 'Онлайн' : 'Офлайн'}
+                {medic.isOnline ? t('profile.online') : t('profile.offline')}
               </Text>
               <Text style={styles.onlineHint}>
                 {medic.isOnline
-                  ? 'Вы получаете новые заказы'
-                  : 'Включите чтобы принимать заказы'}
+                  ? t('profile.onlineHint')
+                  : t('profile.offlineHint')}
               </Text>
             </View>
           </View>
@@ -322,16 +321,16 @@ export default function ProfileScreen() {
         <View style={[styles.card, styles.locationWarningCard]}>
           <View style={styles.warningRow}>
             <FontAwesome name="exclamation-triangle" size={16} color="#92400e" />
-            <Text style={styles.warningTitle}>Выключено "Всегда"</Text>
+            <Text style={styles.warningTitle}>{t('profile.alwaysLocationOff')}</Text>
           </View>
           <Text style={styles.warningText}>
-            Чтобы клиент видел ваше актуальное местоположение, включите доступ к геолокации «Всегда».
+            {t('profile.alwaysLocationMsg')}
           </Text>
           <Pressable
             style={({ pressed }) => [styles.warningBtn, pressed && { opacity: 0.85 }]}
             onPress={handleEnableAlwaysLocation}
           >
-            <Text style={styles.warningBtnText}>Разрешить всегда</Text>
+            <Text style={styles.warningBtnText}>{t('profile.allowAlways')}</Text>
           </Pressable>
         </View>
       )}
@@ -361,14 +360,14 @@ export default function ProfileScreen() {
           <Text style={styles.walletValue}>
             {Number(medic.balance).toLocaleString('ru-RU')} UZS
           </Text>
-          <Text style={styles.walletHint}>рабочий депозит</Text>
+          <Text style={styles.walletHint}>{t('profile.workDeposit')}</Text>
         </View>
         <View style={[styles.walletCard, styles.balanceHalf, styles.earningsCard]}>
           <Text style={styles.walletLabel}>{t('profile.earnings')}</Text>
           <Text style={[styles.walletValue, styles.earningsValue]}>
             {Number(medic.earnings ?? 0).toLocaleString('ru-RU')} UZS
           </Text>
-          <Text style={styles.walletHint}>заработано всего</Text>
+          <Text style={styles.walletHint}>{t('profile.totalEarned')}</Text>
         </View>
       </View>
 
@@ -379,16 +378,16 @@ export default function ProfileScreen() {
             <Text style={styles.tgIcon}>✈️</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.tgTitle}>Telegram уведомления</Text>
+            <Text style={styles.tgTitle}>{t('profile.telegramNotifications')}</Text>
             <Text style={styles.tgSubtitle}>
               {medic.telegramChatId
-                ? 'Уведомления о новых заказах включены'
-                : 'Получайте заказы даже когда приложение закрыто'}
+                ? t('profile.telegramNotificationsOn')
+                : t('profile.telegramNotificationsOff')}
             </Text>
           </View>
           {medic.telegramChatId ? (
             <View style={styles.tgBadge}>
-              <Text style={styles.tgBadgeText}>✓ Активно</Text>
+              <Text style={styles.tgBadgeText}>✓ {t('profile.telegramActive')}</Text>
             </View>
           ) : null}
         </View>
@@ -401,14 +400,14 @@ export default function ProfileScreen() {
           >
             {disconnectingTg
               ? <ActivityIndicator color={Theme.textSecondary} size="small" />
-              : <Text style={styles.tgDisconnectText}>Отключить</Text>}
+              : <Text style={styles.tgDisconnectText}>{t('profile.telegramDisconnect')}</Text>}
           </Pressable>
         ) : (
           <Pressable
             style={({ pressed }) => [styles.tgConnectBtn, pressed && { opacity: 0.85 }]}
             onPress={handleConnectTelegram}
           >
-            <Text style={styles.tgConnectText}>Подключить через Telegram</Text>
+            <Text style={styles.tgConnectText}>{t('profile.telegramConnectVia')}</Text>
           </Pressable>
         )}
       </View>
@@ -421,8 +420,8 @@ export default function ProfileScreen() {
         >
           <Text style={styles.channelEmoji}>📢</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.channelTitle}>Вы часть команды HamshiraGo!</Text>
-            <Text style={styles.channelSub}>Подпишитесь на канал для медиков</Text>
+            <Text style={styles.channelTitle}>{t('profile.channelTitle')}</Text>
+            <Text style={styles.channelSub}>{t('profile.channelSub')}</Text>
           </View>
           <FontAwesome name="chevron-right" size={13} color="#0e7490" />
         </Pressable>
@@ -469,11 +468,11 @@ export default function ProfileScreen() {
 
     <AppModal
       visible={tgDisconnectModal}
-      title="Отключить Telegram?"
-      message="Вы больше не будете получать уведомления о новых заказах в Telegram."
+      title={t('profile.telegramDisconnectTitle')}
+      message={t('profile.telegramDisconnectMessage')}
       buttons={[
-        { text: 'Отмена', style: 'cancel', onPress: () => setTgDisconnectModal(false) },
-        { text: 'Отключить', style: 'destructive', onPress: confirmDisconnectTelegram },
+        { text: t('profile.cancel'), style: 'cancel', onPress: () => setTgDisconnectModal(false) },
+        { text: t('profile.telegramDisconnect'), style: 'destructive', onPress: confirmDisconnectTelegram },
       ]}
       onClose={() => setTgDisconnectModal(false)}
     />

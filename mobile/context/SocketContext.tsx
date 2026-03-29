@@ -1,0 +1,61 @@
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { API_BASE } from '@/constants/api';
+import { useAuth } from '@/context/AuthContext';
+
+interface SocketContextType {
+  socket: Socket | null;
+  connected: boolean;
+}
+
+const SocketContext = createContext<SocketContextType>({ socket: null, connected: false });
+
+/**
+ * Provides a single shared Socket.IO connection for the entire app.
+ * All screens subscribe to events on this shared instance instead of
+ * creating independent connections.
+ */
+export function SocketProvider({ children }: { children: React.ReactNode }) {
+  const { token } = useAuth();
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      // No token — tear down any existing socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setConnected(false);
+      }
+      return;
+    }
+
+    const socket = io(API_BASE, {
+      transports: ['websocket', 'polling'],
+      auth: { token },
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      setConnected(false);
+    };
+  }, [token]);
+
+  return (
+    <SocketContext.Provider value={{ socket: socketRef.current, connected }}>
+      {children}
+    </SocketContext.Provider>
+  );
+}
+
+export function useSocket(): SocketContextType {
+  return useContext(SocketContext);
+}

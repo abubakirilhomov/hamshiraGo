@@ -34,12 +34,6 @@ export function LocationMap({
           latitudeDelta: 0.02,
           longitudeDelta: 0.02,
         }}
-        region={{
-          latitude,
-          longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        }}
         onPress={(e) => onPinChange(e.nativeEvent.coordinate)}
         showsUserLocation
         showsMyLocationButton

@@ -43,14 +43,14 @@ const AnimatedMedicMarker: React.ComponentType<any> | null = TrackMapComponent
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-const STEPS: { status: OrderStatus; label: string; icon: string }[] = [
-  { status: 'CREATED', label: 'Заказ создан', icon: 'file-text-o' },
-  { status: 'ASSIGNED', label: 'Медик найден', icon: 'user' },
-  { status: 'ACCEPTED', label: 'Медик принял', icon: 'check-circle-o' },
-  { status: 'ON_THE_WAY', label: 'Медик едет', icon: 'car' },
-  { status: 'ARRIVED', label: 'Медик прибыл', icon: 'map-marker' },
-  { status: 'SERVICE_STARTED', label: 'Услуга начата', icon: 'heartbeat' },
-  { status: 'DONE', label: 'Завершено', icon: 'check-circle' },
+const STEPS: { status: OrderStatus; labelKey: string; icon: string }[] = [
+  { status: 'CREATED', labelKey: 'track.stepCreated', icon: 'file-text-o' },
+  { status: 'ASSIGNED', labelKey: 'track.stepAssigned', icon: 'user' },
+  { status: 'ACCEPTED', labelKey: 'track.stepAccepted', icon: 'check-circle-o' },
+  { status: 'ON_THE_WAY', labelKey: 'track.stepOnTheWay', icon: 'car' },
+  { status: 'ARRIVED', labelKey: 'track.stepArrived', icon: 'map-marker' },
+  { status: 'SERVICE_STARTED', labelKey: 'track.stepServiceStarted', icon: 'heartbeat' },
+  { status: 'DONE', labelKey: 'track.stepDone', icon: 'check-circle' },
 ];
 
 const STATUS_INDEX: Partial<Record<OrderStatus, number>> = Object.fromEntries(
@@ -146,15 +146,15 @@ export default function TrackOrderScreen() {
     if (!mustRate) return;
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
       e.preventDefault();
-      Alert.alert('Оцените медика', 'Пожалуйста, оцените медика перед тем как вернуться назад.', [{ text: 'Хорошо' }]);
+      Alert.alert(t('track.rateMedic'), t('track.rateBeforeBack'), [{ text: t('track.ok') }]);
     });
     return unsubscribe;
-  }, [navigation, mustRate]);
+  }, [navigation, mustRate, t]);
 
   useEffect(() => {
     if (!mustRate) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Оцените медика', 'Пожалуйста, оцените медика перед тем как вернуться назад.', [{ text: 'Хорошо' }]);
+      Alert.alert(t('track.rateMedic'), t('track.rateBeforeBack'), [{ text: t('track.ok') }]);
       return true;
     });
     return () => sub.remove();
@@ -190,7 +190,7 @@ export default function TrackOrderScreen() {
     try {
       await cancelOrder(cancelReason.trim() || undefined);
     } catch (e: unknown) {
-      setCancelError(e instanceof Error ? e.message : 'Не удалось отменить');
+      setCancelError(e instanceof Error ? e.message : t('track.cancelFailed'));
     }
   };
 
@@ -206,9 +206,9 @@ export default function TrackOrderScreen() {
   if (!order) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Заказ не найден</Text>
+        <Text style={styles.errorText}>{t('track.orderNotFound')}</Text>
         <Pressable style={styles.backBtn} onPress={() => router.replace('/(tabs)/two')}>
-          <Text style={styles.backBtnText}>К заказам</Text>
+          <Text style={styles.backBtnText}>{t('track.toOrders')}</Text>
         </Pressable>
       </View>
     );
@@ -249,7 +249,7 @@ export default function TrackOrderScreen() {
           </View>
           <View style={styles.candidateInfo}>
             <Text style={styles.candidateName}>{dispatchState.candidateName}</Text>
-            <Text style={styles.candidateSubtitle}>Рассматривает ваш заказ...</Text>
+            <Text style={styles.candidateSubtitle}>{t('track.candidateReviewing')}</Text>
           </View>
           <ActivityIndicator size="small" color={Theme.primary} />
         </View>
@@ -266,7 +266,7 @@ export default function TrackOrderScreen() {
               color={dispatchState.status === 'no_medics' ? Theme.warning : Theme.primary}
             />
             <Text style={[styles.dispatchBannerLabel, dispatchState.status === 'no_medics' && { color: Theme.warning }]}>
-              {getDispatchStatusText(dispatchState)}
+              {getDispatchStatusText(t, dispatchState)}
             </Text>
           </View>
           <Text style={styles.dispatchTimer}>{formatElapsed(elapsedSeconds)}</Text>
@@ -278,7 +278,7 @@ export default function TrackOrderScreen() {
         <View style={styles.canceledBanner}>
           <FontAwesome name="times-circle" size={18} color={Theme.error} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.canceledText}>Заказ отменён</Text>
+            <Text style={styles.canceledText}>{t('track.orderCanceled')}</Text>
             {!!order.cancelReason && (
               <Text style={styles.canceledReason}>{order.cancelReason}</Text>
             )}
@@ -289,7 +289,7 @@ export default function TrackOrderScreen() {
       {/* Progress stepper */}
       {!isCanceled && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Статус заказа</Text>
+          <Text style={styles.sectionTitle}>{t('track.orderStatus')}</Text>
           {STEPS.map((step, idx) => {
             const done = idx < currentIdx;
             const active = idx === currentIdx;
@@ -309,8 +309,8 @@ export default function TrackOrderScreen() {
                   {idx < STEPS.length - 1 && <View style={[styles.stepLine, { backgroundColor: lineColor }]} />}
                 </View>
                 <View style={styles.stepRight}>
-                  <Text style={[styles.stepLabel, { color: labelColor, fontWeight: active ? '700' : '400' }]}>{step.label}</Text>
-                  {active && <Text style={styles.stepActiveHint}>{getStepHint(step.status)}</Text>}
+                  <Text style={[styles.stepLabel, { color: labelColor, fontWeight: active ? '700' : '400' }]}>{t(step.labelKey)}</Text>
+                  {active && <Text style={styles.stepActiveHint}>{getStepHint(t, step.status)}</Text>}
                 </View>
               </View>
             );
@@ -321,7 +321,7 @@ export default function TrackOrderScreen() {
       {/* Medic card */}
       {order.medic && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ваш медик</Text>
+          <Text style={styles.sectionTitle}>{t('track.yourMedic')}</Text>
           <View style={styles.medicRow}>
             <View style={styles.medicAvatar}>
               {order.medic.profilePhotoUrl
@@ -339,7 +339,7 @@ export default function TrackOrderScreen() {
       {/* Live map */}
       {order.location?.latitude != null && order.location?.longitude != null && TrackMapComponent && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{order.status === 'CREATED' ? 'Поиск медика' : 'Медик на карте'}</Text>
+          <Text style={styles.sectionTitle}>{order.status === 'CREATED' ? t('track.searchingMedic') : t('track.medicOnMap')}</Text>
           <View style={styles.mapWrap}>
             <TrackMapComponent.default
               style={styles.map}
@@ -352,8 +352,8 @@ export default function TrackOrderScreen() {
             >
               <TrackMapComponent.Marker
                 coordinate={{ latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) }}
-                title="Вы здесь"
-                description="Адрес вызова"
+                title={t('track.youAreHere')}
+                description={t('track.callAddress')}
                 tracksViewChanges={false}
                 anchor={{ x: 0.5, y: 0.5 }}
               >
@@ -373,8 +373,8 @@ export default function TrackOrderScreen() {
               {medicLocation && medicAnimReady && medicAnimCoordRef.current && AnimatedMedicMarker && (
                 <AnimatedMedicMarker
                   coordinate={medicAnimCoordRef.current}
-                  title={order.status === 'CREATED' && dispatchState?.candidateName ? dispatchState.candidateName : 'Медик'}
-                  description={order.status === 'CREATED' ? 'Ожидаем подтверждения' : 'Текущая позиция медика'}
+                  title={order.status === 'CREATED' && dispatchState?.candidateName ? dispatchState.candidateName : t('track.medic')}
+                  description={order.status === 'CREATED' ? t('track.waitingConfirmation') : t('track.currentPosition')}
                   anchor={{ x: 0.5, y: 0.5 }}
                   tracksViewChanges={false}
                 >
@@ -404,11 +404,11 @@ export default function TrackOrderScreen() {
           <View style={styles.mapLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
-              <Text style={styles.legendText}>Вы</Text>
+              <Text style={styles.legendText}>{t('track.you')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: order.status === 'CREATED' ? '#f59e0b' : '#16a34a' }]} />
-              <Text style={styles.legendText}>{order.status === 'CREATED' ? 'Кандидат' : 'Медик'}</Text>
+              <Text style={styles.legendText}>{order.status === 'CREATED' ? t('track.candidate') : t('track.medic')}</Text>
             </View>
             {medicLocation && (
               <Text style={styles.mapMeta}>{new Date(medicLocation.updatedAt).toLocaleTimeString('ru-RU')}</Text>
@@ -420,13 +420,13 @@ export default function TrackOrderScreen() {
       {/* Address */}
       {order.location && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Адрес</Text>
+          <Text style={styles.sectionTitle}>{t('track.address')}</Text>
           <View style={styles.addressRow}>
             <FontAwesome name="map-marker" size={14} color={Theme.textSecondary} />
             <Text style={styles.addressText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
               {order.location.house}
-              {order.location.floor ? `, эт. ${order.location.floor}` : ''}
-              {order.location.apartment ? `, кв. ${order.location.apartment}` : ''}
+              {order.location.floor ? `, ${t('confirm.floor')} ${order.location.floor}` : ''}
+              {order.location.apartment ? `, ${t('confirm.apt')} ${order.location.apartment}` : ''}
             </Text>
           </View>
         </View>
@@ -442,7 +442,7 @@ export default function TrackOrderScreen() {
       {/* Rating already submitted */}
       {isDone && order.clientRating !== null && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ваша оценка</Text>
+          <Text style={styles.sectionTitle}>{t('track.yourRating')}</Text>
           <View style={styles.ratingDoneRow}>
             {[1, 2, 3, 4, 5].map((star) => (
               <FontAwesome
@@ -459,7 +459,7 @@ export default function TrackOrderScreen() {
       {/* Buttons */}
       {isActive && (order.status === 'CREATED' || order.status === 'ASSIGNED') && (
         <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]} onPress={() => setCancelModal(true)}>
-          <Text style={styles.cancelBtnText}>Отменить заказ</Text>
+          <Text style={styles.cancelBtnText}>{t('track.cancelOrder')}</Text>
         </Pressable>
       )}
 
@@ -473,38 +473,34 @@ export default function TrackOrderScreen() {
 
       {(isDone || isCanceled) && !mustRate && (
         <Pressable style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]} onPress={() => router.replace('/(tabs)/two')}>
-          <Text style={styles.doneBtnText}>К моим заказам</Text>
+          <Text style={styles.doneBtnText}>{t('track.toMyOrders')}</Text>
         </Pressable>
       )}
     </ScrollView>
 
-    {cancelModal && (
-      <View style={{ position: 'absolute', bottom: 80, left: 16, right: 16, backgroundColor: Theme.surface, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Theme.border, zIndex: 10 }}>
-        <TextInput
-          placeholder="Причина отмены (необязательно)"
-          placeholderTextColor={Theme.textSecondary}
-          value={cancelReason}
-          onChangeText={setCancelReason}
-          style={{ fontSize: 14, color: Theme.text, paddingVertical: 8 }}
-          maxLength={200}
-        />
-      </View>
-    )}
-
     <AppModal
       visible={cancelModal}
-      title="Отменить заказ?"
-      message="Вы уверены, что хотите отменить заказ?"
+      title={t('track.cancelTitle')}
+      message={t('track.cancelMessage')}
       buttons={[
-        { text: 'Нет', style: 'cancel', onPress: () => { setCancelModal(false); setCancelReason(''); } },
-        { text: 'Отменить', style: 'destructive', onPress: confirmCancel },
+        { text: t('track.cancelNo'), style: 'cancel', onPress: () => { setCancelModal(false); setCancelReason(''); } },
+        { text: t('track.cancelYes'), style: 'destructive', onPress: confirmCancel },
       ]}
       onClose={() => { setCancelModal(false); setCancelReason(''); }}
-    />
+    >
+      <TextInput
+        placeholder={t('track.cancelReasonPlaceholder')}
+        placeholderTextColor={Theme.textSecondary}
+        value={cancelReason}
+        onChangeText={setCancelReason}
+        style={{ fontSize: 14, color: Theme.text, paddingVertical: 8, borderWidth: 1, borderColor: Theme.border, borderRadius: 10, paddingHorizontal: 12, marginTop: 4 }}
+        maxLength={200}
+      />
+    </AppModal>
 
     <AppModal
       visible={cancelError !== null}
-      title="Ошибка"
+      title={t('common.error')}
       message={cancelError ?? ''}
       buttons={[{ text: 'OK', style: 'default', onPress: () => setCancelError(null) }]}
       onClose={() => setCancelError(null)}
@@ -521,25 +517,25 @@ function formatElapsed(sec: number): string {
   return m > 0 ? `${m}м ${s}с` : `${s}с`;
 }
 
-function getDispatchStatusText(dispatchState: { status: DispatchStatus; candidateName?: string } | null): string | null {
+function getDispatchStatusText(t: (key: string, opts?: Record<string, string>) => string, dispatchState: { status: DispatchStatus; candidateName?: string } | null): string | null {
   if (!dispatchState) return null;
   switch (dispatchState.status) {
-    case 'searching': return 'Ищем медика...';
-    case 'contacting': return dispatchState.candidateName ? `Связываемся с ${dispatchState.candidateName}...` : 'Связываемся с медиком...';
-    case 'no_medics': return 'Медики заняты, продолжаем поиск...';
+    case 'searching': return t('track.dispatchSearching');
+    case 'contacting': return dispatchState.candidateName ? t('track.dispatchContacting', { name: dispatchState.candidateName }) : t('track.dispatchContactingGeneric');
+    case 'no_medics': return t('track.dispatchNoMedics');
     default: return null;
   }
 }
 
-function getStepHint(status: OrderStatus): string {
+function getStepHint(t: (key: string) => string, status: OrderStatus): string {
   switch (status) {
-    case 'CREATED': return 'Ожидаем назначения медика...';
-    case 'ASSIGNED': return 'Медик получил ваш заказ';
-    case 'ACCEPTED': return 'Медик подтвердил выезд';
-    case 'ON_THE_WAY': return 'Медик едет к вам';
-    case 'ARRIVED': return 'Медик у вашей двери';
-    case 'SERVICE_STARTED': return 'Услуга оказывается';
-    case 'DONE': return 'Завершено';
+    case 'CREATED': return t('track.hintCreated');
+    case 'ASSIGNED': return t('track.hintAssigned');
+    case 'ACCEPTED': return t('track.hintAccepted');
+    case 'ON_THE_WAY': return t('track.hintOnTheWay');
+    case 'ARRIVED': return t('track.hintArrived');
+    case 'SERVICE_STARTED': return t('track.hintServiceStarted');
+    case 'DONE': return t('track.hintDone');
     default: return '';
   }
 }

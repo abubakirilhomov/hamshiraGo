@@ -15,12 +15,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_OSRM_URL": "https://osrm-production-09f0.up.railway.app",
+        "EXPO_PUBLIC_API_BASE": "https://hamshirago-production-0a65.up.railway.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_OSRM_URL": "https://osrm-production-09f0.up.railway.app",
+        "EXPO_PUBLIC_API_BASE": "https://hamshirago-production-0a65.up.railway.app"
       }
     }
   },

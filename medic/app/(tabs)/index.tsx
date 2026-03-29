@@ -69,6 +69,8 @@ export default function AvailableOrdersScreen() {
     try {
       await acceptOrder(orderId);
       router.push(`/order/${orderId}`);
+    } catch {
+      // error is already handled by the hook (setAcceptError)
     } finally {
       setAccepting(null);
     }
@@ -105,8 +107,8 @@ export default function AvailableOrdersScreen() {
           />
           <Text style={[styles.verifyBannerText, vStatus === 'REJECTED' && { color: '#ef4444' }]}>
             {vStatus === 'REJECTED'
-              ? 'Аккаунт отклонён — загрузите документы повторно'
-              : 'Аккаунт не верифицирован — вы не можете принимать заказы'}
+              ? t('profile.accountRejected')
+              : t('profile.accountNotVerified')}
           </Text>
           <FontAwesome name="chevron-right" size={11} color={vStatus === 'REJECTED' ? '#ef4444' : '#92400e'} />
         </Pressable>
@@ -120,7 +122,7 @@ export default function AvailableOrdersScreen() {
         >
           <FontAwesome name="camera" size={15} color="#92400e" />
           <Text style={styles.nophotoText}>
-            Добавьте фото профиля — без него нельзя принимать заказы
+            {t('profile.addProfilePhoto')}
           </Text>
           <FontAwesome name="chevron-right" size={11} color="#92400e" />
         </Pressable>
@@ -131,7 +133,7 @@ export default function AvailableOrdersScreen() {
         <View style={styles.offlineBanner}>
           <FontAwesome name="power-off" size={14} color="#854d0e" />
           <Text style={styles.offlineText}>
-            Вы офлайн — новые заказы не поступают. Включите онлайн в Профиле.
+            {t('profile.offlineBannerMsg')}
           </Text>
         </View>
       )}
@@ -141,7 +143,7 @@ export default function AvailableOrdersScreen() {
         <View style={[styles.statusBar, wsConnected ? styles.statusBarLive : styles.statusBarWaiting]}>
           <View style={[styles.statusDot, { backgroundColor: wsConnected ? Theme.success : Theme.warning }]} />
           <Text style={[styles.statusBarText, { color: wsConnected ? '#065f46' : '#78350f' }]}>
-            {wsConnected ? 'Подключено — ожидаем новых заказов' : 'Подключение...'}
+            {wsConnected ? t('profile.wsConnected') : t('profile.wsConnecting')}
           </Text>
         </View>
       )}
@@ -160,7 +162,7 @@ export default function AvailableOrdersScreen() {
         <View style={styles.fetchErrorBox}>
           <Text style={styles.fetchErrorText}>{fetchError}</Text>
           <Pressable onPress={() => fetchOrders()} style={styles.fetchRetryBtn}>
-            <Text style={styles.fetchRetryText}>Повторить</Text>
+            <Text style={styles.fetchRetryText}>{t('common.retry')}</Text>
           </Pressable>
         </View>
       )}
@@ -243,8 +245,8 @@ function AvailableOrderCard({
           <FontAwesome name="map-marker" size={13} color={Theme.textSecondary} />
           <Text style={styles.locationText} numberOfLines={2}>
             {order.location.house}
-            {order.location.floor ? `, эт. ${order.location.floor}` : ''}
-            {order.location.apartment ? `, кв. ${order.location.apartment}` : ''}
+            {order.location.floor ? `, ${t('orders.floor')} ${order.location.floor}` : ''}
+            {order.location.apartment ? `, ${t('orders.apartment')} ${order.location.apartment}` : ''}
           </Text>
         </View>
       )}

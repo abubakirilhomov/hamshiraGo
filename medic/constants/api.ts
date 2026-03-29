@@ -2,11 +2,16 @@ export const API_BASE =
   process.env.EXPO_PUBLIC_API_BASE?.replace(/\/$/, '') ||
   'https://hamshirago-production-0a65.up.railway.app';
 
-// Registered by AuthProvider — called automatically on any 401 response
+// Registered by AuthProvider — called on 401 response.
+// Shows an alert before logging out so the medic understands what happened.
 let _onUnauthorized: (() => void) | null = null;
 export function setUnauthorizedHandler(fn: () => void) {
   _onUnauthorized = fn;
 }
+
+import { Alert } from 'react-native';
+
+let _unauthorizedFired = false;
 
 export async function apiFetch<T>(
   path: string,
@@ -22,8 +27,13 @@ export async function apiFetch<T>(
     },
   });
   if (!res.ok) {
-    if (res.status === 401) {
-      _onUnauthorized?.();
+    if (res.status === 401 && _onUnauthorized && !_unauthorizedFired) {
+      _unauthorizedFired = true;
+      Alert.alert(
+        'Сессия истекла',
+        'Ваша сессия истекла. Пожалуйста, войдите заново.',
+        [{ text: 'OK', onPress: () => { _onUnauthorized?.(); _unauthorizedFired = false; } }],
+      );
     }
     const body = await res.json().catch(() => ({}));
     const msg = body?.message ?? `HTTP ${res.status}`;

@@ -46,17 +46,19 @@ export default function MyOrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await apiFetch<{ data: Order[] }>('/orders/medic/my?limit=50', {
         token: token ?? undefined,
       });
       setOrders(res.data);
-    } catch {
-      // ignore
+    } catch (e: unknown) {
+      setFetchError(e instanceof Error ? e.message : t('orders.fetchError'));
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     setLoading(true);
@@ -90,23 +92,34 @@ export default function MyOrdersScreen() {
   return (
     <FlatList
       style={styles.container}
-      contentContainerStyle={orders.length === 0 ? styles.emptyContainer : styles.listContent}
+      contentContainerStyle={orders.length === 0 && !fetchError ? styles.emptyContainer : styles.listContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
       }
       data={[...active, ...history]}
       keyExtractor={(item) => item.id}
       ListHeaderComponent={
-        active.length > 0 ? (
-          <Text style={styles.sectionTitle}>{t('orders.active')}</Text>
-        ) : null
+        <>
+          {fetchError && (
+            <View style={styles.fetchErrorBox}>
+              <Text style={styles.fetchErrorText}>{fetchError}</Text>
+              <Pressable onPress={() => fetchOrders()} style={styles.fetchRetryBtn}>
+                <Text style={styles.fetchRetryText}>{t('common.retry')}</Text>
+              </Pressable>
+            </View>
+          )}
+          {active.length > 0 ? (
+            <Text style={styles.sectionTitle}>{t('orders.active')}</Text>
+          ) : null}
+        </>
       }
       ListEmptyComponent={
-        <View style={styles.empty}>
-          <FontAwesome name="briefcase" size={48} color={Theme.border} />
-          <Text style={styles.emptyTitle}>{t('orders.emptyMy')}</Text>
-          <Text style={styles.emptyHint}>{t('common.loading')}</Text>
-        </View>
+        !fetchError ? (
+          <View style={styles.empty}>
+            <FontAwesome name="briefcase" size={48} color={Theme.border} />
+            <Text style={styles.emptyTitle}>{t('orders.emptyMy')}</Text>
+          </View>
+        ) : null
       }
       renderItem={({ item, index }) => (
         <>
@@ -130,7 +143,7 @@ export default function MyOrdersScreen() {
                 <FontAwesome name="map-marker" size={12} color={Theme.textSecondary} />
                 <Text style={styles.locationText}>
                   {item.location.house}
-                  {item.location.floor ? `, эт. ${item.location.floor}` : ''}
+                  {item.location.floor ? `, ${t('orders.floor')} ${item.location.floor}` : ''}
                 </Text>
               </View>
             )}
@@ -172,4 +185,31 @@ const styles = StyleSheet.create({
   locationText: { fontSize: 13, color: Theme.textSecondary, flex: 1 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   price: { fontSize: 15, fontWeight: '700', color: Theme.primary },
+  fetchErrorBox: {
+    marginBottom: 12,
+    padding: 14,
+    backgroundColor: '#fee2e220',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ef444440',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fetchErrorText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#ef4444',
+  },
+  fetchRetryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+  },
+  fetchRetryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });

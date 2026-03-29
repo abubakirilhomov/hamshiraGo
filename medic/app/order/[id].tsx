@@ -19,12 +19,13 @@ import { MAP_ACTIVE_STATUSES, OrderStatus } from '@/types/order';
 import { useOrderStatus, NEXT_STATUS_MAP } from '@/hooks/useOrderStatus';
 import { useMedicLocation } from '@/hooks/useMedicLocation';
 import { useMedicRoute } from '@/hooks/useMedicRoute';
+import { useSharedSocket } from '@/context/SocketContext';
 import { SwipeActionButton } from '@/components/SwipeActionButton';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
 
-async function openInMaps(latitude: number, longitude: number) {
+async function openInMaps(latitude: number, longitude: number, t: (key: string) => string) {
   const lat = latitude;
   const lng = longitude;
 
@@ -44,10 +45,10 @@ async function openInMaps(latitude: number, longitude: number) {
     }
   } catch {}
 
-  Alert.alert('Открыть в картах', '', [
-    { text: 'Яндекс Карты', onPress: () => Linking.openURL(yandexWeb) },
-    { text: 'Google Maps', onPress: () => Linking.openURL(googleWeb) },
-    { text: 'Отмена', style: 'cancel' },
+  Alert.alert(t('orders.openInMaps'), '', [
+    { text: t('orders.yandexMaps'), onPress: () => Linking.openURL(yandexWeb) },
+    { text: t('orders.googleMaps'), onPress: () => Linking.openURL(googleWeb) },
+    { text: t('profile.cancel'), style: 'cancel' },
   ]);
 }
 
@@ -73,8 +74,9 @@ export default function OrderDetailScreen() {
   const hasFittedMapRef = useRef(false);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
-  const { order, loading, wsConnected, socketRef, updateOrderStatus } =
+  const { order, loading, wsConnected, updateOrderStatus } =
     useOrderStatus(id);
+  const { socket } = useSharedSocket();
 
   const { routeCoords, routeLoading, fetchRoute, resetRoute } = useMedicRoute();
 
@@ -82,7 +84,7 @@ export default function OrderDetailScreen() {
 
   const { startTracking, stopTracking } = useMedicLocation({
     orderId: id,
-    socketRef,
+    socket,
     onLocationUpdate: setMedicPos,
     onLastSentAt: setLastLocationSentAt,
     onSentCountIncrement: incrementSentCount,
@@ -221,14 +223,14 @@ export default function OrderDetailScreen() {
             />
             <Text style={styles.liveTrackingText}>
               {wsConnected
-                ? 'Передаём геолокацию клиенту'
-                : 'Подключаем live-трекинг...'}
+                ? t('orders.liveTracking')
+                : t('orders.liveTrackingConnecting')}
             </Text>
           </View>
           {lastLocationSentAt && (
             <Text style={styles.liveTrackingMeta}>
-              Последняя отправка:{' '}
-              {new Date(lastLocationSentAt).toLocaleTimeString('ru-RU')} · точек:{' '}
+              {t('orders.lastSent')}:{' '}
+              {new Date(lastLocationSentAt).toLocaleTimeString('ru-RU')} · {t('orders.points')}:{' '}
               {sentLocationCount}
             </Text>
           )}
@@ -237,17 +239,17 @@ export default function OrderDetailScreen() {
 
       {/* Service info */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Услуга</Text>
+        <Text style={styles.cardTitle}>{t('orders.service')}</Text>
         <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
         <View style={styles.divider} />
-        <Row label="Дата создания" value={date} />
+        <Row label={t('orders.createdAt')} value={date} />
         <Row
-          label="Стоимость услуги"
+          label={t('orders.serviceCost')}
           value={`${order.priceAmount.toLocaleString('ru-RU')} UZS`}
         />
         {order.discountAmount > 0 && (
           <Row
-            label="Скидка клиента"
+            label={t('orders.clientDiscount')}
             value={`−${order.discountAmount.toLocaleString('ru-RU')} UZS`}
             valueColor={Theme.success}
           />
@@ -268,13 +270,13 @@ export default function OrderDetailScreen() {
       {/* Address */}
       {order.location && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Адрес клиента</Text>
+          <Text style={styles.cardTitle}>{t('orders.clientAddress')}</Text>
           <View style={styles.locationRow}>
             <FontAwesome name="map-marker" size={16} color={Theme.primary} />
             <Text style={styles.locationText}>
               {order.location.house}
-              {order.location.floor ? `, этаж ${order.location.floor}` : ''}
-              {order.location.apartment ? `, кв. ${order.location.apartment}` : ''}
+              {order.location.floor ? `, ${t('orders.floorFull')} ${order.location.floor}` : ''}
+              {order.location.apartment ? `, ${t('orders.apartment')} ${order.location.apartment}` : ''}
             </Text>
           </View>
           <View style={styles.locationRow}>
@@ -296,7 +298,7 @@ export default function OrderDetailScreen() {
                 styles.mapsBtn,
                 pressed && styles.mapsBtnPressed,
               ]}
-              onPress={() => openInMaps(clientLat!, clientLng!)}
+              onPress={() => openInMaps(clientLat!, clientLng!, t)}
             >
               <FontAwesome name="location-arrow" size={15} color="#fff" />
               <Text style={styles.mapsBtnText}>{t('orders.openMap')}</Text>
@@ -308,7 +310,7 @@ export default function OrderDetailScreen() {
       {/* Embedded map: medic → client */}
       {showMap && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Маршрут к клиенту</Text>
+          <Text style={styles.cardTitle}>{t('orders.routeToClient')}</Text>
           <View style={styles.mapWrap}>
             <MapsModule.default
               ref={mapRef}
@@ -337,7 +339,7 @@ export default function OrderDetailScreen() {
               {/* Client marker — blue */}
               <MapsModule.Marker
                 coordinate={{ latitude: clientLat!, longitude: clientLng! }}
-                title="Клиент"
+                title={t('orders.client')}
                 anchor={{ x: 0.5, y: 0.5 }}
                 tracksViewChanges={false}
               >
@@ -350,7 +352,7 @@ export default function OrderDetailScreen() {
               {medicPos && (
                 <MapsModule.Marker
                   coordinate={medicPos}
-                  title="Вы"
+                  title={t('orders.you')}
                   anchor={{ x: 0.5, y: 0.5 }}
                   tracksViewChanges={false}
                 >
@@ -383,7 +385,7 @@ export default function OrderDetailScreen() {
             {routeLoading && (
               <View style={styles.mapLoadingOverlay}>
                 <ActivityIndicator color={Theme.primary} />
-                <Text style={styles.mapLoadingText}>Строим маршрут...</Text>
+                <Text style={styles.mapLoadingText}>{t('orders.buildingRoute')}</Text>
               </View>
             )}
           </View>
@@ -392,14 +394,14 @@ export default function OrderDetailScreen() {
           <View style={styles.mapLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
-              <Text style={styles.legendLabel}>Клиент</Text>
+              <Text style={styles.legendLabel}>{t('orders.client')}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#16a34a' }]} />
-              <Text style={styles.legendLabel}>Вы</Text>
+              <Text style={styles.legendLabel}>{t('orders.you')}</Text>
             </View>
             {!medicPos && (
-              <Text style={styles.waitingGps}>Ожидаем GPS...</Text>
+              <Text style={styles.waitingGps}>{t('orders.waitingGps')}</Text>
             )}
           </View>
         </View>
@@ -435,7 +437,7 @@ export default function OrderDetailScreen() {
 
       {order.status === 'DONE' && order.clientRating != null && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Оценка клиента</Text>
+          <Text style={styles.cardTitle}>{t('orders.clientRating')}</Text>
           <View style={{ flexDirection: 'row', gap: 4, marginBottom: order.clientReview ? 8 : 0 }}>
             {[1, 2, 3, 4, 5].map((star) => (
               <FontAwesome
@@ -456,7 +458,7 @@ export default function OrderDetailScreen() {
 
       {order.status === 'CANCELED' && order.cancelReason ? (
         <View style={[styles.card, { borderColor: `${Theme.error}30` }]}>
-          <Text style={styles.cardTitle}>Причина отмены</Text>
+          <Text style={styles.cardTitle}>{t('orders.cancelReason')}</Text>
           <Text style={{ fontSize: 14, color: Theme.error }}>{order.cancelReason}</Text>
         </View>
       ) : null}

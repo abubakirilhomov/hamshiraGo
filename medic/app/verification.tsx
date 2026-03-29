@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
@@ -25,10 +25,18 @@ export default function VerificationScreen() {
   const [licenseUri, setLicenseUri] = useState<string | null>(medic?.licensePhotoUrl ?? null);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    if (medic?.facePhotoUrl) setFaceUri(medic.facePhotoUrl);
+  }, [medic?.facePhotoUrl]);
+
+  useEffect(() => {
+    if (medic?.licensePhotoUrl) setLicenseUri(medic.licensePhotoUrl);
+  }, [medic?.licensePhotoUrl]);
+
   const pickImage = async (type: PhotoType) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Нет доступа', 'Разрешите доступ к галерее в настройках.');
+      Alert.alert(t('verification.noGalleryAccess'), t('verification.allowGalleryAccess'));
       return;
     }
 
@@ -47,7 +55,7 @@ export default function VerificationScreen() {
   const takePhoto = async (type: PhotoType) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Нет доступа', 'Разрешите доступ к камере в настройках.');
+      Alert.alert(t('verification.noCameraAccess'), t('verification.allowCameraAccess'));
       return;
     }
 
@@ -63,10 +71,10 @@ export default function VerificationScreen() {
   };
 
   const showPickerOptions = (type: PhotoType, label: string) => {
-    Alert.alert(`Загрузить: ${label}`, undefined, [
-      { text: 'Камера', onPress: () => takePhoto(type) },
-      { text: 'Из галереи', onPress: () => pickImage(type) },
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('verification.uploadSourceTitle', { label }), undefined, [
+      { text: t('verification.camera'), onPress: () => takePhoto(type) },
+      { text: t('verification.fromGallery'), onPress: () => pickImage(type) },
+      { text: t('profile.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -139,7 +147,9 @@ export default function VerificationScreen() {
           <Text style={[styles.statusTitle, { color: statusIconColor(status) }]}>
             {status === 'APPROVED' ? t('verification.statusApproved') : status === 'REJECTED' ? t('verification.statusRejected') : t('verification.statusPending')}
           </Text>
-          <Text style={styles.statusDesc}>{STATUS_DESC[status]}</Text>
+          <Text style={styles.statusDesc}>
+            {status === 'PENDING' ? t('verification.descPending') : status === 'APPROVED' ? t('verification.descApproved') : t('verification.descRejected')}
+          </Text>
         </View>
       </View>
 
@@ -153,9 +163,9 @@ export default function VerificationScreen() {
 
       {/* Instructions */}
       <View style={styles.instructionCard}>
-        <Text style={styles.instructionTitle}>Что нужно загрузить</Text>
-        <InstructionRow icon="user" text="Фото лица — чёткое, анфас, хорошее освещение" />
-        <InstructionRow icon="id-card" text="Медицинская лицензия или диплом — все данные читаемы" />
+        <Text style={styles.instructionTitle}>{t('verification.whatToUpload')}</Text>
+        <InstructionRow icon="user" text={t('verification.facePhotoHint')} />
+        <InstructionRow icon="id-card" text={t('verification.licensePhotoHint')} />
       </View>
 
       {/* Face photo */}
@@ -197,6 +207,7 @@ export default function VerificationScreen() {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function PhotoBlock({ label, uri, onPress }: { label: string; uri: string | null; onPress: () => void }) {
+  const { t } = useTranslation();
   const isRemote = uri?.startsWith('http');
   return (
     <Pressable
@@ -214,7 +225,7 @@ function PhotoBlock({ label, uri, onPress }: { label: string; uri: string | null
         <Text style={styles.photoLabel}>{label}</Text>
         <View style={[styles.photoBadge, { backgroundColor: uri ? `${Theme.success}20` : `${Theme.primary}15` }]}>
           <Text style={[styles.photoBadgeText, { color: uri ? Theme.success : Theme.primary }]}>
-            {uri ? (isRemote ? 'Загружено ✓' : 'Выбрано') : 'Нажмите для выбора'}
+            {uri ? (isRemote ? `${t('verification.uploaded')} ✓` : t('verification.selected')) : t('verification.tapToSelect')}
           </Text>
         </View>
       </View>
@@ -233,17 +244,7 @@ function InstructionRow({ icon, text }: { icon: string; text: string }) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const STATUS_TITLE: Record<string, string> = {
-  PENDING: 'Ожидает проверки',
-  APPROVED: 'Верифицирован ✓',
-  REJECTED: 'Отклонено',
-};
-
-const STATUS_DESC: Record<string, string> = {
-  PENDING: 'Загрузите документы — оператор проверит в течение 24 часов',
-  APPROVED: 'Вы можете принимать заказы',
-  REJECTED: 'Загрузите документы повторно с учётом причины отказа',
-};
+// STATUS_TITLE and STATUS_DESC moved to i18n (verification.statusPending, etc.)
 
 function statusBannerStyle(status: string) {
   if (status === 'APPROVED') return { backgroundColor: `${Theme.success}15`, borderColor: `${Theme.success}40` };

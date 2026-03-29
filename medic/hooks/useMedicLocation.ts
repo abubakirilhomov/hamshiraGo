@@ -7,15 +7,15 @@
  * Returns: { startTracking, stopTracking }
  */
 
-import { useCallback, useRef, type MutableRefObject } from 'react';
+import { useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
-import { Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
 
 interface UseMedicLocationOptions {
   orderId: string | undefined;
-  socketRef: MutableRefObject<Socket | null>;
+  socket: Socket | null;
   onLocationUpdate?: (pos: { latitude: number; longitude: number; heading: number | null }) => void;
   onLastSentAt?: (iso: string) => void;
   onSentCountIncrement?: () => void;
@@ -23,7 +23,7 @@ interface UseMedicLocationOptions {
 
 export function useMedicLocation({
   orderId,
-  socketRef,
+  socket,
   onLocationUpdate,
   onLastSentAt,
   onSentCountIncrement,
@@ -53,14 +53,14 @@ export function useMedicLocation({
       // Emit one position immediately
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((loc) => {
-          if (!startingRef.current || !orderId || !socketRef.current?.connected) return;
+          if (!startingRef.current || !orderId || !socket?.connected) return;
           const pos = {
             latitude: loc.coords.latitude,
             longitude: loc.coords.longitude,
             heading: loc.coords.heading ?? null,
           };
           onLocationUpdate?.(pos);
-          socketRef.current!.emit('medic_location', { orderId, ...pos });
+          socket!.emit('medic_location', { orderId, ...pos });
           onLastSentAt?.(new Date().toISOString());
           onSentCountIncrement?.();
         })
@@ -73,7 +73,7 @@ export function useMedicLocation({
           distanceInterval: 15, // минимум 15м между фиксами
         },
         (loc) => {
-          if (!orderId || !socketRef.current?.connected) return;
+          if (!orderId || !socket?.connected) return;
           // JS-level throttle: Android игнорирует timeInterval и шлёт фиксы каждые мс
           const now = Date.now();
           const pos = {
@@ -84,7 +84,7 @@ export function useMedicLocation({
           onLocationUpdate?.(pos); // карта обновляется всегда (дёшево)
           if (now - lastEmitRef.current < LOCATION_EMIT_INTERVAL_MS) return;
           lastEmitRef.current = now;
-          socketRef.current!.emit('medic_location', { orderId, ...pos });
+          socket!.emit('medic_location', { orderId, ...pos });
           onLastSentAt?.(new Date().toISOString());
           onSentCountIncrement?.();
         },
@@ -95,9 +95,10 @@ export function useMedicLocation({
           return;
         }
         watchRef.current = sub;
+        startingRef.current = false; // reset so stop+start can work correctly
       }).catch(() => { startingRef.current = false; });
     });
-  }, [orderId, socketRef, onLocationUpdate, onLastSentAt, onSentCountIncrement]);
+  }, [orderId, socket, onLocationUpdate, onLastSentAt, onSentCountIncrement]);
 
   const stopTracking = useCallback(() => {
     startingRef.current = false; // prevent pending async from completing

@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
-import { OrderStatus, STATUS_COLOR, STATUS_LABEL } from '@/types/order';
+import { OrderStatus, STATUS_COLOR, getStatusLabel } from '@/types/order';
 
 interface OrderLocation {
   house: string;
@@ -30,6 +31,8 @@ interface OrderCardProps {
 
 export default function OrderCard({ order, isActive }: OrderCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
+  const statusLabels = getStatusLabel(t);
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
   const statusColor = STATUS_COLOR[order.status] ?? Theme.textSecondary;
   const date = new Date(order.created_at);
@@ -43,17 +46,14 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-      onPress={() => isActive
-        ? router.push({ pathname: '/order/track', params: { orderId: order.id } })
-        : undefined
-      }
+      onPress={() => router.push({ pathname: '/order/track', params: { orderId: order.id } })}
     >
       <View style={styles.cardHeader}>
         <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
         <View style={styles.statusBadgeWrap}>
           <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
-              {STATUS_LABEL[order.status]}
+              {statusLabels[order.status]}
             </Text>
           </View>
           {order.status === 'CANCELED' && !!order.cancelReason && (
@@ -69,8 +69,8 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
           <FontAwesome name="map-marker" size={13} color={Theme.textSecondary} />
           <Text style={styles.cardRowText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
             {order.location.house}
-            {order.location.floor ? `, эт. ${order.location.floor}` : ''}
-            {order.location.apartment ? `, кв. ${order.location.apartment}` : ''}
+            {order.location.floor ? `, ${t('confirm.floor')} ${order.location.floor}` : ''}
+            {order.location.apartment ? `, ${t('confirm.apt')} ${order.location.apartment}` : ''}
           </Text>
         </View>
       )}
@@ -81,9 +81,7 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
           <Text style={styles.date} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
             {dateStr}
           </Text>
-          {isActive && (
-            <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
-          )}
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
         </View>
       </View>
     </Pressable>

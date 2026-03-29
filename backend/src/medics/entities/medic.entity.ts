@@ -7,6 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Order } from '../../orders/entities/order.entity';
 import { VerificationStatus } from './verification-status.enum';
 
@@ -22,6 +23,7 @@ export class Medic {
   @Column({ type: 'varchar', length: 255 })
   name!: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255 })
   passwordHash!: string;
 

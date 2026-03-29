@@ -67,14 +67,17 @@ export class CloudinaryService implements OnModuleInit {
       Readable.from(buffer).pipe(uploadStream);
     });
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(
+    let timeoutHandle: ReturnType<typeof setTimeout>;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(
         () => reject(new Error('Cloudinary upload timeout (30s)')),
         CLOUDINARY_TIMEOUT_MS,
-      ),
-    );
+      );
+    });
 
-    return Promise.race([uploadPromise, timeoutPromise]);
+    return Promise.race([uploadPromise, timeoutPromise]).finally(() => {
+      clearTimeout(timeoutHandle);
+    });
   }
 
   /** Delete an asset by its Cloudinary public_id */

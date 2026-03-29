@@ -6,13 +6,14 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Logger, OnModuleInit } from '@nestjs/common';
+import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
+import { ALLOWED_ORIGINS } from '../common/cors.config';
 
 export type OrderStatusPayload = { orderId: string; status: string };
 export type MedicLocationPayload = {
@@ -27,34 +28,26 @@ export type MedicLocationPayload = {
 
 @WebSocketGateway({
   cors: {
-    origin: [
-      'https://hamshirago-web.vercel.app',
-      'https://hamshirago-web-medic.vercel.app',
-      'https://hamshirago-admin.vercel.app',
-      'https://web-production-d365f.up.railway.app',
-      'https://admin-production-9727.up.railway.app',
-      'https://web-medic-production.up.railway.app',
-      'https://hamshirago.uz',
-      'https://www.hamshirago.uz',
-      'https://app.hamshirago.uz',
-      'https://medic.hamshirago.uz',
-      'https://admin.hamshirago.uz',
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:8081',
-      'http://localhost:8082',
-    ],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   },
 })
-export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
+export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit, OnModuleDestroy {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(OrderEventsGateway.name);
   private clientOrderRooms = new Map<string, Set<string>>(); // socketId -> Set of orderIds
   private readonly clientConnectedAt = new Map<string, number>();
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+  /** BE-M7: In-memory cache for order access checks (key: "userId-orderId", value: {allowed, ts}) */
+  private readonly accessCache = new Map<string, { allowed: boolean; ts: number }>();
+  private readonly ACCESS_CACHE_TTL = 30_000;
+
+  /** BE-M8: In-memory cache for medic-to-active-order mapping (key: "medicId-orderId", value: {ok, ts}) */
+  private readonly medicOrderCache = new Map<string, { ok: boolean; ts: number }>();
+  private readonly MEDIC_ORDER_CACHE_TTL = 30_000;
 
   constructor(
     @InjectRepository(Order)
@@ -64,7 +57,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {}
 
   onModuleInit() {
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       const cutoff = Date.now() - 30 * 60 * 1000;
       for (const [socketId, connectedAt] of this.clientConnectedAt.entries()) {
         if (connectedAt < cutoff) {
@@ -75,25 +68,45 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     }, 5 * 60 * 1000);
   }
 
+  onModuleDestroy() {
+    if (this.cleanupInterval !== null) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
   private async canAccessOrderRoom(
     userId: string,
     role: 'client' | 'medic' | 'admin',
     orderId: string,
   ): Promise<boolean> {
     if (role === 'admin') return true;
+
+    const cacheKey = `${userId}-${orderId}`;
+    const cached = this.accessCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < this.ACCESS_CACHE_TTL) {
+      return cached.allowed;
+    }
+
+    let allowed = false;
     if (role === 'client') {
-      const exists = await this.orderRepo.exist({ where: { id: orderId, clientId: userId } });
-      return exists;
+      allowed = await this.orderRepo.exist({ where: { id: orderId, clientId: userId } });
+    } else if (role === 'medic') {
+      allowed = await this.orderRepo.exist({ where: { id: orderId, medicId: userId } });
     }
-    if (role === 'medic') {
-      const exists = await this.orderRepo.exist({ where: { id: orderId, medicId: userId } });
-      return exists;
-    }
-    return false;
+
+    this.accessCache.set(cacheKey, { allowed, ts: Date.now() });
+    return allowed;
   }
 
   private async isMedicAssignedToActiveOrder(medicId: string, orderId: string): Promise<boolean> {
-    return this.orderRepo.exist({
+    const cacheKey = `${medicId}-${orderId}`;
+    const cached = this.medicOrderCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < this.MEDIC_ORDER_CACHE_TTL) {
+      return cached.ok;
+    }
+
+    const ok = await this.orderRepo.exist({
       where: {
         id: orderId,
         medicId,
@@ -106,6 +119,9 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
         ]),
       },
     });
+
+    this.medicOrderCache.set(cacheKey, { ok, ts: Date.now() });
+    return ok;
   }
 
   async handleConnection(client: any) {
@@ -165,6 +181,13 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   emitOrderStatus(orderId: string, status: string) {
     this.server.to(`order:${orderId}`).emit('order_status', { orderId, status });
     this.logger.log(`Emitted order_status orderId=${orderId} status=${status}`);
+
+    // Invalidate medic-order cache entries for this order on status change
+    for (const [key] of this.medicOrderCache) {
+      if (key.endsWith(`-${orderId}`)) {
+        this.medicOrderCache.delete(key);
+      }
+    }
   }
 
   /** Broadcast a new order to all online medics */

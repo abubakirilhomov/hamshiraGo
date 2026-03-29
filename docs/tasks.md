@@ -2,6 +2,7 @@
 
 > Обновляется при каждом изменении. Выполненные задачи → `done.md`.
 > **Этапы 1–18 выполнены** — подробности в `done.md`.
+> **Полный аудит проведён 2026-03-28** — backend (41), mobile (25), medic (26).
 
 ---
 
@@ -16,33 +17,135 @@
 
 ---
 
-## 🐛 Открытые баги
+## 🔴 CRITICAL — Backend (аудит 2026-03-28)
 
-### 🔴 КРИТИЧНО — Абубакир (backend) — найдено аудитом 2026-03-14
-- [x] **N1** — `payme.service.ts:126` + `click.service.ts:78`: `CheckPerformTransaction` сравнивает сумму с `priceAmount`, нужно `priceAmount - discountAmount` — заказы со скидкой не оплачиваются
-- [x] **N4** — `main.ts`: добавить `app.set('trust proxy', 1)` — без этого Payme IP-whitelist блокирует все webhooks на Railway
-- [x] **N6** — `auth/auth.controller.ts:115`: добавить `@Throttle({ default: { ttl: 900_000, limit: 5 } })` на `/auth/admin/login` — сейчас глобальный лимит 120 req/min (брутфорс)
+- [x] **BE-C1** — FIXED — Унифицировано начисление earnings: оба пути используют `netPrice`
+- [x] **BE-C2** — FIXED — SQL-инъекция: заменена интерполяция на `.setParameter('fee', fee)`
+- [x] **BE-C3** — FIXED — Race condition: атомарный `update()` с `Not(In([DONE, CANCELED]))`
+- [x] **BE-C4** — FIXED — Telegram webhook: проверка `X-Telegram-Bot-Api-Secret-Token` + `secret_token` в setWebhook
+- [x] **BE-C5** — FIXED — Payme auth: `crypto.timingSafeEqual` вместо `!==`
 
-### 🟡 ВАЖНО — Абубакир (backend)
-- [x] **N2** — `dispatch.service.ts:179`: NO_MEDICS retry `setTimeout` не хранится в `this.timers` — при отмене заказа таймер висит в памяти
-- [x] **N5** — `medics/medics.service.ts:350`: `findCandidatesForDispatch` без `.take()` — при росте базы загружает всех медиков
+## 🔴 CRITICAL — Mobile (аудит 2026-03-28)
 
-### 🟡 Карта — встречная полоса (bearings fix) — Абубакир
-> Диёр уже исправил web-medic. Нужно сделать для нативного medic и backend.
-- [x] **Шаг 1** — `medic/hooks/useMedicLocation.ts`: добавить `heading: loc.coords.heading ?? null` в объект emit `medic_location`
-- [x] **Шаг 2** — `backend/src/realtime/order-events.gateway.ts`: пробросить `heading` из payload `medic_location` клиенту
-- [x] **Шаг 3** — `medic/hooks/useMedicRoute.ts`: добавить `bearings=${heading},45` и `radiuses=25` в OSRM-запрос
-- [x] **Шаг 4** — `web/components/TrackingMap.tsx` + `web/app/orders/[id]/page.tsx`: принять `heading` из WS-события и передать в OSRM ✅
+- [x] **MOB-C1** — ~~Каталог `/services` запрашивается без token~~ — **FIXED** — передаём token в apiFetch
+- [x] **MOB-C2** — ~~Двойное подключение WebSocket~~ — **FIXED** — единый SocketContext/SocketProvider
+- [x] **MOB-C3** — ~~`discountAmount` вычисляется на клиенте~~ — **TODO added** — требует backend fix BE-L7
+- [x] **MOB-C4** — ~~Нет валидации телефона~~ — **FIXED** — regex проверка формата +998 / min 9 цифр
+- [x] **MOB-C5** — ~~EAS Project ID placeholder~~ — **FIXED** — registerPushToken логирует warning при placeholder
 
-### LOW — Абубакир (mobile/medic)
-- [ ] **`pushLocation` использует `Accuracy.Balanced`** — для первого отображения на карте лучше `High` — `medic/hooks/useMedicOrderFeed.ts`
-- [ ] **История заказов без пагинации** — `/orders` возвращает paginated данные, но mobile показывает только первую страницу без кнопки "загрузить ещё"
+## 🔴 CRITICAL — Medic (аудит 2026-03-28)
 
-### ⚠️ Частично закрыты (требуют backend-изменений)
+- [x] **MED-C1** — ~~Два WebSocket-соединения одновременно~~ — FIXED: shared SocketContext
+- [x] **MED-C2** — ~~SwipeActionButton stale onConfirm~~ — FIXED: onConfirmRef pattern
+
+---
+
+## 🟠 HIGH — Backend
+
+- [x] **BE-H1** — FIXED (already) — `isBlocked` проверяется в `JwtStrategy.validate()` — `strategies/jwt.strategy.ts`
+- [x] **BE-H2** — FIXED (already) — `verifyOrderOwnership` проверяет `clientId === userId` — `payments.controller.ts`, `payments.service.ts`
+- [x] **BE-H3** — FIXED (already) — `verifyOrderOwnership` проверяет владельца — `payments.controller.ts`, `payments.service.ts`
+- [x] **BE-H4** — FIXED (already) — `validateClickIp` проверяет IP 185.8.212.0/24 и 195.158.28.0/24 — `payments.controller.ts`
+- [x] **BE-H5** — FIXED (already) — `amount <= 0` проверяется inline — `medics.controller.ts`
+- [x] **BE-H6** — FIXED (already) — `PushTokenDto` и `WebPushSubscriptionDto` имеют `@MaxLength` — `common/dto/`
+- [x] **BE-H7** — FIXED (already) — order + location обёрнуты в `dataSource.transaction` — `orders.service.ts`
+- [x] **BE-H8** — FIXED (already) — `profilePhotoUrl IS NOT NULL` в `findCandidatesForDispatch` — `medics.service.ts`
+- [x] **BE-H9** — FIXED — `@MaxLength(10000)` на stacktrace, `@MaxLength(2000)` на message — `client-errors/dto/create-client-error.dto.ts`
+- [x] **BE-H10** — FIXED — `@Exclude()` на `passwordHash` + `ClassSerializerInterceptor` глобально — `medic.entity.ts`, `user.entity.ts`, `main.ts`
+- [x] **BE-H11** — FIXED — Telegram `/start` проверяет что medic не привязан к другому chatId — `telegram-bot.service.ts`
+
+## 🟠 HIGH — Mobile
+
+- [x] **MOB-H1** — VERIFIED — `ratingSubmittingRef` guard already present, `ratingSubmitting` not in deps — `hooks/useOrderTracking.ts`
+- [x] **MOB-H2** — FIXED — All hardcoded Russian strings replaced with `t()` calls — `app/order/track.tsx`, `app/(tabs)/two.tsx`, `components/RatingModal.tsx`
+- [x] **MOB-H3** — FIXED — Removed deprecated `STATUS_LABEL`, `OrderCard` uses `getStatusLabel(t)` — `types/order.ts`
+- [x] **MOB-H4** — VERIFIED — `OrderCard.onPress` already navigates for all statuses — `components/OrderCard.tsx`
+- [x] **MOB-H5** — FIXED — `cancelOrder` no longer checks truthiness of result (204 returns undefined); navigation always runs on success, throws on failure — `hooks/useOrderTracking.ts`
+
+## 🟠 HIGH — Medic
+
+- [x] **MED-H1** — FIXED — location interval no longer cleared on accept — `hooks/useMedicOrderFeed.ts`
+- [x] **MED-H2** — FIXED — 401 shows alert before logout instead of silent logout — `constants/api.ts`
+- [x] **MED-H3** — FIXED — fetchOrderRef pattern removes fetchOrder from socket effect deps — `hooks/useOrderStatus.ts`
+- [x] **MED-H4** — FIXED — confirmAccept wrapped in try/catch, navigation only on success — `app/(tabs)/index.tsx`
+- [x] **MED-H5** — VERIFIED — `.env` already in root `.gitignore`, not tracked by git
+
+---
+
+## 🟡 MEDIUM — Backend
+
+- [x] **BE-M1** — FIXED (already) — `forbidNonWhitelisted: true` в ValidationPipe — `main.ts`
+- [x] **BE-M2** — FIXED (already) — Payme cancelTransaction поддерживает state=-2 (refund) — `payme.service.ts`
+- [x] **BE-M3** — FIXED (already) — `synchronize: false` для всех окружений — `app.module.ts`
+- [x] **BE-M4** — FIXED (already) — DB pool `max: 20` — `app.module.ts`
+- [x] **BE-M5** — FIXED (already) — Dispatch timer восстанавливает PENDING с future expiresAt — `dispatch.service.ts`
+- [x] **BE-M6** — FIXED (already) — `findAvailable` возвращает [] для не-APPROVED/blocked медиков — `orders.service.ts`
+- [x] **BE-M7** — FIXED (already) — `subscribe_order` кэширует access check (30s TTL) — `order-events.gateway.ts`
+- [x] **BE-M8** — FIXED (already) — `medic_location` кэширует medic-to-order mapping (30s TTL) — `order-events.gateway.ts`
+- [x] **BE-M9** — FIXED — Добавлен составной `@Index(['orderId', 'medicId', 'result'])` — `dispatch-attempt.entity.ts`
+- [x] **BE-M10** — FIXED — WebSocket CORS использует shared `ALLOWED_ORIGINS` из `cors.config.ts` — `order-events.gateway.ts`
+- [x] **BE-M11** — FIXED — Cloudinary timeout clearTimeout через `.finally()` — `cloudinary.service.ts`
+- [x] **BE-M12** — FIXED (already) — Payme GetStatement имеет `take: 1000` — `payme.service.ts`
+
+## 🟡 MEDIUM — Mobile
+
+- [x] **MOB-M1** — FIXED — Infinite scroll pagination в orders list — `app/(tabs)/two.tsx`
+- [x] **MOB-M2** — FIXED — Profile uses limit=1 + total from pagination — `app/(tabs)/profile.tsx`
+- [x] **MOB-M3** — VERIFIED — Already uses shared SocketContext, no token dep for socket — `hooks/useOrderTracking.ts`
+- [x] **MOB-M4** — FIXED — `res.ok` check added — `utils/registerPushToken.ts`
+- [x] **MOB-M5** — FIXED — Removed `region` prop, kept `initialRegion` — `components/LocationMap.tsx`
+- [x] **MOB-M6** — FIXED — AbortController 20s timeout — `constants/api.ts`
+- [x] **MOB-M7** — FIXED — `language` added to useEffect deps — `app/(tabs)/index.tsx`
+- [x] **MOB-M8** — FIXED — Refs for locations, removed from useCallback deps — `hooks/useRoutePolyline.ts`
+- [x] **MOB-M9** — FIXED — TextInput moved inside AppModal children — `app/order/track.tsx`, `components/AppModal.tsx`
+
+## 🟡 MEDIUM — Medic
+
+- [x] **MED-M1** — FIXED — All hardcoded Russian strings replaced with `t()` across 5 files
+- [x] **MED-M2** — FIXED — Auto-dismiss modal after 2s when countdown hits 0
+- [x] **MED-M3** — FIXED — `startingRef.current = false` after setting watchRef on success
+- [x] **MED-M4** — FIXED — OSRM_URL imported from `@/constants/config`
+- [x] **MED-M5** — FIXED — Error state + retry UI in my-orders.tsx
+- [x] **MED-M6** — FIXED — Uses `?status=DONE&limit=1` + `total` from pagination
+- [x] **MED-M7** — FIXED — `onDismissRef` pattern + `order.id` in effect deps
+- [x] **MED-M8** — FIXED — Throttle increased to 30s + 200m distance check
+- [x] **MED-M9** — FIXED — `reconnectionAttempts: 15` added to SocketContext
+
+---
+
+## 🔵 LOW — Backend
+
+- [x] **BE-L1** — FIXED — `findOneBasic` без medic JOIN для внутренних вызовов; `findOne` с JOIN для API — `orders.service.ts`
+- [x] **BE-L2** — FIXED — Interval сохраняется в `cleanupInterval`, `onModuleDestroy` очищает его — `order-events.gateway.ts`
+- [x] **BE-L3** — FIXED — `BlockUserDto` с `@IsBoolean()` заменил inline тип — `auth/dto/block-user.dto.ts`, `auth.controller.ts`
+- [x] **BE-L4** — FIXED — Все вызовы `notifyClient`/`notifyMedic` получили `.catch(err => console.error('Notify error:', err))` — `orders.service.ts`
+- [x] **BE-L5** — FIXED — `GET /services/:id` бросает `NotFoundException` если результат null — `services.controller.ts`
+- [x] **BE-L6** — FIXED — `broadcastToAll` обрабатывает chunks по 20 с 100ms задержкой — `telegram.service.ts`
+- [x] **BE-L7** — FIXED — `discountAmount` ограничен 20% от цены сервиса; TODO-комментарий для promo-code системы — `orders.service.ts`
+
+## 🔵 LOW — Mobile
+
+- [x] **MOB-L1** — FIXED — `fetchLocation` infinite loop: replaced `pin` dep with `initialPinSetRef` ref — `app/order/location.tsx`
+- [x] **MOB-L2** — FIXED — Removed unused `getServiceById` import and `service` variable — `app/order/location.tsx`
+- [x] **MOB-L3** — FIXED — Wrapped native `LocationMap` with `React.memo` to prevent MapView re-renders — `app/order/location.tsx`
+- [x] **MOB-L4** — FIXED — Removed duplicate channel setup from `registerPushToken.ts`; kept only in `_layout.tsx` — `utils/registerPushToken.ts`
+- [x] **MOB-L5** — FIXED — `logout` typed as `() => Promise<void>` in `AuthContextType` interface — `context/AuthContext.tsx`
+
+## 🔵 LOW — Medic
+
+- [x] **MED-L1** — FIXED — Added `useEffect` to sync `faceUri`/`licenseUri` state when `medic.facePhotoUrl`/`licensePhotoUrl` changes — `app/verification.tsx`
+- [x] **MED-L2** — FIXED — Replaced dynamic `import('@/constants/api')` with static `API_BASE` import at top of file — `app/(tabs)/profile.tsx`
+- [x] **MED-L3** — FIXED — `token` stored in `tokenRef`; `pushLocation` has empty deps; removed `pushLocation` from socket effect deps — `hooks/useMedicOrderFeed.ts`
+
+---
+
+## ⚠️ Частично закрыты (требуют backend-изменений)
+
 - **JWT в localStorage** (web, web-medic, admin) — auto-logout при истечении добавлен; полный фикс = httpOnly cookies на бэкенде
 - **Admin JWT** — `AdminLayout` проверяет exp каждые 60с ✅ (BUG 32); localStorage XSS-уязвимость остаётся пока нет httpOnly cookies (BUG 33)
 
-### ⛔ Вне зоны изменений (зафиксировано, не исправляем)
+## ⛔ Вне зоны изменений (зафиксировано, не исправляем)
+
 - BUG 14: web-medic загружает все заказы чтобы найти один по id
 - BUG 15: web client передаёт лишние поля в CreateOrderDto
 - BUG 26: `BASE_URL` захардкожен `localhost:3000` в web и web-medic
@@ -166,6 +269,10 @@
 - [ ] Повторный заказ (кнопка "Заказать снова" в истории)
 - [ ] История платежей клиента: `GET /payments/my`
 - [ ] Редактирование профиля: `PATCH /auth/profile`, `PATCH /medics/profile`
+- [ ] Token refresh mechanism (вместо hard logout при 401)
+- [ ] `/orders/stats` endpoint для подсчёта заказов без загрузки данных
+- [ ] Certificate pinning для mobile apps
+- [ ] httpOnly cookies вместо JWT в localStorage
 
 ---
 

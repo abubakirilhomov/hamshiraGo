@@ -5,7 +5,7 @@ import {
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, Repository } from 'typeorm';
+import { LessThan, MoreThan, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { DispatchAttempt, DispatchResult } from './entities/dispatch-attempt.entity';
 import { Order } from './entities/order.entity';
@@ -51,6 +51,23 @@ export class DispatchService implements OnApplicationBootstrap {
         this.logger.log(`Recovering stale attempt ${attempt.id} for order ${attempt.orderId}`);
         await this.attemptRepo.update(attempt.id, { result: DispatchResult.TIMEOUT });
         await this.advanceDispatch(attempt.orderId);
+      }
+
+      // Recover PENDING attempts whose expiresAt is still in the future — re-create timers
+      const pending = await this.attemptRepo.find({
+        where: { result: DispatchResult.PENDING, expiresAt: MoreThan(new Date()) },
+      });
+      for (const attempt of pending) {
+        const remainingMs = attempt.expiresAt.getTime() - Date.now();
+        this.logger.log(
+          `Recovering pending attempt ${attempt.id} for order ${attempt.orderId}, ${remainingMs}ms remaining`,
+        );
+        const timer = setTimeout(async () => {
+          this.timers.delete(attempt.orderId);
+          await this.attemptRepo.update(attempt.id, { result: DispatchResult.TIMEOUT });
+          await this.advanceDispatch(attempt.orderId);
+        }, remainingMs);
+        this.timers.set(attempt.orderId, timer);
       }
     } catch (err) {
       this.logger.error(`onApplicationBootstrap error: ${err}`);

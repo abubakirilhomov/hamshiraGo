@@ -47,10 +47,15 @@ export class TelegramBotService implements OnApplicationBootstrap {
     }
     const webhookUrl = `${backendUrl}/telegram/webhook`;
     try {
+      const webhookSecret = this.config.get<string>('TELEGRAM_WEBHOOK_SECRET');
+      const webhookBody: Record<string, unknown> = { url: webhookUrl, drop_pending_updates: false };
+      if (webhookSecret) {
+        webhookBody.secret_token = webhookSecret;
+      }
       const res = await fetch(`${this.apiBase}/setWebhook`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: webhookUrl, drop_pending_updates: false }),
+        body: JSON.stringify(webhookBody),
       });
       const data = await res.json() as { ok: boolean; description?: string };
       if (data.ok) {
@@ -83,6 +88,12 @@ export class TelegramBotService implements OnApplicationBootstrap {
         const medic = await this.medicsService.findById(medicId);
         if (!medic) {
           await this.telegramService.sendMessage(chatId, '❌ Медик не найден. Попробуйте ещё раз через приложение.');
+          return;
+        }
+
+        // Reject if this medic is already linked to a different Telegram chat
+        if (medic.telegramChatId && medic.telegramChatId !== String(chatId)) {
+          await this.telegramService.sendMessage(chatId, '❌ Этот аккаунт медика уже привязан к другому Telegram-чату. Отключите старый чат в приложении.');
           return;
         }
 

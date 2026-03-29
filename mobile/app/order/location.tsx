@@ -1,3 +1,4 @@
+import React from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -12,29 +13,28 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import type { OrderAddress } from '@/types/order';
-import { getServiceById, type ServiceId } from '@/types/services';
 import { useAuth } from '@/context/AuthContext';
 import { GPS_ACCURACY_THRESHOLD_METERS } from '@/constants/config';
 
-const LocationMapComponent =
+const LocationMapComponent: React.ComponentType<any> =
   Platform.OS === 'web'
     ? () => null
-    : require('@/components/LocationMap').LocationMap;
+    : memo(require('@/components/LocationMap').LocationMap);
 
 export default function OrderLocationScreen() {
   const { serviceId } = useLocalSearchParams<{ serviceId?: string }>();
   const router = useRouter();
-  const service = serviceId ? getServiceById(serviceId as ServiceId) : null;
 
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [accuracyMeters, setAccuracyMeters] = useState<number | null>(null);
   const [pin, setPin] = useState<{ latitude: number; longitude: number } | null>(null);
+  const initialPinSetRef = useRef(false);
   const [address, setAddress] = useState<Partial<OrderAddress>>({
     house: '',
     floor: '',
@@ -61,13 +61,16 @@ export default function OrderLocationScreen() {
       const acc = loc.coords.accuracy ?? null;
       setCoords({ latitude, longitude });
       setAccuracyMeters(acc);
-      if (!pin) setPin({ latitude, longitude });
+      if (!initialPinSetRef.current) {
+        initialPinSetRef.current = true;
+        setPin({ latitude, longitude });
+      }
     } catch {
       setLocationPermission(false);
     } finally {
       setLoadingLocation(false);
     }
-  }, [pin]);
+  }, []);
 
   useEffect(() => {
     fetchLocation();
@@ -76,6 +79,14 @@ export default function OrderLocationScreen() {
   const handleConfirm = () => {
     if (!displayCoords || !address.house?.trim() || !address.phone?.trim()) {
       Alert.alert('Заполните адрес', 'Укажите дом и телефон.');
+      return;
+    }
+    const phoneTrimmed = (address.phone ?? '').trim();
+    const phoneDigits = phoneTrimmed.replace(/\D/g, '');
+    // Accept +998XXXXXXXXX or bare 9-digit numbers (with any spacing/dashes)
+    const isValidPhone = /^\+998\d{9}$/.test(phoneTrimmed.replace(/[\s\-()]/g, '')) || (phoneDigits.length >= 9 && phoneDigits.length <= 12);
+    if (!isValidPhone) {
+      Alert.alert('Неверный телефон', 'Введите номер в формате +998 XX XXX XX XX');
       return;
     }
     router.push({

@@ -40,10 +40,19 @@ export class TelegramService {
     }
   }
 
-  /** Broadcast the same message to multiple chat_ids (fire-and-forget) */
+  /** Broadcast the same message to multiple chat_ids (fire-and-forget, chunked with 100ms delay) */
   broadcastToAll(chatIds: (string | number)[], text: string): void {
-    for (const chatId of chatIds) {
-      this.sendMessage(chatId, text).catch(() => {});
-    }
+    const CHUNK_SIZE = 20;
+    const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+    (async () => {
+      for (let i = 0; i < chatIds.length; i += CHUNK_SIZE) {
+        const chunk = chatIds.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map((chatId) => this.sendMessage(chatId, text).catch(() => {})));
+        if (i + CHUNK_SIZE < chatIds.length) {
+          await delay(100);
+        }
+      }
+    })().catch(() => {});
   }
 }
