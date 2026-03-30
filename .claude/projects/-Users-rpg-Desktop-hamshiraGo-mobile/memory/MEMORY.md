@@ -1,0 +1,1 @@
+- [Abubakir profile](user_abubakir.md) — lead dev for backend, mobile, medic

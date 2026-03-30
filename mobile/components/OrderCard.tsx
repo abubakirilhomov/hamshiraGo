@@ -22,6 +22,7 @@ export interface OrderCardItem {
   cancelReason?: string | null;
   location: OrderLocation | null;
   created_at: string;
+  isUrgent?: boolean;
 }
 
 interface OrderCardProps {
@@ -49,7 +50,14 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
       onPress={() => router.push({ pathname: '/order/track', params: { orderId: order.id } })}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
+        <View style={styles.titleWrap}>
+          <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
+          {order.isUrgent && (
+            <View style={styles.urgentBadge}>
+              <Text style={styles.urgentBadgeText}>{t('urgent.badge')}</Text>
+            </View>
+          )}
+        </View>
         <View style={styles.statusBadgeWrap}>
           <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
@@ -103,11 +111,28 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 8,
   },
+  titleWrap: {
+    flex: 1,
+    gap: 4,
+  },
   serviceTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: Theme.text,
-    flex: 1,
+  },
+  urgentBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fee2e2',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  urgentBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#dc2626',
   },
   statusBadgeWrap: {
     alignItems: 'flex-end',

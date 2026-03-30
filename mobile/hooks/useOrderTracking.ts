@@ -16,6 +16,8 @@ interface Medic {
   profilePhotoUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  rating?: number | null;
+  reviewCount?: number | null;
 }
 
 export interface Order {
@@ -23,10 +25,13 @@ export interface Order {
   serviceTitle: string;
   priceAmount: number;
   discountAmount: number;
+  isUrgent?: boolean;
+  urgentFee?: number;
   status: OrderStatus;
   dispatchStatus?: 'SEARCHING' | 'NO_MEDICS' | 'ASSIGNED' | 'FAILED' | null;
   cancelReason?: string | null;
   clientRating: number | null;
+  clientReview?: string | null;
   medic?: Medic | null;
   location: {
     house: string;

@@ -158,7 +158,8 @@ export default function OrderDetailScreen() {
   // ── Derived display values ─────────────────────────────────────────────────
   const statusColor = STATUS_COLOR[order.status];
   const nextStep = NEXT_STATUS_MAP[order.status];
-  const netPrice = order.priceAmount - (order.discountAmount ?? 0);
+  const urgentFee = order.isUrgent ? (order.urgentFee ?? 0) : 0;
+  const netPrice = order.priceAmount + urgentFee - (order.discountAmount ?? 0);
   const platformFee = order.platformFee ?? Math.round(netPrice * 0.1);
   const medicEarnings = netPrice - platformFee;
   const date = new Date(order.created_at).toLocaleDateString('ru-RU', {
@@ -199,6 +200,13 @@ export default function OrderDetailScreen() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      {/* Urgent badge */}
+      {order.isUrgent && (
+        <View style={styles.urgentBadge}>
+          <Text style={styles.urgentBadgeText}>🔴 {t('urgent.badge')}</Text>
+        </View>
+      )}
+
       {/* Status */}
       <View
         style={[
@@ -247,6 +255,13 @@ export default function OrderDetailScreen() {
           label={t('orders.serviceCost')}
           value={`${order.priceAmount.toLocaleString('ru-RU')} UZS`}
         />
+        {order.isUrgent && urgentFee > 0 && (
+          <Row
+            label={t('urgent.fee')}
+            value={`+${urgentFee.toLocaleString('ru-RU')} UZS`}
+            valueColor='#dc2626'
+          />
+        )}
         {order.discountAmount > 0 && (
           <Row
             label={t('orders.clientDiscount')}
@@ -493,6 +508,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Theme.background,
+  },
+  urgentBadge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  urgentBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#dc2626',
   },
   statusBlock: {
     flexDirection: 'row',

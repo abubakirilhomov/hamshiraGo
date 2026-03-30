@@ -164,6 +164,18 @@
     "errorTitle": "Xatolik",
     "errorMessage": "Bahoni yuborib bo'lmadi"
   },
+  "review": {
+    "placeholder": "Izoh qoldiring (ixtiyoriy)",
+    "reviews": "fikrlar",
+    "noReviews": "Hozircha fikrlar yo'q",
+    "myReviews": "Mening fikrlarim"
+  },
+  "urgent": {
+    "label": "Shoshilinch chaqiruv",
+    "badge": "Shoshilinch",
+    "description": "Medikni ustuvor chiqishi",
+    "fee": "Shoshilinch ustamasi"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

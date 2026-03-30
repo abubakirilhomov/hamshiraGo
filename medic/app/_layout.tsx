@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
 import { apiFetch } from '@/constants/api';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
@@ -22,6 +23,7 @@ import {
   stopBackgroundLocationUpdates,
 } from '@/utils/backgroundLocation';
 import { registerPushToken } from '@/utils/registerPushToken';
+import { reportError } from '@/utils/reportError';
 
 // Show notifications in foreground with sound
 Notifications.setNotificationHandler({
@@ -91,13 +93,15 @@ export default function RootLayout() {
   if (showSplash) return <SplashOverlay />;
 
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <SocketProvider>
-          <RootLayoutNav />
-        </SocketProvider>
-      </AuthProvider>
-    </LanguageProvider>
+    <ErrorBoundary appType="medic">
+      <LanguageProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <RootLayoutNav />
+          </SocketProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -134,6 +138,20 @@ function RootLayoutNav() {
   useEffect(() => {
     if (token) registerPushToken(token);
   }, [token]);
+
+  useEffect(() => {
+    const originalHandler = ErrorUtils.getGlobalHandler();
+    ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      reportError({
+        message: error.message,
+        stacktrace: error.stack,
+        errorCode: isFatal ? 'FATAL_ERROR' : 'JS_ERROR',
+        appType: 'medic',
+      });
+      originalHandler(error, isFatal);
+    });
+    return () => ErrorUtils.setGlobalHandler(originalHandler);
+  }, []);
 
   useEffect(() => {
     setBackgroundLocationToken(token ?? null);

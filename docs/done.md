@@ -1,5 +1,67 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-30 (Urgent Order UI — mobile + medic)
+
+- **[feat]** Added `isUrgent` boolean state + fetch `GET /settings` for `urgentFeePercent` on confirm screen — `mobile/app/order/confirm.tsx`
+- **[feat]** Urgent toggle row with Switch + description label on confirm screen — `mobile/app/order/confirm.tsx`
+- **[feat]** `urgentFee` line in price breakdown; total updated to include `urgentFee`; `isUrgent` sent in POST /orders body — `mobile/app/order/confirm.tsx`
+- **[feat]** Added `isUrgent?: boolean` to `OrderCardItem`; shows red "Срочный" badge when true — `mobile/components/OrderCard.tsx`
+- **[feat]** Added `isUrgent?: boolean` and `urgentFee?: number` to `Order` interface — `mobile/hooks/useOrderTracking.ts`
+- **[feat]** Track screen shows "🔴 Срочный" badge and `urgentFee` line in header when `order.isUrgent` is true — `mobile/app/order/track.tsx`
+- **[feat]** Added `urgentBadge`, `urgentBadgeText`, `urgentFeeText` styles — `mobile/app/order/trackStyles.ts`
+- **[feat]** Added `isUrgent?: boolean` and `urgentFee?: number` to `DispatchInvitePayload.order` in medic's invite modal — `medic/components/OrderInviteModal.tsx`
+- **[feat]** Red urgent banner "🔴 СРОЧНЫЙ — доплата: X сум" shown at top of invite modal when `order.isUrgent` is true — `medic/components/OrderInviteModal.tsx`
+- **[feat]** Added `isUrgent?: boolean` and `urgentFee?: number` to `OrderDetail` type — `medic/hooks/useOrderStatus.ts`
+- **[feat]** Medic order detail screen shows red "Срочный" badge; `urgentFee` row in service/earnings card; `netPrice` calculation includes `urgentFee` — `medic/app/order/[id].tsx`
+- **[i18n]** Added `urgent.label`, `urgent.badge`, `urgent.description`, `urgent.fee` keys — `mobile/i18n/ru.json`, `mobile/i18n/uz.json`, `medic/i18n/ru.json`, `medic/i18n/uz.json`
+
+## 2026-03-30 (Global Error Boundary — mobile + medic)
+
+- **[feat]** Created `reportError()` utility — sends error to `POST /client-errors` with userId, appType, screen, deviceInfo, appVersion — `mobile/utils/reportError.ts`, `medic/utils/reportError.ts`
+- **[feat]** Created `ErrorBoundary` React class component — catches render errors, reports via `reportError()`, shows fallback UI with retry button — `mobile/components/ErrorBoundary.tsx`, `medic/components/ErrorBoundary.tsx`
+- **[feat]** Wrapped root `RootLayout` JSX with `<ErrorBoundary appType="mobile">` — `mobile/app/_layout.tsx`
+- **[feat]** Wrapped root `RootLayout` JSX with `<ErrorBoundary appType="medic">` — `medic/app/_layout.tsx`
+- **[feat]** Added `ErrorUtils.setGlobalHandler` in `RootLayoutNav` to catch unhandled JS errors and report them via `reportError()` — `mobile/app/_layout.tsx`, `medic/app/_layout.tsx`
+
+## 2026-03-29 (Rating & Reviews UI — mobile + medic)
+
+- **[feat]** Added `clientReview?: string | null` and `rating`/`reviewCount` to `Medic` interface in `Order` type — `mobile/hooks/useOrderTracking.ts`
+- **[feat]** Track screen shows submitted `clientReview` text after rating — `mobile/app/order/track.tsx`
+- **[feat]** Track screen shows medic's `rating` + `reviewCount` (N отзывов) next to medic name — `mobile/app/order/track.tsx`
+- **[feat]** Added `medicRatingRow`, `medicRatingText`, `medicReviewCount`, `clientReviewText` styles — `mobile/app/order/trackStyles.ts`
+- **[feat]** Added `review.*` i18n keys (placeholder, reviews, noReviews, myReviews) — `mobile/i18n/ru.json`, `mobile/i18n/uz.json`
+- **[feat]** Added `reviewCount: number` to `MedicUser` type — `medic/context/AuthContext.tsx`
+- **[feat]** Medic profile header shows `reviewCount` next to rating stars — `medic/app/(tabs)/profile.tsx`
+- **[feat]** Medic stats card for rating is now tappable, navigates to `/reviews` — `medic/app/(tabs)/profile.tsx`
+- **[feat]** Created `app/reviews.tsx` — screen listing all DONE orders with non-empty `clientReview`, shows stars + review text + date — `medic/app/reviews.tsx`
+- **[feat]** Added `review.*` i18n keys — `medic/i18n/ru.json`, `medic/i18n/uz.json`
+
+## 2026-03-29 (Urgent Order feature)
+
+- **[feat]** Added `isUrgent: boolean` (default false) and `urgentFee: decimal(10,0)` (default 0) columns to `Order` entity — `backend/src/orders/entities/order.entity.ts`
+- **[feat]** Added `urgentFeePercent` (default 50), `urgentStartHour` (default 22), `urgentEndHour` (default 7) columns to `AppSettings` entity — `backend/src/app-settings/entities/app-settings.entity.ts`
+- **[feat]** Added `@IsOptional() @IsBoolean() isUrgent?` field to `CreateOrderDto` — `backend/src/orders/dto/create-order.dto.ts`
+- **[feat]** `create()`: auto-detects night window (UTC+5) or client flag; calculates `urgentFee`; updated `netPrice = priceAmount + urgentFee - discountAmount` and `platformFee` accordingly — `backend/src/orders/orders.service.ts`
+- **[feat]** `updateStatusByClient` and `updateStatusByMedic` DONE transitions: earnings now use `netPrice - platformFee` (includes `urgentFee`) — `backend/src/orders/orders.service.ts`
+- **[feat]** `acceptOrder` balance deduction uses `urgentFee`-inclusive `netPrice` — `backend/src/orders/orders.service.ts`
+- **[feat]** `findAllAdmin()` accepts optional `isUrgent?: boolean` filter — `backend/src/orders/orders.service.ts`
+- **[feat]** Admin `GET /orders/admin/all` accepts `?isUrgent=true|false` query param — `backend/src/orders/orders.controller.ts`
+- **[feat]** `PatchSettingsDto` extended with `urgentFeePercent`, `urgentStartHour`, `urgentEndHour` — `backend/src/app-settings/dto/patch-settings.dto.ts`
+- **[feat]** `AppSettingsService.patch()` persists new urgent settings — `backend/src/app-settings/app-settings.service.ts`
+- **[feat]** `GET /settings` and `PATCH /settings` now return/accept urgent fee config fields — `backend/src/app-settings/app-settings.controller.ts`
+- **[docs]** Updated Order model and commission formula in `docs/BACKEND_API.md`
+
+## 2026-03-29 (Error Tracking backend extension)
+
+- **[feat]** Created `ClientErrorStatus` enum (`NEW | IN_PROGRESS | FIXED | IGNORED`) — `backend/src/client-errors/entities/client-error-status.enum.ts`
+- **[feat]** Extended `ClientError` entity with new nullable fields: `status` (default NEW), `deviceInfo`, `appVersion`, `errorCode`, `count` (default 1), `resolvedAt` — `backend/src/client-errors/entities/client-error.entity.ts`
+- **[feat]** Extended `CreateClientErrorDto` with optional `deviceInfo` (MaxLength 200), `appVersion` (MaxLength 50), `errorCode` (MaxLength 100) — `backend/src/client-errors/dto/create-client-error.dto.ts`
+- **[feat]** Added `findAll()` with paginated filtering by status/appType/userId/dateFrom/dateTo — `backend/src/client-errors/client-errors.service.ts`
+- **[feat]** Added `updateStatus()` — sets `resolvedAt` when status becomes FIXED or IGNORED — `backend/src/client-errors/client-errors.service.ts`
+- **[feat]** Added `getStats()` — returns `{ NEW, IN_PROGRESS, FIXED, IGNORED }` counts — `backend/src/client-errors/client-errors.service.ts`
+- **[feat]** Auto-grouping in `save()` — if `errorCode` provided, increments `count` on matching NEW/IN_PROGRESS entry within 24 h instead of creating duplicate — `backend/src/client-errors/client-errors.service.ts`
+- **[feat]** Added admin endpoints behind `AdminGuard`: `GET /client-errors/admin`, `PATCH /client-errors/admin/:id`, `GET /client-errors/admin/stats` — `backend/src/client-errors/client-errors.controller.ts`
+
 ## 2026-03-29 (LOW bugs BE-L1..L7)
 
 - **[fix]** BE-L1: Added `findOneBasic(id)` without medic JOIN for internal use; all internal callers (cancelOrder, rateOrder, updateStatusByClient, updateStatusByMedic, acceptOrder) now use it — `orders.service.ts`

@@ -29,4 +29,19 @@ export class CreateClientErrorDto {
   @IsOptional()
   @IsString()
   meta?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  deviceInfo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  appVersion?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  errorCode?: string;
 }

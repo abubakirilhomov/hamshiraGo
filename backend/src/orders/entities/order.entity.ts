@@ -62,6 +62,14 @@ export class Order {
   @Column({ type: 'varchar', length: 500, nullable: true })
   cancelReason?: string | null;
 
+  /** Whether the order was marked as urgent (night hours or client-requested) */
+  @Column({ type: 'boolean', default: false })
+  isUrgent!: boolean;
+
+  /** Urgent fee surcharge in UZS (e.g. 50% of priceAmount), 0 if not urgent */
+  @Column({ type: 'decimal', precision: 10, scale: 0, default: 0 })
+  urgentFee!: number;
+
   /** Rating left by client after order completion (1-5), null if not rated yet */
   @Column({ type: 'smallint', nullable: true, default: null })
   clientRating!: number | null;

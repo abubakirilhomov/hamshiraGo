@@ -10,4 +10,22 @@ export class PatchSettingsDto {
   @Min(1)
   @Max(50)
   commissionRate?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(500)
+  urgentFeePercent?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(23)
+  urgentStartHour?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(23)
+  urgentEndHour?: number;
 }

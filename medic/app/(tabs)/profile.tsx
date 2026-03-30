@@ -267,6 +267,13 @@ export default function ProfileScreen() {
           <View style={styles.ratingRow}>
             <FontAwesome name="star" size={14} color="#fde68a" />
             <Text style={styles.ratingText}>{Number(medic.rating).toFixed(1)}</Text>
+            {medic.reviewCount > 0 ? (
+              <Text style={styles.reviewCountText}>
+                ({medic.reviewCount} {t('review.reviews')})
+              </Text>
+            ) : (
+              <Text style={styles.reviewCountText}>{t('review.noReviews')}</Text>
+            )}
           </View>
         )}
       </LinearGradient>
@@ -346,10 +353,11 @@ export default function ProfileScreen() {
           <Text style={styles.statLabel}>{t('profile.statCompleted')}</Text>
         </View>
         {medic.rating != null && (
-          <View style={styles.statCard}>
+          <Pressable style={styles.statCard} onPress={() => router.push('/reviews')}>
             <Text style={styles.statValue}>{Number(medic.rating).toFixed(1)}</Text>
             <Text style={styles.statLabel}>{t('profile.statRating')}</Text>
-          </View>
+            <Text style={styles.statReviewCount}>{medic.reviewCount} {t('review.reviews')}</Text>
+          </Pressable>
         )}
       </View>
 
@@ -527,6 +535,7 @@ const styles = StyleSheet.create({
   phone: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
   ratingText: { fontSize: 15, fontWeight: '700', color: '#fde68a' },
+  reviewCountText: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
   verifyCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -590,6 +599,7 @@ const styles = StyleSheet.create({
   },
   statValue: { fontSize: 20, fontWeight: '700', color: Theme.primary },
   statLabel: { fontSize: 12, color: Theme.textSecondary, marginTop: 2, textAlign: 'center' },
+  statReviewCount: { fontSize: 10, color: Theme.textSecondary, textAlign: 'center', marginTop: 1 },
   balancesRow: {
     flexDirection: 'row',
     gap: 10,

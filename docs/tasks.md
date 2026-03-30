@@ -175,22 +175,32 @@
 - [ ] Backend: `POST /reviews` — клиент оставляет отзыв после DONE
 - [ ] Backend: `GET /reviews/medic/:id` — отзывы медика
 - [ ] Backend: автоматический пересчёт `averageRating` у медика
-- [ ] Mobile/Web: экран оценки после завершения заказа (звёзды + комментарий)
-- [ ] Mobile/Web: отображение рейтинга и отзывов в профиле медика
+- [x] Mobile: экран оценки (звёзды + комментарий) после DONE — `components/RatingModal.tsx`, `hooks/useOrderTracking.ts`
+- [x] Mobile: отображение `clientReview` и `reviewCount` после оценки — `app/order/track.tsx`
+- [x] Medic: `reviewCount` на странице профиля рядом с рейтингом — `app/(tabs)/profile.tsx`
+- [x] Medic: экран «Мои отзывы» со списком отзывов из DONE заказов — `app/reviews.tsx`
+- [ ] Web: экран оценки после завершения заказа (звёзды + комментарий)
+- [ ] Web: отображение рейтинга и отзывов в профиле медика
 
 ### Срочный вызов (extra fee) — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: поле `isUrgent` в заказе + `urgentFee` (наценка)
-- [ ] Backend: логика расчёта — ночь/праздник = автоматическая наценка
-- [ ] Mobile/Web: переключатель «Срочный вызов» при создании заказа с отображением доплаты
-- [ ] Admin: отображение срочных заказов в списке
+- [x] Backend: поле `isUrgent` в заказе + `urgentFee` (наценка)
+- [x] Backend: логика расчёта — ночь/праздник = автоматическая наценка
+- [x] Backend: `urgentFeePercent`, `urgentStartHour`, `urgentEndHour` в AppSettings (PATCH /settings)
+- [x] Admin: фильтр `?isUrgent=true` в GET /orders/admin/all
+- [x] Mobile: переключатель «Срочный вызов» при создании заказа с отображением доплаты — `mobile/app/order/confirm.tsx`
+- [x] Mobile: бейдж «Срочный» в OrderCard и track screen — `mobile/components/OrderCard.tsx`, `mobile/app/order/track.tsx`
+- [x] Medic: баннер срочного заказа в OrderInviteModal — `medic/components/OrderInviteModal.tsx`
+- [x] Medic: бейдж «Срочный» и urgentFee в деталях заказа — `medic/app/order/[id].tsx`
+- [ ] Web: переключатель «Срочный вызов» при создании заказа с отображением доплаты
 
 ### Система трекинга ошибок пользователей (User Support / Error Tracking) — Абубакир (backend) + Диёр (admin/web/mobile)
-- [ ] Backend: сущность `UserError` (userId, userRole [client/medic], errorCode, errorMessage, stackTrace, screen/page, deviceInfo, appVersion, createdAt)
-- [ ] Backend: `POST /errors/report` — клиент/медик автоматически отправляет ошибку при возникновении
-- [ ] Backend: `GET /errors` (admin) — список всех ошибок с фильтрами (по пользователю, дате, типу, статусу)
-- [ ] Backend: `PATCH /errors/:id` (admin) — изменить статус (NEW → IN_PROGRESS → FIXED → IGNORED)
-- [ ] Backend: автоматическая группировка одинаковых ошибок (по errorCode + errorMessage)
-- [ ] Mobile: глобальный error boundary — перехватывает все падения и отправляет на backend с userId, экраном, устройством
+- [x] Backend: расширена сущность `ClientError` — добавлены `status`, `deviceInfo`, `appVersion`, `errorCode`, `count`, `resolvedAt`
+- [x] Backend: `POST /client-errors` — уже существовал; теперь поддерживает новые поля + авто-группировку по errorCode
+- [x] Backend: `GET /client-errors/admin` — список с фильтрами (userId, appType, status, dateFrom, dateTo, pagination)
+- [x] Backend: `PATCH /client-errors/admin/:id` — изменение статуса (NEW → IN_PROGRESS → FIXED → IGNORED)
+- [x] Backend: `GET /client-errors/admin/stats` — счётчики по статусам
+- [x] Backend: автоматическая группировка одинаковых ошибок (по errorCode + appType, окно 24 ч)
+- [x] Mobile: глобальный error boundary — перехватывает все падения и отправляет на backend с userId, экраном, устройством
 - [ ] Web/Web-medic: глобальный error handler — перехватывает ошибки API и JS и отправляет на backend
 - [ ] Admin: новая страница «User Support» — таблица ошибок с колонками: пользователь, ошибка, экран, устройство, дата, статус
 - [ ] Admin: фильтры — по пользователю, по дате, по статусу (новые/в работе/исправлены)

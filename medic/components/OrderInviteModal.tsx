@@ -31,6 +31,8 @@ export interface DispatchInvitePayload {
     serviceTitle: string;
     priceAmount: number;
     discountAmount: number;
+    isUrgent?: boolean;
+    urgentFee?: number;
     location: {
       house: string;
       floor: string | null;
@@ -166,8 +168,10 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
 
   const netPrice = (invite.order.priceAmount ?? 0) - (invite.order.discountAmount ?? 0);
   const isExpired = secondsLeft === 0;
-  const isUrgent = secondsLeft <= 15 && !isExpired;
+  const isCountdownUrgent = secondsLeft <= 15 && !isExpired;
   const canAct = loading === null && !isExpired;
+  const orderIsUrgent = invite.order.isUrgent === true;
+  const orderUrgentFee = invite.order.urgentFee ?? 0;
 
   const loc = invite.order.location;
   const addressParts = loc
@@ -202,9 +206,9 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
     <Modal visible animationType="slide" statusBarTranslucent>
       <View style={styles.container}>
         {/* Top header with countdown */}
-        <View style={[styles.header, isUrgent && styles.headerUrgent, isExpired && styles.headerExpired]}>
+        <View style={[styles.header, isCountdownUrgent && styles.headerUrgent, isExpired && styles.headerExpired]}>
           <View style={styles.timerWrap}>
-            <Text style={[styles.timerNumber, isUrgent && styles.timerNumberUrgent, isExpired && styles.timerNumberExpired]}>
+            <Text style={[styles.timerNumber, isCountdownUrgent && styles.timerNumberUrgent, isExpired && styles.timerNumberExpired]}>
               {secondsLeft}
             </Text>
             <Text style={styles.timerSec}>{t('orders.sec')}</Text>
@@ -220,6 +224,15 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             </Text>
           </View>
         </View>
+
+        {/* Urgent order banner */}
+        {orderIsUrgent && (
+          <View style={styles.urgentBanner}>
+            <Text style={styles.urgentBannerText}>
+              🔴 {t('urgent.badge').toUpperCase()} — {t('urgent.fee')}: +{orderUrgentFee.toLocaleString('ru-RU')} {t('common.sum')}
+            </Text>
+          </View>
+        )}
 
         {/* Order details card */}
         <View style={styles.card}>
@@ -446,6 +459,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 4,
+  },
+
+  // ── Urgent banner ────────────────────────────────────────────────────────────
+  urgentBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#fee2e2',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  urgentBannerText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#dc2626',
+    textAlign: 'center',
   },
 
   // ── Details card ────────────────────────────────────────────────────────────

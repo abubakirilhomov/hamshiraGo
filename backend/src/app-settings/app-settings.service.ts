@@ -33,6 +33,9 @@ export class AppSettingsService {
     const update: Partial<AppSettings> = { id: SINGLETON_ID };
     if (dto.isPaidMode !== undefined) update.isPaidMode = dto.isPaidMode;
     if (dto.commissionRate !== undefined) update.commissionRate = dto.commissionRate;
+    if (dto.urgentFeePercent !== undefined) update.urgentFeePercent = dto.urgentFeePercent;
+    if (dto.urgentStartHour !== undefined) update.urgentStartHour = dto.urgentStartHour;
+    if (dto.urgentEndHour !== undefined) update.urgentEndHour = dto.urgentEndHour;
     await this.repo.upsert(update as AppSettings, ['id']);
     this.cache = null; // invalidate cache
     return this.get();

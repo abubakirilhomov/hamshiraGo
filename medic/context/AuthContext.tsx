@@ -13,6 +13,7 @@ export interface MedicUser {
   name: string;
   experienceYears: number;
   rating: number | null;
+  reviewCount: number;
   balance: number;
   earnings: number;
   isOnline: boolean;

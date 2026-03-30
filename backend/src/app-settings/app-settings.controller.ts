@@ -19,15 +19,27 @@ export class AppSettingsController {
   @Get()
   async getSettings() {
     const s = await this.service.get();
-    return { isPaidMode: s.isPaidMode, commissionRate: s.commissionRate };
+    return {
+      isPaidMode: s.isPaidMode,
+      commissionRate: s.commissionRate,
+      urgentFeePercent: s.urgentFeePercent,
+      urgentStartHour: s.urgentStartHour,
+      urgentEndHour: s.urgentEndHour,
+    };
   }
 
-  /** Admin only — update settings (isPaidMode and/or commissionRate) */
+  /** Admin only — update settings (isPaidMode, commissionRate, and/or urgentFee settings) */
   @Patch()
   @HttpCode(HttpStatus.OK)
   @UseGuards(AdminGuard)
   async patchSettings(@Body() dto: PatchSettingsDto) {
     const s = await this.service.patch(dto);
-    return { isPaidMode: s.isPaidMode, commissionRate: s.commissionRate };
+    return {
+      isPaidMode: s.isPaidMode,
+      commissionRate: s.commissionRate,
+      urgentFeePercent: s.urgentFeePercent,
+      urgentStartHour: s.urgentStartHour,
+      urgentEndHour: s.urgentEndHour,
+    };
   }
 }

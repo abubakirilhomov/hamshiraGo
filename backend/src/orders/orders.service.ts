@@ -113,8 +113,21 @@ export class OrdersService {
       throw new BadRequestException('Discount cannot exceed 20% of the service price');
     }
 
-    const netPrice = service.price - discountAmount;
-    const commissionRate = await this.appSettingsService.getCommissionRate();
+    const appSettings = await this.appSettingsService.get();
+    const commissionRate = appSettings.commissionRate ?? 10;
+
+    // Determine if order is urgent: explicit flag OR current hour is in the night window
+    const nowHour = new Date().getUTCHours() + 5; // Tashkent UTC+5 (simplified, no DST)
+    const normalizedHour = ((nowHour % 24) + 24) % 24;
+    const { urgentStartHour = 22, urgentEndHour = 7, urgentFeePercent = 50 } = appSettings;
+    const isNightHour =
+      urgentStartHour > urgentEndHour
+        ? normalizedHour >= urgentStartHour || normalizedHour < urgentEndHour // wraps midnight
+        : normalizedHour >= urgentStartHour && normalizedHour < urgentEndHour;
+    const isUrgent = dto.isUrgent === true || isNightHour;
+    const urgentFee = isUrgent ? Math.round(service.price * urgentFeePercent / 100) : 0;
+
+    const netPrice = service.price + urgentFee - discountAmount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
     const saved = await this.dataSource.transaction(async (manager) => {
@@ -124,6 +137,8 @@ export class OrdersService {
         serviceTitle: service.title,     // snapshot from catalog
         priceAmount: service.price,      // price locked from catalog, client cannot override
         discountAmount,
+        isUrgent,
+        urgentFee,
         platformFee,
         status: OrderStatus.CREATED,
       });
@@ -272,8 +287,9 @@ export class OrdersService {
         `Client cannot transition from "${order.status}" to "${dto.status}"`,
       );
     }
-    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-    // Credit full netPrice — commission was already deducted from balance at accept-time
+    const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
+    const earnings = netPrice - (order.platformFee ?? 0);
+    // Credit earnings (netPrice minus platformFee) — commission already deducted at accept-time
     await this.dataSource.transaction(async (manager) => {
       const result = await manager.update(
         Order,
@@ -284,7 +300,7 @@ export class OrdersService {
         throw new BadRequestException('Order status has already changed, please refresh');
       }
       if (order.medicId) {
-        await manager.increment(Medic, { id: order.medicId }, 'earnings', netPrice);
+        await manager.increment(Medic, { id: order.medicId }, 'earnings', earnings);
       }
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
@@ -394,7 +410,7 @@ export class OrdersService {
       }
 
       if (paidMode) {
-        const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+        const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
         const fee = Math.round(netPrice * commissionRate / 100);
         const deductResult = await manager
           .createQueryBuilder()
@@ -453,8 +469,9 @@ export class OrdersService {
 
     // DONE: status update + earnings credit in a single transaction
     if (status === OrderStatus.DONE) {
-      const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-      // Credit full netPrice to earnings (commission was already deducted from balance at accept)
+      const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
+      const earnings = netPrice - (order.platformFee ?? 0);
+      // Credit earnings (netPrice minus platformFee) — commission already deducted at accept
       await this.dataSource.transaction(async (manager) => {
         const result = await manager.update(
           Order,
@@ -464,7 +481,7 @@ export class OrdersService {
         if (!result.affected) {
           throw new BadRequestException('Status changed concurrently, please retry');
         }
-        await manager.increment(Medic, { id: medicId }, 'earnings', netPrice);
+        await manager.increment(Medic, { id: medicId }, 'earnings', earnings);
       });
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it
@@ -503,15 +520,18 @@ export class OrdersService {
 
   // ── Admin ─────────────────────────────────────────────────────────────────
 
-  /** All orders with optional status filter — for admin dashboard */
+  /** All orders with optional status/isUrgent filters — for admin dashboard */
   async findAllAdmin(
     page = 1,
     limit = 20,
     status?: OrderStatus,
+    isUrgent?: boolean,
   ): Promise<{ data: Order[]; total: number; page: number; totalPages: number }> {
     const take = Math.min(limit, 100);
     const skip = (page - 1) * take;
-    const where = status ? { status } : {};
+    const where: Record<string, unknown> = {};
+    if (status) where['status'] = status;
+    if (isUrgent !== undefined) where['isUrgent'] = isUrgent;
     const [data, total] = await this.orderRepo.findAndCount({
       where,
       relations: { location: true },

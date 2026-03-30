@@ -218,6 +218,7 @@ export default function TrackOrderScreen() {
   const isDone = order.status === 'DONE';
   const isCanceled = order.status === 'CANCELED';
   const isActive = !isDone && !isCanceled;
+  const urgentFee = order.isUrgent ? (order.urgentFee ?? 0) : 0;
   const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
 
   return (
@@ -235,7 +236,17 @@ export default function TrackOrderScreen() {
             </View>
           )}
         </View>
+        {order.isUrgent && (
+          <View style={styles.urgentBadge}>
+            <Text style={styles.urgentBadgeText}>🔴 {t('urgent.badge')}</Text>
+          </View>
+        )}
         <Text style={styles.priceText}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
+        {order.isUrgent && urgentFee > 0 && (
+          <Text style={styles.urgentFeeText}>
+            {t('urgent.fee')}: +{urgentFee.toLocaleString('ru-RU')} UZS
+          </Text>
+        )}
       </View>
 
       {/* Candidate medic banner (shown during dispatch contacting) */}
@@ -331,6 +342,20 @@ export default function TrackOrderScreen() {
             </View>
             <View style={styles.medicInfo}>
               <Text style={styles.medicName}>{order.medic.name}</Text>
+              {order.medic.rating != null && (
+                <View style={styles.medicRatingRow}>
+                  <FontAwesome name="star" size={13} color={Theme.primary} />
+                  <Text style={styles.medicRatingText}>{Number(order.medic.rating).toFixed(1)}</Text>
+                  {order.medic.reviewCount != null && order.medic.reviewCount > 0 && (
+                    <Text style={styles.medicReviewCount}>
+                      ({order.medic.reviewCount} {t('review.reviews')})
+                    </Text>
+                  )}
+                  {order.medic.reviewCount === 0 && (
+                    <Text style={styles.medicReviewCount}>{t('review.noReviews')}</Text>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -453,6 +478,9 @@ export default function TrackOrderScreen() {
               />
             ))}
           </View>
+          {!!order.clientReview && (
+            <Text style={styles.clientReviewText}>"{order.clientReview}"</Text>
+          )}
         </View>
       )}
 

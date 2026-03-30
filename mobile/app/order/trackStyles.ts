@@ -79,6 +79,27 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     color: Theme.primary,
   },
+  urgentBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  urgentBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
+  urgentFeeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#dc2626',
+    marginTop: 4,
+  },
 
   // Section card
   card: {
@@ -400,5 +421,28 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 8,
+  },
+  clientReviewText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: Theme.textSecondary,
+    marginTop: 10,
+    lineHeight: 20,
+  },
+
+  // Medic rating row
+  medicRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  medicRatingText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.primary,
+  },
+  medicReviewCount: {
+    fontSize: 12,
+    color: Theme.textSecondary,
   },
 });

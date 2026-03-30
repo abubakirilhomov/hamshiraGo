@@ -165,11 +165,13 @@ export class OrdersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
+    @Query('isUrgent') isUrgent?: string,
   ) {
     return this.ordersService.findAllAdmin(
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
       status as OrderStatus | undefined,
+      isUrgent !== undefined ? isUrgent === 'true' : undefined,
     );
   }
 

@@ -212,8 +212,9 @@ JWT содержит поля `sub` (id пользователя) и `role` (`cl
 }
 ```
 
-> Цена берётся из каталога. Клиент не может передать произвольную сумму.  
-> `platformFee` = 10% от чистой цены (`priceAmount - discountAmount`).
+> Цена берётся из каталога. Клиент не может передать произвольную сумму.
+> `urgentFee` — автоматически рассчитывается если `isUrgent: true` или ночной час.
+> `platformFee` = `commissionRate`% от чистой цены (`priceAmount + urgentFee - discountAmount`).
 
 **GET /orders?page=1&limit=20**
 ```json
@@ -272,7 +273,7 @@ ASSIGNED → ACCEPTED → ON_THE_WAY → ARRIVED → SERVICE_STARTED → DONE
 ```
 
 При переходе в `DONE` автоматически:
-- Рассчитывается заработок: `priceAmount - discountAmount - platformFee`
+- Рассчитывается заработок: `priceAmount + urgentFee - discountAmount - platformFee`
 - Сумма зачисляется на баланс медика
 - Клиент получает push-уведомление
 
@@ -526,7 +527,9 @@ openssl rand -hex 32
   serviceTitle: string | null; // Снимок названия на момент создания
   priceAmount: number | null;  // Цена из каталога
   discountAmount: number;      // Скидка (default: 0)
-  platformFee: number;         // 10% комиссия платформы
+  isUrgent: boolean;           // Срочный вызов (авто или явный)
+  urgentFee: number;           // Доплата за срочность в UZS (default: 0)
+  platformFee: number;         // Комиссия платформы (% от netPrice)
   status: OrderStatus;
   clientRating: number | null; // 1–5, заполняется после DONE
   location: OrderLocation;
@@ -579,10 +582,13 @@ openssl rand -hex 32
 При создании заказа рассчитывается автоматически:
 
 ```
-netPrice   = priceAmount - discountAmount
-platformFee = round(netPrice × 0.10)
+urgentFee   = isUrgent ? round(priceAmount × urgentFeePercent / 100) : 0
+netPrice    = priceAmount + urgentFee - discountAmount
+platformFee = round(netPrice × commissionRate / 100)
 medicEarns  = netPrice - platformFee
 ```
+
+`isUrgent` устанавливается в `true` если клиент передал `isUrgent: true` ИЛИ текущий час входит в ночное окно (`urgentStartHour`–`urgentEndHour`, по умолчанию 22:00–07:00 UTC+5).
 
 При завершении заказа (`DONE`) сумма `medicEarns` зачисляется на баланс медика.
 

@@ -25,6 +25,8 @@ export interface OrderDetail {
   priceAmount: number;
   discountAmount: number;
   platformFee: number;
+  isUrgent?: boolean;
+  urgentFee?: number;
   status: OrderStatus;
   location: OrderLocation | null;
   created_at: string;

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,12 @@ interface CatalogService {
   category: string | null;
 }
 
+interface AppSettings {
+  urgentFeePercent: number;
+  urgentStartHour: number;
+  urgentEndHour: number;
+}
+
 export default function OrderConfirmScreen() {
   const router = useRouter();
   const { token } = useAuth();
@@ -29,6 +35,8 @@ export default function OrderConfirmScreen() {
   const [service, setService] = useState<CatalogService | null>(null);
   const [loadingService, setLoadingService] = useState(true);
   const [isFirstOrder, setIsFirstOrder] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [urgentFeePercent, setUrgentFeePercent] = useState(50);
 
   const params = useLocalSearchParams<{
     serviceId: string;
@@ -54,6 +62,10 @@ export default function OrderConfirmScreen() {
     apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined })
       .then((resp) => setIsFirstOrder((resp?.total ?? 1) === 0))
       .catch(() => {}); // on failure, isFirstOrder stays false — no discount shown
+
+    apiFetch<AppSettings>('/settings')
+      .then((s) => setUrgentFeePercent(s?.urgentFeePercent ?? 50))
+      .catch(() => {}); // on failure, keep default 50%
   }, [params.serviceId, token]);
 
   const basePrice = service?.price ?? 0;
@@ -61,7 +73,8 @@ export default function OrderConfirmScreen() {
   // Client computes it for display purposes only; the backend must
   // independently verify eligibility and cap the amount.
   const discountAmount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
-  const finalPrice = basePrice - discountAmount;
+  const urgentFee = isUrgent ? Math.round(basePrice * urgentFeePercent / 100) : 0;
+  const finalPrice = basePrice + urgentFee - discountAmount;
 
   const handleSubmit = async () => {
     if (!service) return;
@@ -73,6 +86,7 @@ export default function OrderConfirmScreen() {
         body: JSON.stringify({
           serviceId: service.id,
           ...(discountAmount > 0 ? { discountAmount } : {}),
+          ...(isUrgent ? { isUrgent: true } : {}),
           location: {
             latitude: parseFloat(params.lat),
             longitude: parseFloat(params.lng),
@@ -141,6 +155,27 @@ export default function OrderConfirmScreen() {
         )}
       </View>
 
+      {/* Urgent toggle */}
+      <View style={styles.urgentCard}>
+        <View style={styles.urgentRow}>
+          <View style={styles.urgentLabelWrap}>
+            <Text style={styles.urgentLabel}>{t('urgent.label')}</Text>
+            <Text style={styles.urgentDescription}>{t('urgent.description')}</Text>
+          </View>
+          <Switch
+            value={isUrgent}
+            onValueChange={setIsUrgent}
+            trackColor={{ false: Theme.border, true: `${Theme.error}88` }}
+            thumbColor={isUrgent ? Theme.error : Theme.textSecondary}
+          />
+        </View>
+        {isUrgent && (
+          <Text style={styles.urgentFeeHint}>
+            {t('urgent.fee')}: +{urgentFee.toLocaleString('ru-RU')} {t('common.sum')} ({urgentFeePercent}%)
+          </Text>
+        )}
+      </View>
+
       <View style={styles.priceBlock}>
         {isFirstOrder && (
           <View style={styles.discountBadge}>
@@ -150,13 +185,19 @@ export default function OrderConfirmScreen() {
             </Text>
           </View>
         )}
-        {isFirstOrder && (
+        {(isFirstOrder || isUrgent) && (
           <View style={styles.row}>
             <Text style={styles.rowLabel}>{t('confirm.basePrice')}</Text>
             <Text style={styles.rowValue}>{basePrice.toLocaleString('ru-RU')} UZS</Text>
           </View>
         )}
-        <View style={[styles.finalRow, !isFirstOrder && { marginTop: 0, paddingTop: 0, borderTopWidth: 0 }]}>
+        {isUrgent && (
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>{t('urgent.fee')}</Text>
+            <Text style={[styles.rowValue, { color: Theme.error }]}>+{urgentFee.toLocaleString('ru-RU')} UZS</Text>
+          </View>
+        )}
+        <View style={[styles.finalRow, !isFirstOrder && !isUrgent && { marginTop: 0, paddingTop: 0, borderTopWidth: 0 }]}>
           <Text style={styles.finalLabel}>{t('confirm.total')}</Text>
           <Text style={styles.finalPrice}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
         </View>
@@ -288,6 +329,39 @@ const styles = StyleSheet.create({
   },
   finalLabel: { fontSize: 16, fontWeight: '700', color: Theme.text },
   finalPrice: { fontSize: 18, fontWeight: '700', color: Theme.primary },
+  urgentCard: {
+    backgroundColor: Theme.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Theme.border,
+  },
+  urgentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  urgentLabelWrap: {
+    flex: 1,
+  },
+  urgentLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Theme.text,
+  },
+  urgentDescription: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
+  urgentFeeHint: {
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.error,
+  },
   buttons: { gap: 12 },
   button: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   buttonPressed: { opacity: 0.9 },
