@@ -2,6 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import * as nodeCrypto from 'crypto';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,6 +11,12 @@ import { seedServices } from './services/services.seed';
 import { ALLOWED_ORIGINS } from './common/cors.config';
 
 async function bootstrap() {
+  // Node 18 compatibility: @nestjs/schedule expects global `crypto.randomUUID()`.
+  const g = globalThis as any;
+  if (!g.crypto?.randomUUID) {
+    g.crypto = nodeCrypto;
+  }
+
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
 
