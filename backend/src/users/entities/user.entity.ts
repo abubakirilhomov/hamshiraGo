@@ -32,6 +32,19 @@ export class User {
   @Column({ type: 'boolean', default: false, nullable: true })
   isBlocked!: boolean;
 
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 10, nullable: true, default: null })
+  referralCode!: string | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true, default: null })
+  referredBy!: string | null;
+
+  @Column({ type: 'boolean', default: false, nullable: true })
+  referralBonusUsed!: boolean;
+
+  @Column({ type: 'int', default: 0, nullable: true })
+  pendingReferralDiscount!: number;
+
   @CreateDateColumn()
   created_at!: Date;
 

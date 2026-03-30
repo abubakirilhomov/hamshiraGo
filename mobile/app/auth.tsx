@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Text, View } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/constants/api';
 
 type Mode = 'login' | 'register';
 
@@ -26,6 +27,9 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralExpanded, setReferralExpanded] = useState(false);
+  const [referralStatus, setReferralStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
 
   const handleSubmit = async () => {
     setError(null);
@@ -42,7 +46,7 @@ export default function AuthScreen() {
       if (mode === 'login') {
         await login(phone.trim(), password);
       } else {
-        await register(phone.trim(), password, name.trim() || undefined);
+        await register(phone.trim(), password, name.trim() || undefined, referralCode.trim() || undefined);
       }
     } catch (e: unknown) {
       const raw = (e instanceof Error ? e.message : '').toLowerCase();
@@ -63,6 +67,20 @@ export default function AuthScreen() {
   const toggleMode = () => {
     setMode((m) => (m === 'login' ? 'register' : 'login'));
     setError(null);
+    setReferralCode('');
+    setReferralStatus('idle');
+    setReferralExpanded(false);
+  };
+
+  const handleReferralBlur = async () => {
+    const code = referralCode.trim();
+    if (!code) { setReferralStatus('idle'); return; }
+    try {
+      await apiFetch(`/referrals/validate/${encodeURIComponent(code)}`);
+      setReferralStatus('valid');
+    } catch {
+      setReferralStatus('invalid');
+    }
   };
 
   return (
@@ -146,6 +164,35 @@ export default function AuthScreen() {
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
           />
+
+          {mode === 'register' && (
+            <>
+              <Pressable style={styles.referralToggle} onPress={() => setReferralExpanded((v) => !v)}>
+                <Text style={styles.referralToggleText}>{t('referral.hasCode')}</Text>
+                <FontAwesome name={referralExpanded ? 'chevron-up' : 'chevron-down'} size={12} color={Theme.textSecondary} />
+              </Pressable>
+              {referralExpanded && (
+                <>
+                  <TextInput
+                    style={[styles.input, referralStatus === 'invalid' && { borderColor: Theme.error }, referralStatus === 'valid' && { borderColor: '#16a34a' }]}
+                    value={referralCode}
+                    onChangeText={(v) => { setReferralCode(v.toUpperCase()); setReferralStatus('idle'); }}
+                    onBlur={handleReferralBlur}
+                    placeholder="XXXXXXXX"
+                    placeholderTextColor={Theme.textSecondary}
+                    autoCapitalize="characters"
+                    maxLength={16}
+                  />
+                  {referralStatus === 'valid' && (
+                    <Text style={[styles.referralHint, { color: '#16a34a' }]}>{t('referral.codeValid')}</Text>
+                  )}
+                  {referralStatus === 'invalid' && (
+                    <Text style={[styles.referralHint, { color: Theme.error }]}>{t('referral.codeInvalid')}</Text>
+                  )}
+                </>
+              )}
+            </>
+          )}
 
           {error && (
             <View style={styles.errorBox}>
@@ -306,5 +353,21 @@ const styles = StyleSheet.create({
   },
   switchTextBold: {
     fontWeight: '600',
+  },
+  referralToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    marginBottom: 2,
+  },
+  referralToggleText: {
+    fontSize: 13,
+    color: Theme.textSecondary,
+  },
+  referralHint: {
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
   },
 });

@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Order } from './entities/order.entity';
 import { OrderLocation } from './entities/order-location.entity';
 import { DispatchAttempt } from './entities/dispatch-attempt.entity';
+import { Referral } from '../referrals/entities/referral.entity';
 import { OrdersService } from './orders.service';
 import { DispatchService } from './dispatch.service';
 import { OrdersController } from './orders.controller';
@@ -13,10 +14,11 @@ import { MedicsModule } from '../medics/medics.module';
 import { UsersModule } from '../users/users.module';
 import { ServicesModule } from '../services/services.module';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
+import { FavoritesModule } from '../favorites/favorites.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderLocation, DispatchAttempt]),
+    TypeOrmModule.forFeature([Order, OrderLocation, DispatchAttempt, Referral]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -30,6 +32,7 @@ import { AppSettingsModule } from '../app-settings/app-settings.module';
     UsersModule,
     ServicesModule,
     AppSettingsModule,
+    FavoritesModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, DispatchService],

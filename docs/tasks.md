@@ -237,26 +237,26 @@
 ## 🚀 V1.1 — месяц 1–3 после запуска
 
 ### Push-напоминания по курсу лечения — Абубакир (backend)
-- [ ] Backend: сущность `TreatmentCourse` (clientId, название, количество процедур, интервал, следующая дата)
-- [ ] Backend: cron-задача — отправка push/Telegram за 2 часа до следующей процедуры
-- [ ] Mobile/Web: экран «Мои курсы лечения» с расписанием
+- [x] Backend: сущность `TreatmentCourse` (clientId, название, количество процедур, интервал, следующая дата) — `backend/src/treatment-courses/`
+- [x] Backend: cron-задача — отправка push за 2 часа до следующей процедуры — `treatment-courses.service.ts`
+- [x] Mobile: экран «Мои курсы лечения» с расписанием — `mobile/app/courses.tsx`
 
 ### Реферальная программа — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: генерация реферального кода для каждого клиента
-- [ ] Backend: логика начисления бонусов — оба получают скидку на следующий заказ
-- [ ] Backend: `GET /referrals/my` — список приглашённых и бонусов
-- [ ] Mobile/Web: экран «Пригласи друга» с кодом/ссылкой + шаринг
+- [x] Backend: генерация реферального кода для каждого клиента — `auth.service.ts`
+- [x] Backend: логика начисления бонусов — оба получают скидку на следующий заказ — `orders.service.ts`
+- [x] Backend: `GET /referrals/my` — список приглашённых и бонусов — `backend/src/referrals/`
+- [x] Mobile: экран «Пригласи друга» с кодом/ссылкой + шаринг — `mobile/app/referral.tsx`
 
 ### Персональный медик — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: поле `favoriteMedicId` у клиента или таблица `favorite_medics`
-- [ ] Backend: при создании заказа — приоритет закреплённому медику
-- [ ] Mobile/Web: кнопка «Закрепить медика» в профиле медика после заказа
+- [x] Backend: таблица `favorite_medics` — `backend/src/favorites/`
+- [x] Backend: при создании заказа — приоритет избранному медику — `backend/src/orders/dispatch.service.ts`
+- [x] Mobile: кнопка «Закрепить медика» на track screen (DONE), экран «Мои медики» `/favorites` — `mobile/app/order/track.tsx`, `mobile/app/favorites.tsx`
 
 ### Медкарта в приложении — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: сущность `MedicalCard` (clientId, аллергии, хронические заболевания, группа крови, заметки)
-- [ ] Backend: CRUD эндпоинты `/medical-card`
-- [ ] Mobile/Web: экран «Моя медкарта» — заполнение и просмотр
-- [ ] Медик видит медкарту клиента при принятии заказа
+- [x] Backend: сущность `MedicalCard` — `backend/src/medical-card/`
+- [x] Backend: эндпоинты `GET /medical-card`, `PUT /medical-card`, `GET /medical-card/client/:clientId`
+- [x] Mobile: экран «Моя медкарта» `/medical-card` — заполнение и просмотр — `mobile/app/medical-card.tsx`
+- [x] Медик: просмотр медкарты клиента в деталях заказа — `medic/app/order/[id].tsx`
 
 ---
 

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import AppModal from '@/components/AppModal';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
@@ -120,6 +121,31 @@ export default function ProfileScreen() {
             </Pressable>
           ))}
         </View>
+      </View>
+
+      {/* Quick links */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t('profile.features')}</Text>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/referral')}>
+          <FontAwesome name="gift" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('referral.title')} 🎁</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/courses')}>
+          <FontAwesome name="calendar-check-o" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('courses.title')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/favorites')}>
+          <FontAwesome name="heart" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('favorites.myMedics')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/medical-card')}>
+          <FontAwesome name="medkit" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('medcard.title')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
       </View>
 
       {/* App info */}
@@ -258,6 +284,19 @@ const styles = StyleSheet.create({
   langBtnTextActive: {
     color: Theme.primary,
     fontWeight: '700',
+  },
+
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  linkIcon: { width: 20, textAlign: 'center', marginRight: 12 },
+  linkText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: Theme.text,
   },
 
   logoutBtn: {

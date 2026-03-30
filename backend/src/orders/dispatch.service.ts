@@ -15,6 +15,7 @@ import { PushNotificationsService } from '../realtime/push-notifications.service
 import { TelegramService } from '../common/telegram.service';
 import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
+import { FavoritesService } from '../favorites/favorites.service';
 import { Medic } from '../medics/entities/medic.entity';
 import { haversineKm } from '../utils/geo';
 
@@ -38,6 +39,7 @@ export class DispatchService implements OnApplicationBootstrap {
     private telegramService: TelegramService,
     private medicsService: MedicsService,
     private usersService: UsersService,
+    private favoritesService: FavoritesService,
     private configService: ConfigService,
   ) {}
 
@@ -103,7 +105,7 @@ export class DispatchService implements OnApplicationBootstrap {
       return;
     }
 
-    const medic = await this.selectBestMedic(order, excludedIds);
+    const medic = await this.selectBestMedic(order, excludedIds, order.clientId);
     if (!medic) {
       await this.handleNoMedics(order, excludedIds.length);
       return;
@@ -302,7 +304,7 @@ export class DispatchService implements OnApplicationBootstrap {
     }
   }
 
-  private async selectBestMedic(order: Order, excludedIds: string[]): Promise<Medic | null> {
+  private async selectBestMedic(order: Order, excludedIds: string[], clientId: string): Promise<Medic | null> {
     const candidates = await this.medicsService.findCandidatesForDispatch(excludedIds);
     if (!candidates.length) return null;
 
@@ -310,6 +312,26 @@ export class DispatchService implements OnApplicationBootstrap {
       order.location?.latitude != null ? Number(order.location.latitude) : null;
     const lng =
       order.location?.longitude != null ? Number(order.location.longitude) : null;
+
+    // Check if client has a favorite medic among candidates
+    const favoriteMedicId = await this.favoritesService.findActiveFavoriteMedicId(clientId);
+    if (favoriteMedicId) {
+      const favCandidate = candidates.find((m) => m.id === favoriteMedicId);
+      if (favCandidate) {
+        // Additional radius check for favorite medic
+        if (lat != null && lng != null) {
+          const dist = haversineKm(lat, lng, Number(favCandidate.latitude!), Number(favCandidate.longitude!));
+          if (dist <= this.DISPATCH_RADIUS_KM) {
+            this.logger.log(`Dispatch: prioritizing favorite medic ${favoriteMedicId} for order ${order.id}`);
+            return favCandidate;
+          }
+        } else {
+          // No location — favorite takes priority regardless
+          this.logger.log(`Dispatch: prioritizing favorite medic ${favoriteMedicId} for order ${order.id} (no location)`);
+          return favCandidate;
+        }
+      }
+    }
 
     if (lat == null || lng == null) {
       // No order location — pick best by rating then reviews

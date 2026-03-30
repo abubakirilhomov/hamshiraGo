@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
@@ -16,6 +17,10 @@ import { PaymentsModule } from './payments/payments.module';
 import { ClientErrorsModule } from './client-errors/client-errors.module';
 import { AppSettingsModule } from './app-settings/app-settings.module';
 import { TelegramBotModule } from './telegram/telegram-bot.module';
+import { FavoritesModule } from './favorites/favorites.module';
+import { MedicalCardModule } from './medical-card/medical-card.module';
+import { ReferralsModule } from './referrals/referrals.module';
+import { TreatmentCoursesModule } from './treatment-courses/treatment-courses.module';
 
 @Module({
   imports: [
@@ -48,6 +53,7 @@ import { TelegramBotModule } from './telegram/telegram-bot.module';
         },
       },
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'default',
@@ -79,6 +85,10 @@ import { TelegramBotModule } from './telegram/telegram-bot.module';
     ClientErrorsModule,
     AppSettingsModule,
     TelegramBotModule,
+    FavoritesModule,
+    MedicalCardModule,
+    ReferralsModule,
+    TreatmentCoursesModule,
   ],
   controllers: [AppController],
   providers: [

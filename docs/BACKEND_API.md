@@ -17,6 +17,8 @@
 8. [Admin endpoints](#8-admin-endpoints)
 9. [Переменные окружения](#9-переменные-окружения)
 10. [Модели данных](#10-модели-данных)
+11. [Избранные медики (Favorites)](#11-избранные-медики-favorites)
+12. [Медкарта (MedicalCard)](#12-медкарта-medicalcard)
 
 ---
 
@@ -675,4 +677,192 @@ medicEarns  = netPrice - platformFee
 
 ---
 
-*Последнее обновление: февраль 2026*
+---
+
+## 11. Избранные медики (Favorites)
+
+Все эндпоинты требуют `JwtAuthGuard` (роль `client`).
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `POST` | `/favorites/:medicId` | Добавить медика в избранное |
+| `DELETE` | `/favorites/:medicId` | Удалить медика из избранного |
+| `GET` | `/favorites` | Список избранных медиков |
+
+**POST /favorites/:medicId**
+```json
+// Response 201
+{ "success": true }
+```
+Повторный вызов — no-op (не возвращает ошибку).
+
+**DELETE /favorites/:medicId**
+```json
+// Response 200
+{ "success": true }
+```
+
+**GET /favorites**
+```json
+// Response 200
+[
+  {
+    "id": "uuid",
+    "medicId": "uuid",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "medic": {
+      "id": "uuid",
+      "name": "Азиза Каримова",
+      "phone": "+998901234567",
+      "rating": 4.9,
+      "profilePhotoUrl": "https://res.cloudinary.com/..."
+    }
+  }
+]
+```
+
+**Приоритет при диспатче:** При создании заказа система проверяет, есть ли у клиента избранный медик, который онлайн, верифицирован, не заблокирован и находится в радиусе диспатча. Если да — он получает приглашение первым.
+
+---
+
+## 12. Медкарта (MedicalCard)
+
+**Клиент (JwtAuthGuard):**
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/medical-card` | Получить свою медкарту |
+| `PUT` | `/medical-card` | Создать или обновить медкарту |
+
+**GET /medical-card**
+```json
+// Response 200 (null если карта не создана)
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "bloodType": "A+",
+  "allergies": "Пенициллин, пыль",
+  "chronicDiseases": "Гипертония",
+  "notes": "Принимает метформин",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}
+```
+
+**PUT /medical-card** — все поля опциональны
+```json
+// Request
+{
+  "bloodType": "A+",
+  "allergies": "Пенициллин",
+  "chronicDiseases": "Гипертония",
+  "notes": "Принимает метформин"
+}
+// Response 200 — обновлённая карта
+```
+
+**Медик (MedicAuthGuard):**
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/medical-card/client/:clientId` | Просмотр медкарты клиента |
+
+Медик может получить карту только если он назначен на активный заказ для этого клиента (статус `ASSIGNED`, `ACCEPTED`, `ON_THE_WAY`, `ARRIVED`, `SERVICE_STARTED`). Иначе — `403 Forbidden`.
+
+---
+
+## 13. Реферальная программа (Referrals)
+
+### Регистрация с реферальным кодом
+
+**POST /auth/register** теперь принимает необязательное поле `referredByCode`:
+```json
+// Request
+{
+  "phone": "+998901234567",
+  "password": "secret123",
+  "name": "Алишер",
+  "referredByCode": "AB12CD34"
+}
+
+// Response 201
+{
+  "access_token": "eyJ...",
+  "user": { "id": "uuid", "phone": "+998901234567", "name": "Алишер", "referralCode": "XY98ZW56" }
+}
+```
+
+- При регистрации каждому клиенту автоматически генерируется уникальный `referralCode` (8 символов, upper-case alphanumeric).
+- Если передан `referredByCode`, создаётся запись в таблице `referrals`.
+- После первого завершённого заказа (DONE) оба пользователя получают по 10 000 UZS на следующий заказ (`pendingReferralDiscount`).
+- Скидка применяется автоматически при создании следующего заказа и сбрасывается в 0.
+
+### Endpoints
+
+| Метод | URL | Auth | Описание |
+|-------|-----|------|----------|
+| `GET` | `/referrals/my` | JwtAuthGuard (client) | Мой реферальный код, статистика и pending скидка |
+| `GET` | `/referrals/validate/:code` | Public | Проверить, существует ли реферальный код |
+
+**GET /referrals/my**
+```json
+// Response 200
+{
+  "referralCode": "AB12CD34",
+  "referredCount": 3,
+  "bonusPaidCount": 1,
+  "pendingReferralDiscount": 10000
+}
+```
+
+**GET /referrals/validate/:code**
+```json
+// Response 200
+{ "valid": true }
+```
+
+---
+
+## 14. Курсы лечения (TreatmentCourses)
+
+Позволяют клиенту создать расписание повторяющихся процедур с push-напоминаниями.
+
+| Метод | URL | Auth | Описание |
+|-------|-----|------|----------|
+| `POST` | `/treatment-courses` | JwtAuthGuard (client) | Создать курс |
+| `GET` | `/treatment-courses/my` | JwtAuthGuard (client) | Мои курсы |
+| `PATCH` | `/treatment-courses/:id` | JwtAuthGuard (client) | Обновить курс |
+| `DELETE` | `/treatment-courses/:id` | JwtAuthGuard (client) | Удалить курс |
+
+**POST /treatment-courses**
+```json
+// Request
+{
+  "title": "Курс инъекций витамина B12",
+  "serviceId": "uuid",
+  "totalProcedures": 10,
+  "intervalDays": 2,
+  "nextDate": "2026-04-01T09:00:00.000Z"
+}
+
+// Response 201 — TreatmentCourse entity
+```
+
+**PATCH /treatment-courses/:id**
+```json
+// Отметить процедуру выполненной (автоматически сдвигает nextDate на intervalDays вперёд)
+{ "markComplete": true }
+
+// Поставить на паузу
+{ "status": "PAUSED" }
+
+// Обновить расписание
+{ "nextDate": "2026-04-05T10:00:00.000Z", "intervalDays": 3 }
+```
+
+**Статусы курса:** `ACTIVE` | `COMPLETED` | `PAUSED`
+
+**Cron-напоминания:** каждый час сервис проверяет курсы с `status=ACTIVE` и `nextDate <= now + 2 hours`. Если напоминание ещё не отправлено — шлёт push-уведомление клиенту.
+
+---
+
+*Последнее обновление: март 2026*

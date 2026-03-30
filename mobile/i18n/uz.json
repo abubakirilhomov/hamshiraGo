@@ -53,7 +53,8 @@
     "logout": "Chiqish",
     "logoutConfirmTitle": "Chiqasizmi?",
     "logoutConfirmMessage": "Hisobdan chiqasiz.",
-    "cancel": "Bekor qilish"
+    "cancel": "Bekor qilish",
+    "features": "Imkoniyatlar"
   },
   "language": {
     "title": "Язык / Til",
@@ -183,5 +184,53 @@
     "save": "Saqlash",
     "back": "Orqaga",
     "sum": "so'm"
+  },
+  "favorites": {
+    "myMedics": "Mening mediklarim",
+    "add": "Medikni mahkamlash",
+    "remove": "Mahkamlashni bekor qilish",
+    "empty": "Mahkam mediklar yo'q",
+    "added": "Medik mahkamlandi"
+  },
+  "medcard": {
+    "title": "Mening tibbiy kartam",
+    "bloodType": "Qon guruhi",
+    "allergies": "Allergiyalar",
+    "chronicDiseases": "Surunkali kasalliklar",
+    "notes": "Izohlar",
+    "save": "Saqlash",
+    "saved": "Tibbiy karta saqlandi"
+  },
+  "referral": {
+    "title": "Do'st taklif qiling",
+    "yourCode": "Sizning kodingiz",
+    "share": "Ulashish",
+    "copy": "Nusxalash",
+    "copied": "Nusxalandi!",
+    "stats": "Do'stlar taklif qilindi",
+    "bonusPaid": "Bonuslar to'landi",
+    "bonus": "Bonus: har bir do'st uchun 10 000 so'm chegirma",
+    "hasCode": "Referal kodingiz bormi?",
+    "codeInvalid": "Referal kod topilmadi",
+    "codeValid": "Kod qabul qilindi"
+  },
+  "courses": {
+    "title": "Davolash kurslari",
+    "create": "Kurs yaratish",
+    "procedures": "protsedura",
+    "nextDate": "Keyingi tashrif",
+    "complete": "Bajarildi deb belgilash",
+    "delete": "Kursni o'chirish",
+    "createPrompt": "Davolash kursi yaratmoqchimisiz?",
+    "empty": "Faol kurslar yo'q",
+    "statusActive": "Faol",
+    "statusDone": "Tugallandi",
+    "statusCanceled": "Bekor qilindi",
+    "fillRequired": "Majburiy maydonlarni to'ldiring",
+    "fieldTitle": "Kurs nomi",
+    "fieldTitlePlaceholder": "Masalan: Glukoza tomchilari",
+    "fieldTotal": "Protseduralar soni",
+    "fieldInterval": "Interval (kun)",
+    "fieldNextDate": "Keyingi tashrif (ixtiyoriy)"
   }
 }

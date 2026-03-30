@@ -22,6 +22,7 @@ export interface OrderDetail {
   id: string;
   serviceTitle: string;
   serviceId: string;
+  clientId?: string;
   priceAmount: number;
   discountAmount: number;
   platformFee: number;

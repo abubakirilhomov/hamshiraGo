@@ -70,6 +70,10 @@ export default function TrackOrderScreen() {
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoritesChecked, setFavoritesChecked] = useState(false);
+  const coursePromptShownRef = useRef(false);
 
   const {
     order,
@@ -168,6 +172,32 @@ export default function TrackOrderScreen() {
       .catch(() => {});
   }, [order?.status, orderId, token]);
 
+  // ── Check if medic is already favorited (when DONE) ──────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'DONE' || !order.medic || !token || favoritesChecked) return;
+    setFavoritesChecked(true);
+    apiFetch<Array<{ medicId: string }>>('/favorites', { token })
+      .then((list) => {
+        const medicId = order.medic!.id;
+        setIsFavorite(list.some((f) => f.medicId === medicId));
+      })
+      .catch(() => {});
+  }, [order?.status, order?.medic, token, favoritesChecked]);
+
+  // ── Course prompt (when DONE, once) ──────────────────────────────────────────
+  useEffect(() => {
+    if (order?.status !== 'DONE' || coursePromptShownRef.current) return;
+    coursePromptShownRef.current = true;
+    Alert.alert(
+      t('courses.title'),
+      t('courses.createPrompt'),
+      [
+        { text: t('profile.cancel'), style: 'cancel' },
+        { text: t('courses.create'), onPress: () => router.push('/courses') },
+      ],
+    );
+  }, [order?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Pay handler ───────────────────────────────────────────────────────────────
   const handlePay = async () => {
     try {
@@ -181,6 +211,27 @@ export default function TrackOrderScreen() {
       ]);
     } catch {
       Alert.alert(t('payment.errorFetch'));
+    }
+  };
+
+  // ── Favorite toggle ────────────────────────────────────────────────────────
+  const handleFavoriteToggle = async () => {
+    if (!order?.medic || favoriteLoading || !token) return;
+    const medicId = order.medic.id;
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await apiFetch(`/favorites/${medicId}`, { method: 'DELETE', token });
+        setIsFavorite(false);
+      } else {
+        await apiFetch(`/favorites/${medicId}`, { method: 'POST', token });
+        setIsFavorite(true);
+        Alert.alert(t('favorites.added'));
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -488,6 +539,19 @@ export default function TrackOrderScreen() {
       {isActive && (order.status === 'CREATED' || order.status === 'ASSIGNED') && (
         <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]} onPress={() => setCancelModal(true)}>
           <Text style={styles.cancelBtnText}>{t('track.cancelOrder')}</Text>
+        </Pressable>
+      )}
+
+      {isDone && !mustRate && !!order.medic && (
+        <Pressable
+          style={({ pressed }) => [styles.favoriteBtn, isFavorite && styles.favoriteBtnActive, pressed && { opacity: 0.75 }]}
+          onPress={handleFavoriteToggle}
+          disabled={favoriteLoading}
+        >
+          <FontAwesome name={isFavorite ? 'heart' : 'heart-o'} size={16} color={isFavorite ? Theme.error : Theme.primary} />
+          <Text style={[styles.favoriteBtnText, isFavorite && { color: Theme.error }]}>
+            {isFavorite ? t('favorites.remove') : t('favorites.add')}
+          </Text>
         </Pressable>
       )}
 

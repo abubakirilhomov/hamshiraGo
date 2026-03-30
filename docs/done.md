@@ -1,5 +1,64 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-28 (Favorites + MedicalCard UI — mobile client)
+
+- **[feat]** Добавлена кнопка "Закрепить медика / Открепить" на экране трекинга заказа (статус DONE, если есть медик); загружает список favorites при DONE и проверяет isFavorite — `mobile/app/order/track.tsx`, `mobile/app/order/trackStyles.ts`
+- **[feat]** Создан экран `app/favorites.tsx` — список избранных медиков (фото, имя, рейтинг, телефон), empty state — `mobile/app/favorites.tsx`
+- **[feat]** Создан экран `app/medical-card.tsx` — форма медкарты (bloodType, allergies, chronicDiseases, notes), GET/PUT /medical-card — `mobile/app/medical-card.tsx`
+- **[feat]** Добавлены ссылки "Мои медики" и "Медкарта" в профиль клиента (раздел Quick links) — `mobile/app/(tabs)/profile.tsx`
+- **[i18n]** Ключи `favorites.*` и `medcard.*` уже присутствовали в `mobile/i18n/ru.json` и `mobile/i18n/uz.json`
+
+## 2026-03-28 (Referral Program + Treatment Courses UI — mobile client)
+
+- **[feat]** Created referral screen — `mobile/app/referral.tsx`: fetches `GET /referrals/my`, shows large code, Clipboard copy, Share, stats (referredCount, bonusPaidCount), promo text
+- **[feat]** Added optional referral code section to registration form — `mobile/app/auth.tsx`: collapsible "Есть реферальный код?" with TextInput, onBlur validation via `GET /referrals/validate/:code`, passes `referredByCode` in register call
+- **[feat]** Updated `AuthContext.register()` signature to accept optional `referredByCode` — `mobile/context/AuthContext.tsx`
+- **[feat]** Created treatment courses screen — `mobile/app/courses.tsx`: FlatList with progress bars, status badges, next date, FAB "+" → bottom sheet modal to create course, tap card → Alert with "Отметить выполненной" (PATCH markComplete) or delete
+- **[feat]** Added post-DONE courses prompt in track screen — `mobile/app/order/track.tsx`: Alert fires once when order reaches DONE, offers to navigate to `/courses`
+- **[feat]** Added "Пригласи друга" and "Курсы лечения" rows to profile — `mobile/app/(tabs)/profile.tsx`
+- **[i18n]** Added `referral.*` and `courses.*` keys — `mobile/i18n/ru.json`, `mobile/i18n/uz.json`
+
+## 2026-03-28 (MedCard client view — medic app)
+
+- **[feat]** Added `clientId?: string` field to `OrderDetail` interface — `medic/hooks/useOrderStatus.ts`
+- **[feat]** Added `medcard.*` i18n keys (ru + uz): clientCard, bloodType, allergies, chronicDiseases, notes, noCard, noAccess — `medic/i18n/ru.json`, `medic/i18n/uz.json`
+- **[feat]** Added "Медкарта клиента" button in address card section; fetches `GET /medical-card/client/:clientId` with medic token; 404/403 → Alert — `medic/app/order/[id].tsx`
+- **[feat]** Added inline Modal with MedCardData display (bloodType, allergies, chronicDiseases, notes) and "Закрыть" button — `medic/app/order/[id].tsx`
+
+## 2026-03-30 (Referral Program + Treatment Courses — backend)
+
+- **[feat]** Added `referralCode`, `referredBy`, `referralBonusUsed`, `pendingReferralDiscount` columns (all nullable) to `User` entity — `backend/src/users/entities/user.entity.ts`
+- **[feat]** Added `findByReferralCode`, `setReferralCode`, `setPendingReferralDiscount`, `markReferralBonusUsed` methods to `UsersService` — `backend/src/users/users.service.ts`
+- **[feat]** Added optional `referredByCode` field to `RegisterClientDto` — `backend/src/auth/dto/register-client.dto.ts`
+- **[feat]** `registerClient()`: generates unique 8-char referral code, handles `referredByCode` lookup, creates `Referral` record — `backend/src/auth/auth.service.ts`
+- **[feat]** Created `Referral` entity (`referrerId`, `referredId`, `bonusPaid`, `bonusAmount`) — `backend/src/referrals/entities/referral.entity.ts`
+- **[feat]** Created `ReferralsService`: `getMyReferrals()`, `validateCode()` — `backend/src/referrals/referrals.service.ts`
+- **[feat]** Created `ReferralsController`: `GET /referrals/my` (JWT), `GET /referrals/validate/:code` (public) — `backend/src/referrals/referrals.controller.ts`
+- **[feat]** Created `ReferralsModule` — `backend/src/referrals/referrals.module.ts`
+- **[feat]** `OrdersService.create()`: auto-applies `pendingReferralDiscount` from user and zeros it out — `backend/src/orders/orders.service.ts`
+- **[feat]** `OrdersService.updateStatusByClient()`: calls `applyReferralBonusIfEligible()` on first DONE order — `backend/src/orders/orders.service.ts`
+- **[feat]** `applyReferralBonusIfEligible()`: awards 10 000 UZS to both referrer and referee on first DONE order — `backend/src/orders/orders.service.ts`
+- **[feat]** Installed `@nestjs/schedule`, added `ScheduleModule.forRoot()` to `AppModule` — `backend/src/app.module.ts`
+- **[feat]** Created `TreatmentCourse` entity (`clientId`, `title`, `serviceId`, `totalProcedures`, `completedProcedures`, `intervalDays`, `nextDate`, `status`, `reminderSentToday`) — `backend/src/treatment-courses/entities/treatment-course.entity.ts`
+- **[feat]** Created `TreatmentCoursesService`: CRUD + `@Cron('0 * * * *')` hourly reminder job — `backend/src/treatment-courses/treatment-courses.service.ts`
+- **[feat]** Created `TreatmentCoursesController`: `POST`, `GET /my`, `PATCH /:id`, `DELETE /:id` (all JWT) — `backend/src/treatment-courses/treatment-courses.controller.ts`
+- **[feat]** Created `TreatmentCoursesModule` — `backend/src/treatment-courses/treatment-courses.module.ts`
+- **[feat]** Registered `ReferralsModule` and `TreatmentCoursesModule` in `AppModule` — `backend/src/app.module.ts`
+- **[docs]** Added sections 13 (Referrals) and 14 (TreatmentCourses) to `docs/BACKEND_API.md`
+
+## 2026-03-30 (Favorites + MedicalCard — backend)
+
+- **[feat]** Создана сущность `FavoriteMedic` с уникальным индексом `(userId, medicId)` — `backend/src/favorites/entities/favorite-medic.entity.ts`
+- **[feat]** Создан `FavoritesService` — методы `add` (upsert/orIgnore), `remove`, `findByUser` (с JOIN medic info), `isFavorite`, `findActiveFavoriteMedicId` (активный избранный медик) — `backend/src/favorites/favorites.service.ts`
+- **[feat]** Создан `FavoritesController` — `POST /favorites/:medicId`, `DELETE /favorites/:medicId`, `GET /favorites` (JwtAuthGuard) — `backend/src/favorites/favorites.controller.ts`
+- **[feat]** `FavoritesModule` зарегистрирован в `app.module.ts` и импортирован в `OrdersModule`
+- **[feat]** `DispatchService` инжектирует `FavoritesService` — при диспатче проверяет избранного медика клиента; если онлайн/верифицирован/в радиусе — получает приглашение первым — `backend/src/orders/dispatch.service.ts`
+- **[feat]** Создана сущность `MedicalCard` с unique `userId` — `backend/src/medical-card/entities/medical-card.entity.ts`
+- **[feat]** Создан `MedicalCardService` — `upsert` (create/update), `findByUserId`, `findByUserIdForMedic` (проверяет активный заказ медика) — `backend/src/medical-card/medical-card.service.ts`
+- **[feat]** Создан `MedicalCardController` — `GET /medical-card` (JwtAuthGuard), `PUT /medical-card` (JwtAuthGuard), `GET /medical-card/client/:clientId` (MedicAuthGuard + check active order) — `backend/src/medical-card/medical-card.controller.ts`
+- **[feat]** `MedicalCardModule` зарегистрирован в `app.module.ts`
+- **[docs]** Обновлён `docs/BACKEND_API.md` — добавлены секции 11 (Favorites) и 12 (MedicalCard)
+
 ## 2026-03-30 (Urgent Order UI — mobile + medic)
 
 - **[feat]** Added `isUrgent` boolean state + fetch `GET /settings` for `urgentFeePercent` on confirm screen — `mobile/app/order/confirm.tsx`

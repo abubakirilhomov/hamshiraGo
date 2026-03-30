@@ -17,6 +17,8 @@ import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Medic } from '../medics/entities/medic.entity';
+import { User } from '../users/entities/user.entity';
+import { Referral } from '../referrals/entities/referral.entity';
 import { haversineKm } from '../utils/geo';
 
 const MEDIC_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
@@ -43,6 +45,8 @@ export class OrdersService {
     private orderRepo: Repository<Order>,
     @InjectRepository(OrderLocation)
     private locationRepo: Repository<OrderLocation>,
+    @InjectRepository(Referral)
+    private referralRepo: Repository<Referral>,
     private orderEventsGateway: OrderEventsGateway,
     private pushService: PushNotificationsService,
     private webPushService: WebPushService,
@@ -102,15 +106,25 @@ export class OrdersService {
     // ── Fetch & validate service from catalog ────────────────────────────────
     const service = await this.servicesService.getActiveServiceOrThrow(dto.serviceId);
 
-    const discountAmount = dto.discountAmount ?? 0;
+    // Apply pending referral discount (auto-added, bypasses 20% cap)
+    const clientUser = await this.usersService.findById(clientId);
+    const referralBonus = clientUser?.pendingReferralDiscount ?? 0;
+
+    const discountAmount = (dto.discountAmount ?? 0) + referralBonus;
     if (discountAmount > service.price) {
       throw new BadRequestException('Discount cannot exceed the service price');
     }
     // TODO: validate discountAmount against a real promo-code/coupon system
-    // Safety cap: client-supplied discount cannot exceed 20% of service price
+    // Safety cap: client-supplied discount (excluding referral bonus) cannot exceed 20% of service price
+    const clientDiscount = dto.discountAmount ?? 0;
     const maxDiscount = Math.round(service.price * 0.20);
-    if (discountAmount > maxDiscount) {
+    if (clientDiscount > maxDiscount) {
       throw new BadRequestException('Discount cannot exceed 20% of the service price');
+    }
+
+    // Zero out pending referral discount after applying it
+    if (referralBonus > 0) {
+      await this.usersService.setPendingReferralDiscount(clientId, 0);
     }
 
     const appSettings = await this.appSettingsService.get();
@@ -307,7 +321,41 @@ export class OrdersService {
     const doneOrder = await this.findOne(id);
     this.notifyClient(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
     this.notifyMedic(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
+
+    // Referral bonus: check if this is the referred user's first DONE order
+    this.applyReferralBonusIfEligible(clientId).catch((err) =>
+      this.logger.error('Referral bonus error:', err),
+    );
+
     return doneOrder;
+  }
+
+  /** Award 10 000 UZS discount to both referrer and referee on referee's first DONE order */
+  private async applyReferralBonusIfEligible(clientId: string): Promise<void> {
+    const user = await this.usersService.findById(clientId);
+    if (!user || user.referralBonusUsed || !user.referredBy) return;
+
+    // Check this is truly the first DONE order
+    const doneCount = await this.orderRepo.count({
+      where: { clientId, status: OrderStatus.DONE },
+    });
+    if (doneCount !== 1) return; // not the first DONE order
+
+    const BONUS = 10_000; // 10 000 UZS
+
+    // Mark bonus used on the referred user
+    await this.usersService.markReferralBonusUsed(clientId);
+    await this.usersService.setPendingReferralDiscount(clientId, BONUS);
+
+    // Find the referral record to get referrer ID and mark it paid
+    const referral = await this.referralRepo.findOne({
+      where: { referredId: clientId, bonusPaid: false },
+    });
+    if (referral) {
+      await this.referralRepo.update(referral.id, { bonusPaid: true, bonusAmount: BONUS });
+      // Award bonus to referrer as well
+      await this.usersService.setPendingReferralDiscount(referral.referrerId, BONUS);
+    }
   }
 
   async findByClient(

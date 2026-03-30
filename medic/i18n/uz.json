@@ -209,6 +209,15 @@
     "description": "Medikni ustuvor chiqishi",
     "fee": "Shoshilinch ustamasi"
   },
+  "medcard": {
+    "clientCard": "Mijoz tibbiy kartasi",
+    "bloodType": "Qon guruhi",
+    "allergies": "Allergiyalar",
+    "chronicDiseases": "Surunkali kasalliklar",
+    "notes": "Izohlar",
+    "noCard": "Mijoz tibbiy kartasini to'ldirmagan",
+    "noAccess": "Tibbiy kartaga kirish yo'q"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

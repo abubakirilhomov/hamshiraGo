@@ -10,9 +10,25 @@ export class UsersService {
     private userRepo: Repository<User>,
   ) {}
 
-  async create(data: { phone: string; passwordHash: string; name: string | null }): Promise<User> {
+  async create(data: { phone: string; passwordHash: string; name: string | null; referredBy?: string | null }): Promise<User> {
     const user = this.userRepo.create(data);
     return this.userRepo.save(user);
+  }
+
+  async findByReferralCode(code: string): Promise<User | null> {
+    return this.userRepo.findOne({ where: { referralCode: code } });
+  }
+
+  async setReferralCode(id: string, code: string): Promise<void> {
+    await this.userRepo.update(id, { referralCode: code });
+  }
+
+  async setPendingReferralDiscount(id: string, amount: number): Promise<void> {
+    await this.userRepo.update(id, { pendingReferralDiscount: amount });
+  }
+
+  async markReferralBonusUsed(id: string): Promise<void> {
+    await this.userRepo.update(id, { referralBonusUsed: true });
   }
 
   async findById(id: string): Promise<User | null> {

@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,8 @@ import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Theme } from '@/constants/Theme';
+import { apiFetch } from '@/constants/api';
+import { useAuth } from '@/context/AuthContext';
 import { MAP_ACTIVE_STATUSES, OrderStatus } from '@/types/order';
 import { useOrderStatus, NEXT_STATUS_MAP } from '@/hooks/useOrderStatus';
 import { useMedicLocation } from '@/hooks/useMedicLocation';
@@ -63,13 +66,24 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   CANCELED:        Theme.error,
 };
 
+interface MedCardData {
+  bloodType?: string | null;
+  allergies?: string | null;
+  chronicDiseases?: string | null;
+  notes?: string | null;
+}
+
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const { token } = useAuth();
   const [updating, setUpdating] = useState(false);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
+  const [medCardVisible, setMedCardVisible] = useState(false);
+  const [medCardData, setMedCardData] = useState<MedCardData | null>(null);
+  const [medCardLoading, setMedCardLoading] = useState(false);
   const mapRef = useRef<any>(null);
   const hasFittedMapRef = useRef(false);
 
@@ -145,6 +159,30 @@ export default function OrderDetailScreen() {
   const handleNextStatus = useCallback(() => {
     updateOrderStatus((v) => setUpdating(v));
   }, [updateOrderStatus]);
+
+  const handleOpenMedCard = useCallback(async () => {
+    if (!order?.clientId) return;
+    setMedCardLoading(true);
+    try {
+      const data = await apiFetch<MedCardData>(
+        `/medical-card/client/${order.clientId}`,
+        { token: token ?? undefined },
+      );
+      setMedCardData(data);
+      setMedCardVisible(true);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('403')) {
+        Alert.alert(t('medcard.noAccess'));
+      } else if (msg.includes('404')) {
+        Alert.alert(t('medcard.noCard'));
+      } else {
+        Alert.alert(t('common.error'), msg || t('common.error'));
+      }
+    } finally {
+      setMedCardLoading(false);
+    }
+  }, [order?.clientId, token, t]);
 
   // ── Loading guard ──────────────────────────────────────────────────────────
   if (loading || !order) {
@@ -319,6 +357,24 @@ export default function OrderDetailScreen() {
               <Text style={styles.mapsBtnText}>{t('orders.openMap')}</Text>
             </Pressable>
           )}
+          {order.clientId && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.medCardBtn,
+                pressed && styles.mapsBtnPressed,
+                medCardLoading && styles.actionBtnDisabled,
+              ]}
+              onPress={handleOpenMedCard}
+              disabled={medCardLoading}
+            >
+              {medCardLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <FontAwesome name="heartbeat" size={15} color="#fff" />
+              )}
+              <Text style={styles.mapsBtnText}>{t('medcard.clientCard')}</Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -477,6 +533,38 @@ export default function OrderDetailScreen() {
           <Text style={{ fontSize: 14, color: Theme.error }}>{order.cancelReason}</Text>
         </View>
       ) : null}
+
+      {/* Medical card modal */}
+      <Modal
+        visible={medCardVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMedCardVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <FontAwesome name="heartbeat" size={18} color={Theme.primary} />
+              <Text style={styles.modalTitle}>{t('medcard.clientCard')}</Text>
+            </View>
+            <View style={styles.divider} />
+            {medCardData && (
+              <>
+                <MedCardRow label={t('medcard.bloodType')} value={medCardData.bloodType} />
+                <MedCardRow label={t('medcard.allergies')} value={medCardData.allergies} />
+                <MedCardRow label={t('medcard.chronicDiseases')} value={medCardData.chronicDiseases} />
+                <MedCardRow label={t('medcard.notes')} value={medCardData.notes} />
+              </>
+            )}
+            <Pressable
+              style={({ pressed }) => [styles.modalCloseBtn, pressed && { opacity: 0.8 }]}
+              onPress={() => setMedCardVisible(false)}
+            >
+              <Text style={styles.modalCloseBtnText}>{t('common.close')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -496,6 +584,15 @@ function Row({
       <Text style={[styles.rowValue, valueColor ? { color: valueColor } : {}]}>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function MedCardRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <View style={styles.medCardRow}>
+      <Text style={styles.medCardLabel}>{label}</Text>
+      <Text style={styles.medCardValue}>{value || '—'}</Text>
     </View>
   );
 }
@@ -696,4 +793,71 @@ const styles = StyleSheet.create({
     borderColor: Theme.border,
   },
   completedText: { fontSize: 16, fontWeight: '600' },
+
+  // ── MedCard button ────────────────────────────────────────────────────────
+  medCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#7c3aed',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+
+  // ── MedCard modal ─────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: Theme.surface,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: Theme.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Theme.text,
+  },
+  medCardRow: {
+    marginBottom: 12,
+  },
+  medCardLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Theme.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  medCardValue: {
+    fontSize: 15,
+    color: Theme.text,
+  },
+  modalCloseBtn: {
+    backgroundColor: Theme.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  modalCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
 });

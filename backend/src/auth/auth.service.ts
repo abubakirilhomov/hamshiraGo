@@ -2,7 +2,10 @@ import { Injectable, ConflictException, UnauthorizedException, ForbiddenExceptio
 import * as crypto from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
+import { Referral } from '../referrals/entities/referral.entity';
 import * as bcrypt from 'bcrypt';
 import { RegisterClientDto } from './dto/register-client.dto';
 import { LoginDto } from './dto/login.dto';
@@ -13,7 +16,13 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private config: ConfigService,
+    @InjectRepository(Referral)
+    private referralRepo: Repository<Referral>,
   ) {}
+
+  private generateReferralCode(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
 
   async registerClient(dto: RegisterClientDto) {
     const existing = await this.usersService.findByPhone(dto.phone);
@@ -21,12 +30,44 @@ export class AuthService {
       throw new ConflictException('User with this phone already exists');
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
+
+    // Validate referral code if provided
+    let referrer: import('../users/entities/user.entity').User | null = null;
+    if (dto.referredByCode) {
+      referrer = await this.usersService.findByReferralCode(dto.referredByCode);
+    }
+
     const user = await this.usersService.create({
       phone: dto.phone,
       passwordHash,
       name: dto.name ?? null,
+      referredBy: dto.referredByCode ?? null,
     });
-    return { access_token: this.jwtService.sign({ sub: user.id, role: 'client' }), user: { id: user.id, phone: user.phone, name: user.name } };
+
+    // Generate unique referral code — retry once on collision
+    let referralCode = this.generateReferralCode();
+    const collision = await this.usersService.findByReferralCode(referralCode);
+    if (collision) {
+      referralCode = this.generateReferralCode();
+    }
+    await this.usersService.setReferralCode(user.id, referralCode);
+
+    // Create referral record if referred by someone
+    if (referrer) {
+      await this.referralRepo.save(
+        this.referralRepo.create({
+          referrerId: referrer.id,
+          referredId: user.id,
+          bonusPaid: false,
+          bonusAmount: 0,
+        }),
+      );
+    }
+
+    return {
+      access_token: this.jwtService.sign({ sub: user.id, role: 'client' }),
+      user: { id: user.id, phone: user.phone, name: user.name, referralCode },
+    };
   }
 
   async loginClient(dto: LoginDto) {

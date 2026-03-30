@@ -19,7 +19,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<void>;
-  register: (phone: string, password: string, name?: string) => Promise<void>;
+  register: (phone: string, password: string, name?: string, referredByCode?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -64,10 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user: res.user, token: res.access_token, isLoading: false });
   };
 
-  const register = async (phone: string, password: string, name?: string) => {
+  const register = async (phone: string, password: string, name?: string, referredByCode?: string) => {
     const res = await apiFetch<{ access_token: string; user: AuthUser }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ phone, password, ...(name ? { name } : {}) }),
+      body: JSON.stringify({
+        phone,
+        password,
+        ...(name ? { name } : {}),
+        ...(referredByCode ? { referredByCode } : {}),
+      }),
     });
     await persist(res.access_token, res.user);
     setState({ user: res.user, token: res.access_token, isLoading: false });

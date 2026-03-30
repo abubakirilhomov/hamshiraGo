@@ -389,6 +389,27 @@ export const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 4,
   },
+  favoriteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: Theme.primary,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 4,
+    backgroundColor: `${Theme.primary}08`,
+  },
+  favoriteBtnActive: {
+    borderColor: Theme.error,
+    backgroundColor: `${Theme.error}08`,
+  },
+  favoriteBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Theme.primary,
+  },
 
   // Candidate medic banner (dispatch contacting)
   candidateBanner: {
