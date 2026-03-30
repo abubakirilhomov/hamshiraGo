@@ -170,17 +170,27 @@
 
 ## 🔥 V1 — до запуска
 
-### Рейтинг и отзывы медиков — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: создать сущность `Review` (orderId, clientId, medicId, rating 1–5, comment, createdAt)
-- [ ] Backend: `POST /reviews` — клиент оставляет отзыв после DONE
-- [ ] Backend: `GET /reviews/medic/:id` — отзывы медика
-- [ ] Backend: автоматический пересчёт `averageRating` у медика
+### Взаимные отзывы после заказа — Абубакир (backend) + Диёр (web/mobile/web-medic)
+**Уже сделано (клиент → медик):**
 - [x] Mobile: экран оценки (звёзды + комментарий) после DONE — `components/RatingModal.tsx`, `hooks/useOrderTracking.ts`
 - [x] Mobile: отображение `clientReview` и `reviewCount` после оценки — `app/order/track.tsx`
 - [x] Medic: `reviewCount` на странице профиля рядом с рейтингом — `app/(tabs)/profile.tsx`
 - [x] Medic: экран «Мои отзывы» со списком отзывов из DONE заказов — `app/reviews.tsx`
+**Осталось (клиент → медик):**
+- [ ] Backend: сущность `Review` (orderId, clientId, medicId, rating 1–5, comment, createdAt)
+- [ ] Backend: `POST /reviews` — клиент оставляет отзыв после DONE
+- [ ] Backend: `GET /reviews/medic/:id` — отзывы медика
+- [ ] Backend: автоматический пересчёт `averageRating` у медика
 - [ ] Web: экран оценки после завершения заказа (звёзды + комментарий)
 - [ ] Web: отображение рейтинга и отзывов в профиле медика
+**Новое (медик → клиент):**
+- [ ] Backend: расширить `Review` — добавить `authorRole` [client/medic], `targetRole` [medic/client] для двусторонних отзывов
+- [ ] Backend: `GET /reviews/client/:id` — отзывы о клиенте от медиков
+- [ ] Backend: автоматический пересчёт `averageRating` у клиента
+- [ ] Backend: push/Telegram напоминание через 1 час если отзыв не оставлен
+- [ ] Web-medic/Mobile medic: экран оценки клиента после заказа (был ли вежлив, подготовил ли место, оплатил вовремя)
+- [ ] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
+- [ ] Admin: страница всех отзывов с фильтрами (по медику, клиенту, рейтингу, дате)
 
 ### Срочный вызов (extra fee) — Абубакир (backend) + Диёр (web/mobile)
 - [x] Backend: поле `isUrgent` в заказе + `urgentFee` (наценка)
@@ -206,6 +216,15 @@
 - [ ] Admin: фильтры — по пользователю, по дате, по статусу (новые/в работе/исправлены)
 - [ ] Admin: детальная карточка ошибки — полный стек, информация об устройстве, история заказов пользователя
 - [ ] Admin: счётчик новых ошибок в сайдбаре (бейдж)
+
+### Ограничение зоны работы для медиков (геозона) — Абубакир (backend) + Диёр (web-medic/mobile medic)
+- [ ] Backend: поля у медика — `workZoneCenter` (lat, lng) + `workZoneRadius` (в км)
+- [ ] Backend: при диспатче — если геозона задана, отправлять только заказы внутри круга (расстояние от центра < radius)
+- [ ] Backend: `PATCH /medics/work-zone` — сохранить/обновить центр и радиус зоны
+- [ ] Backend: `DELETE /medics/work-zone` — убрать ограничение (принимать заказы отовсюду)
+- [ ] Web-medic/Mobile medic: экран с картой — медик ставит точку и тянет круг (или слайдером выбирает радиус 1–15 км)
+- [ ] Web-medic/Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг)
+- [ ] Admin: на карте медиков отображать их геозоны
 
 ### SEO-страницы на лендинге — Диёр
 - [ ] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu`
