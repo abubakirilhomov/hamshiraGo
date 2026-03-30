@@ -1,428 +1,126 @@
-# HamshiraGo — Админ-панель
+# HamshiraGo - Админ-панель
 
-> **API Base URL:** `https://hamshirago-production-0a65.up.railway.app`  
-> **Все admin-запросы требуют заголовок:** `X-Admin-Secret: <ADMIN_SECRET>`
+> API Base URL: `https://hamshirago-production-0a65.up.railway.app`
 
----
+## 1. Авторизация
 
-## Содержание
+Актуальная схема для admin UI:
 
-1. [Обзор](#1-обзор)
-2. [Авторизация](#2-авторизация)
-3. [Страница: Верификация медиков](#3-страница-верификация-медиков)
-4. [Страница: Все медики](#4-страница-все-медики)
-5. [Страница: Все клиенты](#5-страница-все-клиенты)
-6. [Страница: Все заказы](#6-страница-все-заказы)
-7. [Страница: Каталог услуг](#7-страница-каталог-услуг)
-8. [Страница: Аналитика (дашборд)](#8-страница-аналитика-дашборд)
-9. [Таблица всех API эндпоинтов](#9-таблица-всех-api-эндпоинтов)
+1. `POST /auth/admin/login` с `username/password`
+2. получить `access_token`
+3. отправлять `Authorization: Bearer <token>` во все admin-запросы
 
----
-
-## 1. Обзор
-
-Админ-панель — внутренний инструмент для операторов HamshiraGo.
-
-**Основные задачи:**
-- Верификация медиков (одобрить/отклонить документы)
-- Блокировка недобросовестных медиков и клиентов
-- Управление каталогом услуг и ценами
-- Мониторинг всех заказов и ручная отмена при необходимости
-- Просмотр статистики
-
-**Нет отдельного логина** — доступ защищён статичным секретом (`ADMIN_SECRET`), который передаётся в каждый запрос заголовком `X-Admin-Secret`. Храните его в переменных окружения фронтенда и никогда не показывайте пользователям.
-
----
-
-## 2. Авторизация
-
-Каждый запрос к admin-эндпоинтам должен содержать:
+Пример login:
 
 ```http
-X-Admin-Secret: ваш_admin_secret
+POST /auth/admin/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "..." }
 ```
 
-Если секрет неверный — вернётся `403 Forbidden`.
-
-**Рекомендации по реализации:**
-- Хранить секрет в `NEXT_PUBLIC_ADMIN_SECRET` (или серверной переменной если Next.js)
-- На странице входа попросить ввести секрет → сохранить в `localStorage` / `sessionStorage`
-- Добавлять заголовок через axios interceptor или fetch wrapper
-
-```typescript
-// Пример axios interceptor
-axios.interceptors.request.use((config) => {
-  config.headers['X-Admin-Secret'] = process.env.NEXT_PUBLIC_ADMIN_SECRET;
-  return config;
-});
-```
-
----
-
-## 3. Страница: Верификация медиков
-
-Самая приоритетная страница — медик не может принимать заказы до одобрения.
-
-### Получить список ожидающих медиков
-
-```http
-GET /medics/admin/pending
-X-Admin-Secret: ...
-```
-
-**Response 200:**
 ```json
-[
-  {
-    "id": "uuid",
-    "name": "Азиза Каримова",
-    "phone": "+998901234567",
-    "experienceYears": 5,
-    "verificationStatus": "PENDING",
-    "facePhotoUrl": "https://res.cloudinary.com/...",
-    "licensePhotoUrl": "https://res.cloudinary.com/...",
-    "verificationRejectedReason": null,
-    "created_at": "2026-02-20T10:00:00.000Z"
+{ "access_token": "eyJ..." }
+```
+
+Примечание:
+- `AdminGuard` поддерживает и legacy-заголовок `X-Admin-Secret`, но для фронтенда используйте JWT.
+
+## 2. Основные страницы и API
+
+### 2.1 Медики
+
+- `GET /medics/admin/pending` - медики в статусе `PENDING`
+- `GET /medics/admin/all?page=1&limit=20&search=&verificationStatus=&isBlocked=&isOnline=`
+- `PATCH /medics/admin/:id/verify` - `{ status: "APPROVED" | "REJECTED", reason? }`
+- `PATCH /medics/admin/:id/block` - `{ isBlocked: boolean }`
+- `POST /medics/admin/:id/topup` - `{ amount: number }`
+
+Рекомендуемые колонки:
+- `name`, `phone`, `verificationStatus`, `isOnline`, `rating`, `reviewCount`, `balance`, `isBlocked`, `created_at`
+
+### 2.2 Клиенты
+
+- `GET /auth/admin/users?page=1&limit=20&search=&isBlocked=`
+- `PATCH /auth/admin/users/:id/block` - `{ isBlocked: boolean }`
+
+Рекомендуемые колонки:
+- `phone`, `name`, `isBlocked`, `created_at`
+
+### 2.3 Заказы
+
+- `GET /orders/admin/all?page=1&limit=20&status=&isUrgent=`
+- `PATCH /orders/admin/:id/cancel` - `{ reason?: string }`
+
+Рекомендуемые колонки:
+- `id`, `created_at`, `serviceTitle`, `status`, `priceAmount`, `discountAmount`, `urgentFee`, `platformFee`, `location.house`, `clientId`, `medicId`
+
+### 2.4 Услуги
+
+- `GET /services` (public)
+- `POST /services`
+- `PATCH /services/:id`
+- `DELETE /services/:id` (soft delete: `isActive=false`)
+
+### 2.5 Настройки приложения
+
+- `GET /settings` (public)
+- `PATCH /settings` (admin)
+
+`PATCH /settings` поддерживает:
+- `isPaidMode`
+- `commissionRate`
+- `urgentFeePercent`
+- `urgentStartHour`
+- `urgentEndHour`
+
+### 2.6 User Support / Error tracking
+
+- `GET /client-errors/admin/stats`
+- `GET /client-errors/admin?status=&appType=&dateFrom=&dateTo=&userId=&page=&limit=`
+- `PATCH /client-errors/admin/:id` - `{ status: "NEW" | "IN_PROGRESS" | "FIXED" | "IGNORED" }`
+
+## 3. Минимальный fetch-wrapper (JWT)
+
+```ts
+const API_BASE = 'https://hamshirago-production-0a65.up.railway.app';
+
+function getAdminToken() {
+  return localStorage.getItem('admin_token') ?? '';
+}
+
+export async function adminRequest(path: string, init: RequestInit = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getAdminToken()}`,
+      ...(init.headers ?? {}),
+    },
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
   }
-]
-```
 
-### UI этой страницы
+  if (!res.ok) {
+    throw new Error(`API ${res.status}: ${await res.text()}`);
+  }
 
-Для каждого медика показать:
-- Имя, телефон, опыт работы
-- Дата регистрации
-- Фото лица (кликабельное, открывает полный размер)
-- Фото лицензии (кликабельное)
-- Две кнопки: **Одобрить** (зелёная) и **Отклонить** (красная)
-- При отклонении — текстовое поле для причины
-
-### Одобрить медика
-
-```http
-PATCH /medics/admin/:id/verify
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{ "status": "APPROVED" }
-```
-
-### Отклонить медика
-
-```http
-PATCH /medics/admin/:id/verify
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{ "status": "REJECTED", "reason": "Фото лицензии нечёткое, перезагрузите" }
-```
-
-**Response 200** (в обоих случаях):
-```json
-{ "id": "uuid", "verificationStatus": "APPROVED", ... }
-```
-
-После успешного действия — убрать медика из списка ожидающих.
-
----
-
-## 4. Страница: Все медики
-
-Список всех зарегистрированных медиков с фильтрацией и управлением.
-
-> ⚠️ Отдельного admin-эндпоинта "получить всех медиков" пока нет. Используйте эндпоинт верификации и дополните при необходимости запросом на бэкенд. **Рекомендуем добавить `GET /medics/admin/all` на бэкенд** (аналогично `/orders/admin/all`).
-
-### Блокировка / разблокировка медика
-
-```http
-PATCH /medics/admin/:id/block
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{ "isBlocked": true }   // заблокировать
-{ "isBlocked": false }  // разблокировать
-```
-
-**Response 200:**
-```json
-{ "id": "uuid", "isBlocked": true, ... }
-```
-
-Заблокированный медик:
-- Не может войти в приложение (получит `403`)
-- Не может принимать заказы
-
-### Рекомендуемые колонки таблицы
-
-| Колонка | Описание |
-|---------|----------|
-| Имя | `name` |
-| Телефон | `phone` |
-| Статус верификации | `PENDING` / `APPROVED` / `REJECTED` (бейдж с цветом) |
-| Онлайн | `isOnline` (зелёная/серая точка) |
-| Рейтинг | `rating` (звёзды) |
-| Заказов выполнено | `reviewCount` |
-| Баланс | `balance` UZS |
-| Заблокирован | `isBlocked` (переключатель) |
-| Действия | Кнопки: Верифицировать / Заблокировать / Документы |
-
----
-
-## 5. Страница: Все клиенты
-
-> ⚠️ Эндпоинта "получить всех клиентов" пока нет. **Рекомендуем добавить `GET /auth/admin/users` на бэкенд.**
-
-### Блокировка / разблокировка клиента
-
-```http
-PATCH /auth/admin/users/:id/block
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{ "isBlocked": true }
-```
-
-**Response 200:**
-```json
-{ "id": "uuid", "isBlocked": true }
-```
-
-Заблокированный клиент:
-- Не может войти в приложение (получит `403`)
-- Не может создавать заказы
-
-### Рекомендуемые колонки таблицы
-
-| Колонка | Описание |
-|---------|----------|
-| Телефон | `phone` |
-| Дата регистрации | `created_at` |
-| Заказов всего | Количество из `/orders/admin/all?clientId=...` |
-| Заблокирован | `isBlocked` (переключатель) |
-
----
-
-## 6. Страница: Все заказы
-
-Полный список заказов с фильтрацией по статусу.
-
-### Получить все заказы
-
-```http
-GET /orders/admin/all?page=1&limit=20&status=CREATED
-X-Admin-Secret: ...
-```
-
-**Параметры:**
-
-| Параметр | Тип | Default | Описание |
-|----------|-----|---------|----------|
-| `page` | number | 1 | Номер страницы |
-| `limit` | number | 20 | Заказов на страницу (max 100) |
-| `status` | string | — | Фильтр: `CREATED`, `ASSIGNED`, `ACCEPTED`, `ON_THE_WAY`, `ARRIVED`, `SERVICE_STARTED`, `DONE`, `CANCELED` |
-
-**Response 200:**
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "status": "CREATED",
-      "serviceTitle": "Измерение давления",
-      "priceAmount": 50000,
-      "discountAmount": 0,
-      "platformFee": 5000,
-      "clientId": "uuid",
-      "medicId": null,
-      "location": {
-        "house": "ул. Навои 15",
-        "floor": "3",
-        "apartment": "12",
-        "phone": "+998901234567",
-        "latitude": 41.2995,
-        "longitude": 69.2401
-      },
-      "created_at": "2026-02-26T10:00:00.000Z"
-    }
-  ],
-  "total": 128,
-  "page": 1,
-  "totalPages": 7
+  if (res.status === 204) return null;
+  return res.json();
 }
 ```
 
-### Принудительная отмена заказа
+## 4. Чек-лист по безопасности
 
-```http
-PATCH /orders/admin/:id/cancel
-X-Admin-Secret: ...
-```
-
-**Response 200:** обновлённый объект заказа со статусом `CANCELED`.
-
-Клиент автоматически получит push-уведомление об отмене.
-
-> Нельзя отменить заказы со статусом `DONE` или `CANCELED`.
-
-### Рекомендуемые колонки таблицы
-
-| Колонка | Описание |
-|---------|----------|
-| ID | Первые 8 символов UUID |
-| Дата | `created_at` |
-| Услуга | `serviceTitle` |
-| Цена | `priceAmount` UZS |
-| Комиссия | `platformFee` UZS |
-| Статус | Цветной бейдж |
-| Адрес | `location.house` |
-| Медик | `medicId` (имя если загружен) |
-| Действие | Кнопка "Отменить" (только для активных) |
-
-### Цвета статусов (рекомендация)
-
-| Статус | Цвет |
-|--------|------|
-| `CREATED` | Синий |
-| `ASSIGNED` / `ACCEPTED` / `ON_THE_WAY` / `ARRIVED` / `SERVICE_STARTED` | Жёлтый |
-| `DONE` | Зелёный |
-| `CANCELED` | Красный |
+- хранить только `admin_token` (не хранить `ADMIN_PASSWORD` и `ADMIN_SECRET` в браузере)
+- обрабатывать `401` централизованно с auto-logout
+- использовать HTTPS origin админки в `ALLOWED_ORIGINS`
+- ограничить доступ к админке на уровне инфраструктуры (если возможно)
 
 ---
 
-## 7. Страница: Каталог услуг
-
-Управление списком услуг и ценами. Цены, установленные здесь, используются при создании заказов — клиент не может задать произвольную сумму.
-
-### Получить все услуги (публичный эндпоинт)
-
-```http
-GET /services
-```
-
-```json
-[
-  {
-    "id": "uuid",
-    "title": "Измерение давления",
-    "description": "...",
-    "category": "Диагностика",
-    "price": 50000,
-    "durationMinutes": 15,
-    "isActive": true,
-    "sortOrder": 1
-  }
-]
-```
-
-### Создать услугу
-
-```http
-POST /services
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{
-  "title": "Внутримышечная инъекция",
-  "description": "Введение препарата внутримышечно по назначению врача",
-  "category": "Инъекции",
-  "price": 60000,
-  "durationMinutes": 20,
-  "sortOrder": 5
-}
-```
-
-**Response 201:** созданный объект услуги.
-
-### Обновить услугу
-
-```http
-PATCH /services/:id
-X-Admin-Secret: ...
-Content-Type: application/json
-
-{ "price": 65000, "isActive": false }
-```
-
-Можно обновлять любые поля частично.
-
-### Удалить услугу
-
-```http
-DELETE /services/:id
-X-Admin-Secret: ...
-```
-
-**Response 204 No Content.**
-
-> Рекомендуется вместо удаления деактивировать (`isActive: false`) — это сохраняет историю заказов нетронутой.
-
-### Рекомендуемые колонки таблицы
-
-| Колонка | Описание |
-|---------|----------|
-| Название | `title` |
-| Категория | `category` |
-| Цена | `price` UZS (редактируемое поле inline) |
-| Длительность | `durationMinutes` мин |
-| Порядок | `sortOrder` |
-| Активна | `isActive` (переключатель) |
-| Действия | Редактировать / Удалить |
-
----
-
-## 8. Страница: Аналитика (дашборд)
-
-Рекомендуемые метрики для главной страницы. Все данные собираются из уже существующих эндпоинтов.
-
-### Ключевые показатели (KPI)
-
-| Метрика | Как получить |
-|---------|-------------|
-| Заказов сегодня | `GET /orders/admin/all` + фильтрация по `created_at` на фронтенде |
-| Заказов всего | `total` из `GET /orders/admin/all` |
-| Выполнено | `GET /orders/admin/all?status=DONE` → `total` |
-| Отменено | `GET /orders/admin/all?status=CANCELED` → `total` |
-| Доход платформы | Сумма `platformFee` из всех заказов `DONE` |
-| Медиков онлайн | Количество медиков с `isOnline: true` |
-| Ожидают верификации | `GET /medics/admin/pending` → длина массива |
-
-### Рекомендуемые графики
-
-1. **Заказов по дням** — линейный график за последние 30 дней
-2. **Распределение по статусам** — пончиковая диаграмма
-3. **Топ услуг** — горизонтальная барная диаграмма по количеству заказов
-
----
-
-## 9. Таблица всех API эндпоинтов
-
-| Метод | URL | Описание |
-|-------|-----|----------|
-| `GET` | `/medics/admin/pending` | Медики ожидающие верификации |
-| `PATCH` | `/medics/admin/:id/verify` | Верифицировать медика (APPROVED/REJECTED) |
-| `PATCH` | `/medics/admin/:id/block` | Заблокировать / разблокировать медика |
-| `PATCH` | `/auth/admin/users/:id/block` | Заблокировать / разблокировать клиента |
-| `GET` | `/orders/admin/all` | Все заказы с пагинацией и фильтром |
-| `PATCH` | `/orders/admin/:id/cancel` | Принудительная отмена заказа |
-| `GET` | `/services` | Все услуги (публичный) |
-| `GET` | `/services/:id` | Одна услуга (публичный) |
-| `POST` | `/services` | Создать услугу |
-| `PATCH` | `/services/:id` | Обновить услугу |
-| `DELETE` | `/services/:id` | Удалить услугу |
-
----
-
-## Что ещё стоит добавить на бэкенде
-
-Следующие эндпоинты пока отсутствуют, но понадобятся для полноценной админки:
-
-| Эндпоинт | Приоритет | Описание |
-|----------|-----------|----------|
-| `GET /medics/admin/all` | Высокий | Все медики с пагинацией и фильтрами |
-| `GET /auth/admin/users` | Высокий | Все клиенты с пагинацией |
-| `GET /orders/admin/stats` | Средний | Агрегированная статистика (доход, кол-во по статусам) |
-| `GET /medics/admin/:id` | Средний | Детальный профиль медика для admin |
-
----
-
-*Последнее обновление: февраль 2026*
+Последнее обновление: 2026-03-30

@@ -10,7 +10,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                        КЛИЕНТЫ                                  │
 │  mobile/   (Expo React Native)  ←── App Store / Google Play    │
-│  web/      (Next.js 14)         ←── hamshirago.vercel.app       │
+│  web/      (Next.js 16)         ←── hamshirago.vercel.app       │
 └──────────────────────────────┬──────────────────────────────────┘
                                │ REST + WebSocket
 ┌──────────────────────────────▼──────────────────────────────────┐
@@ -22,7 +22,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                        МЕДИКИ                                   │
 │  medic/     (Expo React Native) ←── App Store / Google Play    │
-│  web-medic/ (Next.js 14)        ←── medic.hamshirago.vercel.app │
+│  web-medic/ (Next.js 16)        ←── medic.hamshirago.vercel.app │
 └─────────────────────────────────────────────────────────────────┘
                     │ REST
 ┌───────────────────▼─────────────────────────────────────────────┐
@@ -38,8 +38,8 @@
 ```
 hamshiraGo/
 ├── backend/      # NestJS API — Railway
-├── web/          # Next.js 14 — клиентское web-приложение
-├── web-medic/    # Next.js 14 — web-приложение для медиков
+├── web/          # Next.js 16 — клиентское web-приложение
+├── web-medic/    # Next.js 16 — web-приложение для медиков
 ├── admin/        # React + Vite — панель администратора
 ├── mobile/       # Expo React Native — мобильный клиент
 ├── medic/        # Expo React Native — мобильное приложение медика
@@ -59,9 +59,9 @@ hamshiraGo/
 | Слой | Технология |
 |------|-----------|
 | Backend | NestJS 10, TypeORM, PostgreSQL, Socket.IO |
-| Web client | Next.js 14 (App Router), Tailwind CSS v4 |
+| Web client | Next.js 16 (App Router), Tailwind CSS v4 |
 | Admin | React 18, Vite, shadcn/ui, TanStack Query |
-| Mobile | Expo SDK 52, React Native, Expo Router |
+| Mobile | Expo SDK 54, React Native, Expo Router |
 | Push | Expo Push API, Web Push (VAPID), Telegram Bot |
 | Media | Cloudinary (медик-фото) |
 | Deploy | Railway (backend + DB), Vercel (web/admin) |
@@ -73,7 +73,9 @@ hamshiraGo/
 ### Требования
 - Node.js 20+
 - PostgreSQL (локально или Docker)
-- Переменные окружения (см. `.env.example` в каждом сервисе)
+- Переменные окружения:
+  - backend/admin/mobile/medic: используйте `.env.example`
+  - web/web-medic: создайте `.env.local` вручную
 
 ### Backend
 
@@ -86,8 +88,13 @@ npm run start:dev           # http://localhost:3000
 
 Обязательные переменные в `backend/.env`:
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/hamshirago
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=hamshira_go
 JWT_SECRET=your-secret-key
+ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-admin-password
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
@@ -98,7 +105,8 @@ CLOUDINARY_API_SECRET=...
 
 ```bash
 cd web
-cp .env.example .env.local  # укажите NEXT_PUBLIC_API_URL
+# вручную создайте .env.local
+# NEXT_PUBLIC_API_URL=http://localhost:3000
 npm install
 npm run dev                 # http://localhost:3001
 ```
@@ -107,7 +115,8 @@ npm run dev                 # http://localhost:3001
 
 ```bash
 cd web-medic
-cp .env.example .env.local
+# вручную создайте .env.local
+# NEXT_PUBLIC_API_URL=http://localhost:3000
 npm install
 npm run dev                 # http://localhost:3002
 ```

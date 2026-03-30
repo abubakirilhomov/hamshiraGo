@@ -21,9 +21,15 @@ Railway                Vercel
 
 | Переменная | Описание | Пример |
 |-----------|----------|--------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_USERNAME` | PostgreSQL user | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | `...` |
+| `DB_NAME` | PostgreSQL database name | `hamshira_go` |
 | `JWT_SECRET` | Секрет для подписи JWT | минимум 32 символа |
+| `ADMIN_USERNAME` | Логин для `/auth/admin/login` | `admin` |
 | `ADMIN_PASSWORD` | Пароль для `/auth/admin/login` | сильный пароль |
+| `ADMIN_SECRET` | Legacy fallback для admin guard (опционально) | случайная строка |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `mycloud` |
 | `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789` |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret | `abc...` |
@@ -42,10 +48,10 @@ railway up
 
 ### Первый запуск
 При старте бэкенд автоматически:
-1. Создаёт таблицы (TypeORM `synchronize: true`)
+1. Подключается к существующей схеме БД (`synchronize: false`)
 2. Запускает seed услуг (`seedServices`) — создаёт базовый каталог если пусто
 
-> ⚠️ **`synchronize: true` опасен в production** — при изменении entity-схемы может удалить данные. Перед изменением entity — сделайте бэкап БД.
+> `synchronize` в проекте отключён (`false`) для всех окружений. Схему нужно обновлять миграциями/ручным SQL.
 
 ---
 
@@ -108,7 +114,7 @@ Admin защищён: без JWT-токена (логин через `/login`) �
 
 ### База данных
 - [ ] Сделан бэкап перед первым деплоем с новой схемой
-- [ ] `synchronize: true` — осторожно при изменении entity
+- [ ] Изменения схемы применяются миграциями/ручным SQL (не через `synchronize`)
 - [ ] Индексы применены (добавлены `@Index()` в entity-файлах)
 
 ### Мониторинг
@@ -139,11 +145,15 @@ Admin защищён: без JWT-токена (логин через `/login`) �
 > ⚠️ Не рекомендуется. Используйте только для отладки, никогда для тестов с реальными данными.
 
 ```bash
-# Получить DATABASE_URL из Railway
-railway variables get DATABASE_URL
+# Получить параметры подключения из Railway
+railway variables get DB_HOST
+railway variables get DB_PORT
+railway variables get DB_USERNAME
+railway variables get DB_PASSWORD
+railway variables get DB_NAME
 
 # Подключиться к production БД напрямую
-psql $DATABASE_URL
+PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USERNAME -d $DB_NAME
 ```
 
 ---
@@ -152,8 +162,10 @@ psql $DATABASE_URL
 
 | Сервис | Файл | Переменная | Где брать |
 |--------|------|-----------|-----------|
-| backend | `.env` | `DATABASE_URL` | Railway → PostgreSQL plugin |
+| backend | `.env` | `DB_HOST/DB_PORT/DB_USERNAME/DB_PASSWORD/DB_NAME` | Railway → PostgreSQL plugin |
 | backend | `.env` | `JWT_SECRET` | `openssl rand -base64 32` |
+| backend | `.env` | `ADMIN_USERNAME` | фиксированное значение (`admin` или ваше) |
+| backend | `.env` | `ADMIN_PASSWORD` | сильный пароль |
 | backend | `.env` | `VAPID_PUBLIC_KEY` | `web-push generate-vapid-keys` |
 | backend | `.env` | `VAPID_PRIVATE_KEY` | то же |
 | backend | `.env` | `CLOUDINARY_*` | cloudinary.com → Dashboard |

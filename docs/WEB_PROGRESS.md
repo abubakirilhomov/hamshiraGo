@@ -1,7 +1,7 @@
 # HamshiraGo — Web Progress
 
 ## Стек
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
 - Tailwind CSS v4
 - react-icons/fa
 - @tma.js/sdk (Telegram Mini App)
