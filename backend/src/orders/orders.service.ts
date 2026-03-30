@@ -59,6 +59,100 @@ export class OrdersService {
     private dataSource: DataSource,
   ) {}
 
+  private isMissingColumnError(err: unknown): boolean {
+    return err instanceof Error && /column .* does not exist/i.test(err.message);
+  }
+
+  private mapLegacyOrderRow(
+    row: Record<string, unknown>,
+    withMedic: boolean,
+  ): Order {
+    return {
+      id: String(row['o_id']),
+      clientId: String(row['o_clientId']),
+      medicId: row['o_medicId'] ? String(row['o_medicId']) : null,
+      serviceId: row['o_serviceId'] ? String(row['o_serviceId']) : null,
+      serviceTitle: row['o_serviceTitle'] ? String(row['o_serviceTitle']) : null,
+      priceAmount: row['o_priceAmount'] == null ? null : Number(row['o_priceAmount']),
+      discountAmount: row['o_discountAmount'] == null ? 0 : Number(row['o_discountAmount']),
+      platformFee: row['o_platformFee'] == null ? 0 : Number(row['o_platformFee']),
+      status: String(row['o_status']) as OrderStatus,
+      // Legacy fallback for deployments where newer columns may not exist yet.
+      dispatchStatus: null,
+      cancelReason: null,
+      isUrgent: false,
+      urgentFee: 0,
+      clientRating: null,
+      clientReview: null,
+      created_at: new Date(String(row['o_created_at'])),
+      updated_at: new Date(String(row['o_updated_at'])),
+      location: {
+        id: String(row['l_id']),
+        orderId: String(row['l_orderId']),
+        latitude: row['l_latitude'] == null ? 0 : Number(row['l_latitude']),
+        longitude: row['l_longitude'] == null ? 0 : Number(row['l_longitude']),
+        house: row['l_house'] ? String(row['l_house']) : '',
+        floor: row['l_floor'] == null ? null : String(row['l_floor']),
+        apartment: row['l_apartment'] == null ? null : String(row['l_apartment']),
+        phone: row['l_phone'] ? String(row['l_phone']) : '',
+      } as OrderLocation,
+      medic: withMedic && row['m_id']
+        ? ({
+            id: String(row['m_id']),
+            name: row['m_name'] == null ? null : String(row['m_name']),
+            phone: row['m_phone'] == null ? '' : String(row['m_phone']),
+            rating: row['m_rating'] == null ? null : Number(row['m_rating']),
+            reviewCount: row['m_reviewCount'] == null ? 0 : Number(row['m_reviewCount']),
+            latitude: row['m_latitude'] == null ? null : Number(row['m_latitude']),
+            longitude: row['m_longitude'] == null ? null : Number(row['m_longitude']),
+          } as Medic)
+        : null,
+    } as Order;
+  }
+
+  private async findOneLegacy(id: string, withMedic: boolean): Promise<Order | null> {
+    const qb = this.orderRepo
+      .createQueryBuilder('o')
+      .leftJoin(OrderLocation, 'l', 'l.orderId = o.id')
+      .where('o.id = :id', { id })
+      .select([
+        'o.id AS o_id',
+        'o.clientId AS o_clientId',
+        'o.medicId AS o_medicId',
+        'o.serviceId AS o_serviceId',
+        'o.serviceTitle AS o_serviceTitle',
+        'o.priceAmount AS o_priceAmount',
+        'o.discountAmount AS o_discountAmount',
+        'o.platformFee AS o_platformFee',
+        'o.status AS o_status',
+        'o.created_at AS o_created_at',
+        'o.updated_at AS o_updated_at',
+        'l.id AS l_id',
+        'l.orderId AS l_orderId',
+        'l.latitude AS l_latitude',
+        'l.longitude AS l_longitude',
+        'l.house AS l_house',
+        'l.floor AS l_floor',
+        'l.apartment AS l_apartment',
+        'l.phone AS l_phone',
+      ]);
+
+    if (withMedic) {
+      qb.leftJoin(Medic, 'm', 'm.id = o.medicId').addSelect([
+        'm.id AS m_id',
+        'm.name AS m_name',
+        'm.phone AS m_phone',
+        'm.rating AS m_rating',
+        'm.reviewCount AS m_reviewCount',
+        'm.latitude AS m_latitude',
+        'm.longitude AS m_longitude',
+      ]);
+    }
+
+    const row = await qb.getRawOne<Record<string, unknown>>();
+    return row ? this.mapLegacyOrderRow(row, withMedic) : null;
+  }
+
   /** Send Expo + Web Push notifications to the client of a given order */
   private async notifyClient(order: Order, status: string): Promise<void> {
     const msg = CLIENT_PUSH_MESSAGES[status];
@@ -180,20 +274,32 @@ export class OrdersService {
   }
 
   async findOne(id: string): Promise<Order> {
-    const order = await this.orderRepo.findOne({
-      where: { id },
-      relations: { location: true, medic: true },
-    });
+    let order: Order | null = null;
+    try {
+      order = await this.orderRepo.findOne({
+        where: { id },
+        relations: { location: true, medic: true },
+      });
+    } catch (err) {
+      if (!this.isMissingColumnError(err)) throw err;
+      order = await this.findOneLegacy(id, true);
+    }
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
 
   /** Internal use only — no medic JOIN (status checks, dispatch, post-update fetches) */
   async findOneBasic(id: string): Promise<Order> {
-    const order = await this.orderRepo.findOne({
-      where: { id },
-      relations: { location: true },
-    });
+    let order: Order | null = null;
+    try {
+      order = await this.orderRepo.findOne({
+        where: { id },
+        relations: { location: true },
+      });
+    } catch (err) {
+      if (!this.isMissingColumnError(err)) throw err;
+      order = await this.findOneLegacy(id, false);
+    }
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
@@ -365,13 +471,61 @@ export class OrdersService {
   ): Promise<{ data: Order[]; total: number; page: number; totalPages: number }> {
     const take = Math.min(limit, 100);
     const skip = (page - 1) * take;
-    const [data, total] = await this.orderRepo.findAndCount({
-      where: { clientId },
-      relations: { location: true, medic: true },
-      order: { created_at: 'DESC' },
-      take,
-      skip,
-    });
+    let data: Order[] = [];
+    let total = 0;
+    try {
+      [data, total] = await this.orderRepo.findAndCount({
+        where: { clientId },
+        relations: { location: true, medic: true },
+        order: { created_at: 'DESC' },
+        take,
+        skip,
+      });
+    } catch (err) {
+      if (!this.isMissingColumnError(err)) throw err;
+      const qb = this.orderRepo
+        .createQueryBuilder('o')
+        .leftJoin(OrderLocation, 'l', 'l.orderId = o.id')
+        .leftJoin(Medic, 'm', 'm.id = o.medicId')
+        .where('o.clientId = :clientId', { clientId })
+        .orderBy('o.created_at', 'DESC')
+        .take(take)
+        .skip(skip)
+        .select([
+          'o.id AS o_id',
+          'o.clientId AS o_clientId',
+          'o.medicId AS o_medicId',
+          'o.serviceId AS o_serviceId',
+          'o.serviceTitle AS o_serviceTitle',
+          'o.priceAmount AS o_priceAmount',
+          'o.discountAmount AS o_discountAmount',
+          'o.platformFee AS o_platformFee',
+          'o.status AS o_status',
+          'o.created_at AS o_created_at',
+          'o.updated_at AS o_updated_at',
+          'l.id AS l_id',
+          'l.orderId AS l_orderId',
+          'l.latitude AS l_latitude',
+          'l.longitude AS l_longitude',
+          'l.house AS l_house',
+          'l.floor AS l_floor',
+          'l.apartment AS l_apartment',
+          'l.phone AS l_phone',
+          'm.id AS m_id',
+          'm.name AS m_name',
+          'm.phone AS m_phone',
+          'm.rating AS m_rating',
+          'm.reviewCount AS m_reviewCount',
+          'm.latitude AS m_latitude',
+          'm.longitude AS m_longitude',
+        ]);
+      const rows = await qb.getRawMany<Record<string, unknown>>();
+      data = rows.map((row) => this.mapLegacyOrderRow(row, true));
+      total = await this.orderRepo
+        .createQueryBuilder('o')
+        .where('o.clientId = :clientId', { clientId })
+        .getCount();
+    }
     return { data, total, page, totalPages: Math.ceil(total / take) };
   }
 
@@ -556,13 +710,53 @@ export class OrdersService {
   ): Promise<{ data: Order[]; total: number; page: number; totalPages: number }> {
     const take = Math.min(limit, 100);
     const skip = (page - 1) * take;
-    const [data, total] = await this.orderRepo.findAndCount({
-      where: { medicId },
-      relations: { location: true },
-      order: { created_at: 'DESC' },
-      take,
-      skip,
-    });
+    let data: Order[] = [];
+    let total = 0;
+    try {
+      [data, total] = await this.orderRepo.findAndCount({
+        where: { medicId },
+        relations: { location: true },
+        order: { created_at: 'DESC' },
+        take,
+        skip,
+      });
+    } catch (err) {
+      if (!this.isMissingColumnError(err)) throw err;
+      const qb = this.orderRepo
+        .createQueryBuilder('o')
+        .leftJoin(OrderLocation, 'l', 'l.orderId = o.id')
+        .where('o.medicId = :medicId', { medicId })
+        .orderBy('o.created_at', 'DESC')
+        .take(take)
+        .skip(skip)
+        .select([
+          'o.id AS o_id',
+          'o.clientId AS o_clientId',
+          'o.medicId AS o_medicId',
+          'o.serviceId AS o_serviceId',
+          'o.serviceTitle AS o_serviceTitle',
+          'o.priceAmount AS o_priceAmount',
+          'o.discountAmount AS o_discountAmount',
+          'o.platformFee AS o_platformFee',
+          'o.status AS o_status',
+          'o.created_at AS o_created_at',
+          'o.updated_at AS o_updated_at',
+          'l.id AS l_id',
+          'l.orderId AS l_orderId',
+          'l.latitude AS l_latitude',
+          'l.longitude AS l_longitude',
+          'l.house AS l_house',
+          'l.floor AS l_floor',
+          'l.apartment AS l_apartment',
+          'l.phone AS l_phone',
+        ]);
+      const rows = await qb.getRawMany<Record<string, unknown>>();
+      data = rows.map((row) => this.mapLegacyOrderRow(row, false));
+      total = await this.orderRepo
+        .createQueryBuilder('o')
+        .where('o.medicId = :medicId', { medicId })
+        .getCount();
+    }
     return { data, total, page, totalPages: Math.ceil(total / take) };
   }
 
