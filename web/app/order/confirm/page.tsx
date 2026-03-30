@@ -30,10 +30,20 @@ function ConfirmForm() {
   const [discount, setDiscount] = useState(0);
   const [checkingDiscount, setCheckingDiscount] = useState(true);
   const [discountError, setDiscountError] = useState(false);
-  const total = price - discount;
+
+  const [isUrgent, setIsUrgent] = useState(false);
+  const [urgentFeePercent, setUrgentFeePercent] = useState(50);
+  const urgentFee = isUrgent ? Math.round(price * urgentFeePercent / 100) : 0;
+  const total = price + urgentFee - discount;
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+
+  useEffect(() => {
+    api.settings.get()
+      .then((s) => setUrgentFeePercent(s.urgentFeePercent ?? 50))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     api.orders.list()
@@ -69,6 +79,7 @@ function ConfirmForm() {
     const body = {
       serviceId,
       discountAmount: discount || undefined,
+      isUrgent: isUrgent || undefined,
       location: {
         latitude:  lat,
         longitude: lng,
@@ -165,6 +176,50 @@ function ConfirmForm() {
           </div>
         </div>
 
+        {/* Urgent toggle */}
+        <div style={cardStyle}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+                ⚡ {t("confirm.urgentLabel")}
+              </p>
+              <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                {t("confirm.urgentDescription")}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsUrgent(!isUrgent)}
+              style={{
+                width: 52, height: 28, borderRadius: 14, border: "none",
+                background: isUrgent ? "#f59e0b" : "#e2e8f0",
+                cursor: "pointer", position: "relative",
+                transition: "background 200ms ease",
+                flexShrink: 0, marginLeft: 12,
+              }}
+            >
+              <div style={{
+                width: 22, height: 22, borderRadius: "50%",
+                background: "#fff", position: "absolute",
+                top: 3,
+                left: isUrgent ? 27 : 3,
+                transition: "left 200ms ease",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+          {isUrgent && (
+            <div style={{
+              marginTop: 10, padding: "8px 12px",
+              background: "#fef3c7", borderRadius: 8,
+              fontSize: 13, color: "#92400e", fontWeight: 500,
+            }}>
+              {t("confirm.urgentFee")}: +{urgentFeePercent}% (+{formatPrice(urgentFee)} UZS)
+            </div>
+          )}
+        </div>
+
         {/* Price */}
         <div style={cardStyle}>
           <h2 style={sectionTitle}>{t("confirm.price")}</h2>
@@ -184,6 +239,17 @@ function ConfirmForm() {
             {!checkingDiscount && discountError && (
               <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 500 }}>
                 {t("confirm.discountCheckFailed")}
+              </div>
+            )}
+
+            {isUrgent && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>
+                  ⚡ {t("confirm.urgentFee")}
+                </span>
+                <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 700 }}>
+                  +{formatPrice(urgentFee)} UZS
+                </span>
               </div>
             )}
 

@@ -148,7 +148,11 @@
     "discountCheckFailed": "Chegirmani tekshirib bo'lmadi",
     "cancel": "Bekor qilish",
     "floor": "Qavat",
-    "apt": "Xonadon"
+    "apt": "Xonadon",
+    "urgentLabel": "Shoshilinch chaqiruv",
+    "urgentDescription": "Medikni ustuvor chiqishi",
+    "urgentFee": "Shoshilinch ustamasi",
+    "loadingSettings": "Sozlamalar yuklanmoqda..."
   },
   "location": {
     "title": "Manzilni ko'rsating",

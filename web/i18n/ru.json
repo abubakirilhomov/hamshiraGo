@@ -148,7 +148,11 @@
     "discountCheckFailed": "Не удалось проверить скидку",
     "cancel": "Отмена",
     "floor": "Этаж",
-    "apt": "Кв."
+    "apt": "Кв.",
+    "urgentLabel": "Срочный вызов",
+    "urgentDescription": "Приоритетный выезд медика",
+    "urgentFee": "Наценка за срочность",
+    "loadingSettings": "Загрузка настроек..."
   },
   "location": {
     "title": "Адрес вызова",

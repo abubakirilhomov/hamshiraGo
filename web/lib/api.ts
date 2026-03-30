@@ -110,6 +110,10 @@ export const api = {
       request<Medic[]>(`/medics/nearby?latitude=${lat}&longitude=${lng}`),
   },
 
+  settings: {
+    get: () => request<AppSettings>("/settings"),
+  },
+
   payments: {
     initiatePayment: (orderId: string, provider: PaymentProvider) =>
       request<PaymentInitResponse>(`/payments/${orderId}/initiate`, {
@@ -185,6 +189,7 @@ export interface Medic {
 export interface CreateOrderDto {
   serviceId: string;
   discountAmount?: number;
+  isUrgent?: boolean;
   location: {
     latitude: number;
     longitude: number;
@@ -193,6 +198,14 @@ export interface CreateOrderDto {
     apartment?: string;
     phone: string;
   };
+}
+
+export interface AppSettings {
+  isPaidMode: boolean;
+  commissionRate: number;
+  urgentFeePercent: number;
+  urgentStartHour: number;
+  urgentEndHour: number;
 }
 
 export type OrderStatus =
