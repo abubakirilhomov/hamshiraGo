@@ -15,28 +15,85 @@ export class UsersService {
     return this.userRepo.save(user);
   }
 
+  private isMissingColumnError(err: unknown): boolean {
+    return (
+      err instanceof Error &&
+      /column .* does not exist/i.test(err.message)
+    );
+  }
+
+  private findBaseBy(field: 'id' | 'phone', value: string): Promise<User | null> {
+    return this.userRepo
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.phone',
+        'user.name',
+        'user.passwordHash',
+        'user.pushToken',
+        'user.isBlocked',
+      ])
+      .where(`user.${field} = :value`, { value })
+      .getOne();
+  }
+
   async findByReferralCode(code: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { referralCode: code } });
+    try {
+      return await this.userRepo.findOne({ where: { referralCode: code } });
+    } catch (err) {
+      // Backward compatibility for old DB schema where referral columns are not migrated yet
+      if (this.isMissingColumnError(err)) return null;
+      throw err;
+    }
   }
 
   async setReferralCode(id: string, code: string): Promise<void> {
-    await this.userRepo.update(id, { referralCode: code });
+    try {
+      await this.userRepo.update(id, { referralCode: code });
+    } catch (err) {
+      if (this.isMissingColumnError(err)) return;
+      throw err;
+    }
   }
 
   async setPendingReferralDiscount(id: string, amount: number): Promise<void> {
-    await this.userRepo.update(id, { pendingReferralDiscount: amount });
+    try {
+      await this.userRepo.update(id, { pendingReferralDiscount: amount });
+    } catch (err) {
+      if (this.isMissingColumnError(err)) return;
+      throw err;
+    }
   }
 
   async markReferralBonusUsed(id: string): Promise<void> {
-    await this.userRepo.update(id, { referralBonusUsed: true });
+    try {
+      await this.userRepo.update(id, { referralBonusUsed: true });
+    } catch (err) {
+      if (this.isMissingColumnError(err)) return;
+      throw err;
+    }
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { id } });
+    try {
+      return await this.userRepo.findOne({ where: { id } });
+    } catch (err) {
+      if (this.isMissingColumnError(err)) {
+        return this.findBaseBy('id', id);
+      }
+      throw err;
+    }
   }
 
   async findByPhone(phone: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { phone } });
+    try {
+      return await this.userRepo.findOne({ where: { phone } });
+    } catch (err) {
+      if (this.isMissingColumnError(err)) {
+        return this.findBaseBy('phone', phone);
+      }
+      throw err;
+    }
   }
 
   async savePushToken(id: string, token: string): Promise<void> {

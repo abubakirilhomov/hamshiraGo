@@ -37,12 +37,21 @@ export class AuthService {
       referrer = await this.usersService.findByReferralCode(dto.referredByCode);
     }
 
-    const user = await this.usersService.create({
+    const createPayload: {
+      phone: string;
+      passwordHash: string;
+      name: string | null;
+      referredBy?: string | null;
+    } = {
       phone: dto.phone,
       passwordHash,
       name: dto.name ?? null,
-      referredBy: dto.referredByCode ?? null,
-    });
+    };
+    if (referrer && dto.referredByCode) {
+      createPayload.referredBy = dto.referredByCode;
+    }
+
+    const user = await this.usersService.create(createPayload);
 
     // Generate unique referral code — retry once on collision
     let referralCode = this.generateReferralCode();
