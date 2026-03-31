@@ -3,17 +3,25 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Between } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
 import { Review } from './entities/review.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
+import { PushNotificationsService } from '../realtime/push-notifications.service';
+import { UsersService } from '../users/users.service';
+import { MedicsService } from '../medics/medics.service';
+import { TelegramService } from '../common/telegram.service';
 
 @Injectable()
 export class ReviewsService {
+  private readonly logger = new Logger(ReviewsService.name);
+
   constructor(
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
@@ -23,6 +31,11 @@ export class ReviewsService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    private readonly pushService: PushNotificationsService,
+    private readonly usersService: UsersService,
+    private readonly medicsService: MedicsService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   async create(
@@ -142,6 +155,27 @@ export class ReviewsService {
     }
   }
 
+  /**
+   * Get aggregated rating stats for a target (medic or client).
+   * Used by dispatch to enrich invite payloads with client rating.
+   */
+  async getTargetRatingStats(
+    targetId: string,
+    targetRole: 'medic' | 'client',
+  ): Promise<{ averageRating: number | null; reviewCount: number }> {
+    const result = await this.reviewRepo
+      .createQueryBuilder('r')
+      .select('AVG(r.rating)', 'avg')
+      .addSelect('COUNT(r.id)', 'cnt')
+      .where('r.targetId = :targetId', { targetId })
+      .andWhere('r.targetRole = :targetRole', { targetRole })
+      .getRawOne();
+    return {
+      averageRating: result?.avg ? parseFloat(result.avg) : null,
+      reviewCount: parseInt(result?.cnt ?? '0', 10),
+    };
+  }
+
   /** Paginated list of reviews targeting a medic, newest first */
   async findByMedic(
     medicId: string,
@@ -186,5 +220,105 @@ export class ReviewsService {
       where: { orderId },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  /**
+   * Cron: every 15 minutes — sends push/Telegram reminders for orders
+   * completed ~1 hour ago where a review hasn't been left yet.
+   *
+   * Uses a 15-minute time window [75 min ago, 60 min ago] aligned with the
+   * cron interval so each order is only processed once, without needing an
+   * extra DB column.
+   */
+  @Cron('*/15 * * * *')
+  async sendReviewReminders(): Promise<void> {
+    try {
+      const now = new Date();
+      const from = new Date(now.getTime() - 75 * 60_000); // 75 min ago
+      const to = new Date(now.getTime() - 60 * 60_000);   // 60 min ago
+
+      // Find DONE orders whose updated_at falls within the window
+      const doneOrders = await this.orderRepo.find({
+        where: {
+          status: OrderStatus.DONE,
+          updated_at: Between(from, to),
+        },
+        select: ['id', 'clientId', 'medicId'],
+      });
+
+      if (!doneOrders.length) return;
+
+      // Load existing reviews for these orders in one query
+      const orderIds = doneOrders.map((o) => o.id);
+      const existingReviews = await this.reviewRepo
+        .createQueryBuilder('r')
+        .select(['r.orderId', 'r.authorRole'])
+        .where('r.orderId IN (:...orderIds)', { orderIds })
+        .getMany();
+
+      // Build a Set of "orderId:authorRole" for fast lookup
+      const reviewedSet = new Set(
+        existingReviews.map((r) => `${r.orderId}:${r.authorRole}`),
+      );
+
+      let clientReminders = 0;
+      let medicReminders = 0;
+
+      for (const order of doneOrders) {
+        // --- Client reminder ---
+        if (!reviewedSet.has(`${order.id}:client`)) {
+          try {
+            const pushToken = await this.usersService.getPushToken(order.clientId);
+            if (pushToken) {
+              await this.pushService.send([pushToken], {
+                title: 'Oцените медика',
+                body: 'Расскажите о качестве обслуживания!',
+                sound: 'default',
+                data: { orderId: order.id, action: 'review' },
+                channelId: 'order_updates',
+                priority: 'high',
+              });
+              clientReminders++;
+            }
+          } catch (err) {
+            this.logger.error(`Review reminder push to client ${order.clientId} failed: ${err}`);
+          }
+        }
+
+        // --- Medic reminder ---
+        if (order.medicId && !reviewedSet.has(`${order.id}:medic`)) {
+          try {
+            const medic = await this.medicsService.findById(order.medicId);
+            if (medic?.pushToken) {
+              await this.pushService.send([medic.pushToken], {
+                title: 'Oцените клиента',
+                body: 'Оставьте отзыв о клиенте',
+                sound: 'default',
+                data: { orderId: order.id, action: 'review' },
+                channelId: 'order_updates',
+                priority: 'high',
+              });
+              medicReminders++;
+            }
+            if (medic?.telegramChatId) {
+              await this.telegramService.sendMessage(
+                medic.telegramChatId,
+                'Оцените клиента — оставьте отзыв о последнем заказе в приложении HamshiraGo.',
+              );
+            }
+          } catch (err) {
+            this.logger.error(`Review reminder to medic ${order.medicId} failed: ${err}`);
+          }
+        }
+      }
+
+      if (clientReminders || medicReminders) {
+        this.logger.log(
+          `Review reminders sent: ${clientReminders} to clients, ${medicReminders} to medics`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(`sendReviewReminders cron failed: ${err}`);
+    }
   }
 }

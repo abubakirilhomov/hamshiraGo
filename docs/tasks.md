@@ -187,9 +187,10 @@
 - [x] Backend: `Review` поддерживает `authorRole` [client/medic], `targetRole` [medic/client] — двусторонние отзывы — `backend/src/reviews/entities/review.entity.ts`
 - [x] Backend: `GET /reviews/client/:id` — отзывы о клиенте от медиков — `backend/src/reviews/reviews.controller.ts`
 - [x] Backend: автоматический пересчёт `averageRating` у клиента (с try/catch — колонка может отсутствовать на Railway) — `backend/src/reviews/reviews.service.ts`
-- [ ] Backend: push/Telegram напоминание через 1 час если отзыв не оставлен
-- [ ] Web-medic/Mobile medic: экран оценки клиента после заказа (был ли вежлив, подготовил ли место, оплатил вовремя)
-- [ ] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
+- [x] Backend: push/Telegram напоминание через 1 час если отзыв не оставлен — `backend/src/reviews/reviews.service.ts` (cron `*/15 * * * *`)
+- [x] Mobile medic: экран оценки клиента после заказа (звёзды + комментарий + пропуск) — `medic/components/ClientRatingModal.tsx`, `medic/app/order/[id].tsx`, `medic/hooks/useOrderStatus.ts`
+- [ ] Web-medic: экран оценки клиента после заказа (был ли вежлив, подготовил ли место, оплатил вовремя)
+- [x] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
 - [ ] Admin: страница всех отзывов с фильтрами (по медику, клиенту, рейтингу, дате)
 
 ### Срочный вызов (extra fee) — Абубакир (backend) + Диёр (web/mobile)
@@ -222,8 +223,9 @@
 - [x] Backend: при диспатче — если геозона задана, отправлять только заказы внутри круга (haversine фильтр в `selectBestMedic`)
 - [x] Backend: `PATCH /medics/work-zone` — сохранить/обновить центр и радиус зоны
 - [x] Backend: `DELETE /medics/work-zone` — убрать ограничение (принимать заказы отовсюду)
-- [ ] Web-medic/Mobile medic: экран с картой — медик ставит точку и тянет круг (или слайдером выбирает радиус 1–15 км)
-- [ ] Web-medic/Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг)
+- [x] Mobile medic: экран с картой — медик ставит точку и слайдером выбирает радиус 0.5-50 км — `medic/app/work-zone.tsx`
+- [x] Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг) — `medic/app/work-zone.tsx`
+- [ ] Web-medic: экран с картой — медик ставит точку и тянет круг (или слайдером выбирает радиус)
 - [ ] Admin: на карте медиков отображать их геозоны
 
 ### SEO-страницы на лендинге — Диёр

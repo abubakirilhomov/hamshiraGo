@@ -85,6 +85,7 @@ export function useOrderStatus(orderId: string | undefined) {
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [doneEarnings, setDoneEarnings] = useState<{ earned: number } | null>(null);
   const orderRef = useRef<OrderDetail | null>(null);
   const fetchOrderRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
@@ -158,11 +159,7 @@ export function useOrderStatus(orderId: string | undefined) {
             const net = updated.priceAmount - (updated.discountAmount ?? 0);
             const fee = updated.platformFee ?? Math.round(net * 0.1);
             const earned = net - fee;
-            Alert.alert(
-              `${t('orders.completeOrder')} ✓`,
-              `${t('orders.netEarnings')}:\n+${earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
-              [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
-            );
+            setDoneEarnings({ earned });
           }
         } catch (e: unknown) {
           Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
@@ -180,7 +177,7 @@ export function useOrderStatus(orderId: string | undefined) {
         doUpdate();
       }
     },
-    [order, token, t, router],
+    [order, token, t],
   );
 
   // ── Notifications: dismiss when done/canceled ─────────────────────────────────
@@ -223,5 +220,5 @@ export function useOrderStatus(orderId: string | undefined) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { order, loading, wsConnected, updateOrderStatus, fetchOrder };
+  return { order, loading, wsConnected, updateOrderStatus, fetchOrder, doneEarnings };
 }

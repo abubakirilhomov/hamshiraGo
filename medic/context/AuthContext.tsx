@@ -24,6 +24,9 @@ export interface MedicUser {
   verificationRejectedReason: string | null;
   telegramChatId: string | null;
   onlineDisabledReason?: 'INACTIVE_5H' | null;
+  workZoneLat?: number | null;
+  workZoneLng?: number | null;
+  workZoneRadius?: number | null;
 }
 
 interface AuthState {

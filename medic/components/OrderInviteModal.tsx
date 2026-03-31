@@ -42,6 +42,10 @@ export interface DispatchInvitePayload {
       longitude: number;
     } | null;
   };
+  client?: {
+    averageRating: number | null;
+    reviewCount: number;
+  };
   expiresAt: string; // ISO timestamp
 }
 
@@ -240,6 +244,26 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
             <FontAwesome name="medkit" size={22} color={Theme.primary} />
             <Text style={styles.serviceTitle}>{invite.order.serviceTitle}</Text>
           </View>
+
+          {/* Client rating */}
+          <View style={styles.clientRatingRow}>
+            {invite.client && invite.client.reviewCount > 0 ? (
+              <View style={styles.clientRatingBadge}>
+                <FontAwesome name="star" size={14} color="#f59e0b" />
+                <Text style={styles.clientRatingText}>
+                  {invite.client.averageRating != null
+                    ? invite.client.averageRating.toFixed(1)
+                    : '—'}{' '}
+                  ({invite.client.reviewCount})
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.newClientBadge}>
+                <Text style={styles.newClientText}>{t('rating.newClient')}</Text>
+              </View>
+            )}
+          </View>
+
           <View style={styles.divider} />
 
           <InfoRow label={t('orders.cost')} value={`${netPrice.toLocaleString('ru-RU')} UZS`} valueStyle={styles.priceValue} />
@@ -504,6 +528,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Theme.text,
     flex: 1,
+  },
+  clientRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  clientRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#fef9c3',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  clientRatingText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  newClientBadge: {
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  newClientText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0369a1',
   },
   divider: {
     height: 1,

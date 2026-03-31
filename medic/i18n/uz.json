@@ -218,6 +218,28 @@
     "noCard": "Mijoz tibbiy kartasini to'ldirmagan",
     "noAccess": "Tibbiy kartaga kirish yo'q"
   },
+  "rating": {
+    "rateClient": "Mijozni baholang",
+    "tapStar": "Baholash uchun yulduzni bosing",
+    "selectRating": "Baho tanlang",
+    "submit": "Bahoni yuborish ({{stars}} ★)",
+    "reviewPlaceholder": "Izoh (ixtiyoriy)...",
+    "skip": "O'tkazib yuborish",
+    "clientRating": "Mijoz reytingi",
+    "newClient": "Yangi mijoz"
+  },
+  "geofence": {
+    "workZone": "Ish zonasi",
+    "tapToSetCenter": "Zona markazini belgilash uchun xaritaga bosing",
+    "radius": "Radius",
+    "km": "km",
+    "saveZone": "Zonani saqlash",
+    "clearZone": "Cheklovni olib tashlash",
+    "saved": "Zona saqlandi",
+    "cleared": "Cheklov olib tashlandi",
+    "zoneActive": "Zona faol",
+    "noZone": "Zona o'rnatilmagan — barcha buyurtmalarni qabul qilasiz"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

@@ -15,6 +15,7 @@ import { UsersModule } from '../users/users.module';
 import { ServicesModule } from '../services/services.module';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
 import { FavoritesModule } from '../favorites/favorites.module';
+import { ReviewsModule } from '../reviews/reviews.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { FavoritesModule } from '../favorites/favorites.module';
     ServicesModule,
     AppSettingsModule,
     FavoritesModule,
+    ReviewsModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, DispatchService],

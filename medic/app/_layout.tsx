@@ -262,6 +262,7 @@ function RootLayoutNav() {
           name="verification"
           options={{ title: 'Верификация аккаунта', headerBackTitle: 'Назад' }}
         />
+        <Stack.Screen name="work-zone" options={{ headerBackTitle: 'Назад' }} />
       </Stack>
     </ThemeProvider>
   );

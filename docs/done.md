@@ -1,5 +1,35 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Medic work zone / geofence settings screen — medic app)
+
+- **[feat]** Created work zone screen with MapView + Circle overlay + radius slider (0.5-50 km) — `medic/app/work-zone.tsx`
+- **[feat]** Added `workZoneLat`, `workZoneLng`, `workZoneRadius` fields to `MedicUser` interface — `medic/context/AuthContext.tsx`
+- **[feat]** Added work zone navigation button to profile screen with active/inactive status display — `medic/app/(tabs)/profile.tsx`
+- **[feat]** Registered `work-zone` Stack.Screen in root layout — `medic/app/_layout.tsx`
+- **[i18n]** Added `geofence.*` keys (workZone, tapToSetCenter, radius, km, saveZone, clearZone, saved, cleared, zoneActive, noZone) — `medic/i18n/ru.json`, `medic/i18n/uz.json`
+- **[deps]** Installed `@react-native-community/slider` — `medic/package.json`
+
+## 2026-03-31 (Client rating in dispatch invite — backend + medic)
+
+- **[feat]** `ReviewsService.getTargetRatingStats()` — aggregated AVG(rating) + COUNT for a target (medic or client) — `backend/src/reviews/reviews.service.ts`
+- **[feat]** `DispatchService` injects `ReviewsService`, enriches `dispatch_invite` payload with `client.averageRating` and `client.reviewCount` (wrapped in try/catch) — `backend/src/orders/dispatch.service.ts`
+- **[feat]** `OrdersModule` imports `ReviewsModule` for dispatch access — `backend/src/orders/orders.module.ts`
+- **[feat]** `OrderInviteModal` displays client rating badge (gold star + score) or "New client" badge — `medic/components/OrderInviteModal.tsx`
+- **[feat]** `DispatchInvitePayload` extended with optional `client` field — `medic/components/OrderInviteModal.tsx`
+- **[i18n]** Added `rating.clientRating` and `rating.newClient` keys — `medic/i18n/ru.json`, `medic/i18n/uz.json`
+
+## 2026-03-31 (Medic rates client after DONE — medic app)
+
+- **[feat]** Created `ClientRatingModal` component (stars 1-5, comment, submit + skip buttons) — `medic/components/ClientRatingModal.tsx`
+- **[feat]** Modified `useOrderStatus` hook: stores `doneEarnings` in state instead of showing Alert on DONE; returns `doneEarnings` — `medic/hooks/useOrderStatus.ts`
+- **[feat]** Modified order detail screen: shows `ClientRatingModal` after DONE, submits review via `POST /reviews` with `targetRole: 'client'`, then shows earnings Alert and navigates — `medic/app/order/[id].tsx`
+- **[i18n]** Added `rating.*` keys (rateClient, tapStar, selectRating, submit, reviewPlaceholder, skip) — `medic/i18n/ru.json`, `medic/i18n/uz.json`
+
+## 2026-03-31 (Review reminder cron — backend)
+
+- **[feat]** `ReviewsService.sendReviewReminders()` — cron every 15 min, sends push/Telegram reminders ~1 hour after order completion if review not left — `backend/src/reviews/reviews.service.ts`
+- **[refactor]** `ReviewsModule` imports `RealtimeModule`, `UsersModule`, `MedicsModule` for push/telegram access — `backend/src/reviews/reviews.module.ts`
+
 ## 2026-03-31 (Geofence / work zone — backend)
 
 - **[feat]** Добавлены 3 nullable поля `workZoneLat`, `workZoneLng`, `workZoneRadius` в сущность `Medic` — `backend/src/medics/entities/medic.entity.ts`

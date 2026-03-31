@@ -435,6 +435,25 @@ export default function ProfileScreen() {
         </Pressable>
       )}
 
+      {/* Work zone */}
+      <Pressable
+        style={({ pressed }) => [styles.workZoneCard, pressed && { opacity: 0.88 }]}
+        onPress={() => router.push('/work-zone')}
+      >
+        <View style={styles.workZoneIconWrap}>
+          <FontAwesome name="map-o" size={18} color={Theme.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.workZoneTitle}>{t('geofence.workZone')}</Text>
+          <Text style={styles.workZoneSubtitle}>
+            {medic.workZoneRadius != null
+              ? `${t('geofence.zoneActive')} — ${medic.workZoneRadius} ${t('geofence.km')}`
+              : t('geofence.noZone')}
+          </Text>
+        </View>
+        <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
+      </Pressable>
+
       {/* Language picker */}
       <View style={styles.card}>
         <Text style={styles.cardSectionTitle}>{t('language.title')}</Text>
@@ -678,6 +697,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tgDisconnectText: { fontSize: 14, fontWeight: '600', color: Theme.textSecondary },
+  workZoneCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Theme.border,
+    backgroundColor: Theme.surface,
+  },
+  workZoneIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${Theme.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workZoneTitle: { fontSize: 15, fontWeight: '700', color: Theme.text },
+  workZoneSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

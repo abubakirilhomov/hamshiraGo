@@ -16,6 +16,7 @@ import { TelegramService } from '../common/telegram.service';
 import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { FavoritesService } from '../favorites/favorites.service';
+import { ReviewsService } from '../reviews/reviews.service';
 import { Medic } from '../medics/entities/medic.entity';
 import { haversineKm } from '../utils/geo';
 
@@ -40,6 +41,7 @@ export class DispatchService implements OnApplicationBootstrap {
     private medicsService: MedicsService,
     private usersService: UsersService,
     private favoritesService: FavoritesService,
+    private reviewsService: ReviewsService,
     private configService: ConfigService,
   ) {}
 
@@ -122,6 +124,17 @@ export class DispatchService implements OnApplicationBootstrap {
     });
     const savedAttempt = await this.attemptRepo.save(attempt);
 
+    // Fetch client rating stats (non-blocking — dispatch continues even if this fails)
+    let clientStats: { averageRating: number | null; reviewCount: number } = {
+      averageRating: null,
+      reviewCount: 0,
+    };
+    try {
+      clientStats = await this.reviewsService.getTargetRatingStats(order.clientId, 'client');
+    } catch (err) {
+      this.logger.warn(`Failed to fetch client rating for order ${orderId}: ${err}`);
+    }
+
     // Notify medic via WebSocket (dispatch_invite)
     this.gateway.emitDispatchInvite(medic.id, {
       orderId,
@@ -131,6 +144,10 @@ export class DispatchService implements OnApplicationBootstrap {
         priceAmount: order.priceAmount,
         discountAmount: order.discountAmount,
         location: order.location,
+      },
+      client: {
+        averageRating: clientStats.averageRating,
+        reviewCount: clientStats.reviewCount,
       },
       expiresAt: expiresAt.toISOString(),
     });

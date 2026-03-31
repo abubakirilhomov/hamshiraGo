@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -24,6 +24,7 @@ import { useMedicLocation } from '@/hooks/useMedicLocation';
 import { useMedicRoute } from '@/hooks/useMedicRoute';
 import { useSharedSocket } from '@/context/SocketContext';
 import { SwipeActionButton } from '@/components/SwipeActionButton';
+import ClientRatingModal from '@/components/ClientRatingModal';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
@@ -77,7 +78,10 @@ export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { token } = useAuth();
+  const router = useRouter();
   const [updating, setUpdating] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
@@ -88,7 +92,7 @@ export default function OrderDetailScreen() {
   const hasFittedMapRef = useRef(false);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
-  const { order, loading, wsConnected, updateOrderStatus } =
+  const { order, loading, wsConnected, updateOrderStatus, doneEarnings } =
     useOrderStatus(id);
   const { socket } = useSharedSocket();
 
@@ -183,6 +187,47 @@ export default function OrderDetailScreen() {
       setMedCardLoading(false);
     }
   }, [order?.clientId, token, t]);
+
+  // ── Show rating modal when order completes ─────────────────────────────────
+  useEffect(() => {
+    if (doneEarnings) {
+      setShowRating(true);
+    }
+  }, [doneEarnings]);
+
+  const showEarningsAndNavigate = useCallback(() => {
+    setShowRating(false);
+    if (doneEarnings) {
+      Alert.alert(
+        `${t('orders.completeOrder')} ✓`,
+        `${t('orders.netEarnings')}:\n+${doneEarnings.earned.toLocaleString('ru-RU')} ${t('common.sum')}`,
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)/my-orders') }],
+      );
+    } else {
+      router.replace('/(tabs)/my-orders');
+    }
+  }, [doneEarnings, t, router]);
+
+  const handleRateClient = useCallback(async (stars: number, comment?: string) => {
+    if (!order) return;
+    setRatingSubmitting(true);
+    try {
+      await apiFetch('/reviews', {
+        method: 'POST',
+        token: token ?? undefined,
+        body: JSON.stringify({
+          orderId: order.id,
+          rating: stars,
+          comment,
+          targetRole: 'client',
+        }),
+      });
+    } catch {
+      // Ignore review error — don't block navigation
+    }
+    setRatingSubmitting(false);
+    showEarningsAndNavigate();
+  }, [order, token, showEarningsAndNavigate]);
 
   // ── Loading guard ──────────────────────────────────────────────────────────
   if (loading || !order) {
@@ -533,6 +578,14 @@ export default function OrderDetailScreen() {
           <Text style={{ fontSize: 14, color: Theme.error }}>{order.cancelReason}</Text>
         </View>
       ) : null}
+
+      {/* Client rating modal after DONE */}
+      <ClientRatingModal
+        visible={showRating}
+        submitting={ratingSubmitting}
+        onSubmit={handleRateClient}
+        onSkip={showEarningsAndNavigate}
+      />
 
       {/* Medical card modal */}
       <Modal
