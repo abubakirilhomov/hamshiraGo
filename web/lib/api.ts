@@ -324,6 +324,26 @@ export const patchTreatmentCourse = (id: string, data: Record<string, unknown>) 
     body: JSON.stringify(data),
   });
 
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  authorRole: "client" | "medic";
+}
+
+export interface ReviewsResponse {
+  data: Review[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const getMedicReviews = (medicId: string, page = 1) =>
+  request<ReviewsResponse>(`/reviews/medic/${medicId}?page=${page}&limit=10`);
+
 // ─── Medical Card ─────────────────────────────────────────────────────────────
 
 export interface MedicalCard {
