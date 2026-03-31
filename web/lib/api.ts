@@ -258,6 +258,22 @@ export function formatPrice(n: number): string {
 
 // ─── Payment Types ────────────────────────────────────────
 
+// ─── Medical Card ─────────────────────────────────────────────────────────────
+
+export interface MedicalCard {
+  bloodType: string | null;
+  allergies: string | null;
+  chronicDiseases: string | null;
+  notes: string | null;
+}
+
+export const getMedicalCard = () => request<MedicalCard | null>("/medical-card");
+
+export const saveMedicalCard = (data: MedicalCard) =>
+  request<MedicalCard>("/medical-card", { method: "PUT", body: JSON.stringify(data) });
+
+// ─── Error Reporting ──────────────────────────────────────────────────────────
+
 export function reportClientError(message: string, stack?: string): void {
   const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
   fetch(`${BASE}/client-errors`, {

@@ -190,6 +190,19 @@
   "language": {
     "title": "Язык / Til"
   },
+  "medcard": {
+    "title": "Tibbiy karta",
+    "subtitle": "Qon guruhi, allergiyalar, surunkali kasalliklar",
+    "bloodType": "Qon guruhi",
+    "allergies": "Allergiyalar",
+    "allergiesPlaceholder": "Masalan: penitsillin, gulchangi...",
+    "chronicDiseases": "Surunkali kasalliklar",
+    "chronicPlaceholder": "Masalan: gipertenziya, diabet...",
+    "notes": "Qo'shimcha ma'lumotlar",
+    "notesPlaceholder": "Muhim tibbiy ma'lumotlar...",
+    "save": "Saqlash",
+    "saved": "Saqlandi!"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",
