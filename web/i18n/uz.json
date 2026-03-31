@@ -203,6 +203,20 @@
     "save": "Saqlash",
     "saved": "Saqlandi!"
   },
+  "referral": {
+    "title": "Do'st taklif qiling",
+    "yourCode": "Sizning referal kodingiz",
+    "copy": "Nusxa olish",
+    "copied": "Nusxa olindi!",
+    "share": "Ulashish",
+    "inviteLink": "Taklif havolasi",
+    "bonus": "Do'stingizni taklif qiling — ikkovingiz ham keyingi buyurtmaga chegirma olasiz",
+    "stats": "Statistika",
+    "friendsInvited": "Taklif qilingan do'stlar",
+    "bonusPaid": "Hisoblangan bonuslar",
+    "loading": "Yuklanmoqda...",
+    "shareText": "HamshiraGo bilan uyga hamshira chaqiring! Mening kodimdan foydalaning va birinchi buyurtmaga chegirma oling:"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

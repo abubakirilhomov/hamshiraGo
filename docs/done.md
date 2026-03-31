@@ -1,5 +1,6 @@
 # HamshiraGo — Выполненные задачи
 
+<<<<<<< HEAD
 ## 2026-03-31 (Medic work zone / geofence settings screen — medic app)
 
 - **[feat]** Created work zone screen with MapView + Circle overlay + radius slider (0.5-50 km) — `medic/app/work-zone.tsx`
@@ -49,6 +50,13 @@
 - **[feat]** `ReviewsService.findByMedic()`, `findByClient()`, `findByOrder()` — пагинация, сортировка по дате — `backend/src/reviews/reviews.service.ts`
 - **[feat]** `ReviewsController` — `POST /reviews`, `GET /reviews/medic/:id`, `GET /reviews/client/:id`, `GET /reviews/order/:id` — `backend/src/reviews/reviews.controller.ts`
 - **[feat]** `ReviewsModule` подключён в `AppModule` — `backend/src/app.module.ts`
+
+## 2026-03-31 (Referral Program — web client)
+
+- **[feat]** Добавлен интерфейс `ReferralInfo` и функция `getReferralInfo()` — `web/lib/api.ts`
+- **[feat]** Создана страница `web/app/referral/page.tsx`: хедер с зелёным градиентом, реферальный код крупно с кнопкой "Копировать", ссылка для приглашения `https://app.hamshirago.uz?ref=КОД` с кнопками "Поделиться" и "Копировать ссылку", блок объяснения бонуса, статистика
+- **[feat]** Добавлена кнопка "Пригласи друга" (FaGift) в профиль — `web/app/profile/page.tsx`
+- **[i18n]** Добавлены ключи секции `referral.*` — `web/i18n/ru.json`, `web/i18n/uz.json`
 
 ## 2026-03-31 (MedicalCard — web-medic)
 

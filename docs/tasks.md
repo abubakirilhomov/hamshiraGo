@@ -248,6 +248,7 @@
 - [x] Backend: логика начисления бонусов — оба получают скидку на следующий заказ — `orders.service.ts`
 - [x] Backend: `GET /referrals/my` — список приглашённых и бонусов — `backend/src/referrals/`
 - [x] Mobile: экран «Пригласи друга» с кодом/ссылкой + шаринг — `mobile/app/referral.tsx`
+- [x] Web: страница «Реферальная программа» с кодом, ссылкой, шарингом и статистикой — `web/app/referral/page.tsx`
 
 ### Персональный медик — Абубакир (backend) + Диёр (web/mobile)
 - [x] Backend: таблица `favorite_medics` — `backend/src/favorites/`

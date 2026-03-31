@@ -258,6 +258,16 @@ export function formatPrice(n: number): string {
 
 // ─── Payment Types ────────────────────────────────────────
 
+// ─── Referral ─────────────────────────────────────────────────────────────────
+
+export interface ReferralInfo {
+  referralCode: string;
+  referredCount: number;
+  bonusPaidCount: number;
+}
+
+export const getReferralInfo = () => request<ReferralInfo>("/referrals/my");
+
 // ─── Medical Card ─────────────────────────────────────────────────────────────
 
 export interface MedicalCard {
