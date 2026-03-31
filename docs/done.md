@@ -1,5 +1,11 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Web-medic: Web Push уведомления)
+
+- **[feat]** Добавлен `medicApi.webPush.subscribe` и `medicApi.webPush.unsubscribe` в `medicApi` — `web-medic/lib/api.ts`
+- **[fix]** Исправлен `subscribeWebPush` — теперь вызывает `Notification.requestPermission()` вместо молчаливой проверки `permission !== "granted"` — `web-medic/lib/webPush.ts`
+- **[verified]** `WebPushInit.tsx`, `webPush.ts`, `sw.js`, подключение в `layout.tsx` — уже существовали и корректно настроены для медиков (эндпоинт `/medics/web-push-subscription`, токен `medic_token`)
+
 ## 2026-03-31 (Admin: Reviews page, Settings urgent fields, Medic topup)
 
 - **[feat]** Добавлены интерфейсы `Review`, `AppSettings` и функции `getMedicReviews`, `getClientReviews`, `topupMedic`, `getSettings`, `updateSettings` — `admin/src/lib/api.ts`
