@@ -1,3 +1,4 @@
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
@@ -30,7 +31,7 @@ interface OrderCardProps {
   isActive: boolean;
 }
 
-export default function OrderCard({ order, isActive }: OrderCardProps) {
+function OrderCardComponent({ order, isActive }: OrderCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const statusLabels = getStatusLabel(t);
@@ -48,6 +49,8 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
       onPress={() => router.push({ pathname: '/order/track', params: { orderId: order.id } })}
+      accessibilityRole="button"
+      accessibilityLabel={`${order.serviceTitle}, ${statusLabels[order.status]}, ${finalPrice.toLocaleString('ru-RU')} UZS`}
     >
       <View style={styles.cardHeader}>
         <View style={styles.titleWrap}>
@@ -95,6 +98,9 @@ export default function OrderCard({ order, isActive }: OrderCardProps) {
     </Pressable>
   );
 }
+
+const OrderCard = React.memo(OrderCardComponent);
+export default OrderCard;
 
 const styles = StyleSheet.create({
   card: {

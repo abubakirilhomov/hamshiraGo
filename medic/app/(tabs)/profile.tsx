@@ -1,26 +1,25 @@
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Linking,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AppModal from '@/components/AppModal';
-import { useCallback, useEffect, useState } from 'react';
+import { SkeletonProfileHeader, SkeletonLine } from '@/components/SkeletonLoader';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
 import type { Language } from '@/i18n';
 import {
@@ -30,22 +29,23 @@ import {
   startBackgroundLocationUpdates,
   stopBackgroundLocationUpdates,
 } from '@/utils/backgroundLocation';
+import { cacheSet, cacheGetStale } from '@/utils/cache';
+import { trackEvent } from '@/utils/analytics';
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { VerificationCard } from '@/components/profile/VerificationCard';
+import { OnlineToggle } from '@/components/profile/OnlineToggle';
+import { StatsSection } from '@/components/profile/StatsSection';
 
 const TELEGRAM_BOT = 'hamshirago_medic_bot';
 const TELEGRAM_CHANNEL = 'https://t.me/hamshirago_medics'; // канал для медиков
 
 interface OrderCount { id: string; status: string; }
 
-const VERIFICATION_CONFIG = {
-  PENDING:  { labelKey: 'verification.statusPending',  color: '#f59e0b', icon: 'clock-o' as const,     bg: '#fef3c720', border: '#f59e0b40' },
-  APPROVED: { labelKey: 'verification.statusApproved',  color: '#10b981', icon: 'check-circle' as const, bg: '#d1fae520', border: '#10b98140' },
-  REJECTED: { labelKey: 'verification.statusRejected',  color: '#ef4444', icon: 'times-circle' as const, bg: '#fee2e220', border: '#ef444440' },
-};
-
 export default function ProfileScreen() {
   const { medic, token, updateOnlineStatus, refreshProfile, logout } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const router = useRouter();
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [completedCount, setCompletedCount] = useState<number | null>(null);
@@ -58,9 +58,27 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!token) return;
     apiFetch<{ data: OrderCount[]; total: number }>('/orders/medic/my?status=DONE&limit=1', { token })
-      .then((res) => setCompletedCount(res.total ?? res.data.length))
-      .catch(() => {});
+      .then(async (res) => {
+        const count = res.total ?? res.data.length;
+        setCompletedCount(count);
+        await cacheSet('medic_completed_count', count);
+      })
+      .catch(async () => {
+        try {
+          const cached = await cacheGetStale<number>('medic_completed_count');
+          if (cached != null) setCompletedCount(cached);
+        } catch {
+          // ignore cache read errors
+        }
+      });
   }, [token]);
+
+  // Cache medic profile whenever it changes
+  useEffect(() => {
+    if (medic) {
+      cacheSet('medic_profile', medic).catch(() => {});
+    }
+  }, [medic]);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,7 +100,38 @@ export default function ProfileScreen() {
     }, [medic?.isOnline]),
   );
 
-  if (!medic) return null;
+  const ratingDisplay = useMemo(() => {
+    if (medic?.rating == null) return null;
+    return Number(medic.rating).toFixed(1);
+  }, [medic?.rating]);
+
+  if (!medic) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <SkeletonProfileHeader />
+        <View style={{ marginHorizontal: 16, gap: 16 }}>
+          <View style={[styles.card, { margin: 0 }]}>
+            <SkeletonLine width="40%" height={12} />
+            <SkeletonLine width="100%" height={44} style={{ marginTop: 10 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={[styles.statCard, { gap: 6 }]}>
+              <SkeletonLine width={40} height={20} />
+              <SkeletonLine width={60} height={12} />
+            </View>
+            <View style={[styles.statCard, { gap: 6 }]}>
+              <SkeletonLine width={40} height={20} />
+              <SkeletonLine width={60} height={12} />
+            </View>
+            <View style={[styles.statCard, { gap: 6 }]}>
+              <SkeletonLine width={40} height={20} />
+              <SkeletonLine width={60} height={12} />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
+  }
 
   const handleToggleOnline = async (value: boolean) => {
     setTogglingOnline(true);
@@ -94,7 +143,7 @@ export default function ProfileScreen() {
       if (value) {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert(t('profile.noLocationAccess'), t('profile.allowLocationOnline'));
+          showToast(`${t('profile.noLocationAccess')}. ${t('profile.allowLocationOnline')}`, 'warning', 5000);
           return;
         }
 
@@ -109,10 +158,7 @@ export default function ProfileScreen() {
           await startBackgroundLocationUpdates();
         } catch {
           // Do not block online mode if background tracking isn't available on this runtime/build.
-          Alert.alert(
-            t('profile.bgLocationUnavailable'),
-            t('profile.bgLocationUnavailableMsg'),
-          );
+          showToast(`${t('profile.bgLocationUnavailable')}. ${t('profile.bgLocationUnavailableMsg')}`, 'warning', 5000);
         }
       } else {
         shouldStopBgAfterSuccess = true;
@@ -127,13 +173,14 @@ export default function ProfileScreen() {
         await stopBackgroundLocationUpdates();
       }
       updateOnlineStatus(value);
+      trackEvent('toggle_online', { isOnline: value }).catch(() => {});
       if (value) setHasAlwaysLocation(true);
     } catch (e: unknown) {
       if (value) {
         stopBackgroundLocationUpdates().catch(() => {});
         setHasAlwaysLocation(false);
       }
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('profile.errorUpdateStatus'));
+      showToast(e instanceof Error ? e.message : t('profile.errorUpdateStatus'), 'error');
     } finally {
       setTogglingOnline(false);
     }
@@ -150,7 +197,7 @@ export default function ProfileScreen() {
         );
       }
     } catch {
-      Alert.alert(t('common.error'), t('profile.errorPermission'));
+      showToast(t('profile.errorPermission'), 'error');
     }
   };
 
@@ -158,7 +205,7 @@ export default function ProfileScreen() {
     const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       if (canAskAgain) {
-        Alert.alert(t('profile.noGalleryAccess'), t('profile.allowGalleryAccess'));
+        showToast(`${t('profile.noGalleryAccess')}. ${t('profile.allowGalleryAccess')}`, 'warning');
       } else {
         Alert.alert(
           t('profile.noGalleryAccessTitle'),
@@ -194,7 +241,7 @@ export default function ProfileScreen() {
       if (!res.ok) throw new Error(t('profile.photoUploadError'));
       await refreshProfile();
     } catch {
-      Alert.alert(t('common.error'), t('profile.photoUploadError'));
+      showToast(t('profile.photoUploadError'), 'error');
     } finally {
       setUploadingPhoto(false);
     }
@@ -224,160 +271,59 @@ export default function ProfileScreen() {
       });
       await refreshProfile();
     } catch {
-      Alert.alert(t('common.error'), t('profile.errorTelegramDisconnect'));
+      showToast(t('profile.errorTelegramDisconnect'), 'error');
     } finally {
       setDisconnectingTg(false);
     }
   };
 
-  const vStatus = (medic.verificationStatus ?? 'PENDING') as keyof typeof VERIFICATION_CONFIG;
-  const vConfig = VERIFICATION_CONFIG[vStatus];
-
   return (
     <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
-      <LinearGradient
-        colors={Theme.bannerGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <Pressable style={styles.avatarWrap} onPress={handlePickPhoto} disabled={uploadingPhoto}>
-          {medic.profilePhotoUrl ? (
-            <Image source={{ uri: medic.profilePhotoUrl }} style={styles.avatarImg} />
-          ) : (
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{medic.name.charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
-          {uploadingPhoto ? (
-            <View style={styles.avatarBadge}>
-              <ActivityIndicator size="small" color="#fff" />
-            </View>
-          ) : (
-            <View style={styles.avatarBadge}>
-              <FontAwesome name="camera" size={10} color="#fff" />
-            </View>
-          )}
-        </Pressable>
-        <Text style={styles.name}>{medic.name}</Text>
-        <Text style={styles.phone}>{medic.phone}</Text>
-        {medic.rating != null && (
-          <View style={styles.ratingRow}>
-            <FontAwesome name="star" size={14} color="#fde68a" />
-            <Text style={styles.ratingText}>{Number(medic.rating).toFixed(1)}</Text>
-            {medic.reviewCount > 0 ? (
-              <Text style={styles.reviewCountText}>
-                ({medic.reviewCount} {t('review.reviews')})
-              </Text>
-            ) : (
-              <Text style={styles.reviewCountText}>{t('review.noReviews')}</Text>
-            )}
-          </View>
-        )}
-      </LinearGradient>
+      <ProfileHeader
+        medic={medic}
+        ratingDisplay={ratingDisplay}
+        uploadingPhoto={uploadingPhoto}
+        onPickPhoto={handlePickPhoto}
+        reviewLabel={t('review.reviews')}
+        noReviewsLabel={t('review.noReviews')}
+      />
 
       {/* Verification status card */}
-      <Pressable
-        style={[styles.verifyCard, { backgroundColor: vConfig.bg, borderColor: vConfig.border }]}
+      <VerificationCard
+        verificationStatus={medic.verificationStatus}
         onPress={() => router.push('/verification')}
-      >
-        <FontAwesome name={vConfig.icon} size={20} color={vConfig.color} />
-        <View style={styles.verifyTexts}>
-          <Text style={[styles.verifyTitle, { color: vConfig.color }]}>{t(vConfig.labelKey)}</Text>
-          <Text style={styles.verifyHint}>
-            {vStatus === 'APPROVED'
-              ? t('profile.verifiedHint')
-              : t('profile.verifyHint')}
-          </Text>
-        </View>
-        <FontAwesome name="chevron-right" size={13} color={vConfig.color} />
-      </Pressable>
+        t={t}
+      />
 
       {/* Online toggle */}
-      <View style={styles.card}>
-        <View style={styles.onlineRow}>
-          <View style={styles.onlineInfo}>
-            <View style={[styles.dot, { backgroundColor: medic.isOnline ? Theme.success : Theme.textSecondary }]} />
-            <View>
-              <Text style={styles.onlineLabel}>
-                {medic.isOnline ? t('profile.online') : t('profile.offline')}
-              </Text>
-              <Text style={styles.onlineHint}>
-                {medic.isOnline
-                  ? t('profile.onlineHint')
-                  : t('profile.offlineHint')}
-              </Text>
-            </View>
-          </View>
-          {togglingOnline ? (
-            <ActivityIndicator color={Theme.primary} />
-          ) : (
-            <Switch
-              value={medic.isOnline}
-              onValueChange={handleToggleOnline}
-              trackColor={{ false: Theme.border, true: `${Theme.primary}80` }}
-              thumbColor={medic.isOnline ? Theme.primary : Theme.textSecondary}
-            />
-          )}
-        </View>
-      </View>
-
-      {medic.isOnline && !hasAlwaysLocation && (
-        <View style={[styles.card, styles.locationWarningCard]}>
-          <View style={styles.warningRow}>
-            <FontAwesome name="exclamation-triangle" size={16} color="#92400e" />
-            <Text style={styles.warningTitle}>{t('profile.alwaysLocationOff')}</Text>
-          </View>
-          <Text style={styles.warningText}>
-            {t('profile.alwaysLocationMsg')}
-          </Text>
-          <Pressable
-            style={({ pressed }) => [styles.warningBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleEnableAlwaysLocation}
-          >
-            <Text style={styles.warningBtnText}>{t('profile.allowAlways')}</Text>
-          </Pressable>
-        </View>
-      )}
+      <OnlineToggle
+        isOnline={medic.isOnline}
+        onToggle={handleToggleOnline}
+        loading={togglingOnline}
+        onlineLabel={t('profile.online')}
+        offlineLabel={t('profile.offline')}
+        onlineHint={t('profile.onlineHint')}
+        offlineHint={t('profile.offlineHint')}
+        hasAlwaysLocation={hasAlwaysLocation}
+        alwaysLocationOffLabel={t('profile.alwaysLocationOff')}
+        alwaysLocationMsg={t('profile.alwaysLocationMsg')}
+        allowAlwaysLabel={t('profile.allowAlways')}
+        onEnableAlwaysLocation={handleEnableAlwaysLocation}
+      />
 
       {/* Stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{medic.experienceYears}</Text>
-          <Text style={styles.statLabel}>{t('profile.statExperience')}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{completedCount ?? '—'}</Text>
-          <Text style={styles.statLabel}>{t('profile.statCompleted')}</Text>
-        </View>
-        {medic.rating != null && (
-          <Pressable style={styles.statCard} onPress={() => router.push('/reviews')}>
-            <Text style={styles.statValue}>{Number(medic.rating).toFixed(1)}</Text>
-            <Text style={styles.statLabel}>{t('profile.statRating')}</Text>
-            <Text style={styles.statReviewCount}>{medic.reviewCount} {t('review.reviews')}</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {/* Balances — always visible */}
-      <View style={styles.balancesRow}>
-        <View style={[styles.walletCard, styles.balanceHalf]}>
-          <Text style={styles.walletLabel}>{t('profile.balance')}</Text>
-          <Text style={styles.walletValue}>
-            {Number(medic.balance).toLocaleString('ru-RU')} UZS
-          </Text>
-          <Text style={styles.walletHint}>{t('profile.workDeposit')}</Text>
-        </View>
-        <View style={[styles.walletCard, styles.balanceHalf, styles.earningsCard]}>
-          <Text style={styles.walletLabel}>{t('profile.earnings')}</Text>
-          <Text style={[styles.walletValue, styles.earningsValue]}>
-            {Number(medic.earnings ?? 0).toLocaleString('ru-RU')} UZS
-          </Text>
-          <Text style={styles.walletHint}>{t('profile.totalEarned')}</Text>
-        </View>
-      </View>
+      <StatsSection
+        experienceYears={medic.experienceYears}
+        completedCount={completedCount}
+        ratingDisplay={ratingDisplay}
+        reviewCount={medic.reviewCount}
+        balance={medic.balance}
+        earnings={medic.earnings ?? 0}
+        onRatingPress={() => router.push('/reviews')}
+        t={t}
+      />
 
       {/* Telegram */}
       <View style={styles.card}>
@@ -510,158 +456,42 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
   content: { paddingBottom: 40 },
-  header: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 32,
-  },
-  avatarWrap: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
-    position: 'relative',
-  },
-  avatarImg: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Theme.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  avatarText: { fontSize: 32, fontWeight: '700', color: '#fff' },
-  name: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  phone: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-  ratingText: { fontSize: 15, fontWeight: '700', color: '#fde68a' },
-  reviewCountText: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
-  verifyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  verifyTexts: { flex: 1 },
-  verifyTitle: { fontSize: 15, fontWeight: '700' },
-  verifyHint: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
-
   card: {
-    margin: 16,
+    margin: Spacing.lg,
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-  },
-  onlineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  onlineInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  onlineLabel: { fontSize: 16, fontWeight: '700', color: Theme.text },
-  onlineHint: { fontSize: 13, color: Theme.textSecondary, marginTop: 2 },
-  locationWarningCard: {
-    marginTop: -4,
-    backgroundColor: '#fef3c720',
-    borderColor: '#f59e0b40',
-  },
-  warningRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  warningTitle: { fontSize: 14, fontWeight: '700', color: '#92400e' },
-  warningText: { fontSize: 13, lineHeight: 18, color: '#78350f', marginBottom: 12 },
-  warningBtn: {
-    backgroundColor: '#f59e0b',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  warningBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
   },
   statCard: {
     flex: 1,
     backgroundColor: Theme.surface,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Theme.border,
   },
-  statValue: { fontSize: 20, fontWeight: '700', color: Theme.primary },
-  statLabel: { fontSize: 12, color: Theme.textSecondary, marginTop: 2, textAlign: 'center' },
-  statReviewCount: { fontSize: 10, color: Theme.textSecondary, textAlign: 'center', marginTop: 1 },
-  balancesRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-  },
-  balanceHalf: { flex: 1, marginBottom: 0, marginHorizontal: 0, paddingHorizontal: 12, paddingVertical: 12 },
-  earningsCard: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#86efac40',
-  },
-  walletCard: {
-    backgroundColor: `${Theme.primary}10`,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: `${Theme.primary}25`,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  walletLabel: { fontSize: 13, fontWeight: '600', color: Theme.textSecondary, marginBottom: 4 },
-  walletValue: { fontSize: 17, fontWeight: '700', color: Theme.primary },
-  walletHint: { fontSize: 11, color: Theme.textSecondary, marginTop: 2 },
-  earningsValue: { color: '#16a34a' },
   channelBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     backgroundColor: '#e0f2fe',
-    borderRadius: 12,
+    borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: '#bae6fd',
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   channelEmoji: { fontSize: 20 },
-  channelTitle: { fontSize: 14, fontWeight: '700', color: '#0c4a6e' },
-  channelSub: { fontSize: 12, color: '#0e7490', marginTop: 1 },
+  channelTitle: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: '#0c4a6e' },
+  channelSub: { fontSize: Typography.caption.fontSize, color: '#0e7490', marginTop: 1 },
   tgHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
     marginBottom: 14,
   },
   tgIconWrap: {
@@ -673,38 +503,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tgIcon: { fontSize: 20 },
-  tgTitle: { fontSize: 15, fontWeight: '700', color: Theme.text },
-  tgSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
+  tgTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
+  tgSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
   tgBadge: {
     backgroundColor: '#dcfce7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.sm,
   },
   tgBadgeText: { fontSize: 11, fontWeight: '700', color: '#16a34a' },
   tgConnectBtn: {
     backgroundColor: '#229ED9',
-    borderRadius: 12,
+    borderRadius: Radius.md,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  tgConnectText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  tgConnectText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
   tgDisconnectBtn: {
     borderWidth: 1,
     borderColor: Theme.border,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: Radius.sm,
+    paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
-  tgDisconnectText: { fontSize: 14, fontWeight: '600', color: Theme.textSecondary },
+  tgDisconnectText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
   workZoneCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    gap: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Theme.border,
     backgroundColor: Theme.surface,
@@ -717,39 +547,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  workZoneTitle: { fontSize: 15, fontWeight: '700', color: Theme.text },
-  workZoneSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
+  workZoneTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
+  workZoneSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: `${Theme.error}40`,
     backgroundColor: `${Theme.error}08`,
   },
   logoutBtnPressed: { opacity: 0.8 },
-  logoutText: { fontSize: 16, fontWeight: '600', color: Theme.error },
-
+  logoutText: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.error },
   cardSectionTitle: {
-    fontSize: 12,
+    fontSize: Typography.caption.fontSize,
     fontWeight: '700',
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   langRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: Spacing.sm,
   },
   langBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.sm,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Theme.border,
@@ -760,7 +589,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${Theme.primary}15`,
   },
   langBtnText: {
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '500',
     color: Theme.textSecondary,
   },

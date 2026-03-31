@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     paddingTop: 40,
-    paddingBottom: 32,
+    paddingBottom: Spacing.xxl,
   },
   avatar: {
     width: 80,
@@ -208,21 +208,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   avatarText: { fontSize: 30, fontWeight: '700', color: '#fff' },
   name: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  phone: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  phone: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: Spacing.xs },
 
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
-    margin: 16,
+    gap: Spacing.md,
+    margin: Spacing.lg,
   },
   statCard: {
     flex: 1,
     backgroundColor: Theme.surface,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
@@ -232,14 +232,14 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: Theme.textSecondary, marginTop: 3, textAlign: 'center' },
 
   card: {
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
     backgroundColor: Theme.surface,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-    gap: 12,
+    gap: Spacing.md,
   },
   cardTitle: {
     fontSize: 12,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
   },
   infoIcon: { width: 20, textAlign: 'center' },
   infoTexts: { flex: 1 },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
   },
-  linkIcon: { width: 20, textAlign: 'center', marginRight: 12 },
+  linkIcon: { width: 20, textAlign: 'center', marginRight: Spacing.md },
   linkText: {
     flex: 1,
     fontSize: 15,
@@ -303,11 +303,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 4,
-    paddingVertical: 16,
-    borderRadius: 12,
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xs,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: `${Theme.error}40`,
     backgroundColor: `${Theme.error}08`,

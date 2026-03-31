@@ -1,22 +1,25 @@
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { OrderInviteModal } from '@/components/OrderInviteModal';
 import AppModal from '@/components/AppModal';
 import NewOrderBanner from '@/components/NewOrderBanner';
+import { SkeletonCard } from '@/components/SkeletonLoader';
 import { useMedicOrderFeed, type AvailableOrder } from '@/hooks/useMedicOrderFeed';
+import { trackEvent } from '@/utils/analytics';
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -54,13 +57,13 @@ export default function AvailableOrdersScreen() {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleAccept = (orderId: string) => {
+  const handleAccept = useCallback((orderId: string) => {
     if (!medic?.isOnline) {
       setAcceptError(t('profile.offline') ?? 'Offline');
       return;
     }
     setAcceptModal(orderId);
-  };
+  }, [medic?.isOnline, t, setAcceptError, setAcceptModal]);
 
   const confirmAccept = async () => {
     const orderId = acceptModal;
@@ -68,6 +71,7 @@ export default function AvailableOrdersScreen() {
     setAccepting(orderId);
     try {
       await acceptOrder(orderId);
+      trackEvent('order_accepted', { orderId }).catch(() => {});
       router.push(`/order/${orderId}`);
     } catch {
       // error is already handled by the hook (setAcceptError)
@@ -78,10 +82,30 @@ export default function AvailableOrdersScreen() {
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  const handleRefresh = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await onRefresh();
+  }, [onRefresh]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: AvailableOrder }) => (
+      <AvailableOrderCard
+        order={item}
+        onAccept={() => handleAccept(item.id)}
+        accepting={accepting === item.id}
+      />
+    ),
+    [accepting, handleAccept],
+  );
+
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Theme.primary} />
+      <View style={styles.container}>
+        <View style={styles.listContent}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </View>
       </View>
     );
   }
@@ -167,12 +191,12 @@ export default function AvailableOrdersScreen() {
         </View>
       )}
 
-      <FlatList
+      <FlashList
         data={orders}
         keyExtractor={(item) => item.id}
         contentContainerStyle={orders.length === 0 ? styles.emptyContainer : styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Theme.primary} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -181,13 +205,7 @@ export default function AvailableOrdersScreen() {
             <Text style={styles.emptyHint}>{t('common.retry')}</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <AvailableOrderCard
-            order={item}
-            onAccept={() => handleAccept(item.id)}
-            accepting={accepting === item.id}
-          />
-        )}
+        renderItem={renderItem}
       />
 
       {/* Fullscreen dispatch invite modal */}
@@ -219,7 +237,7 @@ export default function AvailableOrdersScreen() {
 
 // ─── Order card ───────────────────────────────────────────────────────────────
 
-function AvailableOrderCard({
+const AvailableOrderCard = React.memo(function AvailableOrderCard({
   order,
   onAccept,
   accepting,
@@ -234,7 +252,7 @@ function AvailableOrderCard({
   const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <View style={styles.card}>
+    <View style={styles.card} accessibilityRole="button" accessibilityLabel={`${order.serviceTitle}, ${order.location?.house ?? ''}, ${finalPrice.toLocaleString('ru-RU')} UZS`}>
       <View style={styles.cardHeader}>
         <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
         <Text style={styles.price}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
@@ -268,6 +286,8 @@ function AvailableOrderCard({
           ]}
           onPress={onAccept}
           disabled={accepting}
+          accessibilityRole="button"
+          accessibilityLabel={t('dispatch.accept')}
         >
           {accepting ? (
             <ActivityIndicator size="small" color="#fff" />
@@ -278,7 +298,7 @@ function AvailableOrderCard({
       </View>
     </View>
   );
-}
+});
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -289,9 +309,9 @@ const styles = StyleSheet.create({
   verifyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
   },
   verifyBannerPending: {
@@ -304,7 +324,7 @@ const styles = StyleSheet.create({
   },
   verifyBannerText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: Typography.caption.fontSize,
     fontWeight: '600',
     color: '#92400e',
   },
@@ -312,56 +332,56 @@ const styles = StyleSheet.create({
   nophotoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     backgroundColor: '#fef3c720',
     borderBottomWidth: 1,
     borderBottomColor: '#f59e0b40',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
-  nophotoText: { flex: 1, fontSize: 13, color: '#92400e', fontWeight: '500' },
+  nophotoText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: '#92400e', fontWeight: '500' },
 
   offlineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     backgroundColor: '#eab30820',
     borderBottomWidth: 1,
     borderBottomColor: '#eab30840',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
-  offlineText: { flex: 1, fontSize: 13, color: '#854d0e', fontWeight: '500' },
+  offlineText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: '#854d0e', fontWeight: '500' },
 
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: 9,
     borderBottomWidth: 1,
   },
   statusBarLive: { backgroundColor: '#d1fae520', borderBottomColor: '#6ee7b740' },
   statusBarWaiting: { backgroundColor: '#fef3c720', borderBottomColor: '#fde68a40' },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  statusBarText: { fontSize: 12, fontWeight: '600' },
+  statusDot: { width: 8, height: 8, borderRadius: Radius.xs },
+  statusBarText: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
-  listContent: { padding: 16, gap: 12 },
+  listContent: { padding: Spacing.lg, gap: Spacing.md },
   emptyContainer: { flexGrow: 1 },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     paddingTop: 80,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Theme.text },
-  emptyHint: { fontSize: 14, color: Theme.textSecondary },
+  emptyTitle: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text },
+  emptyHint: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
 
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
   },
@@ -369,63 +389,63 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
+    marginBottom: Spacing.sm,
   },
-  serviceTitle: { fontSize: 16, fontWeight: '700', color: Theme.text, flex: 1 },
-  price: { fontSize: 15, fontWeight: '700', color: Theme.primary, marginLeft: 8 },
+  serviceTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text, flex: 1 },
+  price: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.primary, marginLeft: Spacing.sm },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
     marginBottom: 6,
   },
-  locationText: { flex: 1, fontSize: 13, color: Theme.textSecondary },
+  locationText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Theme.border,
   },
-  time: { fontSize: 13, color: Theme.textSecondary },
+  time: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
   acceptBtn: {
     backgroundColor: Theme.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radius.sm,
     minWidth: 100,
     alignItems: 'center',
   },
   acceptBtnPressed: { opacity: 0.9 },
   acceptBtnDisabled: { opacity: 0.7 },
-  acceptBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  acceptBtnText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
 
   fetchErrorBox: {
-    margin: 12,
+    margin: Spacing.md,
     padding: 14,
     backgroundColor: '#fee2e220',
-    borderRadius: 10,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#ef444440',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
   },
   fetchErrorText: {
     flex: 1,
-    fontSize: 13,
-    color: '#ef4444',
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.error,
   },
   fetchRetryBtn: {
-    paddingHorizontal: 12,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
+    backgroundColor: Theme.error,
+    borderRadius: Radius.sm,
   },
   fetchRetryText: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: '#fff',
   },

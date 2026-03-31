@@ -2,6 +2,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useRef } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import type { AvailableOrder } from '@/hooks/useMedicOrderFeed';
 
 interface Props {
@@ -75,23 +76,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 100,
-    backgroundColor: '#dc2626',
+    backgroundColor: Theme.error,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 10,
-    gap: 10,
+    gap: Spacing.sm,
   },
   bannerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     flex: 1,
   },
   bannerIconWrap: {
@@ -103,16 +104,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bannerText: { flex: 1 },
-  bannerTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  bannerPrice: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
-  bannerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bannerTitle: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: '#fff' },
+  bannerPrice: { fontSize: Typography.bodySmall.fontSize, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
+  bannerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   bannerAcceptBtn: {
     backgroundColor: '#fff',
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
   },
-  bannerAcceptText: { fontSize: 13, fontWeight: '700', color: '#dc2626' },
+  bannerAcceptText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: Theme.error },
   bannerCloseBtn: {
     padding: 6,
   },

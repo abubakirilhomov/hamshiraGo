@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
 
 export const styles = StyleSheet.create({
   scroll: {
@@ -7,26 +7,26 @@ export const styles = StyleSheet.create({
     backgroundColor: Theme.background,
   },
   content: {
-    padding: 16,
+    padding: Spacing.lg,
     paddingBottom: 40,
-    gap: 12,
+    gap: Spacing.md,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Theme.background,
-    gap: 16,
+    gap: Spacing.lg,
   },
   errorText: {
     fontSize: 16,
     color: Theme.textSecondary,
   },
   backBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
     backgroundColor: Theme.primary,
-    borderRadius: 12,
+    borderRadius: Radius.md,
   },
   backBtnText: {
     color: '#fff',
@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
   // Header
   headerCard: {
     backgroundColor: Theme.surface,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 18,
     borderWidth: 1,
     borderColor: Theme.border,
@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   serviceTitle: {
     fontSize: 18,
@@ -60,13 +60,13 @@ export const styles = StyleSheet.create({
     gap: 5,
     backgroundColor: `${Theme.success}18`,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.xl,
   },
   liveDot: {
     width: 7,
     height: 7,
-    borderRadius: 4,
+    borderRadius: Radius.xs,
     backgroundColor: Theme.success,
   },
   liveText: {
@@ -82,9 +82,9 @@ export const styles = StyleSheet.create({
   urgentBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#fee2e2',
-    borderRadius: 8,
+    borderRadius: Radius.sm,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: Spacing.xs,
     marginBottom: 6,
     borderWidth: 1,
     borderColor: '#fca5a5',
@@ -92,19 +92,19 @@ export const styles = StyleSheet.create({
   urgentBadgeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#dc2626',
+    color: Theme.error,
   },
   urgentFeeText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#dc2626',
-    marginTop: 4,
+    color: Theme.error,
+    marginTop: Spacing.xs,
   },
 
   // Section card
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 18,
     borderWidth: 1,
     borderColor: Theme.border,
@@ -164,7 +164,7 @@ export const styles = StyleSheet.create({
   medicAvatar: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: Radius.xl,
     backgroundColor: `${Theme.primary}18`,
     alignItems: 'center',
     justifyContent: 'center',
@@ -173,7 +173,7 @@ export const styles = StyleSheet.create({
   medicAvatarImg: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: Radius.xl,
   },
   medicInfo: {
     flex: 1,
@@ -189,7 +189,7 @@ export const styles = StyleSheet.create({
   addressRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    gap: Spacing.sm,
   },
   addressText: {
     fontSize: 14,
@@ -198,7 +198,7 @@ export const styles = StyleSheet.create({
   },
   mapWrap: {
     height: 220,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     overflow: 'hidden',
   },
   map: {
@@ -244,37 +244,31 @@ export const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#2563eb',
+    backgroundColor: Theme.info,
   },
   clientMarkerDot: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#2563eb',
+    backgroundColor: Theme.info,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
     borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    ...Shadow.md,
     shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
   },
   medicMarkerDot: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#16a34a',
+    backgroundColor: Theme.success,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2.5,
     borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    ...Shadow.md,
     shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
   },
   markerEmoji: {
     fontSize: 18,
@@ -283,7 +277,7 @@ export const styles = StyleSheet.create({
   medicMarkerImg: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
   },
 
   // Dispatch status banner
@@ -292,7 +286,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: `${Theme.primary}10`,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
     borderWidth: 1,
     borderColor: `${Theme.primary}25`,
@@ -327,7 +321,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: `${Theme.error}12`,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
     borderWidth: 1,
     borderColor: `${Theme.error}30`,
@@ -348,9 +342,9 @@ export const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Theme.error,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   cancelBtnText: {
     fontSize: 15,
@@ -360,9 +354,9 @@ export const styles = StyleSheet.create({
   doneBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   doneBtnText: {
     fontSize: 15,
@@ -372,9 +366,9 @@ export const styles = StyleSheet.create({
   payBtn: {
     backgroundColor: Theme.success,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   payBtnText: {
     fontSize: 15,
@@ -386,19 +380,19 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: Theme.success,
     textAlign: 'center',
-    paddingVertical: 16,
-    marginTop: 4,
+    paddingVertical: Spacing.lg,
+    marginTop: Spacing.xs,
   },
   favoriteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     borderWidth: 1.5,
     borderColor: Theme.primary,
     borderRadius: 14,
     padding: 14,
-    marginTop: 4,
+    marginTop: Spacing.xs,
     backgroundColor: `${Theme.primary}08`,
   },
   favoriteBtnActive: {
@@ -415,7 +409,7 @@ export const styles = StyleSheet.create({
   candidateBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
     backgroundColor: Theme.surface,
     borderRadius: 14,
     borderWidth: 1,
@@ -426,13 +420,13 @@ export const styles = StyleSheet.create({
   candidateAvatar: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: Radius.xl,
     backgroundColor: `${Theme.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  candidateAvatarImg: { width: 48, height: 48, borderRadius: 24 },
+  candidateAvatarImg: { width: 48, height: 48, borderRadius: Radius.xl },
   candidateInfo: { flex: 1 },
   candidateName: { fontSize: 15, fontWeight: '700', color: Theme.text },
   candidateSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
@@ -440,8 +434,8 @@ export const styles = StyleSheet.create({
   // Rating (submitted display)
   ratingDoneRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
   },
   clientReviewText: {
     fontSize: 14,
@@ -455,7 +449,7 @@ export const styles = StyleSheet.create({
   medicRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.xs,
   },
   medicRatingText: {
     fontSize: 13,

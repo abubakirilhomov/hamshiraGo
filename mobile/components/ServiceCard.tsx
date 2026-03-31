@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -16,19 +17,23 @@ type ServiceCardProps = {
   service: ServiceCardItem;
 };
 
-export function ServiceCard({ service }: ServiceCardProps) {
+export const ServiceCard = React.memo(function ServiceCard({ service }: ServiceCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
+
+  const handlePress = useCallback(() => {
+    router.push({
+      pathname: '/service/[id]',
+      params: { id: service.id },
+    });
+  }, [service.id, router]);
 
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() =>
-        router.push({
-          pathname: '/service/[id]',
-          params: { id: service.id },
-        })
-      }
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${service.title}, ${service.price.toLocaleString('ru-RU')} UZS`}
     >
       <View style={styles.iconWrap}>
         <FontAwesome name="medkit" size={24} color={Theme.primary} />
@@ -43,7 +48,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
       <FontAwesome name="chevron-right" size={14} color={Theme.textSecondary} />
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

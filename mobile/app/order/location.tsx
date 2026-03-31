@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import type { OrderAddress } from '@/types/order';
 import { useAuth } from '@/context/AuthContext';
 import { GPS_ACCURACY_THRESHOLD_METERS } from '@/constants/config';
@@ -242,15 +242,15 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: Spacing.lg, paddingBottom: 40 },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: Spacing.xl,
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: Spacing.md,
     fontSize: 15,
     color: Theme.textSecondary,
   },
@@ -258,21 +258,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Theme.text,
-    marginTop: 16,
+    marginTop: Spacing.lg,
     textAlign: 'center',
   },
   errorHint: {
     fontSize: 14,
     textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 24,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
   },
   retryButton: {
     marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
     backgroundColor: Theme.primary,
-    borderRadius: 12,
+    borderRadius: Radius.md,
   },
   retryButtonText: {
     color: '#fff',
@@ -281,12 +281,12 @@ const styles = StyleSheet.create({
   accuracyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: Spacing.md,
     backgroundColor: `${Theme.primary}12`,
     borderRadius: 10,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   accuracyRowWeak: {
     backgroundColor: `${Theme.warning}20`,
@@ -301,10 +301,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   coordsFallback: {
-    padding: 16,
+    padding: Spacing.lg,
     backgroundColor: Theme.surface,
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
   },
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   coordsHint: {
     fontSize: 12,
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   sectionTitle: {
     fontSize: 16,
@@ -328,24 +328,24 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     color: Theme.textSecondary,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
   input: {
     backgroundColor: Theme.surface,
     borderWidth: 1,
     borderColor: Theme.border,
     borderRadius: 10,
-    padding: 12,
+    padding: Spacing.md,
     fontSize: 16,
     color: Theme.text,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
-  row: { flexDirection: 'row', gap: 12 },
+  row: { flexDirection: 'row', gap: Spacing.md },
   half: { flex: 1 },
   confirmButton: {
     backgroundColor: Theme.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.md,
     alignItems: 'center',
   },
   confirmButtonPressed: { opacity: 0.9 },

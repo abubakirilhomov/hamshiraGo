@@ -12,9 +12,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text, View } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/constants/api';
+import { trackEvent } from '@/utils/analytics';
 
 type Mode = 'login' | 'register';
 
@@ -45,8 +46,10 @@ export default function AuthScreen() {
     try {
       if (mode === 'login') {
         await login(phone.trim(), password);
+        trackEvent('login').catch(() => {});
       } else {
         await register(phone.trim(), password, name.trim() || undefined, referralCode.trim() || undefined);
+        trackEvent('register').catch(() => {});
       }
     } catch (e: unknown) {
       const raw = (e instanceof Error ? e.message : '').toLowerCase();
@@ -111,6 +114,9 @@ export default function AuthScreen() {
             <Pressable
               style={[styles.tab, mode === 'login' && styles.tabActive]}
               onPress={() => { setMode('login'); setError(null); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === 'login' }}
+              accessibilityLabel={t('auth.login')}
             >
               <Text style={[styles.tabText, mode === 'login' && styles.tabTextActive]}>
                 {t('auth.login')}
@@ -119,6 +125,9 @@ export default function AuthScreen() {
             <Pressable
               style={[styles.tab, mode === 'register' && styles.tabActive]}
               onPress={() => { setMode('register'); setError(null); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === 'register' }}
+              accessibilityLabel={t('auth.register')}
             >
               <Text style={[styles.tabText, mode === 'register' && styles.tabTextActive]}>
                 {t('auth.register')}
@@ -137,6 +146,7 @@ export default function AuthScreen() {
                 placeholderTextColor={Theme.textSecondary}
                 autoCapitalize="words"
                 returnKeyType="next"
+                accessibilityLabel="Имя"
               />
             </>
           )}
@@ -151,6 +161,7 @@ export default function AuthScreen() {
             keyboardType="phone-pad"
             autoComplete="tel"
             returnKeyType="next"
+            accessibilityLabel="Телефон"
           />
 
           <Text style={styles.label}>{t('auth.password')}</Text>
@@ -163,6 +174,7 @@ export default function AuthScreen() {
             secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
+            accessibilityLabel="Пароль"
           />
 
           {mode === 'register' && (
@@ -174,7 +186,7 @@ export default function AuthScreen() {
               {referralExpanded && (
                 <>
                   <TextInput
-                    style={[styles.input, referralStatus === 'invalid' && { borderColor: Theme.error }, referralStatus === 'valid' && { borderColor: '#16a34a' }]}
+                    style={[styles.input, referralStatus === 'invalid' && { borderColor: Theme.error }, referralStatus === 'valid' && { borderColor: Theme.success }]}
                     value={referralCode}
                     onChangeText={(v) => { setReferralCode(v.toUpperCase()); setReferralStatus('idle'); }}
                     onBlur={handleReferralBlur}
@@ -182,9 +194,10 @@ export default function AuthScreen() {
                     placeholderTextColor={Theme.textSecondary}
                     autoCapitalize="characters"
                     maxLength={16}
+                    accessibilityLabel="Реферальный код"
                   />
                   {referralStatus === 'valid' && (
-                    <Text style={[styles.referralHint, { color: '#16a34a' }]}>{t('referral.codeValid')}</Text>
+                    <Text style={[styles.referralHint, { color: Theme.success }]}>{t('referral.codeValid')}</Text>
                   )}
                   {referralStatus === 'invalid' && (
                     <Text style={[styles.referralHint, { color: Theme.error }]}>{t('referral.codeInvalid')}</Text>
@@ -205,6 +218,8 @@ export default function AuthScreen() {
             style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, loading && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={mode === 'login' ? t('auth.login') : t('auth.register')}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
@@ -236,7 +251,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 80,
-    paddingBottom: 48,
+    paddingBottom: Spacing.xxxl,
     alignItems: 'center',
   },
   logoWrap: {
@@ -246,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   appName: {
     fontSize: 26,
@@ -256,40 +271,32 @@ const styles = StyleSheet.create({
   appTagline: {
     fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   card: {
-    margin: 16,
+    margin: Spacing.lg,
     marginTop: -24,
     backgroundColor: Theme.surface,
-    borderRadius: 20,
+    borderRadius: Radius.xl,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    ...Shadow.lg,
   },
   tabRow: {
     flexDirection: 'row',
     backgroundColor: Theme.background,
     borderRadius: 10,
-    padding: 4,
+    padding: Spacing.xs,
     marginBottom: 20,
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
     alignItems: 'center',
   },
   tabActive: {
     backgroundColor: Theme.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadow.sm,
   },
   tabText: {
     fontSize: 14,
@@ -311,6 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 13,
+
     fontSize: 16,
     color: Theme.text,
     marginBottom: 14,
@@ -318,10 +326,10 @@ const styles = StyleSheet.create({
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     backgroundColor: `${Theme.error}12`,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: Radius.sm,
+    padding: Spacing.md,
     marginBottom: 14,
   },
   errorText: {
@@ -331,10 +339,10 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     backgroundColor: Theme.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   submitBtnPressed: { opacity: 0.9 },
   submitBtnDisabled: { opacity: 0.7 },
@@ -345,8 +353,8 @@ const styles = StyleSheet.create({
   },
   switchLink: {
     alignItems: 'center',
-    marginTop: 16,
-    paddingVertical: 4,
+    marginTop: Spacing.lg,
+    paddingVertical: Spacing.xs,
   },
   switchText: {
     fontSize: 14,

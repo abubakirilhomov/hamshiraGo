@@ -8,10 +8,10 @@
  */
 
 import { useCallback, useRef } from 'react';
-import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import type { Socket } from 'socket.io-client';
 import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
+import { useToast } from '@/context/ToastContext';
 
 interface UseMedicLocationOptions {
   orderId: string | undefined;
@@ -28,6 +28,7 @@ export function useMedicLocation({
   onLastSentAt,
   onSentCountIncrement,
 }: UseMedicLocationOptions) {
+  const { showToast } = useToast();
   const watchRef = useRef<Location.LocationSubscription | null>(null);
   const locationDeniedWarnedRef = useRef(false);
   const startingRef = useRef(false); // set BEFORE async work to prevent re-entry
@@ -45,7 +46,7 @@ export function useMedicLocation({
         startingRef.current = false;
         if (!locationDeniedWarnedRef.current) {
           locationDeniedWarnedRef.current = true;
-          Alert.alert('Нет доступа к геолокации', 'Разрешите геолокацию, чтобы клиент видел ваш путь.');
+          showToast('Нет доступа к геолокации. Разрешите геолокацию, чтобы клиент видел ваш путь.', 'warning', 5000);
         }
         return;
       }
@@ -98,7 +99,7 @@ export function useMedicLocation({
         startingRef.current = false; // reset so stop+start can work correctly
       }).catch(() => { startingRef.current = false; });
     });
-  }, [orderId, socket, onLocationUpdate, onLastSentAt, onSentCountIncrement]);
+  }, [orderId, socket, onLocationUpdate, onLastSentAt, onSentCountIncrement, showToast]);
 
   const stopTracking = useCallback(() => {
     startingRef.current = false; // prevent pending async from completing

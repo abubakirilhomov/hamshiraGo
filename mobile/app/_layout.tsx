@@ -6,16 +6,20 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { SocketProvider } from '@/context/SocketContext';
+import { ToastProvider } from '@/context/ToastContext';
 import { registerPushToken } from '@/utils/registerPushToken';
 import { reportError } from '@/utils/reportError';
+import { trackEvent, flushPendingEvents } from '@/utils/analytics';
 import '@/i18n';
 
 Notifications.setNotificationHandler({
@@ -82,7 +86,9 @@ export default function RootLayout() {
       <LanguageProvider>
         <AuthProvider>
           <SocketProvider>
-            <RootLayoutNav />
+            <ToastProvider>
+              <RootLayoutNav />
+            </ToastProvider>
           </SocketProvider>
         </AuthProvider>
       </LanguageProvider>
@@ -96,13 +102,27 @@ function RootLayoutNav() {
   const { isLoaded, isFirstLaunch } = useLanguage();
   const segments = useSegments();
   const router = useRouter();
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (isLoading || !isLoaded) return; // wait for both stores
+    AsyncStorage.getItem('onboarding_completed')
+      .then((value) => setOnboardingDone(value === 'true'))
+      .catch(() => setOnboardingDone(true)); // skip onboarding if storage fails
+  }, []);
 
+  useEffect(() => {
+    if (isLoading || !isLoaded || onboardingDone === null) return; // wait for all stores
+
+    const inOnboarding = segments[0] === 'onboarding';
     const inLangPicker = segments[0] === 'language-picker';
 
-    // First launch → show language picker before auth
+    // First time ever → show onboarding slides
+    if (!onboardingDone) {
+      if (!inOnboarding) router.replace('/onboarding');
+      return;
+    }
+
+    // First launch (no language chosen yet) → show language picker before auth
     if (isFirstLaunch) {
       if (!inLangPicker) router.replace('/language-picker');
       return;
@@ -114,11 +134,56 @@ function RootLayoutNav() {
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [isLoaded, isFirstLaunch, token, segments, isLoading]);
+  }, [isLoaded, isFirstLaunch, token, segments, isLoading, onboardingDone]);
 
   useEffect(() => {
     if (token) registerPushToken(token);
   }, [token]);
+
+  // Analytics: track app open and flush pending events
+  useEffect(() => {
+    if (isLoading) return;
+    trackEvent('app_opened').catch(() => {});
+    flushPendingEvents().catch(() => {});
+  }, [isLoading]);
+
+  // Navigate when user taps a push notification (app in background)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as
+          | Record<string, string>
+          | undefined;
+        if (!data) return;
+        if (data.type === 'order' && data.orderId) {
+          router.push(`/order/track?id=${data.orderId}`);
+        } else if (data.type === 'course') {
+          router.push('/courses');
+        } else if (data.type === 'referral') {
+          router.push('/referral');
+        }
+      },
+    );
+    return () => subscription.remove();
+  }, []);
+
+  // Handle notification that launched the app from killed state
+  useEffect(() => {
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as
+        | Record<string, string>
+        | undefined;
+      if (!data) return;
+      if (data.type === 'order' && data.orderId) {
+        router.push(`/order/track?id=${data.orderId}`);
+      } else if (data.type === 'course') {
+        router.push('/courses');
+      } else if (data.type === 'referral') {
+        router.push('/referral');
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const originalHandler = ErrorUtils.getGlobalHandler();
@@ -136,7 +201,9 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <OfflineBanner />
       <Stack>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="language-picker" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

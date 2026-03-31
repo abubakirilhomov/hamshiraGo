@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useSharedSocket } from '@/context/SocketContext';
 import type { OrderStatus, OrderLocation } from '@/types/order';
 
@@ -79,6 +80,7 @@ export const NEXT_STATUS_MAP: Partial<
 
 export function useOrderStatus(orderId: string | undefined) {
   const { token } = useAuth();
+  const { showToast } = useToast();
   const { socket, connected: wsConnected } = useSharedSocket();
   const { t } = useTranslation();
   const router = useRouter();
@@ -101,7 +103,7 @@ export function useOrderStatus(orderId: string | undefined) {
       });
       setOrder(data);
     } catch {
-      Alert.alert('Ошибка', 'Не удалось загрузить заказ');
+      showToast('Не удалось загрузить заказ', 'error');
       router.back();
     }
   }, [orderId, token, router]);
@@ -162,7 +164,7 @@ export function useOrderStatus(orderId: string | undefined) {
             setDoneEarnings({ earned });
           }
         } catch (e: unknown) {
-          Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+          showToast(e instanceof Error ? e.message : t('common.error'), 'error');
         } finally {
           updatingCb(false);
         }

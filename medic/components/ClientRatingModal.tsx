@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from 'react-native';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { trackEvent } from '@/utils/analytics';
 
 interface ClientRatingModalProps {
   visible: boolean;
@@ -22,10 +24,16 @@ export default function ClientRatingModal({
   const [pendingRating, setPendingRating] = useState(0);
   const [review, setReview] = useState('');
 
+  const handleStarPress = useCallback((star: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPendingRating(star);
+  }, []);
+
   if (!visible) return null;
 
   const handleSubmit = () => {
     if (pendingRating === 0) return;
+    trackEvent('rating_submitted', { rating: pendingRating }).catch(() => {});
     onSubmit(pendingRating, review.trim() || undefined);
   };
 
@@ -40,8 +48,11 @@ export default function ClientRatingModal({
           <Pressable
             key={star}
             style={({ pressed }) => [styles.starBtn, pressed && { opacity: 0.6 }]}
-            onPress={() => setPendingRating(star)}
+            onPress={() => handleStarPress(star)}
             disabled={submitting}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} из 5 звёзд`}
+            accessibilityState={{ selected: star <= pendingRating }}
           >
             <FontAwesome
               name={star <= pendingRating ? 'star' : 'star-o'}
@@ -60,6 +71,7 @@ export default function ClientRatingModal({
         multiline
         maxLength={1000}
         editable={!submitting}
+        accessibilityLabel="Текст отзыва"
       />
       <Pressable
         style={({ pressed }) => [
@@ -69,6 +81,8 @@ export default function ClientRatingModal({
         ]}
         onPress={handleSubmit}
         disabled={submitting || pendingRating === 0}
+        accessibilityRole="button"
+        accessibilityLabel="Отправить отзыв"
       >
         {submitting
           ? <ActivityIndicator color="#fff" size="small" />
@@ -81,6 +95,8 @@ export default function ClientRatingModal({
         style={({ pressed }) => [styles.skipBtn, pressed && { opacity: 0.7 }]}
         onPress={onSkip}
         disabled={submitting}
+        accessibilityRole="button"
+        accessibilityLabel={t('rating.skip')}
       >
         <Text style={styles.skipBtnText}>{t('rating.skip')}</Text>
       </Pressable>
@@ -91,41 +107,41 @@ export default function ClientRatingModal({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 18,
     borderWidth: 1,
     borderColor: Theme.border,
     gap: 14,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '700',
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   ratingHint: {
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     marginTop: 2,
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
     color: Theme.textSecondary,
   },
   starsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
-    marginVertical: 8,
+    gap: Spacing.md,
+    marginVertical: Spacing.sm,
   },
   starBtn: {
     alignItems: 'center',
-    padding: 4,
+    padding: Spacing.xs,
   },
   reviewInput: {
     borderWidth: 1,
     borderColor: Theme.border,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
+    borderRadius: Radius.sm,
+    padding: Spacing.md,
+    fontSize: Typography.bodySmall.fontSize,
     color: Theme.text,
     minHeight: 72,
     textAlignVertical: 'top',
@@ -133,25 +149,25 @@ const styles = StyleSheet.create({
   },
   submitRatingBtn: {
     backgroundColor: Theme.primary,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   submitRatingDisabled: {
     backgroundColor: Theme.border,
   },
   submitRatingText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     fontWeight: '700',
   },
   skipBtn: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: Spacing.sm,
   },
   skipBtnText: {
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: Theme.textSecondary,
   },

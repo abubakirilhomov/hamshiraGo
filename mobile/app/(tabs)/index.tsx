@@ -1,13 +1,15 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { ServiceCard } from '@/components/ServiceCard';
+import { SkeletonServiceCard } from '@/components/SkeletonLoader';
 import { useLanguage } from '@/context/LanguageContext';
 import { useAuth } from '@/context/AuthContext';
+import { cacheSet, cacheGet, cacheGetStale } from '@/utils/cache';
 
 interface CatalogService {
   id: string;
@@ -27,18 +29,55 @@ export default function HomeScreen() {
   const { language } = useLanguage();
   const { token } = useAuth();
 
-  const loadServices = () => {
+  const [fromCache, setFromCache] = useState(false);
+
+  const SERVICES_CACHE_KEY = 'services';
+  const SERVICES_TTL = 3_600_000; // 1 hour
+
+  const loadServices = useCallback(async () => {
     setLoading(true);
     setError(null);
-    apiFetch<CatalogService[]>('/services', { token: token ?? undefined })
-      .then(setServices)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : t('common.error')))
-      .finally(() => setLoading(false));
-  };
+    setFromCache(false);
+
+    // Show fresh cache immediately while fetching in background
+    try {
+      const cached = await cacheGet<CatalogService[]>(SERVICES_CACHE_KEY, SERVICES_TTL);
+      if (cached && cached.length > 0) {
+        setServices(cached);
+        setLoading(false);
+      }
+    } catch {
+      // ignore cache read errors
+    }
+
+    try {
+      const data = await apiFetch<CatalogService[]>('/services', { token: token ?? undefined });
+      setServices(data);
+      setError(null);
+      await cacheSet(SERVICES_CACHE_KEY, data);
+    } catch (e: unknown) {
+      // If we already have fresh cached data shown, no need to show error
+      if (services.length > 0) return;
+      // Try stale cache as offline fallback
+      try {
+        const stale = await cacheGetStale<CatalogService[]>(SERVICES_CACHE_KEY);
+        if (stale && stale.length > 0) {
+          setServices(stale);
+          setFromCache(true);
+        } else {
+          setError(e instanceof Error ? e.message : t('common.error'));
+        }
+      } catch {
+        setError(e instanceof Error ? e.message : t('common.error'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [token, language]);
 
   useEffect(() => {
     loadServices();
-  }, [language]);
+  }, [loadServices]);
 
   const getTitle = (s: CatalogService) =>
     language === 'uz' && s.titleUz ? s.titleUz : s.title;
@@ -65,8 +104,19 @@ export default function HomeScreen() {
         <Text style={styles.bannerSubtitle}>{t('home.bannerSubtitle')}</Text>
       </LinearGradient>
 
+      {fromCache && (
+        <View style={styles.cacheBanner}>
+          <Text style={styles.cacheBannerText}>{t('common.cachedData')}</Text>
+        </View>
+      )}
+
       {loading ? (
-        <ActivityIndicator color={Theme.primary} style={{ marginTop: 32 }} />
+        <View style={{ marginTop: 16, gap: 0 }}>
+          <SkeletonServiceCard />
+          <SkeletonServiceCard />
+          <SkeletonServiceCard />
+          <SkeletonServiceCard />
+        </View>
       ) : error ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
@@ -104,13 +154,13 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
   },
   content: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl,
   },
   banner: {
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   bannerTitle: {
     fontSize: 22,
@@ -120,13 +170,13 @@ const styles = StyleSheet.create({
   bannerSubtitle: {
     fontSize: 15,
     color: 'rgba(255,255,255,0.9)',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   discountBadge: {
     backgroundColor: `${Theme.warning}20`,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
     borderWidth: 1,
     borderColor: `${Theme.warning}40`,
   },
@@ -140,15 +190,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Theme.text,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   errorBox: {
-    margin: 16,
-    padding: 16,
+    margin: Spacing.lg,
+    padding: Spacing.lg,
     backgroundColor: `${Theme.error}12`,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
   },
   errorText: {
     fontSize: 14,
@@ -165,5 +215,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
+  },
+  cacheBanner: {
+    backgroundColor: `${Theme.warning}20`,
+    borderRadius: Radius.sm,
+    padding: Spacing.sm,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: `${Theme.warning}40`,
+  },
+  cacheBannerText: {
+    fontSize: 13,
+    color: '#854d0e',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

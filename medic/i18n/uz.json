@@ -240,6 +240,17 @@
     "zoneActive": "Zona faol",
     "noZone": "Zona o'rnatilmagan — barcha buyurtmalarni qabul qilasiz"
   },
+  "onboarding": {
+    "slide1Title": "Buyurtmalarni qabul qiling",
+    "slide1Desc": "Atrofingizdagi mijozlardan buyurtmalar oling. Qabul qilish uchun suring va ishni boshlang.",
+    "slide2Title": "Tasdiqlashdan o'ting",
+    "slide2Desc": "Malakangizni tasdiqlash uchun rasm va litsenziyani yuklang. Bu mijozlar ishonchini oshiradi.",
+    "slide3Title": "Ish zonasini sozlang",
+    "slide3Desc": "Ish geozonangizngi belgilang — faqat tanlangan radius ichidagi buyurtmalarni olasiz.",
+    "next": "Keyingisi",
+    "start": "Boshlash",
+    "skip": "O'tkazib yuborish"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",
@@ -251,6 +262,7 @@
     "alwaysAllow": "Har doim ruxsat bering",
     "openSettings": "Sozlamalarni ochish",
     "permissionDenied": "Ruxsat rad etildi",
-    "close": "Yopish"
+    "close": "Yopish",
+    "cachedData": "Saqlangan ma'lumotlar ko'rsatilmoqda"
   }
 }

@@ -1,15 +1,18 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { FIRST_ORDER_DISCOUNT_RATE } from '@/constants/config';
+import { trackEvent } from '@/utils/analytics';
 
 interface CatalogService {
   id: string;
@@ -30,6 +33,7 @@ export default function OrderConfirmScreen() {
   const router = useRouter();
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [service, setService] = useState<CatalogService | null>(null);
@@ -78,6 +82,7 @@ export default function OrderConfirmScreen() {
 
   const handleSubmit = async () => {
     if (!service) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
       const order = await apiFetch<{ id: string }>('/orders', {
@@ -97,10 +102,16 @@ export default function OrderConfirmScreen() {
           },
         }),
       });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      trackEvent('order_created', {
+        serviceId: service.id,
+        isUrgent,
+        hasDiscount: discountAmount > 0,
+      }).catch(() => {});
       router.replace({ pathname: '/order/track', params: { orderId: order.id } });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('confirm.error');
-      Alert.alert(t('common.error'), msg);
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -253,19 +264,19 @@ function Row({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { padding: Spacing.lg, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: {
     fontSize: 20,
     fontWeight: '700',
     color: Theme.text,
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
   },
@@ -282,22 +293,22 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: Theme.border,
-    marginVertical: 12,
+    marginVertical: Spacing.md,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   rowLabel: { fontSize: 14 },
   rowValue: { fontSize: 14, fontWeight: '600', color: Theme.text },
   rowValueGreen: { color: Theme.success },
   priceBlock: {
     backgroundColor: Theme.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
     borderWidth: 1,
     borderColor: Theme.border,
   },
@@ -308,7 +319,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef3c7',
     borderRadius: 10,
     padding: 10,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: '#fde68a',
   },
@@ -322,8 +333,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Theme.border,
   },
@@ -331,9 +342,9 @@ const styles = StyleSheet.create({
   finalPrice: { fontSize: 18, fontWeight: '700', color: Theme.primary },
   urgentCard: {
     backgroundColor: Theme.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
   },
@@ -341,7 +352,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: Spacing.md,
   },
   urgentLabelWrap: {
     flex: 1,
@@ -362,8 +373,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Theme.error,
   },
-  buttons: { gap: 12 },
-  button: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  buttons: { gap: Spacing.md },
+  button: { paddingVertical: Spacing.lg, borderRadius: Radius.md, alignItems: 'center' },
   buttonPressed: { opacity: 0.9 },
   buttonDisabled: { opacity: 0.7 },
   primaryButton: { backgroundColor: Theme.primary },

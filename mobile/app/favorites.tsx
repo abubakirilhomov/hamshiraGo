@@ -1,16 +1,16 @@
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -68,7 +68,7 @@ function MedicCard({ medic }: { medic: FavoriteMedic }) {
     <View style={styles.card}>
       <View style={styles.avatar}>
         {medic.profilePhotoUrl ? (
-          <Image source={{ uri: medic.profilePhotoUrl }} style={styles.avatarImg} />
+          <Image source={{ uri: medic.profilePhotoUrl }} style={styles.avatarImg} placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }} contentFit="cover" transition={200} />
         ) : (
           <FontAwesome name="user-md" size={26} color={Theme.primary} />
         )}
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: Spacing.lg,
   },
   emptyText: {
     fontSize: 15,
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   list: {
-    padding: 16,
+    padding: Spacing.lg,
     gap: 10,
     backgroundColor: Theme.background,
     flexGrow: 1,

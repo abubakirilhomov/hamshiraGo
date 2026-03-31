@@ -5,17 +5,22 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
 
+import { ONBOARDING_DONE_KEY } from './onboarding';
+
 import { apiFetch } from '@/constants/api';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { SplashOverlay } from '@/components/SplashOverlay';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { SocketProvider } from '@/context/SocketContext';
+import { ToastProvider, useToast } from '@/context/ToastContext';
 import '@/i18n';
 import {
   hasBackgroundLocationPermission,
@@ -24,6 +29,7 @@ import {
 } from '@/utils/backgroundLocation';
 import { registerPushToken } from '@/utils/registerPushToken';
 import { reportError } from '@/utils/reportError';
+import { trackEvent, flushPendingEvents } from '@/utils/analytics';
 
 // Show notifications in foreground with sound
 Notifications.setNotificationHandler({
@@ -97,7 +103,9 @@ export default function RootLayout() {
       <LanguageProvider>
         <AuthProvider>
           <SocketProvider>
-            <RootLayoutNav />
+            <ToastProvider>
+              <RootLayoutNav />
+            </ToastProvider>
           </SocketProvider>
         </AuthProvider>
       </LanguageProvider>
@@ -114,13 +122,29 @@ function RootLayoutNav() {
   const lastLocationSyncTs = useRef(0);
   const lastPermissionReminderTs = useRef(0);
   const lastAutoOfflineAlertTs = useRef(0);
+  const { showToast } = useToast();
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+
+  // Load onboarding completion flag from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_DONE_KEY)
+      .then((val) => setOnboardingDone(val === 'true'))
+      .catch(() => setOnboardingDone(true)); // skip onboarding if storage fails
+  }, []);
 
   useEffect(() => {
-    if (isLoading || !isLoaded) return; // wait for both stores
+    if (isLoading || !isLoaded || onboardingDone === null) return; // wait for all stores
 
+    const inOnboarding = segments[0] === 'onboarding';
     const inLangPicker = segments[0] === 'language-picker';
 
-    // First launch → show language picker before auth
+    // First time ever → show onboarding slides
+    if (!onboardingDone) {
+      if (!inOnboarding) router.replace('/onboarding');
+      return;
+    }
+
+    // First launch (language not yet chosen) → show language picker before auth
     if (isFirstLaunch) {
       if (!inLangPicker) router.replace('/language-picker');
       return;
@@ -132,12 +156,53 @@ function RootLayoutNav() {
     } else if (token && inAuth) {
       router.replace('/(tabs)');
     }
-  }, [isLoaded, isFirstLaunch, token, segments, isLoading]);
+  }, [isLoaded, isFirstLaunch, token, segments, isLoading, onboardingDone]);
 
   // Register push token whenever the medic logs in
   useEffect(() => {
     if (token) registerPushToken(token);
   }, [token]);
+
+  // Analytics: track app open and flush pending events
+  useEffect(() => {
+    if (isLoading) return;
+    trackEvent('app_opened').catch(() => {});
+    flushPendingEvents().catch(() => {});
+  }, [isLoading]);
+
+  // Navigate when user taps a push notification (app in background)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as
+          | Record<string, string>
+          | undefined;
+        if (!data) return;
+        if (data.type === 'order' && data.orderId) {
+          router.push(`/order/${data.orderId}`);
+        } else if (data.type === 'invite') {
+          router.push('/(tabs)/');
+        }
+      },
+    );
+    return () => subscription.remove();
+  }, []);
+
+  // Handle notification that launched the app from killed state
+  useEffect(() => {
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as
+        | Record<string, string>
+        | undefined;
+      if (!data) return;
+      if (data.type === 'order' && data.orderId) {
+        router.push(`/order/${data.orderId}`);
+      } else if (data.type === 'invite') {
+        router.push('/(tabs)/');
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const originalHandler = ErrorUtils.getGlobalHandler();
@@ -231,10 +296,10 @@ function RootLayoutNav() {
     const now = Date.now();
     if (now - lastAutoOfflineAlertTs.current < 60_000) return;
     lastAutoOfflineAlertTs.current = now;
-    Alert.alert(
-      'Онлайн отключён автоматически',
-      'Вы были неактивны более 5 часов. Войдите заново и включите онлайн-режим.',
-      [{ text: 'Понятно' }],
+    showToast(
+      'Онлайн отключён автоматически. Вы были неактивны более 5 часов.',
+      'info',
+      5000,
     );
   }, [token, medic?.onlineDisabledReason]);
 
@@ -250,7 +315,9 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={DefaultTheme}>
+      <OfflineBanner />
       <Stack>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="language-picker" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

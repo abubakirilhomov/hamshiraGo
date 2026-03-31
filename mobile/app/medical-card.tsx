@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,9 +9,10 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 interface MedicalCard {
   bloodType: string | null;
@@ -24,6 +24,7 @@ interface MedicalCard {
 export default function MedicalCardScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [bloodType, setBloodType] = useState('');
@@ -60,9 +61,9 @@ export default function MedicalCardScreen() {
           notes: notes.trim() || null,
         }),
       });
-      Alert.alert(t('medcard.saved'));
+      showToast(t('medcard.saved'), 'success');
     } catch (e: unknown) {
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : String(e));
+      showToast(e instanceof Error ? e.message : String(e), 'error');
     } finally {
       setSaving(false);
     }
@@ -165,17 +166,17 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
   },
   content: {
-    padding: 16,
+    padding: Spacing.lg,
     paddingBottom: 40,
-    gap: 12,
+    gap: Spacing.md,
   },
   card: {
     backgroundColor: Theme.surface,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-    gap: 8,
+    gap: Spacing.sm,
   },
   fieldLabel: {
     fontSize: 12,
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Theme.border,
     borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 10,
     backgroundColor: Theme.background,
   },
@@ -201,9 +202,9 @@ const styles = StyleSheet.create({
   saveBtn: {
     backgroundColor: Theme.primary,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   saveBtnText: {
     fontSize: 15,

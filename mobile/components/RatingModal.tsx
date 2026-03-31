@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { trackEvent } from '@/utils/analytics';
 
 interface RatingModalProps {
   visible: boolean;
@@ -25,6 +27,10 @@ export default function RatingModal({
 
   const handleSubmit = () => {
     if (pendingRating === 0) return;
+    trackEvent('rating_submitted', {
+      rating: pendingRating,
+      hasComment: !!review.trim(),
+    }).catch(() => {});
     onSubmit(pendingRating, review.trim() || undefined);
   };
 
@@ -39,8 +45,14 @@ export default function RatingModal({
           <Pressable
             key={star}
             style={({ pressed }) => [styles.starBtn, pressed && { opacity: 0.6 }]}
-            onPress={() => setPendingRating(star)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setPendingRating(star);
+            }}
             disabled={submitting}
+            accessibilityRole="button"
+            accessibilityLabel={`${star} из 5 звёзд`}
+            accessibilityState={{ selected: star <= pendingRating }}
           >
             <FontAwesome
               name={star <= pendingRating ? 'star' : 'star-o'}
@@ -59,6 +71,7 @@ export default function RatingModal({
         multiline
         maxLength={1000}
         editable={!submitting}
+        accessibilityLabel="Текст отзыва"
       />
       <Pressable
         style={({ pressed }) => [
@@ -68,6 +81,8 @@ export default function RatingModal({
         ]}
         onPress={handleSubmit}
         disabled={submitting || pendingRating === 0}
+        accessibilityRole="button"
+        accessibilityLabel="Отправить отзыв"
       >
         {submitting
           ? <ActivityIndicator color="#fff" size="small" />
@@ -83,7 +98,7 @@ export default function RatingModal({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     padding: 18,
     borderWidth: 1,
     borderColor: Theme.border,
@@ -105,18 +120,18 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
-    marginVertical: 8,
+    gap: Spacing.md,
+    marginVertical: Spacing.sm,
   },
   starBtn: {
     alignItems: 'center',
-    padding: 4,
+    padding: Spacing.xs,
   },
   reviewInput: {
     borderWidth: 1,
     borderColor: Theme.border,
     borderRadius: 10,
-    padding: 12,
+    padding: Spacing.md,
     fontSize: 14,
     color: Theme.text,
     minHeight: 72,
@@ -125,10 +140,10 @@ const styles = StyleSheet.create({
   },
   submitRatingBtn: {
     backgroundColor: Theme.primary,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   submitRatingDisabled: {
     backgroundColor: Theme.border,

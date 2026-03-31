@@ -1,9 +1,10 @@
-import { Alert, AppState } from 'react-native';
+import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useSocket } from '@/context/SocketContext';
 import type { OrderStatus } from '@/types/order';
 
@@ -119,6 +120,7 @@ interface UseOrderTrackingResult {
 export function useOrderTracking(orderId: string | undefined): UseOrderTrackingResult {
   const router = useRouter();
   const { token } = useAuth();
+  const { showToast } = useToast();
   const { socket, connected: wsConnected } = useSocket();
 
   const [order, setOrder] = useState<Order | null>(null);
@@ -319,7 +321,7 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
       });
       setOrder(updated);
     } catch (e: unknown) {
-      Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось отправить оценку');
+      showToast(e instanceof Error ? e.message : 'Не удалось отправить оценку', 'error');
     } finally {
       ratingSubmittingRef.current = false;
       setRatingSubmitting(false);

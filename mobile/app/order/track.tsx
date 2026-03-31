@@ -3,7 +3,6 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -12,6 +11,11 @@ import {
 } from 'react-native';
 import AppModal from '@/components/AppModal';
 import RatingModal from '@/components/RatingModal';
+import ProgressStepper from '@/components/order/ProgressStepper';
+import MedicInfoCard from '@/components/order/MedicInfoCard';
+import TrackMap from '@/components/order/TrackMap';
+import TrackActions from '@/components/order/TrackActions';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -21,10 +25,12 @@ import { Text } from '@/components/Themed';
 import { Theme } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useOrderTracking } from '@/hooks/useOrderTracking';
 import { useRoutePolyline } from '@/hooks/useRoutePolyline';
 import { useDispatchTimer } from '@/hooks/useDispatchTimer';
 import type { OrderStatus } from '@/types/order';
+import { trackEvent } from '@/utils/analytics';
 import { styles } from './trackStyles';
 
 // ─── Types (local only) ───────────────────────────────────────────────────────
@@ -36,27 +42,6 @@ const TrackMapComponent =
     ? null
     : require('react-native-maps');
 
-const AnimatedMedicMarker: React.ComponentType<any> | null = TrackMapComponent
-  ? (TrackMapComponent.Marker.Animated ??
-     Animated.createAnimatedComponent(TrackMapComponent.Marker as React.ComponentType<any>))
-  : null;
-
-// ─── Step definitions ─────────────────────────────────────────────────────────
-
-const STEPS: { status: OrderStatus; labelKey: string; icon: string }[] = [
-  { status: 'CREATED', labelKey: 'track.stepCreated', icon: 'file-text-o' },
-  { status: 'ASSIGNED', labelKey: 'track.stepAssigned', icon: 'user' },
-  { status: 'ACCEPTED', labelKey: 'track.stepAccepted', icon: 'check-circle-o' },
-  { status: 'ON_THE_WAY', labelKey: 'track.stepOnTheWay', icon: 'car' },
-  { status: 'ARRIVED', labelKey: 'track.stepArrived', icon: 'map-marker' },
-  { status: 'SERVICE_STARTED', labelKey: 'track.stepServiceStarted', icon: 'heartbeat' },
-  { status: 'DONE', labelKey: 'track.stepDone', icon: 'check-circle' },
-];
-
-const STATUS_INDEX: Partial<Record<OrderStatus, number>> = Object.fromEntries(
-  STEPS.map((s, i) => [s.status, i]),
-);
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function TrackOrderScreen() {
@@ -65,6 +50,7 @@ export default function TrackOrderScreen() {
   const navigation = useNavigation();
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
 
   const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
   const [cancelModal, setCancelModal] = useState(false);
@@ -184,6 +170,13 @@ export default function TrackOrderScreen() {
       .catch(() => {});
   }, [order?.status, order?.medic, token, favoritesChecked]);
 
+  // ── Analytics: track order completion ─────────────────────────────────────────
+  useEffect(() => {
+    if (order?.status === 'DONE' && orderId) {
+      trackEvent('order_completed', { orderId }).catch(() => {});
+    }
+  }, [order?.status, orderId]);
+
   // ── Course prompt (when DONE, once) ──────────────────────────────────────────
   useEffect(() => {
     if (order?.status !== 'DONE' || coursePromptShownRef.current) return;
@@ -210,7 +203,7 @@ export default function TrackOrderScreen() {
         { text: t('payment.cancel'), style: 'cancel' },
       ]);
     } catch {
-      Alert.alert(t('payment.errorFetch'));
+      showToast(t('payment.errorFetch'), 'error');
     }
   };
 
@@ -226,7 +219,7 @@ export default function TrackOrderScreen() {
       } else {
         await apiFetch(`/favorites/${medicId}`, { method: 'POST', token });
         setIsFavorite(true);
-        Alert.alert(t('favorites.added'));
+        showToast(t('favorites.added'), 'success');
       }
     } catch {
       // silently ignore
@@ -265,7 +258,6 @@ export default function TrackOrderScreen() {
     );
   }
 
-  const currentIdx = order.status === 'CANCELED' ? -1 : (STATUS_INDEX[order.status] ?? 0);
   const isDone = order.status === 'DONE';
   const isCanceled = order.status === 'CANCELED';
   const isActive = !isDone && !isCanceled;
@@ -305,7 +297,7 @@ export default function TrackOrderScreen() {
         <View style={styles.candidateBanner}>
           <View style={styles.candidateAvatar}>
             {dispatchState.candidatePhoto
-              ? <Image source={{ uri: dispatchState.candidatePhoto }} style={styles.candidateAvatarImg} />
+              ? <Image source={{ uri: dispatchState.candidatePhoto }} style={styles.candidateAvatarImg} placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }} contentFit="cover" transition={200} />
               : <FontAwesome name="user-md" size={22} color={Theme.primary} />
             }
           </View>
@@ -350,147 +342,27 @@ export default function TrackOrderScreen() {
 
       {/* Progress stepper */}
       {!isCanceled && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t('track.orderStatus')}</Text>
-          {STEPS.map((step, idx) => {
-            const done = idx < currentIdx;
-            const active = idx === currentIdx;
-            const future = idx > currentIdx;
-            const lineColor = done ? Theme.primary : Theme.border;
-            const circleColor = active ? Theme.primary : done ? Theme.primary : Theme.border;
-            const labelColor = future ? Theme.textSecondary : Theme.text;
-            return (
-              <View key={step.status} style={styles.step}>
-                <View style={styles.stepLeft}>
-                  <View style={[styles.stepCircle, { borderColor: circleColor, backgroundColor: (done || active) ? circleColor : 'transparent' }]}>
-                    {done
-                      ? <FontAwesome name="check" size={10} color="#fff" />
-                      : <FontAwesome name={step.icon as keyof typeof FontAwesome.glyphMap} size={11} color={active ? '#fff' : Theme.border} />
-                    }
-                  </View>
-                  {idx < STEPS.length - 1 && <View style={[styles.stepLine, { backgroundColor: lineColor }]} />}
-                </View>
-                <View style={styles.stepRight}>
-                  <Text style={[styles.stepLabel, { color: labelColor, fontWeight: active ? '700' : '400' }]}>{t(step.labelKey)}</Text>
-                  {active && <Text style={styles.stepActiveHint}>{getStepHint(t, step.status)}</Text>}
-                </View>
-              </View>
-            );
-          })}
-        </View>
+        <ProgressStepper currentStatus={order.status} />
       )}
 
       {/* Medic card */}
       {order.medic && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{t('track.yourMedic')}</Text>
-          <View style={styles.medicRow}>
-            <View style={styles.medicAvatar}>
-              {order.medic.profilePhotoUrl
-                ? <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicAvatarImg} />
-                : <FontAwesome name="user-md" size={22} color={Theme.primary} />
-              }
-            </View>
-            <View style={styles.medicInfo}>
-              <Text style={styles.medicName}>{order.medic.name}</Text>
-              {order.medic.rating != null && (
-                <View style={styles.medicRatingRow}>
-                  <FontAwesome name="star" size={13} color={Theme.primary} />
-                  <Text style={styles.medicRatingText}>{Number(order.medic.rating).toFixed(1)}</Text>
-                  {order.medic.reviewCount != null && order.medic.reviewCount > 0 && (
-                    <Text style={styles.medicReviewCount}>
-                      ({order.medic.reviewCount} {t('review.reviews')})
-                    </Text>
-                  )}
-                  {order.medic.reviewCount === 0 && (
-                    <Text style={styles.medicReviewCount}>{t('review.noReviews')}</Text>
-                  )}
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
+        <MedicInfoCard medic={order.medic} />
       )}
 
       {/* Live map */}
-      {order.location?.latitude != null && order.location?.longitude != null && TrackMapComponent && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>{order.status === 'CREATED' ? t('track.searchingMedic') : t('track.medicOnMap')}</Text>
-          <View style={styles.mapWrap}>
-            <TrackMapComponent.default
-              style={styles.map}
-              initialRegion={{
-                latitude: medicLocation ? (Number(order.location.latitude) + medicLocation.latitude) / 2 : Number(order.location.latitude),
-                longitude: medicLocation ? (Number(order.location.longitude) + medicLocation.longitude) / 2 : Number(order.location.longitude),
-                latitudeDelta: 0.025,
-                longitudeDelta: 0.025,
-              }}
-            >
-              <TrackMapComponent.Marker
-                coordinate={{ latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) }}
-                title={t('track.youAreHere')}
-                description={t('track.callAddress')}
-                tracksViewChanges={false}
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View style={styles.clientMarkerWrap}>
-                  {order.status === 'CREATED' && dispatchState && (
-                    <Animated.View style={[styles.pulseRing, {
-                      opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
-                      transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] }) }],
-                    }]} />
-                  )}
-                  <View style={styles.clientMarkerDot}>
-                    <Text style={styles.markerEmoji}>🏠</Text>
-                  </View>
-                </View>
-              </TrackMapComponent.Marker>
-
-              {medicLocation && medicAnimReady && medicAnimCoordRef.current && AnimatedMedicMarker && (
-                <AnimatedMedicMarker
-                  coordinate={medicAnimCoordRef.current}
-                  title={order.status === 'CREATED' && dispatchState?.candidateName ? dispatchState.candidateName : t('track.medic')}
-                  description={order.status === 'CREATED' ? t('track.waitingConfirmation') : t('track.currentPosition')}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  tracksViewChanges={false}
-                >
-                  <View style={[styles.medicMarkerDot, order.status === 'CREATED' && { backgroundColor: '#f59e0b' }]}>
-                    {order.medic?.profilePhotoUrl
-                      ? <Image source={{ uri: order.medic.profilePhotoUrl }} style={styles.medicMarkerImg} />
-                      : <Text style={styles.markerEmoji}>🧑‍⚕️</Text>
-                    }
-                  </View>
-                </AnimatedMedicMarker>
-              )}
-
-              {medicLocation && (
-                <TrackMapComponent.Polyline
-                  coordinates={routeCoords.length > 1 ? routeCoords : [
-                    { latitude: Number(order.location.latitude), longitude: Number(order.location.longitude) },
-                    { latitude: medicLocation.latitude, longitude: medicLocation.longitude },
-                  ]}
-                  strokeColor={order.status === 'CREATED' ? '#f59e0b' : '#16a34a'}
-                  strokeWidth={3}
-                  lineDashPattern={order.status === 'CREATED' ? [6, 4] : undefined}
-                />
-              )}
-            </TrackMapComponent.default>
-          </View>
-
-          <View style={styles.mapLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#2563eb' }]} />
-              <Text style={styles.legendText}>{t('track.you')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: order.status === 'CREATED' ? '#f59e0b' : '#16a34a' }]} />
-              <Text style={styles.legendText}>{order.status === 'CREATED' ? t('track.candidate') : t('track.medic')}</Text>
-            </View>
-            {medicLocation && (
-              <Text style={styles.mapMeta}>{new Date(medicLocation.updatedAt).toLocaleTimeString('ru-RU')}</Text>
-            )}
-          </View>
-        </View>
+      {order.location && (
+        <TrackMap
+          orderStatus={order.status}
+          orderLocation={order.location}
+          medicLocation={medicLocation}
+          medicInfo={order.medic ?? null}
+          routeCoords={routeCoords}
+          dispatchState={dispatchState}
+          pulseAnim={pulseAnim}
+          medicAnimCoord={medicAnimCoordRef.current}
+          medicAnimReady={medicAnimReady}
+        />
       )}
 
       {/* Address */}
@@ -535,39 +407,19 @@ export default function TrackOrderScreen() {
         </View>
       )}
 
-      {/* Buttons */}
-      {isActive && (order.status === 'CREATED' || order.status === 'ASSIGNED') && (
-        <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]} onPress={() => setCancelModal(true)}>
-          <Text style={styles.cancelBtnText}>{t('track.cancelOrder')}</Text>
-        </Pressable>
-      )}
-
-      {isDone && !mustRate && !!order.medic && (
-        <Pressable
-          style={({ pressed }) => [styles.favoriteBtn, isFavorite && styles.favoriteBtnActive, pressed && { opacity: 0.75 }]}
-          onPress={handleFavoriteToggle}
-          disabled={favoriteLoading}
-        >
-          <FontAwesome name={isFavorite ? 'heart' : 'heart-o'} size={16} color={isFavorite ? Theme.error : Theme.primary} />
-          <Text style={[styles.favoriteBtnText, isFavorite && { color: Theme.error }]}>
-            {isFavorite ? t('favorites.remove') : t('favorites.add')}
-          </Text>
-        </Pressable>
-      )}
-
-      {isDone && !mustRate && (
-        payStatus === 'paid'
-          ? <Text style={styles.payPaid}>{t('payment.paid')}</Text>
-          : <Pressable style={styles.payBtn} onPress={handlePay}>
-              <Text style={styles.payBtnText}>{t('payment.pay')}</Text>
-            </Pressable>
-      )}
-
-      {(isDone || isCanceled) && !mustRate && (
-        <Pressable style={({ pressed }) => [styles.doneBtn, pressed && { opacity: 0.85 }]} onPress={() => router.replace('/(tabs)/two')}>
-          <Text style={styles.doneBtnText}>{t('track.toMyOrders')}</Text>
-        </Pressable>
-      )}
+      {/* Action buttons */}
+      <TrackActions
+        orderStatus={order.status}
+        mustRate={mustRate}
+        payStatus={payStatus}
+        isFavorite={isFavorite}
+        favoriteLoading={favoriteLoading}
+        hasMedic={!!order.medic}
+        onCancel={() => setCancelModal(true)}
+        onFavoriteToggle={handleFavoriteToggle}
+        onPay={handlePay}
+        onGoToOrders={() => router.replace('/(tabs)/two')}
+      />
     </ScrollView>
 
     <AppModal
@@ -616,18 +468,5 @@ function getDispatchStatusText(t: (key: string, opts?: Record<string, string>) =
     case 'contacting': return dispatchState.candidateName ? t('track.dispatchContacting', { name: dispatchState.candidateName }) : t('track.dispatchContactingGeneric');
     case 'no_medics': return t('track.dispatchNoMedics');
     default: return null;
-  }
-}
-
-function getStepHint(t: (key: string) => string, status: OrderStatus): string {
-  switch (status) {
-    case 'CREATED': return t('track.hintCreated');
-    case 'ASSIGNED': return t('track.hintAssigned');
-    case 'ACCEPTED': return t('track.hintAccepted');
-    case 'ON_THE_WAY': return t('track.hintOnTheWay');
-    case 'ARRIVED': return t('track.hintArrived');
-    case 'SERVICE_STARTED': return t('track.hintServiceStarted');
-    case 'DONE': return t('track.hintDone');
-    default: return '';
   }
 }

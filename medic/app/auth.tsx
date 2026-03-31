@@ -13,8 +13,9 @@ import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
+import { trackEvent } from '@/utils/analytics';
 
 type Mode = 'login' | 'register';
 
@@ -47,9 +48,11 @@ export default function AuthScreen() {
     try {
       if (mode === 'login') {
         await login(phone.trim(), password);
+        trackEvent('login').catch(() => {});
       } else {
         const years = parseInt(experienceYears) || 0;
         await register(phone.trim(), password, name.trim(), years);
+        trackEvent('register').catch(() => {});
       }
     } catch (e: unknown) {
       const raw = (e instanceof Error ? e.message : '').toLowerCase();
@@ -95,6 +98,9 @@ export default function AuthScreen() {
             <Pressable
               style={[styles.tab, mode === 'login' && styles.tabActive]}
               onPress={() => { setMode('login'); setError(null); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === 'login' }}
+              accessibilityLabel={t('auth.login')}
             >
               <Text style={[styles.tabText, mode === 'login' && styles.tabTextActive]}>
                 {t('auth.login')}
@@ -103,6 +109,9 @@ export default function AuthScreen() {
             <Pressable
               style={[styles.tab, mode === 'register' && styles.tabActive]}
               onPress={() => { setMode('register'); setError(null); }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: mode === 'register' }}
+              accessibilityLabel={t('auth.register')}
             >
               <Text style={[styles.tabText, mode === 'register' && styles.tabTextActive]}>
                 {t('auth.register')}
@@ -120,6 +129,7 @@ export default function AuthScreen() {
                 placeholder={t('auth.namePlaceholder')}
                 placeholderTextColor={Theme.textSecondary}
                 autoCapitalize="words"
+                accessibilityLabel="Имя"
               />
               <Text style={styles.label}>{t('auth.experienceYears')}</Text>
               <TextInput
@@ -129,6 +139,7 @@ export default function AuthScreen() {
                 placeholder="3"
                 placeholderTextColor={Theme.textSecondary}
                 keyboardType="number-pad"
+                accessibilityLabel="Опыт работы в годах"
               />
             </>
           )}
@@ -141,6 +152,7 @@ export default function AuthScreen() {
             placeholder={t('auth.phonePlaceholder')}
             placeholderTextColor={Theme.textSecondary}
             keyboardType="phone-pad"
+            accessibilityLabel="Телефон"
           />
 
           <Text style={styles.label}>{t('auth.password')} *</Text>
@@ -153,6 +165,7 @@ export default function AuthScreen() {
             secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
+            accessibilityLabel="Пароль"
           />
 
           {error && (
@@ -170,6 +183,8 @@ export default function AuthScreen() {
             ]}
             onPress={handleSubmit}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={mode === 'login' ? t('auth.login') : t('auth.register')}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
@@ -200,73 +215,65 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
-  appName: { fontSize: 26, fontWeight: '700', color: '#fff' },
-  appTagline: { fontSize: 15, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+  appName: { fontSize: Typography.h1.fontSize, fontWeight: '700', color: '#fff' },
+  appTagline: { fontSize: Typography.body.fontSize, color: 'rgba(255,255,255,0.85)', marginTop: Spacing.xs },
   card: {
-    margin: 16,
-    marginTop: -24,
+    margin: Spacing.lg,
+    marginTop: -Spacing.xl,
     backgroundColor: Theme.surface,
-    borderRadius: 20,
+    borderRadius: Radius.xl,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    ...Shadow.lg,
   },
   tabRow: {
     flexDirection: 'row',
     backgroundColor: Theme.background,
-    borderRadius: 10,
-    padding: 4,
+    borderRadius: Radius.sm,
+    padding: Spacing.xs,
     marginBottom: 20,
   },
   tab: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
     alignItems: 'center',
   },
   tabActive: {
     backgroundColor: Theme.surface,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadow.sm,
   },
-  tabText: { fontSize: 14, fontWeight: '600', color: Theme.textSecondary },
+  tabText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
   tabTextActive: { color: Theme.primary },
-  label: { fontSize: 13, color: Theme.textSecondary, marginBottom: 6 },
+  label: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginBottom: 6 },
   input: {
     backgroundColor: Theme.background,
     borderWidth: 1,
     borderColor: Theme.border,
-    borderRadius: 10,
+    borderRadius: Radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     color: Theme.text,
     marginBottom: 14,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     backgroundColor: `${Theme.error}12`,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: Radius.sm,
+    padding: Spacing.md,
     marginBottom: 14,
   },
-  errorText: { flex: 1, fontSize: 13, color: Theme.error },
+  errorText: { flex: 1, fontSize: Typography.caption.fontSize, color: Theme.error },
   submitBtn: {
     backgroundColor: Theme.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   submitBtnPressed: { opacity: 0.9 },
   submitBtnDisabled: { opacity: 0.7 },

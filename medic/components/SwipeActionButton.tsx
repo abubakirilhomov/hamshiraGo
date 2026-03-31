@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Theme } from '@/constants/Theme';
+import { Theme, Shadow, Typography } from '@/constants/Theme';
 
 interface SwipeActionButtonProps {
   label: string;
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.92)',
     letterSpacing: 0.3,
@@ -178,11 +178,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 4,
+    ...Shadow.md,
     zIndex: 10,
   },
 });

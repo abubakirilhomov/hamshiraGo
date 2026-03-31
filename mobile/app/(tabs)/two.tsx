@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -8,16 +7,20 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { FlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
 import { OrderStatus, ACTIVE_STATUSES } from '@/types/order';
 import { ORDERS_PAGE_LIMIT } from '@/constants/config';
 import OrderCard, { OrderCardItem } from '@/components/OrderCard';
+import { SkeletonOrderCard } from '@/components/SkeletonLoader';
+import { cacheSet, cacheGetStale } from '@/utils/cache';
 
 type Order = OrderCardItem;
 
@@ -30,8 +33,11 @@ export default function OrdersScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
   const { socket } = useSocket();
   const subscribedRef = useRef<Set<string>>(new Set());
+
+  const ORDERS_CACHE_KEY = 'orders';
 
   const fetchOrders = useCallback(async (offset = 0) => {
     try {
@@ -42,6 +48,8 @@ export default function OrdersScreen() {
       const data = res.data;
       if (offset === 0) {
         setOrders(data);
+        setFromCache(false);
+        await cacheSet(ORDERS_CACHE_KEY, data);
       } else {
         setOrders((prev) => [...prev, ...data]);
       }
@@ -49,6 +57,20 @@ export default function OrdersScreen() {
       setError(null);
       return data;
     } catch (e: unknown) {
+      // On first page failure, try cache fallback
+      if (offset === 0) {
+        try {
+          const cached = await cacheGetStale<Order[]>(ORDERS_CACHE_KEY);
+          if (cached && cached.length > 0) {
+            setOrders(cached);
+            setFromCache(true);
+            setHasMore(false);
+            return cached;
+          }
+        } catch {
+          // ignore cache read errors
+        }
+      }
       setError(e instanceof Error ? e.message : t('orders.loadError'));
       return [];
     }
@@ -95,6 +117,7 @@ export default function OrdersScreen() {
   );
 
   const onRefresh = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setRefreshing(true);
     await fetchOrders(0);
     setRefreshing(false);
@@ -107,10 +130,24 @@ export default function OrdersScreen() {
     setLoadingMore(false);
   }, [loadingMore, hasMore, orders.length, fetchOrders]);
 
+  const renderItem = useCallback(
+    ({ item }: { item: Order }) => (
+      <OrderCard order={item} isActive={ACTIVE_STATUSES.includes(item.status)} />
+    ),
+    [],
+  );
+
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Theme.primary} />
+      <View style={styles.container}>
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>{t('orders.myOrders')}</Text>
+        </View>
+        <View style={styles.listContent}>
+          <SkeletonOrderCard />
+          <SkeletonOrderCard />
+          <SkeletonOrderCard />
+        </View>
       </View>
     );
   }
@@ -133,7 +170,13 @@ export default function OrdersScreen() {
         </View>
       )}
 
-      <FlatList
+      {fromCache && (
+        <View style={styles.cacheBanner}>
+          <Text style={styles.cacheBannerText}>{t('common.cachedData')}</Text>
+        </View>
+      )}
+
+      <FlashList
         data={orders}
         keyExtractor={(item) => item.id}
         contentContainerStyle={orders.length === 0 ? styles.emptyContainer : styles.listContent}
@@ -151,7 +194,7 @@ export default function OrdersScreen() {
             </View>
           ) : null
         }
-        renderItem={({ item }) => <OrderCard order={item} isActive={ACTIVE_STATUSES.includes(item.status)} />}
+        renderItem={renderItem}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ paddingVertical: 16 }} color={Theme.primary} /> : null}
@@ -175,9 +218,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
   },
   headerTitle: {
     fontSize: 22,
@@ -185,16 +228,16 @@ const styles = StyleSheet.create({
     color: Theme.text,
   },
   logoutBtn: {
-    padding: 8,
+    padding: Spacing.sm,
   },
   errorBox: {
-    margin: 16,
+    margin: Spacing.lg,
     backgroundColor: `${Theme.error}12`,
     borderRadius: 10,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
   },
   errorText: {
     flex: 1,
@@ -202,10 +245,10 @@ const styles = StyleSheet.create({
     color: Theme.error,
   },
   retryBtn: {
-    paddingHorizontal: 12,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     backgroundColor: Theme.error,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
   },
   retryText: {
     fontSize: 13,
@@ -213,8 +256,8 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   listContent: {
-    padding: 16,
-    gap: 12,
+    padding: Spacing.lg,
+    gap: Spacing.md,
   },
   emptyContainer: {
     flexGrow: 1,
@@ -223,8 +266,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
+    paddingHorizontal: Spacing.xxl,
+    gap: Spacing.md,
   },
   emptyTitle: {
     fontSize: 18,
@@ -236,5 +279,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  cacheBanner: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    backgroundColor: `${Theme.warning}20`,
+    borderRadius: Radius.sm,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: `${Theme.warning}40`,
+  },
+  cacheBannerText: {
+    fontSize: 13,
+    color: '#854d0e',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

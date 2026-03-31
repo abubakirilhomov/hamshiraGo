@@ -1,4 +1,5 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 
 export function SplashOverlay() {
   return (
@@ -17,25 +18,25 @@ export function SplashOverlay() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: Theme.background,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: Spacing.md,
   },
   logo: {
     width: 110,
     height: 110,
-    borderRadius: 24,
+    borderRadius: Radius.xl,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#0d9488',
+    color: Theme.primary,
     letterSpacing: 0.5,
   },
   sub: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: Theme.textTertiary,
     fontWeight: '500',
     letterSpacing: 0.3,
   },

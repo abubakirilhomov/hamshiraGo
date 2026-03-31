@@ -1,26 +1,28 @@
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import { API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 type PhotoType = 'facePhoto' | 'licensePhoto';
 
 export default function VerificationScreen() {
   const { medic, token, refreshProfile } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [faceUri, setFaceUri] = useState<string | null>(medic?.facePhotoUrl ?? null);
   const [licenseUri, setLicenseUri] = useState<string | null>(medic?.licensePhotoUrl ?? null);
   const [uploading, setUploading] = useState(false);
@@ -36,7 +38,7 @@ export default function VerificationScreen() {
   const pickImage = async (type: PhotoType) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('verification.noGalleryAccess'), t('verification.allowGalleryAccess'));
+      showToast(`${t('verification.noGalleryAccess')}. ${t('verification.allowGalleryAccess')}`, 'warning');
       return;
     }
 
@@ -55,7 +57,7 @@ export default function VerificationScreen() {
   const takePhoto = async (type: PhotoType) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('verification.noCameraAccess'), t('verification.allowCameraAccess'));
+      showToast(`${t('verification.noCameraAccess')}. ${t('verification.allowCameraAccess')}`, 'warning');
       return;
     }
 
@@ -83,7 +85,7 @@ export default function VerificationScreen() {
     const hasNewLicense = licenseUri && !licenseUri.startsWith('http');
 
     if (!hasNewFace && !hasNewLicense) {
-      Alert.alert(t('verification.photoRequired'), t('verification.instructions'));
+      showToast(t('verification.photoRequired'), 'warning');
       return;
     }
 
@@ -121,12 +123,9 @@ export default function VerificationScreen() {
       }
 
       await refreshProfile();
-      Alert.alert(
-        t('verification.submit'),
-        t('verification.instructions'),
-      );
+      showToast(t('verification.submit'), 'success');
     } catch (e: unknown) {
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+      showToast(e instanceof Error ? e.message : t('common.error'), 'error');
     } finally {
       setUploading(false);
     }
@@ -215,7 +214,7 @@ function PhotoBlock({ label, uri, onPress }: { label: string; uri: string | null
       onPress={onPress}
     >
       {uri ? (
-        <Image source={{ uri }} style={styles.photoPreview} resizeMode="cover" />
+        <Image source={{ uri }} style={styles.photoPreview} contentFit="cover" transition={200} />
       ) : (
         <View style={styles.photoPlaceholder}>
           <FontAwesome name="camera" size={28} color={Theme.textSecondary} />
@@ -262,47 +261,47 @@ function statusIconColor(status: string) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
-  content: { padding: 16, paddingBottom: 40, gap: 16 },
+  content: { padding: Spacing.lg, paddingBottom: 40, gap: Spacing.lg },
 
   statusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 14,
+    gap: Spacing.md,
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
     borderWidth: 1,
   },
   statusTexts: { flex: 1 },
-  statusTitle: { fontSize: 16, fontWeight: '700' },
-  statusDesc: { fontSize: 13, color: Theme.textSecondary, marginTop: 2 },
+  statusTitle: { fontSize: Typography.body.fontSize, fontWeight: '700' },
+  statusDesc: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary, marginTop: 2 },
 
   rejectedReason: {
     backgroundColor: `${Theme.error}08`,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     padding: 14,
     borderWidth: 1,
     borderColor: `${Theme.error}30`,
-    gap: 4,
+    gap: Spacing.xs,
   },
-  rejectedReasonLabel: { fontSize: 12, fontWeight: '700', color: Theme.error },
-  rejectedReasonText: { fontSize: 14, color: Theme.text },
+  rejectedReasonLabel: { fontSize: Typography.caption.fontSize, fontWeight: '700', color: Theme.error },
+  rejectedReasonText: { fontSize: Typography.bodySmall.fontSize, color: Theme.text },
 
   instructionCard: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-    gap: 10,
+    gap: Spacing.sm,
   },
-  instructionTitle: { fontSize: 13, fontWeight: '700', color: Theme.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
-  instructionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  instructionTitle: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: Theme.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  instructionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   instructionIcon: { width: 20, marginTop: 2 },
-  instructionText: { flex: 1, fontSize: 14, color: Theme.text, lineHeight: 20 },
+  instructionText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.text, lineHeight: 20 },
 
   photoBlock: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Theme.border,
@@ -321,15 +320,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
   },
-  photoLabel: { fontSize: 14, fontWeight: '600', color: Theme.text },
-  photoBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  photoBadgeText: { fontSize: 12, fontWeight: '600' },
+  photoLabel: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.text },
+  photoBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs },
+  photoBadgeText: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
   submitBtn: {
     backgroundColor: Theme.primary,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     padding: 17,
     alignItems: 'center',
   },
-  submitBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  submitBtnText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
 });

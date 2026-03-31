@@ -1,13 +1,14 @@
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { OSRM_URL } from '@/constants/config';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
@@ -57,6 +58,7 @@ interface Props {
 export function OrderInviteModal({ invite, onDismiss }: Props) {
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const router = useRouter();
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [loading, setLoading] = useState<'accept' | 'decline' | null>(null);
@@ -145,9 +147,9 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '';
       if (msg.includes('INSUFFICIENT_WALLET')) {
-        Alert.alert(t('wallet.insufficientTitle'), t('wallet.insufficientMessage'), [{ text: t('wallet.ok') }]);
+        showToast(`${t('wallet.insufficientTitle')}: ${t('wallet.insufficientMessage')}`, 'error', 5000);
       } else {
-        Alert.alert(t('common.error'), msg || t('common.error'));
+        showToast(msg || t('common.error'), 'error');
       }
       setLoading(null);
     }
@@ -163,7 +165,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
       });
       onDismiss();
     } catch (e: unknown) {
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('orders.declineError'));
+      showToast(e instanceof Error ? e.message : t('orders.declineError'), 'error');
       setLoading(null);
     }
   };
@@ -434,7 +436,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: Spacing.lg,
     backgroundColor: Theme.primary,
     paddingHorizontal: 20,
     paddingTop: 60,
@@ -455,7 +457,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timerNumber: {
-    fontSize: 28,
+    fontSize: Typography.h1.fontSize,
     fontWeight: '800',
     color: '#fff',
     lineHeight: 32,
@@ -475,56 +477,52 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: Typography.h2.fontSize,
     fontWeight: '800',
     color: '#fff',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
 
   // ── Urgent banner ────────────────────────────────────────────────────────────
   urgentBanner: {
-    marginHorizontal: 16,
-    marginTop: 12,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
     backgroundColor: '#fee2e2',
-    borderRadius: 10,
+    borderRadius: Radius.sm,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: Spacing.sm,
     borderWidth: 1,
     borderColor: '#fca5a5',
   },
   urgentBannerText: {
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '700',
-    color: '#dc2626',
+    color: Theme.error,
     textAlign: 'center',
   },
 
   // ── Details card ────────────────────────────────────────────────────────────
   card: {
-    margin: 16,
+    margin: Spacing.lg,
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    ...Shadow.sm,
   },
   serviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     marginBottom: 2,
   },
   serviceTitle: {
-    fontSize: 18,
+    fontSize: Typography.h3.fontSize,
     fontWeight: '700',
     color: Theme.text,
     flex: 1,
@@ -532,7 +530,7 @@ const styles = StyleSheet.create({
   clientRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: Spacing.sm,
     marginBottom: 2,
   },
   clientRatingBadge: {
@@ -540,53 +538,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     backgroundColor: '#fef9c3',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.md,
   },
   clientRatingText: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '700',
     color: '#92400e',
   },
   newClientBadge: {
     backgroundColor: '#e0f2fe',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.md,
   },
   newClientText: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: '#0369a1',
   },
   divider: {
     height: 1,
     backgroundColor: Theme.border,
-    marginVertical: 12,
+    marginVertical: Spacing.md,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
-    gap: 12,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
   },
   infoLabel: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     color: Theme.textSecondary,
     minWidth: 90,
   },
   infoValue: {
     flex: 1,
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: Theme.text,
     textAlign: 'right',
   },
   priceValue: {
     color: Theme.primary,
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     fontWeight: '700',
   },
 
@@ -594,14 +592,14 @@ const styles = StyleSheet.create({
   distanceValue: {
     color: Theme.primary,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
   },
 
   // ── Mini map ────────────────────────────────────────────────────────────────
   mapCard: {
-    marginHorizontal: 16,
-    marginBottom: 4,
-    borderRadius: 14,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xs,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Theme.border,
@@ -619,7 +617,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 14,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: Spacing.sm,
     backgroundColor: Theme.surface,
   },
   legendItem: {
@@ -633,14 +631,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendLabel: {
-    fontSize: 12,
+    fontSize: Typography.caption.fontSize,
     color: Theme.textSecondary,
     fontWeight: '600',
   },
   clientDot: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
@@ -650,15 +648,15 @@ const styles = StyleSheet.create({
   medicDot: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#dc2626',
+    borderRadius: Radius.lg,
+    backgroundColor: Theme.error,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#fff',
   },
   markerEmoji: {
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     lineHeight: 20,
   },
   mapLoadingOverlay: {
@@ -669,24 +667,24 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   mapLoadingText: {
-    fontSize: 12,
+    fontSize: Typography.caption.fontSize,
     color: Theme.primary,
     fontWeight: '600',
   },
 
   // ── Buttons ─────────────────────────────────────────────────────────────────
   buttons: {
-    paddingHorizontal: 16,
-    gap: 12,
-    marginTop: 8,
+    paddingHorizontal: Spacing.lg,
+    gap: Spacing.md,
+    marginTop: Spacing.sm,
   },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: Spacing.sm,
     paddingVertical: 18,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
   },
   btnPressed: { opacity: 0.85 },
   btnDisabled: { opacity: 0.45 },
@@ -694,7 +692,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
   },
   acceptBtnText: {
-    fontSize: 18,
+    fontSize: Typography.h3.fontSize,
     fontWeight: '700',
     color: '#fff',
   },
@@ -704,7 +702,7 @@ const styles = StyleSheet.create({
     borderColor: Theme.error,
   },
   declineBtnText: {
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     fontWeight: '600',
     color: Theme.error,
   },

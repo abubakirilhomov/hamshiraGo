@@ -1,20 +1,22 @@
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { type OrderStatus, ACTIVE_STATUSES } from '@/types/order';
+import { SkeletonMyOrderCard } from '@/components/SkeletonLoader';
+import { cacheSet, cacheGetStale } from '@/utils/cache';
 
 interface Order {
   id: string;
@@ -47,6 +49,9 @@ export default function MyOrdersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+
+  const MEDIC_ORDERS_CACHE_KEY = 'medic_orders';
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -55,7 +60,20 @@ export default function MyOrdersScreen() {
         token: token ?? undefined,
       });
       setOrders(res.data);
+      setFromCache(false);
+      await cacheSet(MEDIC_ORDERS_CACHE_KEY, res.data);
     } catch (e: unknown) {
+      // Try cache fallback on failure
+      try {
+        const cached = await cacheGetStale<Order[]>(MEDIC_ORDERS_CACHE_KEY);
+        if (cached && cached.length > 0) {
+          setOrders(cached);
+          setFromCache(true);
+          return;
+        }
+      } catch {
+        // ignore cache read errors
+      }
       setFetchError(e instanceof Error ? e.message : t('orders.fetchError'));
     }
   }, [token, t]);
@@ -78,26 +96,68 @@ export default function MyOrdersScreen() {
     setRefreshing(false);
   }, [fetchOrders]);
 
-  const active = orders.filter((o) => ACTIVE_STATUSES.includes(o.status));
-  const history = orders.filter((o) => !ACTIVE_STATUSES.includes(o.status));
+  const active = useMemo(() => orders.filter((o) => ACTIVE_STATUSES.includes(o.status)), [orders]);
+  const history = useMemo(() => orders.filter((o) => !ACTIVE_STATUSES.includes(o.status)), [orders]);
+  const sortedData = useMemo(() => [...active, ...history], [active, history]);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: Order; index: number }) => (
+      <>
+        {index === active.length && history.length > 0 && (
+          <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('orders.history')}</Text>
+        )}
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+          onPress={() => router.push(`/order/${item.id}`)}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.serviceTitle}>{item.serviceTitle}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLOR[item.status]}18` }]}>
+              <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] }]}>
+                {t(`orders.status.${item.status}`)}
+              </Text>
+            </View>
+          </View>
+          {item.location && (
+            <View style={styles.locationRow}>
+              <FontAwesome name="map-marker" size={12} color={Theme.textSecondary} />
+              <Text style={styles.locationText}>
+                {item.location.house}
+                {item.location.floor ? `, ${t('orders.floor')} ${item.location.floor}` : ''}
+              </Text>
+            </View>
+          )}
+          <View style={styles.cardFooter}>
+            <Text style={styles.price}>
+              {(item.priceAmount - (item.discountAmount ?? 0)).toLocaleString('ru-RU')} UZS
+            </Text>
+            <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
+          </View>
+        </Pressable>
+      </>
+    ),
+    [active.length, history.length, t, router],
+  );
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={Theme.primary} />
+      <View style={[styles.container, styles.listContent]}>
+        <SkeletonMyOrderCard />
+        <SkeletonMyOrderCard />
+        <SkeletonMyOrderCard />
+        <SkeletonMyOrderCard />
       </View>
     );
   }
 
   return (
-    <FlatList
-      style={styles.container}
+    <FlashList
+      data={sortedData}
+      keyExtractor={(item) => item.id}
       contentContainerStyle={orders.length === 0 && !fetchError ? styles.emptyContainer : styles.listContent}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
       }
-      data={[...active, ...history]}
-      keyExtractor={(item) => item.id}
       ListHeaderComponent={
         <>
           {fetchError && (
@@ -106,6 +166,11 @@ export default function MyOrdersScreen() {
               <Pressable onPress={() => fetchOrders()} style={styles.fetchRetryBtn}>
                 <Text style={styles.fetchRetryText}>{t('common.retry')}</Text>
               </Pressable>
+            </View>
+          )}
+          {fromCache && (
+            <View style={styles.cacheBanner}>
+              <Text style={styles.cacheBannerText}>{t('common.cachedData')}</Text>
             </View>
           )}
           {active.length > 0 ? (
@@ -121,41 +186,7 @@ export default function MyOrdersScreen() {
           </View>
         ) : null
       }
-      renderItem={({ item, index }) => (
-        <>
-          {index === active.length && history.length > 0 && (
-            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('orders.history')}</Text>
-          )}
-          <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => router.push(`/order/${item.id}`)}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.serviceTitle}>{item.serviceTitle}</Text>
-              <View style={[styles.statusBadge, { backgroundColor: `${STATUS_COLOR[item.status]}18` }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLOR[item.status] }]}>
-                  {t(`orders.status.${item.status}`)}
-                </Text>
-              </View>
-            </View>
-            {item.location && (
-              <View style={styles.locationRow}>
-                <FontAwesome name="map-marker" size={12} color={Theme.textSecondary} />
-                <Text style={styles.locationText}>
-                  {item.location.house}
-                  {item.location.floor ? `, ${t('orders.floor')} ${item.location.floor}` : ''}
-                </Text>
-              </View>
-            )}
-            <View style={styles.cardFooter}>
-              <Text style={styles.price}>
-                {(item.priceAmount - (item.discountAmount ?? 0)).toLocaleString('ru-RU')} UZS
-              </Text>
-              <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
-            </View>
-          </Pressable>
-        </>
-      )}
+      renderItem={renderItem}
     />
   );
 }
@@ -163,53 +194,67 @@ export default function MyOrdersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
-  listContent: { padding: 16, gap: 10 },
+  listContent: { padding: Spacing.lg, gap: Spacing.sm },
   emptyContainer: { flexGrow: 1 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10, paddingTop: 80 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Theme.text },
-  emptyHint: { fontSize: 14, color: Theme.textSecondary },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: Theme.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.sm, paddingTop: 80 },
+  emptyTitle: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text },
+  emptyHint: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  sectionTitle: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: Theme.textSecondary, marginBottom: Spacing.sm, textTransform: 'uppercase', letterSpacing: 0.5 },
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
   },
   cardPressed: { opacity: 0.9 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  serviceTitle: { fontSize: 15, fontWeight: '600', color: Theme.text, flex: 1 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
+  serviceTitle: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.text, flex: 1 },
+  statusBadge: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Radius.xl },
   statusText: { fontSize: 11, fontWeight: '700' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  locationText: { fontSize: 13, color: Theme.textSecondary, flex: 1 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.sm },
+  locationText: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary, flex: 1 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontSize: 15, fontWeight: '700', color: Theme.primary },
+  price: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.primary },
   fetchErrorBox: {
-    marginBottom: 12,
+    marginBottom: Spacing.md,
     padding: 14,
     backgroundColor: '#fee2e220',
-    borderRadius: 10,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#ef444440',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Spacing.sm,
   },
   fetchErrorText: {
     flex: 1,
-    fontSize: 13,
-    color: '#ef4444',
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.error,
   },
   fetchRetryBtn: {
-    paddingHorizontal: 12,
+    paddingHorizontal: Spacing.md,
     paddingVertical: 6,
-    backgroundColor: '#ef4444',
-    borderRadius: 8,
+    backgroundColor: Theme.error,
+    borderRadius: Radius.sm,
   },
   fetchRetryText: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: '#fff',
+  },
+  cacheBanner: {
+    marginBottom: Spacing.sm,
+    backgroundColor: `${Theme.warning}20`,
+    borderRadius: Radius.sm,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: `${Theme.warning}40`,
+  },
+  cacheBannerText: {
+    fontSize: Typography.bodySmall.fontSize,
+    color: '#854d0e',
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });

@@ -13,9 +13,10 @@ import { useCallback, useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 interface TreatmentCourse {
   id: string;
@@ -40,7 +41,7 @@ function StatusBadge({ status }: { status: TreatmentCourse['status'] }) {
   const { t } = useTranslation();
   const colors: Record<TreatmentCourse['status'], string> = {
     ACTIVE: Theme.primary,
-    COMPLETED: '#16a34a',
+    COMPLETED: Theme.success,
     CANCELED: Theme.error,
   };
   const labels: Record<TreatmentCourse['status'], string> = {
@@ -67,6 +68,7 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
 export default function CoursesScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [courses, setCourses] = useState<TreatmentCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,7 +89,7 @@ export default function CoursesScreen() {
 
   const handleCreate = async () => {
     if (!form.title.trim() || !form.totalProcedures || !form.intervalDays) {
-      Alert.alert(t('common.error'), t('courses.fillRequired'));
+      showToast(t('courses.fillRequired'), 'warning');
       return;
     }
     setSubmitting(true);
@@ -106,7 +108,7 @@ export default function CoursesScreen() {
       setForm(EMPTY_FORM);
       fetchCourses();
     } catch (e: unknown) {
-      Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+      showToast(e instanceof Error ? e.message : t('common.error'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +128,7 @@ export default function CoursesScreen() {
             });
             fetchCourses();
           } catch (e: unknown) {
-            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+            showToast(e instanceof Error ? e.message : t('common.error'), 'error');
           }
         },
       },
@@ -141,7 +143,7 @@ export default function CoursesScreen() {
             });
             fetchCourses();
           } catch (e: unknown) {
-            Alert.alert(t('common.error'), e instanceof Error ? e.message : t('common.error'));
+            showToast(e instanceof Error ? e.message : t('common.error'), 'error');
           }
         },
       },
@@ -275,16 +277,16 @@ export default function CoursesScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Theme.background },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { padding: 16, gap: 12 },
+  listContent: { padding: Spacing.lg, gap: Spacing.md },
   listEmpty: { flexGrow: 1 },
 
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   emptyText: { fontSize: 15, color: Theme.textSecondary, textAlign: 'center' },
 
   courseCard: {
     backgroundColor: Theme.surface,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
     gap: 10,
@@ -293,7 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: Spacing.sm,
   },
   courseTitle: {
     fontSize: 16,
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
@@ -311,7 +313,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  progressRow: { gap: 4 },
+  progressRow: { gap: Spacing.xs },
   progressTrack: {
     height: 6,
     backgroundColor: Theme.border,
@@ -339,7 +341,7 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: Spacing.xl,
     right: 20,
     width: 56,
     height: 56,
@@ -347,11 +349,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    ...Shadow.lg,
   },
 
   overlay: {
@@ -360,8 +358,8 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: Theme.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
     padding: 20,
     paddingBottom: 40,
     maxHeight: '80%',
@@ -372,7 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Theme.border,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   sheetTitle: {
     fontSize: 18,
@@ -391,7 +389,7 @@ const styles = StyleSheet.create({
     borderColor: Theme.border,
     borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: Spacing.md,
     fontSize: 15,
     color: Theme.text,
     marginBottom: 14,
@@ -399,9 +397,9 @@ const styles = StyleSheet.create({
   submitBtn: {
     backgroundColor: Theme.primary,
     paddingVertical: 15,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: Spacing.xs,
   },
   submitBtnText: {
     fontSize: 16,

@@ -183,7 +183,8 @@
     "retry": "Qayta urinish",
     "save": "Saqlash",
     "back": "Orqaga",
-    "sum": "so'm"
+    "sum": "so'm",
+    "cachedData": "Saqlangan ma'lumotlar ko'rsatilmoqda"
   },
   "favorites": {
     "myMedics": "Mening mediklarim",
@@ -213,6 +214,17 @@
     "hasCode": "Referal kodingiz bormi?",
     "codeInvalid": "Referal kod topilmadi",
     "codeValid": "Kod qabul qilindi"
+  },
+  "onboarding": {
+    "slide1Title": "Hamshirani uyga chaqiring",
+    "slide1Desc": "Uyingizga professional tibbiy xizmatlar. Tomchilatish, ukol, bog'lash va boshqalar.",
+    "slide2Title": "Real vaqtda kuzating",
+    "slide2Desc": "Hamshirangiz xaritada qayerdaligini ko'ring. Har bir bosqich haqida bildirishnoma oling.",
+    "slide3Title": "Sifatni baholang",
+    "slide3Desc": "Fikr-mulohaza qoldiring va reyting bo'yicha eng yaxshi mutaxassislarni tanlang.",
+    "next": "Keyingi",
+    "start": "Boshlash",
+    "skip": "O'tkazib yuborish"
   },
   "courses": {
     "title": "Davolash kurslari",

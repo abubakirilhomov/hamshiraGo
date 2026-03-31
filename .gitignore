@@ -44,3 +44,5 @@ medic/.env.*
 # generated native folders
 /ios
 /android
+*.pyc
+__pycache__/

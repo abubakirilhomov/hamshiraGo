@@ -36,6 +36,186 @@
 - **[feat]** Добавлена кнопка «Отзывы» рядом с рейтингом медика на странице заказа — `web/app/orders/[id]/page.tsx`
 - **[i18n]** Добавлена секция `reviews.*` (title, back, loading, error, retry, empty, emptyHint, avgRating, totalReviews, noComment, roleClient, roleMedic, prevPage, nextPage, pageOf) — `web/i18n/ru.json`, `web/i18n/uz.json`
 
+## 2026-03-31 (Phase 2: Professional Level Upgrade -- mobile + medic)
+
+- **[mobile]** **[medic]** 2A-1: API Retry + Timeout -- Added 20s timeout to medic api.ts (was missing), added GET retry with 1s delay on network error in both apps (`mobile/constants/api.ts`, `medic/constants/api.ts`)
+- **[mobile]** **[medic]** 2A-2: Offline Banner -- Created OfflineBanner component with NetInfo + Reanimated slide-down animation in both apps, integrated in _layout.tsx (`mobile/components/OfflineBanner.tsx`, `medic/components/OfflineBanner.tsx`)
+- **[medic]** 2A-3: Alert->Toast -- Converted remaining non-destructive Alert.alert to toast in medic (6 files: _layout, useMedicLocation, OrderInviteModal, profile, verification)
+- **[mobile]** **[medic]** 2B: Design Tokens Migration -- Migrated 42 files (19 mobile + 23 medic) from hardcoded borderRadius/padding/fontSize/elevation to Radius/Spacing/Typography/Shadow tokens
+- **[mobile]** **[medic]** 2C: Deep Linking + Push Navigation -- Added notification response listeners + cold-start handler in both _layout.tsx for order/course/referral/invite navigation (`mobile/app/_layout.tsx`, `medic/app/_layout.tsx`)
+- **[mobile]** **[medic]** 2D: Onboarding -- Created 3-slide onboarding screens for both apps with FlatList paging, Reanimated dots, i18n (ru+uz), AsyncStorage first-launch flag (`mobile/app/onboarding.tsx`, `medic/app/onboarding.tsx`)
+- **[mobile]** **[medic]** 2E-1: Local Caching -- Created cache.ts utility (TTL-aware + stale fallback), applied to services list, orders, medic profile with offline fallback + warning banner (`mobile/utils/cache.ts`, `medic/utils/cache.ts`)
+- **[mobile]** **[medic]** 2E-2: Analytics -- Created analytics.ts with AsyncStorage event queue + batch flush, tracking: app_opened, login, register, order_created/accepted/completed, rating_submitted, toggle_online (`mobile/utils/analytics.ts`, `medic/utils/analytics.ts`)
+
+## 2026-03-31 (AsyncStorage data caching -- mobile + medic)
+
+- **[feature]** Cache utility (`cacheSet`, `cacheGet`, `cacheGetStale`, `cacheClear`) with TTL support and stale-data fallback for offline use -- `mobile/utils/cache.ts`, `medic/utils/cache.ts`
+- **[feature]** Mobile: services list cached with 1-hour TTL; shows fresh cache instantly on mount, refreshes in background; falls back to stale cache when offline with warning banner -- `mobile/app/(tabs)/index.tsx`
+- **[feature]** Mobile: orders list cached on first-page fetch; falls back to stale cache on network failure with warning banner -- `mobile/app/(tabs)/two.tsx`
+- **[feature]** Medic: profile data cached via `cacheSet` whenever medic object updates; completed count cached with stale fallback on failure -- `medic/app/(tabs)/profile.tsx`
+- **[feature]** Medic: my-orders list cached on fetch; falls back to stale cache on failure with warning banner -- `medic/app/(tabs)/my-orders.tsx`
+- **[i18n]** Added `common.cachedData` key to `mobile/i18n/ru.json`, `mobile/i18n/uz.json`, `medic/i18n/ru.json`, `medic/i18n/uz.json`
+
+## 2026-03-31 (Analytics event tracking -- mobile + medic)
+
+- **[feature]** Created analytics utility with local event queue, batching (20 events), and flush-on-start -- `mobile/utils/analytics.ts`, `medic/utils/analytics.ts`
+- **[integration]** Mobile client: tracking `app_opened`, `order_created`, `order_completed`, `rating_submitted`, `login`, `register` -- `mobile/app/_layout.tsx`, `mobile/app/order/confirm.tsx`, `mobile/app/order/track.tsx`, `mobile/components/RatingModal.tsx`, `mobile/app/auth.tsx`
+- **[integration]** Medic app: tracking `app_opened`, `order_accepted`, `order_completed`, `rating_submitted`, `login`, `register`, `toggle_online` -- `medic/app/_layout.tsx`, `medic/app/(tabs)/index.tsx`, `medic/app/order/[id].tsx`, `medic/components/ClientRatingModal.tsx`, `medic/app/auth.tsx`, `medic/app/(tabs)/profile.tsx`
+
+## 2026-03-31 (Onboarding screen -- medic app)
+
+- **[feature]** 3-slide onboarding screen for medic app: "Accept orders", "Get verified", "Set work zone" -- swipeable FlatList with pagingEnabled, Reanimated dot indicators, Skip/Next/Start buttons -- `medic/app/onboarding.tsx`
+- **[integration]** Onboarding flow integrated into medic _layout.tsx: AsyncStorage key `medic_onboarding_completed`, onboarding shown before language-picker on first launch -- `medic/app/_layout.tsx`
+- **[i18n]** Added `onboarding.*` keys (slide1Title, slide1Desc, slide2Title, slide2Desc, slide3Title, slide3Desc, next, start, skip) to both `medic/i18n/ru.json` and `medic/i18n/uz.json`
+
+## 2026-03-31 (Onboarding screen -- mobile client)
+
+- **[feature]** 3-slide onboarding screen shown on first launch with swipeable FlatList, animated dot indicators (Reanimated), "Skip"/"Next"/"Start" buttons -- `mobile/app/onboarding.tsx`
+- **[integration]** Navigation flow updated: onboarding -> language-picker -> auth -> (tabs); onboarding state stored in AsyncStorage (`onboarding_completed`) -- `mobile/app/_layout.tsx`
+- **[i18n]** Added `onboarding.*` keys (slide1Title, slide1Desc, slide2Title, slide2Desc, slide3Title, slide3Desc, next, start, skip) to both `mobile/i18n/ru.json` and `mobile/i18n/uz.json`
+
+## 2026-03-31 (Design tokens migration -- mobile client)
+
+- **[refactor]** Replaced hardcoded `borderRadius` values with `Radius.*` tokens (xs/sm/md/lg/xl/full) across 19 mobile client files
+- **[refactor]** Replaced hardcoded `padding`/`margin`/`gap` spacing values with `Spacing.*` tokens (xs/sm/md/lg/xl/xxl/xxxl) across 19 mobile client files
+- **[refactor]** Replaced hardcoded `shadowColor`/`shadowOffset`/`shadowOpacity`/`shadowRadius`/`elevation` with `...Shadow.*` spread tokens (sm/md/lg) in auth.tsx, Toast.tsx, courses.tsx, trackStyles.ts, TrackMap.tsx
+- **[refactor]** Replaced hardcoded hex color literals with Theme.* tokens (Theme.info for #2563eb, Theme.success for #16a34a, Theme.error for #dc2626, Theme.warning for #f59e0b, Theme.primary for #0d9488, Theme.background for #f8fafc, Theme.textTertiary for #94a3b8)
+- **[files]** `mobile/app/order/trackStyles.ts`, `mobile/app/auth.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/(tabs)/two.tsx`, `mobile/app/(tabs)/profile.tsx`, `mobile/app/order/confirm.tsx`, `mobile/app/order/location.tsx`, `mobile/app/courses.tsx`, `mobile/app/favorites.tsx`, `mobile/app/medical-card.tsx`, `mobile/app/referral.tsx`, `mobile/components/SplashOverlay.tsx`, `mobile/components/SkeletonLoader.tsx`, `mobile/components/Toast.tsx`, `mobile/components/RatingModal.tsx`, `mobile/components/order/TrackMap.tsx`, `mobile/components/order/ProgressStepper.tsx`, `mobile/components/order/MedicInfoCard.tsx`, `mobile/components/order/TrackActions.tsx`
+
+## 2026-03-31 (Design tokens migration -- medic)
+
+- **[refactor]** Replaced hardcoded `borderRadius` values with `Radius.*` tokens (xs/sm/md/lg/xl/full) across 23 medic app files
+- **[refactor]** Replaced hardcoded `padding`/`margin`/`gap` spacing values with `Spacing.*` tokens (xs/sm/md/lg/xl/xxl/xxxl) across 23 medic app files
+- **[refactor]** Replaced hardcoded `fontSize` values with `Typography.*` tokens (caption/bodySmall/body/h1/h2/h3) across 23 medic app files
+- **[refactor]** Replaced hardcoded `shadowColor`/`shadowOffset`/`shadowOpacity`/`shadowRadius`/`elevation` with `...Shadow.*` spread tokens (sm/md/lg) in auth.tsx, Toast.tsx, SwipeActionButton.tsx, OrderInviteModal.tsx
+- **[refactor]** Replaced hardcoded hex color literals with Theme.* tokens (Theme.error, Theme.warning, Theme.primary, Theme.overlay, Theme.textInverse) where applicable
+- **[files]** `medic/app/auth.tsx`, `medic/app/(tabs)/index.tsx`, `medic/app/(tabs)/my-orders.tsx`, `medic/app/(tabs)/profile.tsx`, `medic/app/order/[id].tsx`, `medic/app/work-zone.tsx`, `medic/app/verification.tsx`, `medic/components/SplashOverlay.tsx`, `medic/components/SkeletonLoader.tsx`, `medic/components/Toast.tsx`, `medic/components/ClientRatingModal.tsx`, `medic/components/NewOrderBanner.tsx`, `medic/components/SwipeActionButton.tsx`, `medic/components/OrderInviteModal.tsx`, `medic/components/OfflineBanner.tsx`, `medic/components/profile/ProfileHeader.tsx`, `medic/components/profile/VerificationCard.tsx`, `medic/components/profile/OnlineToggle.tsx`, `medic/components/profile/StatsSection.tsx`, `medic/components/order/OrderDetailMap.tsx`, `medic/components/order/StatusActions.tsx`, `medic/components/order/EarningsCard.tsx`, `medic/components/order/ClientInfo.tsx`
+
+## 2026-03-31 (Toast conversion Phase 2 -- medic)
+
+- **[refactor]** Converted remaining non-destructive Alert.alert calls to showToast() in medic app -- `medic/app/_layout.tsx` (auto-offline), `medic/hooks/useMedicLocation.ts` (location denied), `medic/components/OrderInviteModal.tsx` (wallet/error alerts), `medic/app/(tabs)/profile.tsx` (location+gallery permission info), `medic/app/verification.tsx` (gallery+camera permission info)
+- **[cleanup]** Removed unused Alert import from `OrderInviteModal.tsx` and `useMedicLocation.ts`; kept Alert only where confirmation dialogs with action buttons are used
+
+## 2026-03-31 (Push notification navigation + deep linking -- mobile + medic)
+
+- **[feature]** Push notification tap handler: added `addNotificationResponseReceivedListener` in `RootLayoutNav` to navigate on notification tap (order->track, course, referral for mobile; order detail, invite for medic) -- `mobile/app/_layout.tsx`, `medic/app/_layout.tsx`
+- **[feature]** Cold-start notification: added `getLastNotificationResponseAsync` to handle notification that launched the app from killed state -- `mobile/app/_layout.tsx`, `medic/app/_layout.tsx`
+- **[verify]** Deep linking schemes already configured: `hamshiragomobile://` (mobile) and `hamshiragomedic://` (medic) in app.json; Expo Router handles URL-based routing automatically via file structure
+
+## 2026-04-01 (API reliability + Offline Banner -- mobile + medic)
+
+- **[fix]** Medic API timeout: added AbortController with 20s timeout matching mobile pattern -- `medic/constants/api.ts`
+- **[fix]** Retry logic: GET requests retry once after 1s on network/timeout errors (TypeError, AbortError); POST/PUT/PATCH/DELETE never retry -- `mobile/constants/api.ts`, `medic/constants/api.ts`
+- **[feature]** OfflineBanner: sticky animated banner using NetInfo + Reanimated slide-down, shows when device is offline, auto-hides on reconnect -- `mobile/components/OfflineBanner.tsx`, `medic/components/OfflineBanner.tsx`
+- **[integration]** OfflineBanner rendered above Stack navigator in both app layouts -- `mobile/app/_layout.tsx`, `medic/app/_layout.tsx`
+- **[deps]** Installed `@react-native-community/netinfo` in both mobile and medic apps
+
+## 2026-03-31 (Professional Level Upgrade -- mobile + medic)
+
+- **[design]** Design System: Updated `Theme.ts` in both apps -- refined healthcare palette (teal primary, better contrast), added `Radius`, `Spacing`, `Typography`, `Shadow` token exports (`mobile/constants/Theme.ts`, `medic/constants/Theme.ts`)
+- **[perf]** Skeleton Loaders: Created `SkeletonLoader.tsx` in both apps (Reanimated shimmer), applied to home/orders/profile screens replacing ActivityIndicator (`mobile/components/SkeletonLoader.tsx`, `medic/components/SkeletonLoader.tsx`)
+- **[perf]** FlashList: Replaced FlatList with `@shopify/flash-list` in orders lists (`mobile/app/(tabs)/two.tsx`, `medic/app/(tabs)/index.tsx`, `medic/app/(tabs)/my-orders.tsx`)
+- **[ux]** Haptic Feedback: Added `expo-haptics` on order confirm, status changes, star rating, pull-to-refresh (`mobile/app/order/confirm.tsx`, `mobile/components/RatingModal.tsx`, `mobile/app/(tabs)/two.tsx`, `medic/app/order/[id].tsx`, `medic/app/(tabs)/index.tsx`, `medic/components/ClientRatingModal.tsx`)
+- **[perf]** React.memo + useCallback: Wrapped `ServiceCard`, `OrderCard`, `AvailableOrderCard` in memo; memoized handlers and computations (`mobile/components/ServiceCard.tsx`, `mobile/components/OrderCard.tsx`, `medic/app/(tabs)/index.tsx`, `medic/app/(tabs)/my-orders.tsx`, `medic/app/(tabs)/profile.tsx`)
+- **[refactor]** Decomposition -- Mobile: `track.tsx` split into `TrackMap`, `ProgressStepper`, `MedicInfoCard`, `TrackActions` (`mobile/components/order/`)
+- **[refactor]** Decomposition -- Medic: `profile.tsx` split into `ProfileHeader`, `VerificationCard`, `OnlineToggle`, `StatsSection`; `order/[id].tsx` split into `OrderDetailMap`, `StatusActions`, `EarningsCard`, `ClientInfo` (`medic/components/profile/`, `medic/components/order/`)
+- **[feature]** Toast System: Created `Toast.tsx` + `ToastContext.tsx` in both apps, replaced non-destructive `Alert.alert()` calls (`mobile/components/Toast.tsx`, `mobile/context/ToastContext.tsx`, `medic/components/Toast.tsx`, `medic/context/ToastContext.tsx`)
+- **[a11y]** Accessibility: Added `accessibilityLabel`/`accessibilityRole` to 11 files across both apps -- auth, cards, rating, profile, status (`mobile/app/auth.tsx`, `mobile/components/ServiceCard.tsx`, `mobile/components/OrderCard.tsx`, `mobile/components/RatingModal.tsx`, `mobile/components/order/MedicInfoCard.tsx`, `mobile/components/order/ProgressStepper.tsx`, `medic/app/auth.tsx`, `medic/app/(tabs)/index.tsx`, `medic/components/ClientRatingModal.tsx`, `medic/components/profile/ProfileHeader.tsx`, `medic/components/profile/OnlineToggle.tsx`, `medic/components/order/StatusActions.tsx`)
+- **[perf]** expo-image: Replaced remote `Image` with `expo-image` (blurhash placeholder, transition, caching) in 6 files (`mobile/components/order/MedicInfoCard.tsx`, `mobile/components/order/TrackMap.tsx`, `mobile/app/order/track.tsx`, `mobile/app/favorites.tsx`, `medic/components/profile/ProfileHeader.tsx`, `medic/app/verification.tsx`)
+
+## 2026-03-31 (Toast notification system replacing Alert.alert for non-destructive messages)
+
+- **[feature]** Created `Toast` component with Reanimated slide-down animation, auto-dismiss, color-coded types (success/error/info/warning) -- `mobile/components/Toast.tsx`, `medic/components/Toast.tsx`
+- **[feature]** Created `ToastContext` with provider, queue (FIFO), and `useToast()` hook -- `mobile/context/ToastContext.tsx`, `medic/context/ToastContext.tsx`
+- **[integration]** Wrapped both app layouts with `ToastProvider` inside existing provider tree -- `mobile/app/_layout.tsx`, `medic/app/_layout.tsx`
+- **[refactor]** Mobile: replaced non-destructive `Alert.alert` with `showToast()` in `medical-card.tsx`, `order/track.tsx`, `order/confirm.tsx`, `courses.tsx`, `hooks/useOrderTracking.ts`
+- **[refactor]** Medic: replaced non-destructive `Alert.alert` with `showToast()` in `work-zone.tsx`, `verification.tsx`, `order/[id].tsx`, `(tabs)/profile.tsx`, `hooks/useOrderStatus.ts`
+- **[note]** Kept `Alert.alert` for confirmation dialogs (cancel order, complete order, payment platform picker, course actions) and permission prompts requiring user acknowledgment
+
+## 2026-03-31 (Accessibility labels and roles for critical user flows)
+
+- **[a11y]** Added `accessibilityRole="button"` and `accessibilityLabel` with service name + price to `ServiceCard` — `mobile/components/ServiceCard.tsx`
+- **[a11y]** Added `accessibilityRole="button"` and `accessibilityLabel` with status + service + price to `OrderCard` — `mobile/components/OrderCard.tsx`
+- **[a11y]** Added star button labels (`N из 5 звёзд`), selected state, submit button label to `RatingModal` — `mobile/components/RatingModal.tsx`
+- **[a11y]** Added avatar `accessibilityLabel` and rating label (`Рейтинг X из 5`) to `MedicInfoCard` — `mobile/components/order/MedicInfoCard.tsx`
+- **[a11y]** Added step labels with active/done/pending state to `ProgressStepper` — `mobile/components/order/ProgressStepper.tsx`
+- **[a11y]** Added `accessibilityRole="tab"` with selected state, input labels (Телефон, Имя, Пароль, Реферальный код), submit button to auth screen — `mobile/app/auth.tsx`
+- **[a11y]** Added `accessibilityRole="button"` and `accessibilityLabel` with service + address + price to `AvailableOrderCard`, accept button label — `medic/app/(tabs)/index.tsx`
+- **[a11y]** Added star labels, submit/skip button labels to `ClientRatingModal` — `medic/components/ClientRatingModal.tsx`
+- **[a11y]** Added avatar and rating accessibility labels to `ProfileHeader` — `medic/components/profile/ProfileHeader.tsx`
+- **[a11y]** Added `accessibilityRole="switch"` with checked state and label to `OnlineToggle` — `medic/components/profile/OnlineToggle.tsx`
+- **[a11y]** Added status badge label and action button label to `StatusActions` — `medic/components/order/StatusActions.tsx`
+- **[a11y]** Added tab roles with selected state, input labels, submit button label to medic auth screen — `medic/app/auth.tsx`
+- **[verify]** `npx tsc --noEmit` passes with zero errors in both mobile and medic apps
+
+## 2026-03-31 (Replace React Native Image with expo-image for remote URLs)
+
+- **[perf]** Replaced `Image` from react-native with `Image` from expo-image for all remote URL images in mobile app — adds disk caching, blurhash placeholders, smooth transitions — `mobile/components/order/MedicInfoCard.tsx`, `mobile/components/order/TrackMap.tsx`, `mobile/app/order/track.tsx`, `mobile/app/favorites.tsx`
+- **[perf]** Replaced `Image` from react-native with `Image` from expo-image for all remote URL images in medic app — adds disk caching, blurhash placeholders, smooth transitions — `medic/components/profile/ProfileHeader.tsx`, `medic/app/verification.tsx`
+- **[deps]** Installed `expo-image` in both `mobile/` and `medic/` apps
+
+## 2026-03-31 (Refactor: decompose profile.tsx and [id].tsx into sub-components — medic app)
+
+- **[refactor]** Extracted `ProfileHeader` component (avatar, name, phone, rating) from profile.tsx — `medic/components/profile/ProfileHeader.tsx`
+- **[refactor]** Extracted `VerificationCard` component (verification status badge with navigation) from profile.tsx — `medic/components/profile/VerificationCard.tsx`
+- **[refactor]** Extracted `OnlineToggle` component (online/offline switch + background location warning) from profile.tsx — `medic/components/profile/OnlineToggle.tsx`
+- **[refactor]** Extracted `StatsSection` component (experience, completed count, rating, balance, earnings cards) from profile.tsx — `medic/components/profile/StatsSection.tsx`
+- **[refactor]** Extracted `OrderDetailMap` component (MapView with medic/client markers, route polyline, legend) from order/[id].tsx — `medic/components/order/OrderDetailMap.tsx`
+- **[refactor]** Extracted `StatusActions` component (status badge, live tracking card, swipe action button, completed note) from order/[id].tsx — `medic/components/order/StatusActions.tsx`
+- **[refactor]** Extracted `EarningsCard` component (service info, price breakdown, net earnings) from order/[id].tsx — `medic/components/order/EarningsCard.tsx`
+- **[refactor]** Extracted `ClientInfo` component (address, phone, call button, maps button, med card button) from order/[id].tsx — `medic/components/order/ClientInfo.tsx`
+- **[refactor]** All 8 sub-components wrapped in `React.memo()` with TypeScript interfaces for props
+- **[refactor]** Refactored `medic/app/(tabs)/profile.tsx` to compose 4 sub-components (reduced from 803 to 483 lines)
+- **[refactor]** Refactored `medic/app/order/[id].tsx` to compose 4 sub-components (reduced from 919 to 296 lines)
+- **[verify]** `npx tsc --noEmit` passes with zero errors
+
+## 2026-03-31 (Refactor: decompose track.tsx into sub-components — mobile client)
+
+- **[refactor]** Extracted `ProgressStepper` component (order status step visualization) — `mobile/components/order/ProgressStepper.tsx`
+- **[refactor]** Extracted `MedicInfoCard` component (medic avatar, name, rating) — `mobile/components/order/MedicInfoCard.tsx`
+- **[refactor]** Extracted `TrackMap` component (MapView, markers, polyline, legend) — `mobile/components/order/TrackMap.tsx`
+- **[refactor]** Extracted `TrackActions` component (cancel, favorite, pay, back-to-orders buttons) — `mobile/components/order/TrackActions.tsx`
+- **[refactor]** Refactored `track.tsx` to compose sub-components; all hooks remain in parent — `mobile/app/order/track.tsx`
+- **[perf]** Wrapped all 4 new sub-components in `React.memo()` for render optimization
+- **[quality]** Each sub-component has own TypeScript interface for props and self-contained StyleSheet
+
+## 2026-03-31 (Skeleton Loaders, FlashList, Haptic Feedback, Memo — medic app)
+
+- **[perf]** Created reusable `SkeletonLoader` component with Reanimated opacity pulse animation + presets (`SkeletonCard`, `SkeletonMyOrderCard`, `SkeletonLine`, `SkeletonAvatar`, `SkeletonProfileHeader`) — `medic/components/SkeletonLoader.tsx`
+- **[perf]** Replaced `FlatList` with `FlashList` (@shopify/flash-list v2) in available orders and my-orders screens — `medic/app/(tabs)/index.tsx`, `medic/app/(tabs)/my-orders.tsx`
+- **[perf]** Replaced `ActivityIndicator` loading states with skeleton placeholders in 3 screens — `medic/app/(tabs)/index.tsx`, `medic/app/(tabs)/my-orders.tsx`, `medic/app/(tabs)/profile.tsx`
+- **[ux]** Added haptic feedback (expo-haptics) on status change buttons, order completion (success notification), pull-to-refresh, and star rating press — `medic/app/order/[id].tsx`, `medic/app/(tabs)/index.tsx`, `medic/components/ClientRatingModal.tsx`
+- **[perf]** Wrapped `AvailableOrderCard` in `React.memo`, memoized `renderItem` with `useCallback`, memoized `handleAccept` with `useCallback` — `medic/app/(tabs)/index.tsx`
+- **[perf]** Memoized active/history order filtering with `useMemo`, wrapped `renderItem` with `useCallback` — `medic/app/(tabs)/my-orders.tsx`
+- **[perf]** Memoized rating display calculation with `useMemo` — `medic/app/(tabs)/profile.tsx`
+- **[deps]** Installed `@shopify/flash-list` v2 — `medic/package.json`
+
+## 2026-03-31 (Skeleton Loaders, FlashList, Haptic Feedback, Memo — mobile client)
+
+- **[perf]** Created reusable `SkeletonLoader` component with Reanimated opacity pulse animation + presets (`SkeletonServiceCard`, `SkeletonOrderCard`, `SkeletonLine`, `SkeletonAvatar`) — `mobile/components/SkeletonLoader.tsx`
+- **[perf]** Replaced `ActivityIndicator` with skeleton card placeholders on Home screen (services list) — `mobile/app/(tabs)/index.tsx`
+- **[perf]** Replaced `ActivityIndicator` with skeleton order cards on Orders screen — `mobile/app/(tabs)/two.tsx`
+- **[perf]** Replaced `FlatList` with `FlashList` from `@shopify/flash-list` v2 on Orders screen — `mobile/app/(tabs)/two.tsx`
+- **[perf]** Wrapped `OrderCard` in `React.memo()` — `mobile/components/OrderCard.tsx`
+- **[perf]** Wrapped `ServiceCard` in `React.memo()` + `useCallback` for press handler — `mobile/components/ServiceCard.tsx`
+- **[perf]** Wrapped `renderItem`, `onRefresh`, `onEndReached` in `useCallback` on Orders screen — `mobile/app/(tabs)/two.tsx`
+- **[perf]** Wrapped `loadServices` in `useCallback` on Home screen — `mobile/app/(tabs)/index.tsx`
+- **[ux]** Added haptic feedback (`expo-haptics`) on order confirm (Medium impact) + success notification — `mobile/app/order/confirm.tsx`
+- **[ux]** Added haptic feedback on rating star press (Light impact) — `mobile/components/RatingModal.tsx`
+- **[ux]** Added haptic feedback on pull-to-refresh (Light impact) — `mobile/app/(tabs)/two.tsx`
+- **[deps]** Installed `@shopify/flash-list`, `expo-haptics` — `mobile/package.json`
+
+## 2026-03-31 (Design System — theme tokens for mobile + medic)
+
+- **[design]** Updated Theme with professional healthcare palette (teal-blue primary, slate neutrals, semantic colors) — `mobile/constants/Theme.ts`, `medic/constants/Theme.ts`
+- **[design]** Added new color tokens: `primaryLight`, `info`, `surfaceSecondary`, `overlay`, `textTertiary`, `textInverse`, `borderLight`, `borderFocus`, `gradientWarm`, order status colors (`statusCreated`..`statusCanceled`) — both apps
+- **[design]** Added medic-specific tokens: `verificationPending/Approved/Rejected`, `onlineGreen`, `offlineGrey` — `medic/constants/Theme.ts`
+- **[design]** Added `Radius` tokens (xs/sm/md/lg/xl/full) — both apps
+- **[design]** Added `Spacing` tokens (xs..xxxl, 4-point grid) — both apps
+- **[design]** Added `Typography` scale (h1..caption, button) with fontSize/lineHeight/fontWeight — both apps
+- **[design]** Added `Shadow` presets (sm/md/lg) with iOS shadows + Android elevation — both apps
+- **[compat]** All existing Theme keys preserved (primary, primaryDark, accent, success, warning, error, background, surface, text, textSecondary, border, bannerGradient)
+
 ## 2026-03-31 (Medic work zone / geofence settings screen — medic app)
 
 - **[feat]** Created work zone screen with MapView + Circle overlay + radius slider (0.5-50 km) — `medic/app/work-zone.tsx`

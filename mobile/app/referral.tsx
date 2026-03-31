@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -112,17 +112,17 @@ export default function ReferralScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
-  content: { padding: 16, gap: 14 },
+  content: { padding: Spacing.lg, gap: 14 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   codeCard: {
     backgroundColor: Theme.surface,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Theme.border,
-    gap: 8,
+    gap: Spacing.sm,
   },
   codeLabel: {
     fontSize: 13,
@@ -135,12 +135,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Theme.primary,
     letterSpacing: 4,
-    marginVertical: 8,
+    marginVertical: Spacing.sm,
   },
   btnRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 8,
+    marginTop: Spacing.sm,
   },
   actionBtn: {
     flexDirection: 'row',
@@ -181,10 +181,10 @@ const styles = StyleSheet.create({
   statsCard: {
     backgroundColor: Theme.surface,
     borderRadius: 14,
-    padding: 16,
+    padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Theme.border,
-    gap: 12,
+    gap: Spacing.md,
   },
   statsTitle: {
     fontSize: 12,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   statItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.xs,
   },
   statValue: {
     fontSize: 28,

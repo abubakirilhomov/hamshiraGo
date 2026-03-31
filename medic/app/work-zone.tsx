@@ -4,7 +4,6 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Platform,
 } from 'react-native';
@@ -13,9 +12,10 @@ import { Stack, useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 const MapsModule =
   Platform.OS === 'web' ? null : require('react-native-maps');
@@ -32,6 +32,7 @@ const FALLBACK_LNG = 69.2401;
 export default function WorkZoneScreen() {
   const { t } = useTranslation();
   const { medic, token, refreshProfile } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
   const mapRef = useRef<any>(null);
 
@@ -106,7 +107,7 @@ export default function WorkZoneScreen() {
 
   const handleSave = async () => {
     if (!center) {
-      Alert.alert(t('common.error'), t('geofence.tapToSetCenter'));
+      showToast(t('geofence.tapToSetCenter'), 'warning');
       return;
     }
     setSaving(true);
@@ -121,12 +122,11 @@ export default function WorkZoneScreen() {
         }),
       });
       await refreshProfile();
-      Alert.alert(t('geofence.saved'), '', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showToast(t('geofence.saved'), 'success');
+      router.back();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('common.error');
-      Alert.alert(t('common.error'), msg);
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -140,12 +140,11 @@ export default function WorkZoneScreen() {
         token: token ?? undefined,
       });
       await refreshProfile();
-      Alert.alert(t('geofence.cleared'), '', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      showToast(t('geofence.cleared'), 'success');
+      router.back();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('common.error');
-      Alert.alert(t('common.error'), msg);
+      showToast(msg, 'error');
     } finally {
       setClearing(false);
     }
@@ -343,34 +342,34 @@ const styles = StyleSheet.create({
   controls: {
     flex: 1,
     padding: 20,
-    gap: 16,
+    gap: Spacing.lg,
   },
   hintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
   },
   hintText: {
-    fontSize: 14,
+    fontSize: Typography.bodySmall.fontSize,
     color: Theme.textSecondary,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Spacing.sm,
     backgroundColor: Theme.surface,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: Radius.sm,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Theme.border,
   },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusText: { fontSize: 13, color: Theme.text, fontWeight: '600' },
+  statusText: { fontSize: Typography.bodySmall.fontSize, color: Theme.text, fontWeight: '600' },
   sliderSection: {
-    gap: 4,
+    gap: Spacing.xs,
   },
   radiusLabel: {
-    fontSize: 16,
+    fontSize: Typography.body.fontSize,
     fontWeight: '700',
     color: Theme.text,
   },
@@ -383,13 +382,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sliderMinMax: {
-    fontSize: 12,
+    fontSize: Typography.caption.fontSize,
     color: Theme.textSecondary,
   },
   saveBtn: {
     backgroundColor: Theme.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -401,13 +400,13 @@ const styles = StyleSheet.create({
   clearBtn: {
     borderWidth: 1,
     borderColor: Theme.border,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   clearBtnText: {
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     fontWeight: '600',
     color: Theme.textSecondary,
   },
