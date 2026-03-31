@@ -242,6 +242,7 @@
 - [x] Backend: сущность `TreatmentCourse` (clientId, название, количество процедур, интервал, следующая дата) — `backend/src/treatment-courses/`
 - [x] Backend: cron-задача — отправка push за 2 часа до следующей процедуры — `treatment-courses.service.ts`
 - [x] Mobile: экран «Мои курсы лечения» с расписанием — `mobile/app/courses.tsx`
+- [x] Web: страница «Курсы лечения» `/courses` с inline-формой добавления, прогресс-баром и удалением — `web/app/courses/page.tsx`
 
 ### Реферальная программа — Абубакир (backend) + Диёр (web/mobile)
 - [x] Backend: генерация реферального кода для каждого клиента — `auth.service.ts`

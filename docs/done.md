@@ -50,6 +50,13 @@
 - **[feat]** `ReviewsController` — `POST /reviews`, `GET /reviews/medic/:id`, `GET /reviews/client/:id`, `GET /reviews/order/:id` — `backend/src/reviews/reviews.controller.ts`
 - **[feat]** `ReviewsModule` подключён в `AppModule` — `backend/src/app.module.ts`
 
+## 2026-03-31 (Курсы лечения — web client)
+
+- **[feat]** Добавлены интерфейс `TreatmentCourse`, `CreateTreatmentCourseDto` и функции `getTreatmentCourses()`, `createTreatmentCourse()`, `deleteTreatmentCourse()`, `patchTreatmentCourse()` — `web/lib/api.ts`
+- **[feat]** Создана страница `web/app/courses/page.tsx`: список курсов с прогресс-баром, статус-бейджем, кнопкой удалить, inline-форма добавления
+- **[feat]** Кнопка "Курсы лечения" (FaSyringe) в профиль — `web/app/profile/page.tsx`
+- **[i18n]** Ключи секции `courses.*` — `web/i18n/ru.json`, `web/i18n/uz.json`
+
 ## 2026-03-31 (Favorites / My Medics — web client)
 
 - **[feat]** Добавлен интерфейс `FavoriteMedic` и функции `getFavorites()`, `addFavorite(medicId)`, `removeFavorite(medicId)` — `web/lib/api.ts`

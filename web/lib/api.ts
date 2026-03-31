@@ -287,6 +287,43 @@ export const addFavorite = (medicId: string) =>
 export const removeFavorite = (medicId: string) =>
   request<void>(`/favorites/${medicId}`, { method: "DELETE" });
 
+// ─── Treatment Courses ────────────────────────────────────────────────────────
+
+export interface TreatmentCourse {
+  id: string;
+  title: string;
+  totalProcedures: number;
+  completedProcedures: number;
+  intervalDays: number;
+  nextDate: string | null;
+  status: "ACTIVE" | "COMPLETED" | "PAUSED";
+}
+
+export interface CreateTreatmentCourseDto {
+  title: string;
+  totalProcedures: number;
+  intervalDays: number;
+  nextDate?: string;
+}
+
+export const getTreatmentCourses = () =>
+  request<TreatmentCourse[]>("/treatment-courses/my");
+
+export const createTreatmentCourse = (data: CreateTreatmentCourseDto) =>
+  request<TreatmentCourse>("/treatment-courses", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const deleteTreatmentCourse = (id: string) =>
+  request<void>(`/treatment-courses/${id}`, { method: "DELETE" });
+
+export const patchTreatmentCourse = (id: string, data: Record<string, unknown>) =>
+  request<TreatmentCourse>(`/treatment-courses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+
 // ─── Medical Card ─────────────────────────────────────────────────────────────
 
 export interface MedicalCard {
