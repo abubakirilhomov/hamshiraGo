@@ -373,7 +373,7 @@ export default function OrderDetailPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{order.medic.name}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
                   {order.medic.rating !== null && (
                     <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#64748b" }}>
                       <FaStar size={11} color="#eab308" />
@@ -385,6 +385,17 @@ export default function OrderDetailPage() {
                     <FaBriefcaseMedical size={11} color="#94a3b8" />
                     {order.medic.experienceYears} {t("order.years")}
                   </span>
+                  <button
+                    onClick={() => router.push(`/reviews/medic/${order.medic!.id}`)}
+                    style={{
+                      background: "#f0fdf9", border: "1px solid #0d9488",
+                      borderRadius: 8, padding: "3px 10px",
+                      fontSize: 12, fontWeight: 700, color: "#0d9488",
+                      cursor: "pointer", whiteSpace: "nowrap",
+                    }}
+                  >
+                    {t("reviews.title")}
+                  </button>
                 </div>
               </div>
             </div>

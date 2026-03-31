@@ -251,6 +251,23 @@
     "fieldInterval": "Interval (kun)",
     "fieldNextDate": "Birinchi protsedura sanasi (ixtiyoriy)"
   },
+  "reviews": {
+    "title": "Sharhlar",
+    "back": "Orqaga",
+    "loading": "Sharhlar yuklanmoqda...",
+    "error": "Sharhlarni yuklashda xatolik",
+    "retry": "Qayta urinish",
+    "empty": "Hali sharhlar yo'q",
+    "emptyHint": "Bu yerda yakunlangan buyurtmalardan so'ng mijozlar sharhlari paydo bo'ladi",
+    "avgRating": "O'rtacha reyting",
+    "totalReviews": "sharh",
+    "noComment": "Sharh yo'q",
+    "roleClient": "Mijoz",
+    "roleMedic": "Hamshira",
+    "prevPage": "← Orqaga",
+    "nextPage": "Oldinga →",
+    "pageOf": "{{page}} / {{total}}"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

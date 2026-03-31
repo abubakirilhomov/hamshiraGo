@@ -1,5 +1,11 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Web: страница отзывов медика)
+
+- **[feat]** Создана страница отзывов `/reviews/medic/[medicId]` — список отзывов с рейтингом, звёздами, датой, пагинацией и заглушкой — `web/app/reviews/medic/[medicId]/page.tsx`
+- **[feat]** Добавлена кнопка «Отзывы» рядом с рейтингом медика на странице заказа — `web/app/orders/[id]/page.tsx`
+- **[i18n]** Добавлена секция `reviews.*` (title, back, loading, error, retry, empty, emptyHint, avgRating, totalReviews, noComment, roleClient, roleMedic, prevPage, nextPage, pageOf) — `web/i18n/ru.json`, `web/i18n/uz.json`
+
 ## 2026-03-31 (Medic work zone / geofence settings screen — medic app)
 
 - **[feat]** Created work zone screen with MapView + Circle overlay + radius slider (0.5-50 km) — `medic/app/work-zone.tsx`
