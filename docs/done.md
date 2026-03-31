@@ -1,5 +1,13 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Web-medic: оценка клиента после заказа)
+
+- **[feat]** Добавлен блок «Оценить клиента» на странице заказа — показывается при `status === "DONE"`, проверяет через `GET /reviews/order/:id` нет ли уже отзыва с `authorRole=medic` — `web-medic/app/order/[id]/page.tsx`
+- **[feat]** 5 интерактивных звёзд с hover-эффектом, textarea для комментария (необязательно), кнопки «Отправить» / «Пропустить» — `web-medic/app/order/[id]/page.tsx`
+- **[feat]** После отправки/пропуска блок скрывается, показывается «Спасибо!» — `web-medic/app/order/[id]/page.tsx`
+- **[feat]** Добавлен интерфейс `Review` — `web-medic/lib/api.ts`
+- **[i18n]** Добавлены ключи `order.rateClient*` (rateClient, rateClientHint, rateClientComment, rateClientCommentPlaceholder, rateClientSubmit, rateClientSkip, rateClientThanks, rateClientSelectFirst) — `web-medic/i18n/ru.json`, `web-medic/i18n/uz.json`
+
 ## 2026-03-31 (Web: страница отзывов медика)
 
 - **[feat]** Создана страница отзывов `/reviews/medic/[medicId]` — список отзывов с рейтингом, звёздами, датой, пагинацией и заглушкой — `web/app/reviews/medic/[medicId]/page.tsx`

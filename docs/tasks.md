@@ -189,7 +189,7 @@
 - [x] Backend: автоматический пересчёт `averageRating` у клиента (с try/catch — колонка может отсутствовать на Railway) — `backend/src/reviews/reviews.service.ts`
 - [x] Backend: push/Telegram напоминание через 1 час если отзыв не оставлен — `backend/src/reviews/reviews.service.ts` (cron `*/15 * * * *`)
 - [x] Mobile medic: экран оценки клиента после заказа (звёзды + комментарий + пропуск) — `medic/components/ClientRatingModal.tsx`, `medic/app/order/[id].tsx`, `medic/hooks/useOrderStatus.ts`
-- [ ] Web-medic: экран оценки клиента после заказа (был ли вежлив, подготовил ли место, оплатил вовремя)
+- [x] Web-medic: экран оценки клиента после заказа (звёзды + комментарий + пропуск) — `web-medic/app/order/[id]/page.tsx`
 - [x] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
 - [ ] Admin: страница всех отзывов с фильтрами (по медику, клиенту, рейтингу, дате)
 
@@ -225,7 +225,7 @@
 - [x] Backend: `DELETE /medics/work-zone` — убрать ограничение (принимать заказы отовсюду)
 - [x] Mobile medic: экран с картой — медик ставит точку и слайдером выбирает радиус 0.5-50 км — `medic/app/work-zone.tsx`
 - [x] Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг) — `medic/app/work-zone.tsx`
-- [ ] Web-medic: экран с картой — медик ставит точку и тянет круг (или слайдером выбирает радиус)
+- [x] Web-medic: экран с картой — медик ставит точку и слайдером выбирает радиус 0.5–50 км — `web-medic/app/work-zone/page.tsx`
 - [ ] Admin: на карте медиков отображать их геозоны
 
 ### SEO-страницы на лендинге — Диёр
