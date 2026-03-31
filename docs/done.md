@@ -50,6 +50,12 @@
 - **[feat]** `ReviewsController` — `POST /reviews`, `GET /reviews/medic/:id`, `GET /reviews/client/:id`, `GET /reviews/order/:id` — `backend/src/reviews/reviews.controller.ts`
 - **[feat]** `ReviewsModule` подключён в `AppModule` — `backend/src/app.module.ts`
 
+## 2026-03-31 (MedicalCard — web-medic)
+
+- **[feat]** Добавлен интерфейс `MedicalCard` и метод `medicApi.medicalCard.getByClient(clientId)` — `web-medic/lib/api.ts`
+- **[feat]** В страницу деталей заказа добавлена секция "Медкарта клиента" (группа крови, аллергии, хронические болезни, заметки); показывается только если есть хотя бы одно непустое поле; загружается по `clientId` из заказа — `web-medic/app/order/[id]/page.tsx`
+- **[i18n]** Добавлены ключи `order.medicalCard.*` (title, bloodType, allergies, chronicDiseases, notes) — `web-medic/i18n/ru.json`, `web-medic/i18n/uz.json`
+
 ## 2026-03-28 (Favorites + MedicalCard UI — mobile client)
 
 - **[feat]** Добавлена кнопка "Закрепить медика / Открепить" на экране трекинга заказа (статус DONE, если есть медик); загружает список favorites при DONE и проверяет isFavorite — `mobile/app/order/track.tsx`, `mobile/app/order/trackStyles.ts`

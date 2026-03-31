@@ -259,6 +259,7 @@
 - [x] Backend: эндпоинты `GET /medical-card`, `PUT /medical-card`, `GET /medical-card/client/:clientId`
 - [x] Mobile: экран «Моя медкарта» `/medical-card` — заполнение и просмотр — `mobile/app/medical-card.tsx`
 - [x] Медик: просмотр медкарты клиента в деталях заказа — `medic/app/order/[id].tsx`
+- [x] Web-medic: просмотр медкарты клиента в деталях заказа — `web-medic/app/order/[id]/page.tsx`
 
 ---
 
