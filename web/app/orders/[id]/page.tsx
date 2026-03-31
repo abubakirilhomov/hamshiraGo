@@ -114,6 +114,7 @@ export default function OrderDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const [hoverStar, setHoverStar] = useState(0);
   const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingDone, setRatingDone] = useState(false);
   const [socketOk, setSocketOk] = useState(true);
@@ -222,7 +223,7 @@ export default function OrderDetailPage() {
   async function handleRate(stars: number) {
     setRatingLoading(true);
     try {
-      const updated = await api.orders.rate(id, stars);
+      const updated = await api.orders.rate(id, stars, review || undefined);
       setOrder(updated);
       setRating(stars);
       setRatingDone(true);
@@ -280,7 +281,7 @@ export default function OrderDetailPage() {
   const date = new Date(order.created_at);
   const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
   const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-  const finalPrice = order.priceAmount - order.discountAmount;
+  const finalPrice = order.priceAmount + (order.urgentFee ?? 0) - order.discountAmount;
   const canCancel = order.status === "CREATED";
   const canConfirmDone = order.status === "SERVICE_STARTED";
 
@@ -438,6 +439,12 @@ export default function OrderDetailPage() {
         {/* Price */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
           <p style={sectionLabel}>{t("order.price")}</p>
+          {order.isUrgent && (order.urgentFee ?? 0) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>⚡ {t("confirm.urgentFee")}</span>
+              <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>+{formatPrice(order.urgentFee!)} UZS</span>
+            </div>
+          )}
           {order.discountAmount > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
               <span style={{ fontSize: 14, color: "#94a3b8" }}>{t("order.discount")}</span>
@@ -503,12 +510,12 @@ export default function OrderDetailPage() {
               <>
                 <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.rateNurse")}</p>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>{order.medic.name}</p>
-                <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
                   {[1, 2, 3, 4, 5].map((s) => (
                     <button
                       key={s}
                       disabled={ratingLoading}
-                      onClick={() => handleRate(s)}
+                      onClick={() => setRating(s)}
                       onMouseEnter={() => setHoverStar(s)}
                       onMouseLeave={() => setHoverStar(0)}
                       style={{
@@ -522,7 +529,31 @@ export default function OrderDetailPage() {
                     </button>
                   ))}
                 </div>
-                {ratingLoading && <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.saving")}</p>}
+                <textarea
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  placeholder={t("order.ratePlaceholder")}
+                  rows={3}
+                  style={{
+                    width: "100%", borderRadius: 10, border: "1.5px solid #e2e8f0",
+                    padding: "10px 12px", fontSize: 14, color: "#0f172a",
+                    resize: "none", outline: "none", marginBottom: 12,
+                    boxSizing: "border-box", fontFamily: "inherit",
+                  }}
+                />
+                <button
+                  disabled={ratingLoading || rating === 0}
+                  onClick={() => handleRate(rating)}
+                  style={{
+                    width: "100%", background: rating === 0 ? "#e2e8f0" : "#0d9488",
+                    color: rating === 0 ? "#94a3b8" : "#fff",
+                    border: "none", borderRadius: 12,
+                    padding: "13px 16px", fontSize: 15, fontWeight: 700,
+                    cursor: ratingLoading || rating === 0 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {ratingLoading ? t("order.saving") : t("order.rateSubmit")}
+                </button>
               </>
             )}
           </div>

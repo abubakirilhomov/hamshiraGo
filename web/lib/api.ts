@@ -98,10 +98,10 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ status: "DONE" }),
       }),
-    rate: (id: string, rating: number) =>
+    rate: (id: string, rating: number, review?: string) =>
       request<Order>(`/orders/${id}/rate`, {
         method: "POST",
-        body: JSON.stringify({ rating }),
+        body: JSON.stringify({ rating, ...(review ? { review } : {}) }),
       }),
   },
 
@@ -163,10 +163,13 @@ export interface Order {
   serviceTitle: string;
   priceAmount: number;
   discountAmount: number;
+  urgentFee?: number;
+  isUrgent?: boolean;
   platformFee?: number;
   status: OrderStatus;
   cancelReason?: string | null;
   clientRating: number | null;
+  clientReview?: string | null;
   created_at: string;
   updated_at: string;
   location: OrderLocation;
