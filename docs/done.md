@@ -1,5 +1,12 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Web-medic: экран геозоны рабочей зоны)
+
+- **[feat]** Создан экран `/work-zone` — lat/lng инпуты, слайдер радиуса 0.5–50 км, кнопки «Сохранить зону» (PATCH /medics/work-zone) и «Убрать ограничение» (DELETE /medics/work-zone) — `web-medic/app/work-zone/page.tsx`
+- **[feat]** При загрузке — GET /medics/me подгружает текущие workZoneLat/workZoneLng/workZoneRadius в поля формы — `web-medic/app/work-zone/page.tsx`
+- **[feat]** Добавлена кнопка «Рабочая зона» в профиль медика — показывает статус зоны (активна / без ограничений) — `web-medic/app/profile/page.tsx`
+- **[i18n]** Добавлена секция `workZone` (23 ключа) — `web-medic/i18n/ru.json`, `web-medic/i18n/uz.json`
+
 ## 2026-03-31 (Web-medic: оценка клиента после заказа)
 
 - **[feat]** Добавлен блок «Оценить клиента» на странице заказа — показывается при `status === "DONE"`, проверяет через `GET /reviews/order/:id` нет ли уже отзыва с `authorRole=medic` — `web-medic/app/order/[id]/page.tsx`
