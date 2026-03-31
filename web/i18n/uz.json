@@ -217,6 +217,17 @@
     "loading": "Yuklanmoqda...",
     "shareText": "HamshiraGo bilan uyga hamshira chaqiring! Mening kodimdan foydalaning va birinchi buyurtmaga chegirma oling:"
   },
+  "favorites": {
+    "title": "Mening hamshiralarim",
+    "myMedics": "Mening hamshiralarim",
+    "myMedicsDescription": "Ustuvor chaqiruvlar uchun sevimli hamshiralar",
+    "empty": "Sevimli hamshiralar yo'q",
+    "emptyHint": "Yakunlangan buyurtmadan so'ng hamshirani mahkamlang",
+    "remove": "O'chirish",
+    "pin": "Hamshirani mahkamlash",
+    "pinned": "Hamshira mahkamlangan",
+    "add": "Sevimlilarga qo'shish"
+  },
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik",

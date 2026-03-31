@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift } from "react-icons/fa";
+import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift, FaStar } from "react-icons/fa";
 import { unsubscribeWebPush } from "@/lib/webPush";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
@@ -196,6 +196,29 @@ export default function ProfilePage() {
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{t("referral.title")}</p>
             <p style={{ fontSize: 12, color: "#94a3b8" }}>{t("referral.bonus")}</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Favorites (My medics) */}
+        <button
+          onClick={() => router.push("/favorites")}
+          style={{
+            width: "100%", background: "#fff", borderRadius: 16,
+            padding: "16px 16px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            border: "1px solid #f1f5f9",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 12,
+            marginBottom: 12, textAlign: "left",
+          }}
+        >
+          <div style={iconWrap}><FaStar size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{t("favorites.myMedics")}</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>{t("favorites.myMedicsDescription")}</p>
           </div>
           <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

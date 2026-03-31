@@ -268,6 +268,25 @@ export interface ReferralInfo {
 
 export const getReferralInfo = () => request<ReferralInfo>("/referrals/my");
 
+// ─── Favorites ────────────────────────────────────────────────────────────────
+
+export interface FavoriteMedic {
+  medicId: string;
+  name: string;
+  phone: string;
+  rating: number | null;
+  experienceYears: number | null;
+  profilePhotoUrl: string | null;
+}
+
+export const getFavorites = () => request<FavoriteMedic[]>("/favorites");
+
+export const addFavorite = (medicId: string) =>
+  request<void>(`/favorites/${medicId}`, { method: "POST" });
+
+export const removeFavorite = (medicId: string) =>
+  request<void>(`/favorites/${medicId}`, { method: "DELETE" });
+
 // ─── Medical Card ─────────────────────────────────────────────────────────────
 
 export interface MedicalCard {

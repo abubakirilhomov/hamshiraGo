@@ -254,6 +254,7 @@
 - [x] Backend: таблица `favorite_medics` — `backend/src/favorites/`
 - [x] Backend: при создании заказа — приоритет избранному медику — `backend/src/orders/dispatch.service.ts`
 - [x] Mobile: кнопка «Закрепить медика» на track screen (DONE), экран «Мои медики» `/favorites` — `mobile/app/order/track.tsx`, `mobile/app/favorites.tsx`
+- [x] Web: кнопка «Закрепить медика» на странице заказа (DONE), страница `/favorites`, ссылка в профиле — `web/app/orders/[id]/page.tsx`, `web/app/favorites/page.tsx`, `web/app/profile/page.tsx`
 
 ### Медкарта в приложении — Абубакир (backend) + Диёр (web/mobile)
 - [x] Backend: сущность `MedicalCard` — `backend/src/medical-card/`

@@ -1,6 +1,5 @@
 # HamshiraGo — Выполненные задачи
 
-<<<<<<< HEAD
 ## 2026-03-31 (Medic work zone / geofence settings screen — medic app)
 
 - **[feat]** Created work zone screen with MapView + Circle overlay + radius slider (0.5-50 km) — `medic/app/work-zone.tsx`
@@ -50,6 +49,14 @@
 - **[feat]** `ReviewsService.findByMedic()`, `findByClient()`, `findByOrder()` — пагинация, сортировка по дате — `backend/src/reviews/reviews.service.ts`
 - **[feat]** `ReviewsController` — `POST /reviews`, `GET /reviews/medic/:id`, `GET /reviews/client/:id`, `GET /reviews/order/:id` — `backend/src/reviews/reviews.controller.ts`
 - **[feat]** `ReviewsModule` подключён в `AppModule` — `backend/src/app.module.ts`
+
+## 2026-03-31 (Favorites / My Medics — web client)
+
+- **[feat]** Добавлен интерфейс `FavoriteMedic` и функции `getFavorites()`, `addFavorite(medicId)`, `removeFavorite(medicId)` — `web/lib/api.ts`
+- **[feat]** Создана страница `web/app/favorites/page.tsx`: список карточек медиков (фото/инициалы, имя, рейтинг, опыт, кнопка "Удалить"), заглушка при пустом списке
+- **[feat]** Кнопка "Закрепить медика" на странице заказа при `status === "DONE"` — `web/app/orders/[id]/page.tsx`
+- **[feat]** Кнопка "Мои медики" в профиль — `web/app/profile/page.tsx`
+- **[i18n]** Ключи секции `favorites.*` — `web/i18n/ru.json`, `web/i18n/uz.json`
 
 ## 2026-03-31 (Referral Program — web client)
 

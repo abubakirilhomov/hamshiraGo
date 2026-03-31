@@ -25,6 +25,8 @@ import {
   ORDER_STATUS_COLOR,
   formatPrice,
   PaymentProvider,
+  getFavorites,
+  addFavorite,
 } from "@/lib/api";
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -125,6 +127,9 @@ export default function OrderDetailPage() {
     status: "searching" | "contacting" | "no_medics";
     candidateName?: string;
   } | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoritesChecked, setFavoritesChecked] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -242,6 +247,30 @@ export default function OrderDetailPage() {
         .catch(() => { /* ignore — payment may not exist yet */ });
     }
   }, [order?.status, order?.id]);
+
+  useEffect(() => {
+    if (order?.status !== "DONE" || !order.medic || favoritesChecked) return;
+    setFavoritesChecked(true);
+    getFavorites()
+      .then((list) => {
+        const medicId = order.medic!.id;
+        setIsFavorite(list.some((f) => f.medicId === medicId));
+      })
+      .catch(() => {});
+  }, [order?.status, order?.medic, favoritesChecked]);
+
+  async function handleAddFavorite() {
+    if (!order?.medic || favoriteLoading || isFavorite) return;
+    setFavoriteLoading(true);
+    try {
+      await addFavorite(order.medic.id);
+      setIsFavorite(true);
+    } catch {
+      // ignore
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }
 
   async function handleInitiatePayment(provider: PaymentProvider) {
     if (!order) return;
@@ -556,6 +585,32 @@ export default function OrderDetailPage() {
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {/* Favorite medic button */}
+        {order.status === "DONE" && order.medic && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              onClick={handleAddFavorite}
+              disabled={favoriteLoading || isFavorite}
+              style={{
+                width: "100%",
+                background: isFavorite ? "#f0fdf9" : "#fff",
+                color: isFavorite ? "#0d9488" : "#0d9488",
+                border: `1.5px solid ${isFavorite ? "#0d9488" : "#0d9488"}`,
+                borderRadius: 14,
+                padding: "14px 16px",
+                fontSize: 15, fontWeight: 700,
+                cursor: favoriteLoading || isFavorite ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                opacity: favoriteLoading ? 0.6 : 1,
+                transition: "background 0.2s",
+              }}
+            >
+              <FaStar size={15} color={isFavorite ? "#eab308" : "#0d9488"} />
+              {isFavorite ? t("favorites.pinned") : (favoriteLoading ? t("common.loading") : t("favorites.pin"))}
+            </button>
           </div>
         )}
 
