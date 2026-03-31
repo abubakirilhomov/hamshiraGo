@@ -1,5 +1,14 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Admin: Reviews page, Settings urgent fields, Medic topup)
+
+- **[feat]** Добавлены интерфейсы `Review`, `AppSettings` и функции `getMedicReviews`, `getClientReviews`, `topupMedic`, `getSettings`, `updateSettings` — `admin/src/lib/api.ts`
+- **[feat]** Создана страница `Reviews` — поиск отзывов медика по ID, таблица с рейтингом звёздами, комментарием, ролью автора и датой — `admin/src/pages/Reviews.tsx`
+- **[feat]** Добавлены поля `urgentFeePercent`, `urgentStartHour`, `urgentEndHour` на страницу настроек с отдельной кнопкой сохранения — `admin/src/pages/Settings.tsx`
+- **[feat]** Добавлена кнопка «Пополнить» для каждого медика в таблице; Dialog с вводом суммы вызывает `topupMedic` + `toast.success` — `admin/src/pages/Medics.tsx`
+- **[feat]** Добавлены маршруты `/reviews` и `/settings` — `admin/src/App.tsx`
+- **[feat]** Добавлены nav items «Отзывы» (Star) и «Настройки» (Settings) в сайдбар — `admin/src/components/AdminSidebar.tsx`
+
 ## 2026-03-31 (Web-medic: экран геозоны рабочей зоны)
 
 - **[feat]** Создан экран `/work-zone` — lat/lng инпуты, слайдер радиуса 0.5–50 км, кнопки «Сохранить зону» (PATCH /medics/work-zone) и «Убрать ограничение» (DELETE /medics/work-zone) — `web-medic/app/work-zone/page.tsx`

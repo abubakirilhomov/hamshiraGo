@@ -191,7 +191,7 @@
 - [x] Mobile medic: экран оценки клиента после заказа (звёзды + комментарий + пропуск) — `medic/components/ClientRatingModal.tsx`, `medic/app/order/[id].tsx`, `medic/hooks/useOrderStatus.ts`
 - [x] Web-medic: экран оценки клиента после заказа (звёзды + комментарий + пропуск) — `web-medic/app/order/[id]/page.tsx`
 - [x] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
-- [ ] Admin: страница всех отзывов с фильтрами (по медику, клиенту, рейтингу, дате)
+- [x] Admin: страница всех отзывов с фильтрами (по медику, клиенту, рейтингу, дате)
 
 ### Срочный вызов (extra fee) — Абубакир (backend) + Диёр (web/mobile)
 - [x] Backend: поле `isUrgent` в заказе + `urgentFee` (наценка)
