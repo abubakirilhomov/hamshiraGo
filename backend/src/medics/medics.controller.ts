@@ -36,6 +36,7 @@ import { WebPushService } from '../realtime/web-push.service';
 import { CloudinaryService } from '../common/cloudinary.service';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
+import { SetWorkZoneDto } from './dto/set-work-zone.dto';
 
 @ApiTags('medics')
 @Controller('medics')
@@ -303,6 +304,25 @@ export class MedicsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteWebPushSubscription(@Body() body: { endpoint: string }) {
     if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
+  }
+
+  // ── Work zone (geofence) ─────────────────────────────────────────────────
+
+  @Patch('work-zone')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Установить рабочую зону медика (geofence)' })
+  setWorkZone(@MedicId() medicId: string, @Body() dto: SetWorkZoneDto) {
+    return this.medicsService.setWorkZone(medicId, dto);
+  }
+
+  @Delete('work-zone')
+  @UseGuards(MedicAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Очистить рабочую зону медика' })
+  async clearWorkZone(@MedicId() medicId: string): Promise<void> {
+    await this.medicsService.clearWorkZone(medicId);
   }
 
   // ── Nearby (used by client app) ───────────────────────────────────────────

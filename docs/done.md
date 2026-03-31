@@ -1,5 +1,25 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (Geofence / work zone — backend)
+
+- **[feat]** Добавлены 3 nullable поля `workZoneLat`, `workZoneLng`, `workZoneRadius` в сущность `Medic` — `backend/src/medics/entities/medic.entity.ts`
+- **[feat]** Создан `SetWorkZoneDto` с валидацией (lat, lng, radius 0.5–50 km) — `backend/src/medics/dto/set-work-zone.dto.ts`
+- **[feat]** `MedicsService.setWorkZone()` и `clearWorkZone()` — `backend/src/medics/medics.service.ts`
+- **[feat]** `PATCH /medics/work-zone` и `DELETE /medics/work-zone` (MedicAuthGuard) — `backend/src/medics/medics.controller.ts`
+- **[feat]** Geofence фильтр в `DispatchService.selectBestMedic()`: haversine-проверка от центра зоны медика до адреса заказа, если `workZoneRadius` задан — `backend/src/orders/dispatch.service.ts`
+
+## 2026-03-31 (Reviews module — backend)
+
+- **[feat]** Создан модуль `reviews` — `backend/src/reviews/`
+- **[feat]** Сущность `Review` с составным UNIQUE по `(orderId, authorRole)` — `backend/src/reviews/entities/review.entity.ts`
+- **[feat]** `CreateReviewDto` с валидацией (orderId UUID, rating 1–5, comment max 1000, targetRole) — `backend/src/reviews/dto/create-review.dto.ts`
+- **[feat]** `PaginationQueryDto` (page, limit) — `backend/src/reviews/dto/pagination-query.dto.ts`
+- **[feat]** `ReviewsService.create()` — проверяет: заказ DONE, автор участник заказа, не дублируется — `backend/src/reviews/reviews.service.ts`
+- **[feat]** `ReviewsService.recalcAverageRating()` — обновляет `medics.rating` + `medics.reviewCount`; обновляет `users.averageRating` с try/catch (колонка может отсутствовать на Railway) — `backend/src/reviews/reviews.service.ts`
+- **[feat]** `ReviewsService.findByMedic()`, `findByClient()`, `findByOrder()` — пагинация, сортировка по дате — `backend/src/reviews/reviews.service.ts`
+- **[feat]** `ReviewsController` — `POST /reviews`, `GET /reviews/medic/:id`, `GET /reviews/client/:id`, `GET /reviews/order/:id` — `backend/src/reviews/reviews.controller.ts`
+- **[feat]** `ReviewsModule` подключён в `AppModule` — `backend/src/app.module.ts`
+
 ## 2026-03-28 (Favorites + MedicalCard UI — mobile client)
 
 - **[feat]** Добавлена кнопка "Закрепить медика / Открепить" на экране трекинга заказа (статус DONE, если есть медик); загружает список favorites при DONE и проверяет isFavorite — `mobile/app/order/track.tsx`, `mobile/app/order/trackStyles.ts`

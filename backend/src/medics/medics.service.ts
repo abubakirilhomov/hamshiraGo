@@ -16,6 +16,7 @@ import { RegisterMedicDto } from './dto/register-medic.dto';
 import { LoginMedicDto } from './dto/login-medic.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { VerifyMedicDto } from './dto/verify-medic.dto';
+import { SetWorkZoneDto } from './dto/set-work-zone.dto';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
@@ -330,6 +331,27 @@ export class MedicsService {
   /** Save Telegram chat_id for the medic (called after /start in bot) */
   async saveTelegramChatId(id: string, chatId: string | null): Promise<void> {
     await this.medicRepo.update(id, { telegramChatId: chatId });
+  }
+
+  // ── Work zone (geofence) ──────────────────────────────────────────────────
+
+  async setWorkZone(medicId: string, dto: SetWorkZoneDto): Promise<Medic> {
+    const medic = await this.findById(medicId);
+    if (!medic) throw new NotFoundException('Medic not found');
+    await this.medicRepo.update(medicId, {
+      workZoneLat: dto.lat,
+      workZoneLng: dto.lng,
+      workZoneRadius: dto.radius,
+    });
+    return this.medicRepo.findOne({ where: { id: medicId } }) as Promise<Medic>;
+  }
+
+  async clearWorkZone(medicId: string): Promise<void> {
+    await this.medicRepo.update(medicId, {
+      workZoneLat: null,
+      workZoneLng: null,
+      workZoneRadius: null,
+    });
   }
 
   /** Returns chat_ids of all online medics (for new order broadcast) */

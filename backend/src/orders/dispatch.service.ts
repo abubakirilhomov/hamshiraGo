@@ -305,13 +305,30 @@ export class DispatchService implements OnApplicationBootstrap {
   }
 
   private async selectBestMedic(order: Order, excludedIds: string[], clientId: string): Promise<Medic | null> {
-    const candidates = await this.medicsService.findCandidatesForDispatch(excludedIds);
+    const rawCandidates = await this.medicsService.findCandidatesForDispatch(excludedIds);
+    if (!rawCandidates.length) return null;
+
+    const orderLat =
+      order.location?.latitude != null ? Number(order.location.latitude) : null;
+    const orderLng =
+      order.location?.longitude != null ? Number(order.location.longitude) : null;
+
+    // Geofence filter: exclude medics whose work zone does not contain the order location
+    const candidates = rawCandidates.filter((m) => {
+      const radius = m.workZoneRadius != null ? Number(m.workZoneRadius) : null;
+      if (radius === null) return true; // no restriction
+      if (orderLat === null || orderLng === null) return true; // no order location — include
+      const zoneLat = Number(m.workZoneLat!);
+      const zoneLng = Number(m.workZoneLng!);
+      const dist = haversineKm(zoneLat, zoneLng, orderLat, orderLng);
+      return dist <= radius;
+    });
+
     if (!candidates.length) return null;
 
-    const lat =
-      order.location?.latitude != null ? Number(order.location.latitude) : null;
-    const lng =
-      order.location?.longitude != null ? Number(order.location.longitude) : null;
+    // Use the already-computed orderLat/orderLng (reuse as lat/lng aliases)
+    const lat = orderLat;
+    const lng = orderLng;
 
     // Check if client has a favorite medic among candidates
     const favoriteMedicId = await this.favoritesService.findActiveFavoriteMedicId(clientId);

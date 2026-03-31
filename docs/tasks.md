@@ -177,16 +177,16 @@
 - [x] Medic: `reviewCount` на странице профиля рядом с рейтингом — `app/(tabs)/profile.tsx`
 - [x] Medic: экран «Мои отзывы» со списком отзывов из DONE заказов — `app/reviews.tsx`
 **Осталось (клиент → медик):**
-- [ ] Backend: сущность `Review` (orderId, clientId, medicId, rating 1–5, comment, createdAt)
-- [ ] Backend: `POST /reviews` — клиент оставляет отзыв после DONE
-- [ ] Backend: `GET /reviews/medic/:id` — отзывы медика
-- [ ] Backend: автоматический пересчёт `averageRating` у медика
+- [x] Backend: сущность `Review` двусторонняя (orderId, authorId, authorRole, targetId, targetRole, rating, comment) — `backend/src/reviews/entities/review.entity.ts`
+- [x] Backend: `POST /reviews` — клиент или медик оставляет отзыв после DONE — `backend/src/reviews/reviews.controller.ts`
+- [x] Backend: `GET /reviews/medic/:id` — отзывы медика — `backend/src/reviews/reviews.controller.ts`
+- [x] Backend: автоматический пересчёт `averageRating` (`medics.rating`) у медика — `backend/src/reviews/reviews.service.ts`
 - [ ] Web: экран оценки после завершения заказа (звёзды + комментарий)
 - [ ] Web: отображение рейтинга и отзывов в профиле медика
 **Новое (медик → клиент):**
-- [ ] Backend: расширить `Review` — добавить `authorRole` [client/medic], `targetRole` [medic/client] для двусторонних отзывов
-- [ ] Backend: `GET /reviews/client/:id` — отзывы о клиенте от медиков
-- [ ] Backend: автоматический пересчёт `averageRating` у клиента
+- [x] Backend: `Review` поддерживает `authorRole` [client/medic], `targetRole` [medic/client] — двусторонние отзывы — `backend/src/reviews/entities/review.entity.ts`
+- [x] Backend: `GET /reviews/client/:id` — отзывы о клиенте от медиков — `backend/src/reviews/reviews.controller.ts`
+- [x] Backend: автоматический пересчёт `averageRating` у клиента (с try/catch — колонка может отсутствовать на Railway) — `backend/src/reviews/reviews.service.ts`
 - [ ] Backend: push/Telegram напоминание через 1 час если отзыв не оставлен
 - [ ] Web-medic/Mobile medic: экран оценки клиента после заказа (был ли вежлив, подготовил ли место, оплатил вовремя)
 - [ ] Web-medic/Mobile medic: медик видит рейтинг клиента при получении заказа (помогает решить — принять или нет)
@@ -218,10 +218,10 @@
 - [ ] Admin: счётчик новых ошибок в сайдбаре (бейдж)
 
 ### Ограничение зоны работы для медиков (геозона) — Абубакир (backend) + Диёр (web-medic/mobile medic)
-- [ ] Backend: поля у медика — `workZoneCenter` (lat, lng) + `workZoneRadius` (в км)
-- [ ] Backend: при диспатче — если геозона задана, отправлять только заказы внутри круга (расстояние от центра < radius)
-- [ ] Backend: `PATCH /medics/work-zone` — сохранить/обновить центр и радиус зоны
-- [ ] Backend: `DELETE /medics/work-zone` — убрать ограничение (принимать заказы отовсюду)
+- [x] Backend: поля у медика — `workZoneLat`, `workZoneLng`, `workZoneRadius` (в км, nullable)
+- [x] Backend: при диспатче — если геозона задана, отправлять только заказы внутри круга (haversine фильтр в `selectBestMedic`)
+- [x] Backend: `PATCH /medics/work-zone` — сохранить/обновить центр и радиус зоны
+- [x] Backend: `DELETE /medics/work-zone` — убрать ограничение (принимать заказы отовсюду)
 - [ ] Web-medic/Mobile medic: экран с картой — медик ставит точку и тянет круг (или слайдером выбирает радиус 1–15 км)
 - [ ] Web-medic/Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг)
 - [ ] Admin: на карте медиков отображать их геозоны
