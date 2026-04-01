@@ -16,6 +16,7 @@ import { UsersService } from '../users/users.service';
 import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
+import { LoyaltyService } from '../loyalty/loyalty.service';
 import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
@@ -64,6 +65,7 @@ export class OrdersService {
     private servicesService: ServicesService,
     private dispatchService: DispatchService,
     private appSettingsService: AppSettingsService,
+    private loyaltyService: LoyaltyService,
     private dataSource: DataSource,
   ) {}
 
@@ -465,6 +467,11 @@ export class OrdersService {
     // Referral bonus: check if this is the referred user's first DONE order
     this.applyReferralBonusIfEligible(clientId).catch((err) =>
       this.logger.error('Referral bonus error:', err),
+    );
+
+    // Award loyalty points
+    this.loyaltyService.awardPoints(clientId, id, netPrice).catch((err) =>
+      this.logger.error('Loyalty award failed:', err),
     );
 
     return doneOrder;

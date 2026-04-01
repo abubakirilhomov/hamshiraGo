@@ -86,6 +86,10 @@ export class AppSettingsService {
     if (dto.urgentFeePercent !== undefined) update.urgentFeePercent = dto.urgentFeePercent;
     if (dto.urgentStartHour !== undefined) update.urgentStartHour = dto.urgentStartHour;
     if (dto.urgentEndHour !== undefined) update.urgentEndHour = dto.urgentEndHour;
+    if (dto.loyaltyPointsPerOrder !== undefined) update.loyaltyPointsPerOrder = dto.loyaltyPointsPerOrder;
+    if (dto.loyaltySilverThreshold !== undefined) update.loyaltySilverThreshold = dto.loyaltySilverThreshold;
+    if (dto.loyaltyGoldThreshold !== undefined) update.loyaltyGoldThreshold = dto.loyaltyGoldThreshold;
+    if (dto.loyaltyRedemptionRate !== undefined) update.loyaltyRedemptionRate = dto.loyaltyRedemptionRate;
     try {
       await this.repo.upsert(update as AppSettings, ['id']);
     } catch (err: unknown) {

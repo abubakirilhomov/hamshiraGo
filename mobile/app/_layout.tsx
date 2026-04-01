@@ -210,6 +210,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="service" options={{ headerShown: false }} />
         <Stack.Screen name="order" options={{ headerShown: false }} />
+        <Stack.Screen name="loyalty" options={{ title: 'Loyalty' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

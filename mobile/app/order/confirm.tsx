@@ -41,6 +41,7 @@ export default function OrderConfirmScreen() {
   const [isFirstOrder, setIsFirstOrder] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
   const [urgentFeePercent, setUrgentFeePercent] = useState(50);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   const params = useLocalSearchParams<{
     serviceId: string;
@@ -66,6 +67,10 @@ export default function OrderConfirmScreen() {
     apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined })
       .then((resp) => setIsFirstOrder((resp?.total ?? 1) === 0))
       .catch((e) => console.warn('Orders count fetch failed:', e)); // non-critical — isFirstOrder stays false
+
+    apiFetch<{ points: number }>('/loyalty/my', { token: token ?? undefined })
+      .then((res) => setLoyaltyPoints(res?.points ?? 0))
+      .catch(() => {}); // non-critical
 
     apiFetch<AppSettings>('/settings')
       .then((s) => {
@@ -203,6 +208,20 @@ export default function OrderConfirmScreen() {
           </Text>
         )}
       </View>
+
+      {/* Loyalty points info */}
+      {loyaltyPoints > 0 && (
+        <Pressable
+          style={({ pressed }) => [styles.loyaltyInfoCard, pressed && { opacity: 0.8 }]}
+          onPress={() => router.push('/loyalty')}
+        >
+          <FontAwesome name="trophy" size={16} color={Theme.primary} />
+          <Text style={styles.loyaltyInfoText}>
+            {t('loyalty.availableDiscount', { amount: (loyaltyPoints * 100).toLocaleString('ru-RU') })}
+          </Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+      )}
 
       <View style={styles.priceBlock}>
         {isFirstOrder && (
@@ -389,6 +408,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Theme.error,
+  },
+  loyaltyInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}30`,
+  },
+  loyaltyInfoText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.primary,
   },
   buttons: { gap: Spacing.md },
   button: { paddingVertical: Spacing.lg, borderRadius: Radius.md, alignItems: 'center' },

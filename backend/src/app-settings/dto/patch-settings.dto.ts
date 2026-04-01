@@ -28,4 +28,24 @@ export class PatchSettingsDto {
   @Min(0)
   @Max(23)
   urgentEndHour?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  loyaltyPointsPerOrder?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  loyaltySilverThreshold?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  loyaltyGoldThreshold?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  loyaltyRedemptionRate?: number;
 }

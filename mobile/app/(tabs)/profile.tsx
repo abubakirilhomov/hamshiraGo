@@ -18,6 +18,19 @@ import { useLanguage } from '@/context/LanguageContext';
 import { cacheSet, cacheGetStale } from '@/utils/cache';
 import type { Language } from '@/i18n';
 
+interface LoyaltyBalance {
+  points: number;
+  tier: 'BRONZE' | 'SILVER' | 'GOLD';
+  nextTierAt: number | null;
+  nextTierName: string | null;
+}
+
+const TIER_EMOJI: Record<string, string> = {
+  BRONZE: '\uD83E\uDD49',
+  SILVER: '\uD83E\uDD48',
+  GOLD: '\uD83E\uDD47',
+};
+
 interface OrderSummary {
   id: string;
   status: string;
@@ -39,6 +52,23 @@ export default function ProfileScreen() {
   const [doneOrders, setDoneOrders] = useState(0);
   const [activeOrders, setActiveOrders] = useState(0);
   const [logoutModal, setLogoutModal] = useState(false);
+  const [loyalty, setLoyalty] = useState<LoyaltyBalance | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    const LOYALTY_CACHE_KEY = 'profile_loyalty';
+    apiFetch<LoyaltyBalance>('/loyalty/my', { token })
+      .then((data) => {
+        setLoyalty(data);
+        cacheSet(LOYALTY_CACHE_KEY, data);
+      })
+      .catch(async () => {
+        try {
+          const cached = await cacheGetStale<LoyaltyBalance>(LOYALTY_CACHE_KEY);
+          if (cached) setLoyalty(cached);
+        } catch {}
+      });
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -118,6 +148,25 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Loyalty card */}
+      {loyalty && (
+        <Pressable
+          style={({ pressed }) => [styles.loyaltyCard, pressed && { opacity: 0.85 }]}
+          onPress={() => router.push('/loyalty')}
+        >
+          <View style={styles.loyaltyRow}>
+            <View style={styles.loyaltyLeft}>
+              <Text style={styles.loyaltyEmoji}>{TIER_EMOJI[loyalty.tier] ?? '\uD83C\uDFC6'}</Text>
+              <View>
+                <Text style={styles.loyaltyLabel}>{t('loyalty.points')}</Text>
+                <Text style={styles.loyaltyValue}>{loyalty.points.toLocaleString('ru-RU')}</Text>
+              </View>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={Theme.primary} />
+          </View>
+        </Pressable>
+      )}
+
       {/* Info card */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('profile.accountInfo')}</Text>
@@ -146,6 +195,11 @@ export default function ProfileScreen() {
       {/* Quick links */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('profile.features')}</Text>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/loyalty')}>
+          <FontAwesome name="trophy" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('loyalty.title')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
         <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/referral')}>
           <FontAwesome name="gift" size={15} color={Theme.primary} style={styles.linkIcon} />
           <Text style={styles.linkText}>{t('referral.title')} 🎁</Text>
@@ -317,6 +371,38 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: Theme.text,
+  },
+
+  loyaltyCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: 14,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}30`,
+  },
+  loyaltyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  loyaltyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  loyaltyEmoji: {
+    fontSize: 28,
+  },
+  loyaltyLabel: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+  },
+  loyaltyValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Theme.primary,
   },
 
   logoutBtn: {

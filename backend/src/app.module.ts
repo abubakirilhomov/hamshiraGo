@@ -22,6 +22,7 @@ import { MedicalCardModule } from './medical-card/medical-card.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { TreatmentCoursesModule } from './treatment-courses/treatment-courses.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { LoyaltyModule } from './loyalty/loyalty.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     ReferralsModule,
     TreatmentCoursesModule,
     ReviewsModule,
+    LoyaltyModule,
   ],
   controllers: [AppController],
   providers: [

@@ -37,6 +37,22 @@ export class AppSettings {
   @Column({ type: 'int', nullable: true })
   urgentEndHour!: number | null;
 
+  /** Loyalty: flat points awarded per completed order (default 100) */
+  @Column({ type: 'int', nullable: true })
+  loyaltyPointsPerOrder!: number | null;
+
+  /** Loyalty: points needed to reach SILVER tier (default 500) */
+  @Column({ type: 'int', nullable: true })
+  loyaltySilverThreshold!: number | null;
+
+  /** Loyalty: points needed to reach GOLD tier (default 2000) */
+  @Column({ type: 'int', nullable: true })
+  loyaltyGoldThreshold!: number | null;
+
+  /** Loyalty: 100 points = X UZS discount (default 1000) */
+  @Column({ type: 'int', nullable: true })
+  loyaltyRedemptionRate!: number | null;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }

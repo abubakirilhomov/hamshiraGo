@@ -244,5 +244,28 @@
     "fieldTotal": "Количество процедур",
     "fieldInterval": "Интервал (дней)",
     "fieldNextDate": "Следующий визит (необязательно)"
+  },
+  "loyalty": {
+    "title": "Программа лояльности",
+    "points": "Баллы",
+    "yourPoints": "Ваши баллы",
+    "tier": "Уровень",
+    "bronze": "Бронза",
+    "silver": "Серебро",
+    "gold": "Золото",
+    "nextTier": "До {{tier}}: {{points}} баллов",
+    "redeem": "Обменять на скидку",
+    "redeemPoints": "Обменять баллы",
+    "pointsToRedeem": "Количество баллов",
+    "equalsDiscount": "= {{amount}} UZS скидка",
+    "redeemed": "Скидка {{amount}} UZS добавлена",
+    "history": "История",
+    "earned": "Начислено",
+    "spent": "Списано",
+    "bonus": "Бонус",
+    "milestone": "Достижение",
+    "noHistory": "Пока нет транзакций",
+    "pointsEarned": "+{{points}} баллов заработано!",
+    "availableDiscount": "Скидка из баллов: до {{amount}} UZS"
   }
 }

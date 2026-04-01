@@ -387,6 +387,15 @@ export default function TrackOrderScreen() {
         onSubmit={submitRating}
       />
 
+      {/* Loyalty points earned */}
+      {isDone && (
+        <View style={styles.card}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: Theme.primary, textAlign: 'center' }}>
+            {t('loyalty.pointsEarned', { points: '10' })}
+          </Text>
+        </View>
+      )}
+
       {/* Rating already submitted */}
       {isDone && order.clientRating !== null && (
         <View style={styles.card}>

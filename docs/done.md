@@ -1,4 +1,32 @@
-# HamshiraGo — Выполненные задачи
+# HamshiraGo --- Выполненные задачи
+
+## 2026-03-31 (Loyalty Points UI -- mobile client)
+
+- **[feature]** Loyalty screen `mobile/app/loyalty.tsx` -- points balance card with gradient, tier badge (BRONZE/SILVER/GOLD), progress bar to next tier, redeem bottom sheet modal with preset buttons and discount estimate, paginated transaction history via FlashList
+- **[feature]** Loyalty card on profile `mobile/app/(tabs)/profile.tsx` -- fetches `/loyalty/my` with cache fallback, shows points + tier badge, navigates to loyalty screen; added loyalty link in quick links section
+- **[feature]** Loyalty info on order confirm `mobile/app/order/confirm.tsx` -- fetches loyalty balance, shows available discount info with link to loyalty screen when user has points
+- **[feature]** Loyalty points earned notice on order track `mobile/app/order/track.tsx` -- informational card shown after order status DONE
+- **[feature]** Loyalty route registered in `mobile/app/_layout.tsx`
+- **[i18n]** Added `loyalty.*` keys to `mobile/i18n/ru.json` and `mobile/i18n/uz.json` (24 keys each)
+
+## 2026-03-31 (Loyalty Points module)
+
+- **[feature]** Complete Loyalty Points module -- `backend/src/loyalty/` (entity, service, controller, module, DTO)
+  - LoyaltyTransaction entity with EARNED/SPENT/BONUS/MILESTONE types
+  - `awardPoints()` with tier multipliers (BRONZE x1, SILVER x1.5, GOLD x2) and milestone bonus every 5 orders
+  - `spendPoints()` with pessimistic_write lock, converts points to UZS discount
+  - `getBalance()` returns points, tier, next tier info
+  - `getHistory()` paginated transaction history
+  - Endpoints: GET /loyalty/my, GET /loyalty/history, POST /loyalty/redeem
+- **[feature]** Extended User entity with `loyaltyPoints` and `loyaltyTier` columns (nullable) -- `backend/src/users/entities/user.entity.ts`
+- **[feature]** Extended AppSettings entity with 4 loyalty config columns (pointsPerOrder, silverThreshold, goldThreshold, redemptionRate) -- `backend/src/app-settings/entities/app-settings.entity.ts`
+- **[feature]** Extended AppSettings DTO, service, controller to support loyalty config fields -- `backend/src/app-settings/`
+- **[feature]** Hooked loyalty award into OrdersService DONE transition (fire-and-forget like referral bonus) -- `backend/src/orders/orders.service.ts`
+- **[migration]** SQL migration `backend/migrations/002_loyalty.sql` -- idempotent DDL for users columns, loyalty_transactions table, app_settings columns
+
+## 2026-03-31 (SQL migration script for Railway DB schema sync)
+
+- **[migration]** Generated comprehensive idempotent SQL migration `backend/migrations/001_sync_schema.sql` covering all 14 tables: users, medics, services, orders, order_locations, dispatch_attempts, reviews, referrals, treatment_courses, favorite_medics, medical_cards, app_settings, client_errors. Creates missing tables (IF NOT EXISTS), adds missing columns via DO $$ blocks, creates enums, indexes, unique constraints, and seeds app_settings singleton row.
 
 ## 2026-03-31 (4 BLOCKER backend bug fixes — Railway DB column mismatch)
 

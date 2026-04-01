@@ -45,6 +45,12 @@ export class User {
   @Column({ type: 'int', default: 0, nullable: true })
   pendingReferralDiscount!: number;
 
+  @Column({ type: 'int', nullable: true, default: 0 })
+  loyaltyPoints!: number | null;
+
+  @Column({ type: 'varchar', length: 10, nullable: true, default: 'BRONZE' })
+  loyaltyTier!: string | null; // BRONZE | SILVER | GOLD
+
   @CreateDateColumn()
   created_at!: Date;
 

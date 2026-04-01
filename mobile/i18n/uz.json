@@ -244,5 +244,28 @@
     "fieldTotal": "Protseduralar soni",
     "fieldInterval": "Interval (kun)",
     "fieldNextDate": "Keyingi tashrif (ixtiyoriy)"
+  },
+  "loyalty": {
+    "title": "Sodiqlik dasturi",
+    "points": "Ballar",
+    "yourPoints": "Sizning ballaringiz",
+    "tier": "Daraja",
+    "bronze": "Bronza",
+    "silver": "Kumush",
+    "gold": "Oltin",
+    "nextTier": "{{tier}} gacha: {{points}} ball",
+    "redeem": "Chegirmaga almashtirish",
+    "redeemPoints": "Ballarni almashtirish",
+    "pointsToRedeem": "Ballar soni",
+    "equalsDiscount": "= {{amount}} UZS chegirma",
+    "redeemed": "{{amount}} UZS chegirma qo'shildi",
+    "history": "Tarix",
+    "earned": "Hisoblandi",
+    "spent": "Sarflandi",
+    "bonus": "Bonus",
+    "milestone": "Yutuq",
+    "noHistory": "Hozircha tranzaksiyalar yo'q",
+    "pointsEarned": "+{{points}} ball topildi!",
+    "availableDiscount": "Ballardan chegirma: {{amount}} UZS gacha"
   }
 }

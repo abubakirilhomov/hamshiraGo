@@ -25,10 +25,14 @@ export class AppSettingsController {
       urgentFeePercent: s.urgentFeePercent,
       urgentStartHour: s.urgentStartHour,
       urgentEndHour: s.urgentEndHour,
+      loyaltyPointsPerOrder: s.loyaltyPointsPerOrder,
+      loyaltySilverThreshold: s.loyaltySilverThreshold,
+      loyaltyGoldThreshold: s.loyaltyGoldThreshold,
+      loyaltyRedemptionRate: s.loyaltyRedemptionRate,
     };
   }
 
-  /** Admin only — update settings (isPaidMode, commissionRate, and/or urgentFee settings) */
+  /** Admin only — update settings */
   @Patch()
   @HttpCode(HttpStatus.OK)
   @UseGuards(AdminGuard)
@@ -40,6 +44,10 @@ export class AppSettingsController {
       urgentFeePercent: s.urgentFeePercent,
       urgentStartHour: s.urgentStartHour,
       urgentEndHour: s.urgentEndHour,
+      loyaltyPointsPerOrder: s.loyaltyPointsPerOrder,
+      loyaltySilverThreshold: s.loyaltySilverThreshold,
+      loyaltyGoldThreshold: s.loyaltyGoldThreshold,
+      loyaltyRedemptionRate: s.loyaltyRedemptionRate,
     };
   }
 }
