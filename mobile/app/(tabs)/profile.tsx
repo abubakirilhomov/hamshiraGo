@@ -15,6 +15,7 @@ import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { cacheSet, cacheGetStale } from '@/utils/cache';
 import type { Language } from '@/i18n';
 
 interface OrderSummary {
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!token) return;
+    const STATS_CACHE_KEY = 'profile_stats';
     // Fetch minimal data: limit=1 just to get `total` from pagination metadata
     // TODO: replace with dedicated `/orders/stats` endpoint when available (see BE ideas)
     Promise.all([
@@ -48,10 +50,28 @@ export default function ProfileScreen() {
       apiFetch<PagedOrders>('/orders?limit=1&status=DONE', { token }).catch(() => null),
       apiFetch<PagedOrders>('/orders?limit=1&status=CREATED,ASSIGNED,ACCEPTED,ON_THE_WAY,ARRIVED,SERVICE_STARTED', { token }).catch(() => null),
     ]).then(([allRes, doneRes, activeRes]) => {
-      setTotalOrders(allRes.total ?? allRes.data.length);
-      setDoneOrders(doneRes?.total ?? doneRes?.data.length ?? 0);
-      setActiveOrders(activeRes?.total ?? activeRes?.data.length ?? 0);
-    }).catch(() => {});
+      const stats = {
+        total: allRes.total ?? allRes.data.length,
+        done: doneRes?.total ?? doneRes?.data.length ?? 0,
+        active: activeRes?.total ?? activeRes?.data.length ?? 0,
+      };
+      setTotalOrders(stats.total);
+      setDoneOrders(stats.done);
+      setActiveOrders(stats.active);
+      cacheSet(STATS_CACHE_KEY, stats);
+    }).catch(async () => {
+      // Network failure — try cached stats as fallback
+      try {
+        const cached = await cacheGetStale<{ total: number; done: number; active: number }>(STATS_CACHE_KEY);
+        if (cached) {
+          setTotalOrders(cached.total);
+          setDoneOrders(cached.done);
+          setActiveOrders(cached.active);
+        }
+      } catch {
+        // ignore cache read errors
+      }
+    });
   }, [token]);
 
   const handleLogout = () => setLogoutModal(true);

@@ -163,19 +163,21 @@ export function useMedicOrderFeed(): UseMedicOrderFeedReturn {
   // ── Accept order ─────────────────────────────────────────────────────────────
 
   const acceptOrder = useCallback(async (orderId: string) => {
-    setAcceptModal(null);
-    setBannerOrder(null);
+    // DON'T close modal/banner yet — wait for API response
     try {
       await apiFetch(`/orders/${orderId}/accept`, {
         method: 'POST',
         token: token ?? undefined,
       });
+      // Only dismiss UI on success:
+      setAcceptModal(null);
+      setBannerOrder(null);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
       // NOTE: Don't clear locationIntervalRef here — location pushes are useful
       // even during an active order (dispatch visibility, medic tracking).
     } catch (e: unknown) {
       setAcceptError(e instanceof Error ? e.message : t('common.error'));
-      throw e; // re-throw so callers (e.g. confirmAccept) know it failed
+      // DON'T throw — let UI stay open so medic can retry
     }
   }, [token, t]);
 

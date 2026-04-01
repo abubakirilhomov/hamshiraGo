@@ -102,7 +102,10 @@ export function useOrderStatus(orderId: string | undefined) {
         token: token ?? undefined,
       });
       setOrder(data);
-    } catch {
+    } catch (err: unknown) {
+      // On 401 the global handler shows alert + redirects to auth — don't also navigate back
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('401') || msg.includes('Unauthorized') || msg.includes('Сессия истекла')) return;
       showToast('Не удалось загрузить заказ', 'error');
       router.back();
     }

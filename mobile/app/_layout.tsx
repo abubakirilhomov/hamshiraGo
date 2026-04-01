@@ -105,6 +105,7 @@ function RootLayoutNav() {
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (onboardingDone === true) return; // Already done, skip redundant re-reads
     AsyncStorage.getItem('onboarding_completed')
       .then((value) => setOnboardingDone(value === 'true'))
       .catch(() => setOnboardingDone(true)); // skip onboarding if storage fails
@@ -156,7 +157,7 @@ function RootLayoutNav() {
           | undefined;
         if (!data) return;
         if (data.type === 'order' && data.orderId) {
-          router.push(`/order/track?id=${data.orderId}`);
+          router.push(`/order/track?orderId=${data.orderId}`);
         } else if (data.type === 'course') {
           router.push('/courses');
         } else if (data.type === 'referral') {
@@ -176,7 +177,7 @@ function RootLayoutNav() {
         | undefined;
       if (!data) return;
       if (data.type === 'order' && data.orderId) {
-        router.push(`/order/track?id=${data.orderId}`);
+        router.push(`/order/track?orderId=${data.orderId}`);
       } else if (data.type === 'course') {
         router.push('/courses');
       } else if (data.type === 'referral') {

@@ -38,6 +38,7 @@ export default function OrdersScreen() {
   const subscribedRef = useRef<Set<string>>(new Set());
 
   const ORDERS_CACHE_KEY = 'orders';
+  const fetchOrdersRef = useRef<(offset?: number) => Promise<Order[]>>(null!);
 
   const fetchOrders = useCallback(async (offset = 0) => {
     try {
@@ -76,6 +77,8 @@ export default function OrdersScreen() {
     }
   }, [token]);
 
+  fetchOrdersRef.current = fetchOrders;
+
   // ── WebSocket: listen for order status updates on the shared socket ─────────
   useEffect(() => {
     if (!socket) return;
@@ -89,6 +92,9 @@ export default function OrdersScreen() {
 
     return () => {
       socket.off('order_status', handler);
+      subscribedRef.current.forEach((id) => {
+        socket.emit('unsubscribe_order', { orderId: id });
+      });
       subscribedRef.current.clear();
     };
   }, [socket]);
@@ -109,11 +115,13 @@ export default function OrdersScreen() {
     fetchOrders().finally(() => setLoading(false));
   }, [fetchOrders]);
 
-  // Also refresh when tab comes into focus
+  // Refresh orders every time the tab gains focus (e.g. after creating a new order).
+  // Uses a ref so the callback is always stable (empty deps) while calling the
+  // latest fetchOrders that has the current token.
   useFocusEffect(
     useCallback(() => {
-      fetchOrders();
-    }, [fetchOrders]),
+      fetchOrdersRef.current?.(0);
+    }, []),
   );
 
   const onRefresh = useCallback(async () => {

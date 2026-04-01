@@ -60,16 +60,19 @@ export default function OrderConfirmScreen() {
     // Fetch service and order count independently — order count failure must not block service display
     apiFetch<CatalogService>(`/services/${params.serviceId}`)
       .then((svc) => setService(svc))
-      .catch(() => {})
+      .catch(() => showToast(t('confirm.serviceLoadError', { defaultValue: 'Не удалось загрузить услугу' }), 'error'))
       .finally(() => setLoadingService(false));
 
     apiFetch<{ total: number }>('/orders?limit=1', { token: token ?? undefined })
       .then((resp) => setIsFirstOrder((resp?.total ?? 1) === 0))
-      .catch(() => {}); // on failure, isFirstOrder stays false — no discount shown
+      .catch((e) => console.warn('Orders count fetch failed:', e)); // non-critical — isFirstOrder stays false
 
     apiFetch<AppSettings>('/settings')
-      .then((s) => setUrgentFeePercent(s?.urgentFeePercent ?? 50))
-      .catch(() => {}); // on failure, keep default 50%
+      .then((s) => {
+        const pct = Math.max(0, Math.min(100, s?.urgentFeePercent ?? 50));
+        setUrgentFeePercent(pct);
+      })
+      .catch((e) => console.warn('Settings fetch failed:', e)); // non-critical — keep default 50%
   }, [params.serviceId, token]);
 
   const basePrice = service?.price ?? 0;
@@ -82,6 +85,20 @@ export default function OrderConfirmScreen() {
 
   const handleSubmit = async () => {
     if (!service) return;
+
+    const phone = params.phone?.trim();
+    if (!phone || phone.length < 9) {
+      showToast(t('confirm.invalidPhone', { defaultValue: 'Неверный номер телефона' }), 'error');
+      return;
+    }
+
+    const lat = parseFloat(params.lat);
+    const lng = parseFloat(params.lng);
+    if (isNaN(lat) || isNaN(lng)) {
+      showToast(t('confirm.locationError', { defaultValue: 'Ошибка определения местоположения' }), 'error');
+      return;
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
@@ -93,12 +110,12 @@ export default function OrderConfirmScreen() {
           ...(discountAmount > 0 ? { discountAmount } : {}),
           ...(isUrgent ? { isUrgent: true } : {}),
           location: {
-            latitude: parseFloat(params.lat),
-            longitude: parseFloat(params.lng),
+            latitude: lat,
+            longitude: lng,
             house: params.house,
             floor: params.floor ?? null,
             apartment: params.apartment ?? null,
-            phone: params.phone,
+            phone,
           },
         }),
       });

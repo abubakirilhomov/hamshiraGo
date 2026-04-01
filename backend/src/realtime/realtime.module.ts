@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -7,6 +7,8 @@ import { PushNotificationsService } from './push-notifications.service';
 import { WebPushService } from './web-push.service';
 import { WebPushSubscription } from './entities/web-push-subscription.entity';
 import { Order } from '../orders/entities/order.entity';
+import { UsersModule } from '../users/users.module';
+import { MedicsModule } from '../medics/medics.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { Order } from '../orders/entities/order.entity';
       }),
       inject: [ConfigService],
     }),
+    UsersModule,
+    forwardRef(() => MedicsModule),
   ],
   providers: [OrderEventsGateway, PushNotificationsService, WebPushService],
   exports: [OrderEventsGateway, PushNotificationsService, WebPushService],

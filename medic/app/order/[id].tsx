@@ -226,18 +226,41 @@ export default function OrderDetailScreen() {
         t={t}
       />
 
-      {/* Service info + earnings */}
-      <EarningsCard
-        serviceTitle={order.serviceTitle}
-        date={date}
-        priceAmount={order.priceAmount}
-        isUrgent={!!order.isUrgent}
-        urgentFee={urgentFee}
-        discountAmount={order.discountAmount}
-        platformFee={platformFee}
-        medicEarnings={medicEarnings}
-        t={t}
-      />
+      {/* Service info + earnings: show full breakdown only after DONE */}
+      {order.status === 'DONE' ? (
+        <EarningsCard
+          serviceTitle={order.serviceTitle}
+          date={date}
+          priceAmount={order.priceAmount}
+          isUrgent={!!order.isUrgent}
+          urgentFee={urgentFee}
+          discountAmount={order.discountAmount}
+          platformFee={doneEarnings ? (order.priceAmount + urgentFee - (order.discountAmount ?? 0) - doneEarnings.earned) : platformFee}
+          medicEarnings={doneEarnings ? doneEarnings.earned : medicEarnings}
+          t={t}
+        />
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('orders.service')}</Text>
+          <Text style={{ fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text }}>{order.serviceTitle}</Text>
+          <View style={styles.divider} />
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>{t('orders.createdAt')}</Text>
+            <Text style={styles.rowValue}>{date}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>{t('orders.serviceCost')}</Text>
+            <Text style={styles.rowValue}>{order.priceAmount.toLocaleString('ru-RU')} UZS</Text>
+          </View>
+          {order.status !== 'CANCELED' && (
+            <View style={[styles.row, { paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Theme.border, marginTop: Spacing.xs }]}>
+              <Text style={{ fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary, fontStyle: 'italic' }}>
+                {t('orders.earningsAfterDone')}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Client address */}
       {order.location && (
@@ -391,6 +414,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   divider: { height: 1, backgroundColor: Theme.border, marginVertical: Spacing.md },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  rowLabel: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  rowValue: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.text },
   modalOverlay: {
     flex: 1,
     backgroundColor: Theme.overlay,

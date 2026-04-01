@@ -253,14 +253,19 @@ export class DispatchService implements OnApplicationBootstrap {
    */
   async onMedicAccept(orderId: string, medicId: string): Promise<void> {
     const attempt = await this.attemptRepo.findOne({
-      where: { orderId, medicId, result: DispatchResult.PENDING },
+      where: {
+        orderId,
+        medicId,
+        result: DispatchResult.PENDING,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
     // Always clear the dispatch timer for this order (no-op if none)
     this.clearTimer(orderId);
 
     if (attempt) {
-      // Normal dispatch flow: invited medic accepted
+      // Normal dispatch flow: invited medic accepted (and invite is not expired)
       await this.attemptRepo.update(attempt.id, { result: DispatchResult.ACCEPTED });
     } else {
       // Self-claim from available orders list: cancel any other pending invite

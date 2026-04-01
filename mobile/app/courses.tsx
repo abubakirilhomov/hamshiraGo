@@ -92,6 +92,14 @@ export default function CoursesScreen() {
       showToast(t('courses.fillRequired'), 'warning');
       return;
     }
+
+    const totalProcedures = parseInt(form.totalProcedures, 10);
+    const intervalDays = parseInt(form.intervalDays, 10);
+    if (isNaN(totalProcedures) || totalProcedures <= 0 || isNaN(intervalDays) || intervalDays <= 0) {
+      showToast(t('courses.invalidNumbers', { defaultValue: 'Введите корректные числа' }), 'warning');
+      return;
+    }
+
     setSubmitting(true);
     try {
       await apiFetch('/treatment-courses', {
@@ -99,8 +107,8 @@ export default function CoursesScreen() {
         token: token ?? undefined,
         body: JSON.stringify({
           title: form.title.trim(),
-          totalProcedures: parseInt(form.totalProcedures, 10),
-          intervalDays: parseInt(form.intervalDays, 10),
+          totalProcedures,
+          intervalDays,
           ...(form.nextDate ? { nextDate: form.nextDate } : {}),
         }),
       });

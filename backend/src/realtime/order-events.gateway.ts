@@ -6,7 +6,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Logger, OnModuleDestroy, OnModuleInit, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +14,8 @@ import { In, Repository } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 import { ALLOWED_ORIGINS } from '../common/cors.config';
+import { UsersService } from '../users/users.service';
+import { MedicsService } from '../medics/medics.service';
 
 export type OrderStatusPayload = { orderId: string; status: string };
 export type MedicLocationPayload = {
@@ -54,6 +56,9 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     private readonly orderRepo: Repository<Order>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private usersService: UsersService,
+    @Inject(forwardRef(() => MedicsService))
+    private medicsService: MedicsService,
   ) {}
 
   onModuleInit() {
@@ -132,6 +137,16 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
         return;
       }
       const payload = this.jwtService.verify(token, { secret: this.configService.get('JWT_SECRET') });
+
+      // Block check: disconnect blocked users even if JWT is still valid
+      if (payload.role === 'client') {
+        const user = await this.usersService.findById(payload.sub);
+        if (!user || user.isBlocked) { client.disconnect(); return; }
+      } else if (payload.role === 'medic') {
+        const medic = await this.medicsService.findById(payload.sub);
+        if (!medic || medic.isBlocked) { client.disconnect(); return; }
+      }
+
       (client as any).userId = payload.sub;
       (client as any).role = payload.role;
       if (payload.role === 'medic') {

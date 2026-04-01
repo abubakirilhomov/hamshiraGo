@@ -1,9 +1,9 @@
 import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { DataSource, Repository, Between } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { Payment } from './entities/payment.entity';
+import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 
@@ -25,6 +25,7 @@ export class PaymeService {
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
     private config: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   /** Validate Basic auth header: "Basic base64(Paycom:{KEY})" */
@@ -189,26 +190,48 @@ export class PaymeService {
     const id = params['id'] as string | undefined;
     if (!id) return this.rpcError(ERR_OBJECT_NOT_FOUND, 'Transaction id required');
 
-    const payment = await this.findPaymentByProviderTxId(id);
-    if (!payment) return this.rpcError(ERR_OBJECT_NOT_FOUND, 'Transaction not found');
-    if (payment.providerState === -1) return this.rpcError(ERR_ALREADY_CANCELLED, 'Transaction cancelled');
-    if (payment.providerState === 2) {
+    // Use a transaction with SELECT ... FOR UPDATE to prevent double-payment race condition.
+    // Two simultaneous PerformTransaction requests will serialize on the row lock.
+    return this.dataSource.transaction(async (manager) => {
+      const payment = await manager
+        .createQueryBuilder(Payment, 'p')
+        .setLock('pessimistic_write')
+        .where('p.providerTransactionId = :id', { id })
+        .andWhere('p.provider = :provider', { provider: 'payme' })
+        .getOne();
+
+      if (!payment) return this.rpcError(ERR_OBJECT_NOT_FOUND, 'Transaction not found');
+      if (payment.providerState === -1) return this.rpcError(ERR_ALREADY_CANCELLED, 'Transaction cancelled');
+      if (payment.providerState === 2) {
+        return this.rpcOk({
+          transaction: payment.id,
+          perform_time: payment.performTime!.getTime(),
+          state: 2,
+        });
+      }
+
+      // Re-check that no other 'paid' payment exists for this order (belt-and-suspenders)
+      const existingPaid = await manager.findOne(Payment, {
+        where: { orderId: payment.orderId, provider: 'payme', status: 'paid' as PaymentStatus },
+      });
+      if (existingPaid) {
+        return this.rpcOk({
+          transaction: existingPaid.id,
+          perform_time: existingPaid.performTime!.getTime(),
+          state: 2,
+        });
+      }
+
+      payment.status = 'paid';
+      payment.providerState = 2;
+      payment.performTime = new Date();
+      await manager.save(Payment, payment);
+
       return this.rpcOk({
         transaction: payment.id,
-        perform_time: payment.performTime!.getTime(),
+        perform_time: payment.performTime.getTime(),
         state: 2,
       });
-    }
-
-    payment.status = 'paid';
-    payment.providerState = 2;
-    payment.performTime = new Date();
-    await this.paymentRepo.save(payment);
-
-    return this.rpcOk({
-      transaction: payment.id,
-      perform_time: payment.performTime.getTime(),
-      state: 2,
     });
   }
 

@@ -20,7 +20,7 @@ import { useToast } from '@/context/ToastContext';
 type PhotoType = 'facePhoto' | 'licensePhoto';
 
 export default function VerificationScreen() {
-  const { medic, token, refreshProfile } = useAuth();
+  const { medic, token, refreshProfile, logout } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [faceUri, setFaceUri] = useState<string | null>(medic?.facePhotoUrl ?? null);
@@ -111,21 +111,37 @@ export default function VerificationScreen() {
         } as unknown as Blob);
       }
 
-      const res = await fetch(`${API_BASE}/medics/documents`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const controller = new AbortController();
+      const uploadTimeout = setTimeout(() => controller.abort(), 30_000);
+      try {
+        const res = await fetch(`${API_BASE}/medics/documents`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+          signal: controller.signal,
+        });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message ?? `HTTP ${res.status}`);
+        if (res.status === 401) {
+          logout();
+          return;
+        }
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.message ?? `HTTP ${res.status}`);
+        }
+
+        await refreshProfile();
+        showToast(t('verification.submit'), 'success');
+      } finally {
+        clearTimeout(uploadTimeout);
       }
-
-      await refreshProfile();
-      showToast(t('verification.submit'), 'success');
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : t('common.error'), 'error');
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        showToast(t('common.timeout') || 'Upload timed out', 'error');
+      } else {
+        showToast(e instanceof Error ? e.message : t('common.error'), 'error');
+      }
     } finally {
       setUploading(false);
     }

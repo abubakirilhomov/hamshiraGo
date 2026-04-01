@@ -229,9 +229,10 @@ export default function ProfileScreen() {
     setUploadingPhoto(true);
     try {
       const asset = result.assets[0];
-      const ext = asset.uri.split('.').pop() ?? 'jpg';
+      const ext = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const mimeType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
       const formData = new FormData();
-      formData.append('photo', { uri: asset.uri, name: `photo.${ext}`, type: `image/${ext}` } as any);
+      formData.append('photo', { uri: asset.uri, name: `photo.${ext}`, type: mimeType } as any);
 
       const res = await fetch(`${API_BASE}/medics/profile-photo`, {
         method: 'POST',

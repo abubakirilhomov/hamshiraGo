@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -20,6 +20,14 @@ import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
 import { haversineKm } from '../utils/geo';
+
+/** Safely convert a DB value (possibly string from decimal columns) to a number.
+ *  Returns `fallback` when the value is null, undefined, NaN, or not numeric. */
+function safeNumber(val: unknown, fallback = 0): number {
+  if (val == null) return fallback;
+  const n = Number(val);
+  return isNaN(n) ? fallback : n;
+}
 
 const MEDIC_PUSH_MESSAGES: Partial<Record<string, { title: string; body: string }>> = {
   CANCELED: { title: '❌ Заказ отменён клиентом', body: 'Клиент отменил заказ. Вы можете принять другой.' },
@@ -89,8 +97,8 @@ export class OrdersService {
       location: {
         id: String(row['l_id']),
         orderId: String(row['l_orderId']),
-        latitude: row['l_latitude'] == null ? 0 : Number(row['l_latitude']),
-        longitude: row['l_longitude'] == null ? 0 : Number(row['l_longitude']),
+        latitude: safeNumber(row['l_latitude'], 0),
+        longitude: safeNumber(row['l_longitude'], 0),
         house: row['l_house'] ? String(row['l_house']) : '',
         floor: row['l_floor'] == null ? null : String(row['l_floor']),
         apartment: row['l_apartment'] == null ? null : String(row['l_apartment']),
@@ -103,8 +111,8 @@ export class OrdersService {
             phone: row['m_phone'] == null ? '' : String(row['m_phone']),
             rating: row['m_rating'] == null ? null : Number(row['m_rating']),
             reviewCount: row['m_reviewCount'] == null ? 0 : Number(row['m_reviewCount']),
-            latitude: row['m_latitude'] == null ? null : Number(row['m_latitude']),
-            longitude: row['m_longitude'] == null ? null : Number(row['m_longitude']),
+            latitude: row['m_latitude'] == null ? null : safeNumber(row['m_latitude'], 0),
+            longitude: row['m_longitude'] == null ? null : safeNumber(row['m_longitude'], 0),
           } as Medic)
         : null,
     } as Order;
@@ -151,6 +159,18 @@ export class OrdersService {
 
     const row = await qb.getRawOne<Record<string, unknown>>();
     return row ? this.mapLegacyOrderRow(row, withMedic) : null;
+  }
+
+  /** Retry a notification function once after 2 seconds on failure */
+  private async notifyWithRetry(fn: () => Promise<void>): Promise<void> {
+    try {
+      await fn();
+    } catch {
+      // Retry once after 2s
+      setTimeout(async () => {
+        try { await fn(); } catch (e) { this.logger.error('Push retry failed:', e); }
+      }, 2000);
+    }
   }
 
   /** Send Expo + Web Push notifications to the client of a given order */
@@ -208,12 +228,25 @@ export class OrdersService {
     if (discountAmount > service.price) {
       throw new BadRequestException('Discount cannot exceed the service price');
     }
-    // TODO: validate discountAmount against a real promo-code/coupon system
-    // Safety cap: client-supplied discount (excluding referral bonus) cannot exceed 20% of service price
+    // TODO: replace this first-order check with a real promo-code/coupon system
+    // For now: only first-time clients (0 DONE orders) may use a discount, capped at 15% of price.
     const clientDiscount = dto.discountAmount ?? 0;
-    const maxDiscount = Math.round(service.price * 0.20);
-    if (clientDiscount > maxDiscount) {
-      throw new BadRequestException('Discount cannot exceed 20% of the service price');
+    if (clientDiscount > 0) {
+      const doneCount = await this.orderRepo.count({
+        where: { clientId, status: OrderStatus.DONE },
+      });
+      if (doneCount > 0) {
+        throw new BadRequestException(
+          'Discount is only available for your first order',
+        );
+      }
+      const FIRST_ORDER_DISCOUNT_PERCENT = 15;
+      const maxDiscount = Math.round(service.price * FIRST_ORDER_DISCOUNT_PERCENT / 100);
+      if (clientDiscount > maxDiscount) {
+        throw new BadRequestException(
+          `First-order discount cannot exceed ${FIRST_ORDER_DISCOUNT_PERCENT}% of the service price (max ${maxDiscount} UZS)`,
+        );
+      }
     }
 
     // Zero out pending referral discount after applying it
@@ -335,26 +368,27 @@ export class OrdersService {
     const order = await this.findOneBasic(orderId);
     if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
     const cancellable: OrderStatus[] = [OrderStatus.CREATED, OrderStatus.ASSIGNED];
-    if (!cancellable.includes(order.status)) {
-      throw new BadRequestException(
-        `Cannot cancel an order with status "${order.status}". Only CREATED or ASSIGNED orders can be cancelled.`,
-      );
-    }
-    // Cancel any active dispatch search
-    if (order.status === OrderStatus.CREATED) {
-      this.dispatchService.cancelDispatch(orderId).catch(() => {});
-    }
+    // Atomic UPDATE with WHERE status IN (cancellable) prevents race condition:
+    // if a medic transitions the order to SERVICE_STARTED between the read above
+    // and the update below, the UPDATE will affect 0 rows and we throw ConflictException.
     const cancelReason = reason ?? 'Отменено клиентом';
     const cancelResult = await this.orderRepo.update(
-      { id: orderId, status: In(cancellable) },
+      { id: orderId, clientId, status: In(cancellable) },
       { status: OrderStatus.CANCELED, cancelReason },
     );
     if (!cancelResult.affected) {
-      throw new BadRequestException('Order status changed concurrently, cannot cancel');
+      // Re-fetch to give the client an accurate error message
+      const fresh = await this.findOneBasic(orderId);
+      if (fresh.clientId !== clientId) throw new ForbiddenException('Not your order');
+      throw new ConflictException(
+        `Cannot cancel an order with status "${fresh.status}". Only CREATED or ASSIGNED orders can be cancelled.`,
+      );
     }
+    // Cancel any active dispatch search
+    this.dispatchService.cancelDispatch(orderId).catch(() => {});
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.CANCELED).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.CANCELED)).catch((err) => console.error('Notify error:', err));
     // Notify medic with cancellation reason
     if (updated.medicId) {
       const medic = await this.medicsService.findById(updated.medicId);
@@ -421,8 +455,8 @@ export class OrdersService {
         `Client cannot transition from "${order.status}" to "${dto.status}"`,
       );
     }
-    const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
-    const earnings = netPrice - (order.platformFee ?? 0);
+    const netPrice = safeNumber(order.priceAmount) + safeNumber(order.urgentFee) - safeNumber(order.discountAmount);
+    const earnings = netPrice - safeNumber(order.platformFee);
     // Credit earnings (netPrice minus platformFee) — commission already deducted at accept-time
     await this.dataSource.transaction(async (manager) => {
       const result = await manager.update(
@@ -439,8 +473,8 @@ export class OrdersService {
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
     const doneOrder = await this.findOne(id);
-    this.notifyClient(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
-    this.notifyMedic(doneOrder, OrderStatus.DONE).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(doneOrder, OrderStatus.DONE)).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyMedic(doneOrder, OrderStatus.DONE)).catch((err) => console.error('Notify error:', err));
 
     // Referral bonus: check if this is the referred user's first DONE order
     this.applyReferralBonusIfEligible(clientId).catch((err) =>
@@ -450,32 +484,49 @@ export class OrdersService {
     return doneOrder;
   }
 
-  /** Award 10 000 UZS discount to both referrer and referee on referee's first DONE order */
+  /** Award 10 000 UZS discount to both referrer and referee on referee's first DONE order.
+   *  Uses a transaction with pessimistic_write lock on the user row to prevent
+   *  double-award when two concurrent DONE transitions race. */
   private async applyReferralBonusIfEligible(clientId: string): Promise<void> {
-    const user = await this.usersService.findById(clientId);
-    if (!user || user.referralBonusUsed || !user.referredBy) return;
-
-    // Check this is truly the first DONE order
-    const doneCount = await this.orderRepo.count({
-      where: { clientId, status: OrderStatus.DONE },
-    });
-    if (doneCount !== 1) return; // not the first DONE order
-
     const BONUS = 10_000; // 10 000 UZS
 
-    // Mark bonus used on the referred user
-    await this.usersService.markReferralBonusUsed(clientId);
-    await this.usersService.setPendingReferralDiscount(clientId, BONUS);
+    await this.dataSource.transaction(async (manager) => {
+      // Lock the user row to serialize concurrent calls for the same client
+      const user = await manager
+        .createQueryBuilder(User, 'u')
+        .setLock('pessimistic_write')
+        .where('u.id = :id', { id: clientId })
+        .getOne();
 
-    // Find the referral record to get referrer ID and mark it paid
-    const referral = await this.referralRepo.findOne({
-      where: { referredId: clientId, bonusPaid: false },
+      if (!user || user.referralBonusUsed || !user.referredBy) return;
+
+      // Check this is truly the first DONE order
+      const doneCount = await manager.count(Order, {
+        where: { clientId, status: OrderStatus.DONE },
+      });
+      if (doneCount !== 1) return; // not the first DONE order
+
+      // Mark bonus used on the referred user (within the same transaction)
+      await manager.update(User, clientId, {
+        referralBonusUsed: true,
+        pendingReferralDiscount: BONUS,
+      });
+
+      // Find the referral record to get referrer ID and mark it paid
+      const referral = await manager.findOne(Referral, {
+        where: { referredId: clientId, bonusPaid: false },
+      });
+      if (referral) {
+        await manager.update(Referral, referral.id, { bonusPaid: true, bonusAmount: BONUS });
+        // Award bonus to referrer as well (increment, don't overwrite)
+        await manager
+          .createQueryBuilder()
+          .update(User)
+          .set({ pendingReferralDiscount: () => `"pendingReferralDiscount" + ${BONUS}` })
+          .where('id = :id', { id: referral.referrerId })
+          .execute();
+      }
     });
-    if (referral) {
-      await this.referralRepo.update(referral.id, { bonusPaid: true, bonusAmount: BONUS });
-      // Award bonus to referrer as well
-      await this.usersService.setPendingReferralDiscount(referral.referrerId, BONUS);
-    }
   }
 
   async findByClient(
@@ -570,17 +621,26 @@ export class OrdersService {
     }
 
     const MAX_KM = 10;
-    const medicLat = Number(medic.latitude);
-    const medicLon = Number(medic.longitude);
+    const medicLat = safeNumber(medic.latitude, NaN);
+    const medicLon = safeNumber(medic.longitude, NaN);
+    if (!Number.isFinite(medicLat) || !Number.isFinite(medicLon)) {
+      // Corrupted medic location — return all orders as fallback
+      return orders;
+    }
 
     const withDistance = orders
-      .filter((o) => o.location?.latitude != null && o.location?.longitude != null)
+      .filter((o) => {
+        if (o.location?.latitude == null || o.location?.longitude == null) return false;
+        const lat = safeNumber(o.location.latitude, NaN);
+        const lng = safeNumber(o.location.longitude, NaN);
+        return Number.isFinite(lat) && Number.isFinite(lng);
+      })
       .map((o) => ({
         order: o,
         distanceKm: haversineKm(
           medicLat, medicLon,
-          Number(o.location!.latitude),
-          Number(o.location!.longitude),
+          safeNumber(o.location!.latitude),
+          safeNumber(o.location!.longitude),
         ),
       }))
       .filter(({ distanceKm }) => distanceKm <= MAX_KM)
@@ -605,6 +665,23 @@ export class OrdersService {
 
     const order = await this.findOneBasic(orderId);
 
+    // Geofence check: if medic has a work zone, verify order is within it
+    const zoneRadius = medic.workZoneRadius != null ? Number(medic.workZoneRadius) : null;
+    if (zoneRadius !== null && order.location) {
+      const orderLat = Number(order.location.latitude);
+      const orderLng = Number(order.location.longitude);
+      if (Number.isFinite(orderLat) && Number.isFinite(orderLng)) {
+        const zoneLat = Number(medic.workZoneLat!);
+        const zoneLng = Number(medic.workZoneLng!);
+        const dist = haversineKm(zoneLat, zoneLng, orderLat, orderLng);
+        if (dist > zoneRadius) {
+          throw new BadRequestException(
+            'Order is outside your work zone. Adjust your work zone or decline.',
+          );
+        }
+      }
+    }
+
     // Validate dispatch invite first (before touching any money or order state)
     await this.dispatchService.onMedicAccept(orderId, medicId);
 
@@ -626,7 +703,7 @@ export class OrdersService {
       }
 
       if (paidMode) {
-        const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
+        const netPrice = safeNumber(order.priceAmount) + safeNumber(order.urgentFee) - safeNumber(order.discountAmount);
         const fee = Math.round(netPrice * commissionRate / 100);
         const deductResult = await manager
           .createQueryBuilder()
@@ -649,7 +726,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ACCEPTED);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, OrderStatus.ACCEPTED).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.ACCEPTED)).catch((err) => console.error('Notify error:', err));
     return updated;
   }
 
@@ -685,8 +762,8 @@ export class OrdersService {
 
     // DONE: status update + earnings credit in a single transaction
     if (status === OrderStatus.DONE) {
-      const netPrice = (order.priceAmount ?? 0) + (Number(order.urgentFee) ?? 0) - (order.discountAmount ?? 0);
-      const earnings = netPrice - (order.platformFee ?? 0);
+      const netPrice = safeNumber(order.priceAmount) + safeNumber(order.urgentFee) - safeNumber(order.discountAmount);
+      const earnings = netPrice - safeNumber(order.platformFee);
       // Credit earnings (netPrice minus platformFee) — commission already deducted at accept
       await this.dataSource.transaction(async (manager) => {
         const result = await manager.update(
@@ -712,7 +789,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, status);
     const updated = await this.findOne(orderId);
-    this.notifyClient(updated, status).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, status)).catch((err) => console.error('Notify error:', err));
     return updated;
   }
 

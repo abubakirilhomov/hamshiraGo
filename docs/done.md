@@ -1,5 +1,67 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (3 LOW bug fixes)
+
+- **[fix]** MED-L1 — Photo MIME type: `jpg` extension now correctly maps to `image/jpeg` instead of invalid `image/jpg`; added `.toLowerCase()` for case safety -- `medic/app/(tabs)/profile.tsx`
+- **[fix]** MED-L2 — Work zone PATCH button disable: verified already implemented (`saving`/`clearing` states with `disabled` prop on both save and clear buttons) -- `medic/app/work-zone.tsx`
+- **[fix]** MOB-L1 — Phone re-validation in confirm.tsx: added `trim()` + `length < 9` check at start of `handleSubmit`; uses validated `phone` variable in API payload -- `mobile/app/order/confirm.tsx`
+
+## 2026-03-31 (Medic: 6 MEDIUM bug fixes)
+
+- **[fix]** MED-M1 — Earnings display mismatch: EarningsCard now only shows full breakdown (commission, net earnings) when `order.status === 'DONE'`; in-progress orders show service name, date, price and "Earnings calculated after completion" placeholder; uses `doneEarnings` from backend response when available -- `medic/app/order/[id].tsx`, `medic/components/order/EarningsCard.tsx`, `medic/i18n/ru.json`, `medic/i18n/uz.json`
+- **[fix]** MED-M2 — Socket emit without connection check: verified all `socket.emit()` calls in `useMedicLocation.ts` already use safe `socket?.connected` guard (fixed in MED-H3) -- `medic/hooks/useMedicLocation.ts`
+- **[fix]** MED-M3 — Photo upload raw fetch without timeout: added AbortController with 30s timeout, explicit 401 handling that calls `logout()`, and AbortError-specific error message -- `medic/app/verification.tsx`
+- **[fix]** MED-M4 — Location permission revoked no retry: reset `locationDeniedWarnedRef.current = false` at start of `startTracking()` so each new order triggers a fresh permission check even if previously denied -- `medic/hooks/useMedicLocation.ts`
+- **[fix]** MED-M5 — OSRM route timeout infinite spinner: added `routeError` state; on fetch failure sets error flag; UI shows "Route unavailable" text with warning icon instead of perpetual loading overlay -- `medic/components/OrderInviteModal.tsx`, `medic/i18n/ru.json`, `medic/i18n/uz.json`
+- **[fix]** MED-M6 — Order fetch 401 router.back() on auth error: catch block now checks if error message contains '401'/'Unauthorized' and returns early, letting the global 401 handler manage auth redirect; `router.back()` only called for non-auth errors (404, 500) -- `medic/hooks/useOrderStatus.ts`
+
+## 2026-03-31 (Backend: 5 MEDIUM bug fixes)
+
+- **[fix]** BE-M1 — Discount validation: replaced 20% cap with first-order eligibility check (count DONE orders) + 15% cap; added TODO for promo-code system -- `orders/orders.service.ts`
+- **[fix]** BE-M2 — AppSettings init save without try-catch: wrapped `repo.save()` in try-catch with retry `findOne` fallback on duplicate key / constraint error -- `app-settings/app-settings.service.ts`
+- **[fix]** BE-M3 — Order status enum validation: already fixed (`@IsEnum(OrderStatus)` present in DTO) -- `orders/dto/update-order-status.dto.ts`
+- **[fix]** BE-M4 — Push notification no retry: added `notifyWithRetry` helper (retries once after 2s); applied to critical calls (CANCELED, DONE, ACCEPTED, medic status changes to client) -- `orders/orders.service.ts`
+- **[fix]** BE-M5 — Location decimal-to-number NaN guard: replaced raw `Number()` with `safeNumber()` in `mapLegacyOrderRow` (lat/lng fields) and `findAvailable` (medic + order coordinates) with `Number.isFinite` fallback -- `orders/orders.service.ts`
+
+## 2026-03-31 (Mobile: 5 MEDIUM bug fixes)
+
+- **[fix]** MOB-M1 — Silent API failures in confirm.tsx: added toast on service load error (critical path), console.warn on non-critical settings/orders-count failures -- `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-M2 — WebSocket cleanup missing unsubscribe_order on unmount: iterate subscribedRef and emit `unsubscribe_order` for each order before clearing -- `mobile/app/(tabs)/two.tsx`
+- **[fix]** MOB-M3 — Urgent fee percent has no bounds check: clamped `urgentFeePercent` to 0-100 range with `Math.max(0, Math.min(100, ...))` -- `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-M4 — Navigation race condition from AsyncStorage re-reads on every segment change: added early return when `onboardingDone === true` to skip redundant reads -- `mobile/app/_layout.tsx`
+- **[fix]** MOB-M5 — Profile stats show 0 on network failure instead of cached values: added `cacheSet` on success and `cacheGetStale` fallback on failure -- `mobile/app/(tabs)/profile.tsx`
+
+## 2026-03-31 (Mobile: 3 HIGH bug fixes)
+
+- **[fix]** MOB-H1 — parseFloat on coordinates without NaN check: added `isNaN(lat) || isNaN(lng)` validation before creating order, shows toast on invalid coordinates -- `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-H2 — Stale orders list after creating new order: replaced `useFocusEffect` dependency on `fetchOrders` with `fetchOrdersRef` pattern so callback is always stable (empty deps) and fires on every tab focus with the latest token -- `mobile/app/(tabs)/two.tsx`
+- **[fix]** MOB-H3 — parseInt without validation in treatment courses: added `isNaN` + `<= 0` checks for totalProcedures and intervalDays before API call, shows warning toast -- `mobile/app/courses.tsx`
+
+## 2026-03-31 (Backend: 5 HIGH bug fixes)
+
+- **[fix]** BE-H1 — Dispatch invite expiry not checked on accept: added `expiresAt: MoreThan(new Date())` to `onMedicAccept` query so expired invites are treated as self-claims, not accepted invites -- `orders/dispatch.service.ts`
+- **[fix]** BE-H2 — Geofence not checked on self-claim: `acceptOrder` now validates medic's `workZoneRadius` via haversine distance to order location before allowing accept -- `orders/orders.service.ts`
+- **[fix]** BE-H3 — Blocked users stay connected via WebSocket: `handleConnection` now looks up user/medic and disconnects if `isBlocked` is true; injected `UsersService`/`MedicsService` into gateway -- `realtime/order-events.gateway.ts`, `realtime/realtime.module.ts`
+- **[fix]** BE-H4 — Reviews unique constraint too weak: changed from `['orderId', 'authorRole']` to `['orderId', 'authorRole', 'targetRole']` -- `reviews/entities/review.entity.ts`
+- **[fix]** BE-H5 — Referral columns fallback incomplete: `findBaseBy` now attempts to select referral columns (`referralCode`, `referredBy`, `referralBonusUsed`, `pendingReferralDiscount`) with try-catch fallback -- `users/users.service.ts`
+
+## 2026-03-31 (Medic: 3 HIGH bug fixes)
+
+- **[fix]** MED-H1 — Accept order UI closes before API response: moved `setAcceptModal(null)` and `setBannerOrder(null)` AFTER successful `apiFetch`, removed re-throw so medic can retry from open modal -- `medic/hooks/useMedicOrderFeed.ts`
+- **[fix]** MED-H2 — Background location token stale after logout: `logout()` in AuthContext now immediately calls `setBackgroundLocationToken(null)` and `stopBackgroundLocationUpdates()` before clearing SecureStore, eliminating the race between React effect and background task -- `medic/context/AuthContext.tsx`
+- **[fix]** MED-H3 — Location tracking continues on socket disconnect: added `socket.on('disconnect')` listener that calls `stopTracking()` to prevent battery drain; replaced unsafe `socket!.emit()` with `socket?.connected` guard -- `medic/hooks/useMedicLocation.ts`
+
+## 2026-03-31 (Backend: 4 CRITICAL bug fixes)
+
+- **[fix]** BE-CR1 — Double-payment race condition in Payme: `performTransaction` now uses `dataSource.transaction` with `SELECT ... FOR UPDATE` on the payment row, preventing two simultaneous requests from both marking as paid -- `payments/payme.service.ts`
+- **[fix]** BE-CR2 — Race condition cancel after SERVICE_STARTED: removed stale pre-check, atomic `UPDATE ... WHERE status IN (cancellable)` now includes `clientId` in WHERE clause, returns `ConflictException` (409) on 0 affected rows -- `orders/orders.service.ts`
+- **[fix]** BE-CR3 — Earnings calculation decimal type mismatch: added `safeNumber()` helper to safely convert DB decimal/string values, applied to all `priceAmount`, `urgentFee`, `discountAmount`, `platformFee` arithmetic -- `orders/orders.service.ts`
+- **[fix]** BE-CR4 — Referral bonus double-award race condition: `applyReferralBonusIfEligible` now runs inside `dataSource.transaction` with `pessimistic_write` lock on user row, preventing concurrent DONE transitions from both awarding bonuses -- `orders/orders.service.ts`
+
+## 2026-03-31 (Mobile: push notification navigation fix)
+
+- **[fix]** Исправлен параметр навигации при тапе на push-уведомление — `_layout.tsx` отправлял `?id=` вместо `?orderId=`, из-за чего `track.tsx` получал `undefined` и показывал "Order not found". Исправлено в обоих обработчиках (background + cold-start) — `mobile/app/_layout.tsx`
+
 ## 2026-03-31 (Web-medic: Web Push уведомления)
 
 - **[feat]** Добавлен `medicApi.webPush.subscribe` и `medicApi.webPush.unsubscribe` в `medicApi` — `web-medic/lib/api.ts`

@@ -15,7 +15,7 @@ export type TargetRole = 'medic' | 'client';
  * (client reviews medic once, medic reviews client once)
  */
 @Entity('reviews')
-@Unique(['orderId', 'authorRole'])
+@Unique(['orderId', 'authorRole', 'targetRole'])
 export class Review {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

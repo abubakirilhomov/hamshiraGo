@@ -38,8 +38,17 @@ export class AppSettingsService {
       }
     }
     if (!settings) {
-      settings = this.repo.create({ id: SINGLETON_ID, isPaidMode: false, commissionRate: 10 });
-      await this.repo.save(settings);
+      try {
+        settings = this.repo.create({ id: SINGLETON_ID, isPaidMode: false, commissionRate: 10 });
+        await this.repo.save(settings);
+      } catch {
+        // Another process may have created the row concurrently (duplicate key) — retry lookup
+        settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
+        if (!settings) {
+          // Still nothing — use in-memory defaults so the app keeps serving requests
+          settings = this.repo.create({ id: SINGLETON_ID, isPaidMode: false, commissionRate: 10 });
+        }
+      }
     }
     this.cache = { settings, expiresAt: Date.now() + this.CACHE_TTL_MS };
     return settings;

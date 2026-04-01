@@ -22,7 +22,29 @@ export class UsersService {
     );
   }
 
-  private findBaseBy(field: 'id' | 'phone', value: string): Promise<User | null> {
+  private async findBaseBy(field: 'id' | 'phone', value: string): Promise<User | null> {
+    // Try including referral columns first so referral logic works
+    try {
+      return await this.userRepo
+        .createQueryBuilder('user')
+        .select([
+          'user.id',
+          'user.phone',
+          'user.name',
+          'user.passwordHash',
+          'user.pushToken',
+          'user.isBlocked',
+          'user.referralCode',
+          'user.referredBy',
+          'user.referralBonusUsed',
+          'user.pendingReferralDiscount',
+        ])
+        .where(`user.${field} = :value`, { value })
+        .getOne();
+    } catch (err) {
+      if (!this.isMissingColumnError(err)) throw err;
+    }
+    // Fall back without referral columns
     return this.userRepo
       .createQueryBuilder('user')
       .select([

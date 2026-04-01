@@ -65,6 +65,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [routeCoords, setRouteCoords] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState(false);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
 
   // Computed early so they can be used in useEffect dependency arrays
@@ -113,6 +114,7 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
     if (!medicPos || clientLat == null || clientLng == null) return;
     setRouteLoading(true);
     setRouteCoords([]);
+    setRouteError(false);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
     fetch(
@@ -126,7 +128,9 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
           setRouteCoords(coords.map(([lng, lat]) => ({ latitude: lat, longitude: lng })));
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setRouteError(true);
+      })
       .finally(() => {
         clearTimeout(timeoutId);
         setRouteLoading(false);
@@ -342,6 +346,12 @@ export function OrderInviteModal({ invite, onDismiss }: Props) {
                 <View style={styles.mapLoadingOverlay}>
                   <ActivityIndicator color={Theme.primary} size="small" />
                   <Text style={styles.mapLoadingText}>{t('orders.buildingRoute')}</Text>
+                </View>
+              )}
+              {routeError && !routeLoading && routeCoords.length === 0 && (
+                <View style={styles.mapLoadingOverlay}>
+                  <FontAwesome name="exclamation-triangle" size={16} color={Theme.textSecondary} />
+                  <Text style={styles.mapLoadingText}>{t('orders.routeUnavailable') || 'Маршрут недоступен'}</Text>
                 </View>
               )}
             </View>

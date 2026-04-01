@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { apiFetch, setUnauthorizedHandler } from '@/constants/api';
+import { setBackgroundLocationToken, stopBackgroundLocationUpdates } from '@/utils/backgroundLocation';
 
 const TOKEN_KEY = 'medic_auth_token';
 const MEDIC_KEY = 'medic_auth_user';
@@ -125,6 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    // Immediately clear background location token to prevent stale API calls
+    setBackgroundLocationToken(null);
+    stopBackgroundLocationUpdates().catch(() => {});
+
     await Promise.all([
       SecureStore.deleteItemAsync(TOKEN_KEY),
       SecureStore.deleteItemAsync(MEDIC_KEY),

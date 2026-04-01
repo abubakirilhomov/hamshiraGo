@@ -7,7 +7,7 @@
  * Returns: { startTracking, stopTracking }
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
 import type { Socket } from 'socket.io-client';
 import { LOCATION_EMIT_INTERVAL_MS } from '@/constants/config';
@@ -37,6 +37,7 @@ export function useMedicLocation({
   const startTracking = useCallback(() => {
     if (watchRef.current || startingRef.current) return; // guard against concurrent calls
     startingRef.current = true;
+    locationDeniedWarnedRef.current = false; // Reset on explicit call so re-granted permission is detected
 
     Location.getForegroundPermissionsAsync().then((perm) => {
       // If stopTracking was called while we were waiting for permissions, abort
@@ -61,7 +62,9 @@ export function useMedicLocation({
             heading: loc.coords.heading ?? null,
           };
           onLocationUpdate?.(pos);
-          socket!.emit('medic_location', { orderId, ...pos });
+          if (socket?.connected) {
+            socket.emit('medic_location', { orderId, ...pos });
+          }
           onLastSentAt?.(new Date().toISOString());
           onSentCountIncrement?.();
         })
@@ -85,7 +88,9 @@ export function useMedicLocation({
           onLocationUpdate?.(pos); // карта обновляется всегда (дёшево)
           if (now - lastEmitRef.current < LOCATION_EMIT_INTERVAL_MS) return;
           lastEmitRef.current = now;
-          socket!.emit('medic_location', { orderId, ...pos });
+          if (socket?.connected) {
+            socket.emit('medic_location', { orderId, ...pos });
+          }
           onLastSentAt?.(new Date().toISOString());
           onSentCountIncrement?.();
         },
@@ -107,6 +112,17 @@ export function useMedicLocation({
     watchRef.current?.remove();
     watchRef.current = null;
   }, []);
+
+  // Stop location tracking when socket disconnects to prevent battery drain
+  // and useless emit attempts to a disconnected socket.
+  useEffect(() => {
+    if (!socket) return;
+    const onDisconnect = () => {
+      stopTracking();
+    };
+    socket.on('disconnect', onDisconnect);
+    return () => { socket.off('disconnect', onDisconnect); };
+  }, [socket, stopTracking]);
 
   return { startTracking, stopTracking };
 }
