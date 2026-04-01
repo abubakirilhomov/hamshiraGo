@@ -241,7 +241,7 @@ export class OrdersService {
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
     const saved = await this.dataSource.transaction(async (manager) => {
-      const order = manager.create(Order, {
+      const orderData: Partial<Order> = {
         clientId,
         serviceId: service.id,
         serviceTitle: service.title,     // snapshot from catalog
@@ -251,8 +251,20 @@ export class OrdersService {
         urgentFee,
         platformFee,
         status: OrderStatus.CREATED,
-      });
-      const savedOrder = await manager.save(Order, order);
+      };
+      let savedOrder: Order;
+      try {
+        savedOrder = await manager.save(Order, manager.create(Order, orderData));
+      } catch (err: any) {
+        // Column may not exist yet on Railway — retry without new columns
+        if (err?.message?.includes('does not exist')) {
+          delete orderData.isUrgent;
+          delete orderData.urgentFee;
+          savedOrder = await manager.save(Order, manager.create(Order, orderData));
+        } else {
+          throw err;
+        }
+      }
       const location = manager.create(OrderLocation, {
         orderId: savedOrder.id,
         latitude: dto.location.latitude,
