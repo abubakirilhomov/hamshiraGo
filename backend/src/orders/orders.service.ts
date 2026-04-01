@@ -273,43 +273,56 @@ export class OrdersService {
     const netPrice = service.price + urgentFee - discountAmount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
-    const saved = await this.dataSource.transaction(async (manager) => {
-      const orderData: Partial<Order> = {
-        clientId,
-        serviceId: service.id,
-        serviceTitle: service.title,     // snapshot from catalog
-        priceAmount: service.price,      // price locked from catalog, client cannot override
-        discountAmount,
-        isUrgent,
-        urgentFee,
-        platformFee,
-        status: OrderStatus.CREATED,
-      };
-      let savedOrder: Order;
-      try {
-        savedOrder = await manager.save(Order, manager.create(Order, orderData));
-      } catch (err: any) {
-        // Column may not exist yet on Railway — retry without new columns
-        if (err?.message?.includes('does not exist')) {
-          delete orderData.isUrgent;
-          delete orderData.urgentFee;
-          savedOrder = await manager.save(Order, manager.create(Order, orderData));
-        } else {
-          throw err;
-        }
-      }
-      const location = manager.create(OrderLocation, {
-        orderId: savedOrder.id,
-        latitude: dto.location.latitude,
-        longitude: dto.location.longitude,
-        house: dto.location.house,
-        floor: dto.location.floor ?? null,
-        apartment: dto.location.apartment ?? null,
-        phone: dto.location.phone,
+    const orderData: Partial<Order> = {
+      clientId,
+      serviceId: service.id,
+      serviceTitle: service.title,
+      priceAmount: service.price,
+      discountAmount,
+      isUrgent,
+      urgentFee,
+      platformFee,
+      status: OrderStatus.CREATED,
+    };
+
+    let saved: Order;
+    try {
+      // Try with all columns (including isUrgent, urgentFee)
+      saved = await this.dataSource.transaction(async (manager) => {
+        const savedOrder = await manager.save(Order, manager.create(Order, orderData));
+        await manager.save(OrderLocation, manager.create(OrderLocation, {
+          orderId: savedOrder.id,
+          latitude: dto.location.latitude,
+          longitude: dto.location.longitude,
+          house: dto.location.house,
+          floor: dto.location.floor ?? null,
+          apartment: dto.location.apartment ?? null,
+          phone: dto.location.phone,
+        }));
+        return savedOrder;
       });
-      await manager.save(OrderLocation, location);
-      return savedOrder;
-    });
+    } catch (err: any) {
+      if (err?.message?.includes('does not exist')) {
+        // Column missing on Railway — retry in a NEW transaction without those columns
+        delete orderData.isUrgent;
+        delete orderData.urgentFee;
+        saved = await this.dataSource.transaction(async (manager) => {
+          const savedOrder = await manager.save(Order, manager.create(Order, orderData));
+          await manager.save(OrderLocation, manager.create(OrderLocation, {
+            orderId: savedOrder.id,
+            latitude: dto.location.latitude,
+            longitude: dto.location.longitude,
+            house: dto.location.house,
+            floor: dto.location.floor ?? null,
+            apartment: dto.location.apartment ?? null,
+            phone: dto.location.phone,
+          }));
+          return savedOrder;
+        });
+      } else {
+        throw err;
+      }
+    }
     const fullOrder = await this.findOne(saved.id);
 
     // Start automatic dispatch (Yandex-taxi-style push-based assignment)
