@@ -28,22 +28,14 @@ export class AppSettings {
    * Urgent fee markup as integer percent (e.g. 50 = 50% surcharge on service price).
    * Applied when client marks order as urgent OR current hour falls in night window.
    */
-  @Column({ type: 'int', default: 50 })
-  urgentFeePercent!: number;
+  @Column({ type: 'int', nullable: true })
+  urgentFeePercent!: number | null;
 
-  /**
-   * Start of the night/urgent window (hour in UTC+5, 0–23).
-   * Default: 22 (10 PM). Orders created at or after this hour are auto-urgent.
-   */
-  @Column({ type: 'int', default: 22 })
-  urgentStartHour!: number;
+  @Column({ type: 'int', nullable: true })
+  urgentStartHour!: number | null;
 
-  /**
-   * End of the night/urgent window (hour in UTC+5, 0–23).
-   * Default: 7 (7 AM). Orders created before this hour are auto-urgent.
-   */
-  @Column({ type: 'int', default: 7 })
-  urgentEndHour!: number;
+  @Column({ type: 'int', nullable: true })
+  urgentEndHour!: number | null;
 
   @UpdateDateColumn()
   updatedAt!: Date;

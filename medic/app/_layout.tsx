@@ -125,12 +125,12 @@ function RootLayoutNav() {
   const { showToast } = useToast();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
-  // Load onboarding completion flag from AsyncStorage
+  // Load onboarding completion flag from AsyncStorage (re-check when navigating back)
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_DONE_KEY)
       .then((val) => setOnboardingDone(val === 'true'))
       .catch(() => setOnboardingDone(true)); // skip onboarding if storage fails
-  }, []);
+  }, [segments]);
 
   useEffect(() => {
     if (isLoading || !isLoaded || onboardingDone === null) return; // wait for all stores

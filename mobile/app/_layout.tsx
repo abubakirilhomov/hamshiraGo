@@ -108,7 +108,7 @@ function RootLayoutNav() {
     AsyncStorage.getItem('onboarding_completed')
       .then((value) => setOnboardingDone(value === 'true'))
       .catch(() => setOnboardingDone(true)); // skip onboarding if storage fails
-  }, []);
+  }, [segments]);
 
   useEffect(() => {
     if (isLoading || !isLoaded || onboardingDone === null) return; // wait for all stores

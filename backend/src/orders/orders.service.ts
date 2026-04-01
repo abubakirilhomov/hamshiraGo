@@ -227,7 +227,9 @@ export class OrdersService {
     // Determine if order is urgent: explicit flag OR current hour is in the night window
     const nowHour = new Date().getUTCHours() + 5; // Tashkent UTC+5 (simplified, no DST)
     const normalizedHour = ((nowHour % 24) + 24) % 24;
-    const { urgentStartHour = 22, urgentEndHour = 7, urgentFeePercent = 50 } = appSettings;
+    const urgentStartHour = appSettings.urgentStartHour ?? 22;
+    const urgentEndHour = appSettings.urgentEndHour ?? 7;
+    const urgentFeePercent = appSettings.urgentFeePercent ?? 50;
     const isNightHour =
       urgentStartHour > urgentEndHour
         ? normalizedHour >= urgentStartHour || normalizedHour < urgentEndHour // wraps midnight

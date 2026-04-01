@@ -20,7 +20,23 @@ export class AppSettingsService {
     if (this.cache && Date.now() < this.cache.expiresAt) {
       return this.cache.settings;
     }
-    let settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
+    let settings: AppSettings | null = null;
+    try {
+      settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
+    } catch {
+      // Columns may not exist yet on Railway — fall back to raw query for safe columns only
+      const rows = await this.repo.query(
+        `SELECT id, "isPaidMode", "commissionRate" FROM app_settings WHERE id = $1 LIMIT 1`,
+        [SINGLETON_ID],
+      );
+      if (rows.length) {
+        settings = this.repo.create({
+          id: rows[0].id,
+          isPaidMode: rows[0].isPaidMode ?? false,
+          commissionRate: rows[0].commissionRate ?? 10,
+        });
+      }
+    }
     if (!settings) {
       settings = this.repo.create({ id: SINGLETON_ID, isPaidMode: false, commissionRate: 10 });
       await this.repo.save(settings);

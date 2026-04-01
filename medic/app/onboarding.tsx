@@ -106,7 +106,7 @@ export default function OnboardingScreen() {
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const finish = useCallback(async () => {
-    await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true');
+    try { await AsyncStorage.setItem(ONBOARDING_DONE_KEY, 'true'); } catch {}
     router.replace('/language-picker');
   }, [router]);
 
