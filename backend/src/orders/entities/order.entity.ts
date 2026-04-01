@@ -62,20 +62,10 @@ export class Order {
   @Column({ type: 'varchar', length: 500, nullable: true })
   cancelReason?: string | null;
 
-  /**
-   * Whether the order was marked as urgent (night hours or client-requested).
-   * NOTE: Column may not exist on Railway yet — NOT mapped to TypeORM to avoid
-   * INSERT/SELECT crashes. Accessed via raw queries when needed.
-   * Uncomment @Column when the DB migration has been applied.
-   */
-  // @Column({ type: 'boolean', nullable: true })
+  @Column({ type: 'boolean', nullable: true })
   isUrgent?: boolean | null;
 
-  /**
-   * Urgent fee surcharge in UZS (e.g. 50% of priceAmount), 0 if not urgent.
-   * Same as isUrgent — not mapped until DB column exists.
-   */
-  // @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
   urgentFee?: number | null;
 
   /** Rating left by client after order completion (1-5), null if not rated yet */

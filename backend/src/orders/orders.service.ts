@@ -273,9 +273,6 @@ export class OrdersService {
     const netPrice = service.price + urgentFee - discountAmount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
-    // NOTE: isUrgent/urgentFee are NOT in the TypeORM entity (@Column commented out)
-    // because the DB column may not exist on Railway yet. We store them via raw UPDATE
-    // after the order is created, wrapped in try-catch.
     const saved = await this.dataSource.transaction(async (manager) => {
       const savedOrder = await manager.save(Order, manager.create(Order, {
         clientId,
@@ -283,6 +280,8 @@ export class OrdersService {
         serviceTitle: service.title,
         priceAmount: service.price,
         discountAmount,
+        isUrgent,
+        urgentFee,
         platformFee,
         status: OrderStatus.CREATED,
       }));
@@ -295,17 +294,6 @@ export class OrdersService {
         apartment: dto.location.apartment ?? null,
         phone: dto.location.phone,
       }));
-      // Try to set isUrgent/urgentFee via raw query (columns may not exist)
-      try {
-        await manager.query(
-          `UPDATE orders SET "isUrgent" = $1, "urgentFee" = $2 WHERE id = $3`,
-          [isUrgent, urgentFee, savedOrder.id],
-        );
-        savedOrder.isUrgent = isUrgent;
-        savedOrder.urgentFee = urgentFee;
-      } catch {
-        // Columns don't exist yet — silently skip
-      }
       return savedOrder;
     });
     const fullOrder = await this.findOne(saved.id);
