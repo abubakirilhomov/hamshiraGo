@@ -273,56 +273,41 @@ export class OrdersService {
     const netPrice = service.price + urgentFee - discountAmount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
-    const orderData: Partial<Order> = {
-      clientId,
-      serviceId: service.id,
-      serviceTitle: service.title,
-      priceAmount: service.price,
-      discountAmount,
-      isUrgent,
-      urgentFee,
-      platformFee,
-      status: OrderStatus.CREATED,
-    };
-
-    let saved: Order;
-    try {
-      // Try with all columns (including isUrgent, urgentFee)
-      saved = await this.dataSource.transaction(async (manager) => {
-        const savedOrder = await manager.save(Order, manager.create(Order, orderData));
-        await manager.save(OrderLocation, manager.create(OrderLocation, {
-          orderId: savedOrder.id,
-          latitude: dto.location.latitude,
-          longitude: dto.location.longitude,
-          house: dto.location.house,
-          floor: dto.location.floor ?? null,
-          apartment: dto.location.apartment ?? null,
-          phone: dto.location.phone,
-        }));
-        return savedOrder;
-      });
-    } catch (err: any) {
-      if (err?.message?.includes('does not exist')) {
-        // Column missing on Railway — retry in a NEW transaction without those columns
-        delete orderData.isUrgent;
-        delete orderData.urgentFee;
-        saved = await this.dataSource.transaction(async (manager) => {
-          const savedOrder = await manager.save(Order, manager.create(Order, orderData));
-          await manager.save(OrderLocation, manager.create(OrderLocation, {
-            orderId: savedOrder.id,
-            latitude: dto.location.latitude,
-            longitude: dto.location.longitude,
-            house: dto.location.house,
-            floor: dto.location.floor ?? null,
-            apartment: dto.location.apartment ?? null,
-            phone: dto.location.phone,
-          }));
-          return savedOrder;
-        });
-      } else {
-        throw err;
+    // NOTE: isUrgent/urgentFee are NOT in the TypeORM entity (@Column commented out)
+    // because the DB column may not exist on Railway yet. We store them via raw UPDATE
+    // after the order is created, wrapped in try-catch.
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const savedOrder = await manager.save(Order, manager.create(Order, {
+        clientId,
+        serviceId: service.id,
+        serviceTitle: service.title,
+        priceAmount: service.price,
+        discountAmount,
+        platformFee,
+        status: OrderStatus.CREATED,
+      }));
+      await manager.save(OrderLocation, manager.create(OrderLocation, {
+        orderId: savedOrder.id,
+        latitude: dto.location.latitude,
+        longitude: dto.location.longitude,
+        house: dto.location.house,
+        floor: dto.location.floor ?? null,
+        apartment: dto.location.apartment ?? null,
+        phone: dto.location.phone,
+      }));
+      // Try to set isUrgent/urgentFee via raw query (columns may not exist)
+      try {
+        await manager.query(
+          `UPDATE orders SET "isUrgent" = $1, "urgentFee" = $2 WHERE id = $3`,
+          [isUrgent, urgentFee, savedOrder.id],
+        );
+        savedOrder.isUrgent = isUrgent;
+        savedOrder.urgentFee = urgentFee;
+      } catch {
+        // Columns don't exist yet — silently skip
       }
-    }
+      return savedOrder;
+    });
     const fullOrder = await this.findOne(saved.id);
 
     // Start automatic dispatch (Yandex-taxi-style push-based assignment)
