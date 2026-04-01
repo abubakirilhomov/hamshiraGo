@@ -35,6 +35,30 @@ export class MedicsService {
     private readonly orderEventsGateway: OrderEventsGateway,
   ) {}
 
+  private isMissingColumnError(err: unknown): boolean {
+    return (
+      err instanceof Error &&
+      /column .* does not exist/i.test(err.message)
+    );
+  }
+
+  /**
+   * Fallback SELECT using only base columns that are guaranteed to exist on Railway.
+   * Used when medicRepo.findOne() crashes due to newer columns missing from DB.
+   */
+  private async findBaseByField(field: 'id' | 'phone', value: string): Promise<Medic | null> {
+    const rows = await this.medicRepo.query(
+      `SELECT id, phone, "passwordHash", name, rating, "reviewCount",
+              "experienceYears", "isOnline", "isBlocked", "verificationStatus",
+              "facePhotoUrl", "licensePhotoUrl", "profilePhotoUrl",
+              "verificationRejectedReason", balance, "pushToken",
+              latitude, longitude, created_at, updated_at
+       FROM medics WHERE "${field}" = $1 LIMIT 1`,
+      [value],
+    );
+    return rows.length ? this.medicRepo.create(rows[0] as Partial<Medic>) : null;
+  }
+
   private onlineCutoffDate(): Date {
     return new Date(Date.now() - ONLINE_IDLE_LIMIT_MS);
   }
@@ -46,34 +70,72 @@ export class MedicsService {
   }
 
   private async autoDisableStaleOnlineMedics(): Promise<void> {
-    await this.medicRepo
-      .createQueryBuilder()
-      .update(Medic)
-      .set({ isOnline: false })
-      .where('isOnline = :isOnline', { isOnline: true })
-      .andWhere('(lastSeenAt IS NULL OR lastSeenAt < :cutoff)', { cutoff: this.onlineCutoffDate() })
-      .execute();
+    try {
+      await this.medicRepo
+        .createQueryBuilder()
+        .update(Medic)
+        .set({ isOnline: false })
+        .where('isOnline = :isOnline', { isOnline: true })
+        .andWhere('(lastSeenAt IS NULL OR lastSeenAt < :cutoff)', { cutoff: this.onlineCutoffDate() })
+        .execute();
+    } catch (err: unknown) {
+      // lastSeenAt column may not exist on Railway — tolerate
+      if (!this.isMissingColumnError(err)) throw err;
+    }
   }
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   async register(dto: RegisterMedicDto) {
-    const existing = await this.medicRepo.findOne({ where: { phone: dto.phone } });
+    let existing: Medic | null;
+    try {
+      existing = await this.medicRepo.findOne({ where: { phone: dto.phone } });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        existing = await this.findBaseByField('phone', dto.phone);
+      } else {
+        throw err;
+      }
+    }
     if (existing) throw new ConflictException('Medic with this phone already exists');
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const medic = this.medicRepo.create({
-      phone: dto.phone,
-      name: dto.name,
-      passwordHash,
-      experienceYears: dto.experienceYears ?? 0,
-      lastSeenAt: new Date(),
-    });
-    const saved = await this.medicRepo.save(medic);
+    let saved: Medic;
+    try {
+      const medic = this.medicRepo.create({
+        phone: dto.phone,
+        name: dto.name,
+        passwordHash,
+        experienceYears: dto.experienceYears ?? 0,
+        lastSeenAt: new Date(),
+      });
+      saved = await this.medicRepo.save(medic);
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        // Fallback: insert only base columns
+        const rows = await this.medicRepo.query(
+          `INSERT INTO medics (phone, name, "passwordHash", "experienceYears")
+           VALUES ($1, $2, $3, $4) RETURNING *`,
+          [dto.phone, dto.name, passwordHash, dto.experienceYears ?? 0],
+        );
+        saved = this.medicRepo.create(rows[0] as Partial<Medic>);
+      } else {
+        throw err;
+      }
+    }
     return this.toAuthResponse(saved);
   }
 
   async login(dto: LoginMedicDto) {
-    const medic = await this.medicRepo.findOne({ where: { phone: dto.phone } });
+    let medic: Medic | null;
+    try {
+      medic = await this.medicRepo.findOne({ where: { phone: dto.phone } });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        medic = await this.findBaseByField('phone', dto.phone);
+      } else {
+        throw err;
+      }
+    }
     if (!medic) throw new UnauthorizedException('Invalid phone or password');
     const ok = await bcrypt.compare(dto.password, medic.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid phone or password');
@@ -81,13 +143,22 @@ export class MedicsService {
 
     let onlineDisabledReason: 'INACTIVE_5H' | null = null;
     if (this.isMedicOnlineStale(medic)) {
-      await this.medicRepo.update(medic.id, { isOnline: false });
+      try {
+        await this.medicRepo.update(medic.id, { isOnline: false });
+      } catch (err: unknown) {
+        if (!this.isMissingColumnError(err)) throw err;
+      }
       medic.isOnline = false;
       onlineDisabledReason = 'INACTIVE_5H';
     }
 
     medic.lastSeenAt = new Date();
-    await this.medicRepo.update(medic.id, { lastSeenAt: medic.lastSeenAt });
+    try {
+      await this.medicRepo.update(medic.id, { lastSeenAt: medic.lastSeenAt });
+    } catch (err: unknown) {
+      // lastSeenAt column may not exist — tolerate
+      if (!this.isMissingColumnError(err)) throw err;
+    }
 
     return this.toAuthResponse(medic, onlineDisabledReason);
   }
@@ -118,7 +189,14 @@ export class MedicsService {
   // ── Profile & location ────────────────────────────────────────────────────
 
   async findById(id: string): Promise<Medic | null> {
-    return this.medicRepo.findOne({ where: { id } });
+    try {
+      return await this.medicRepo.findOne({ where: { id } });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        return this.findBaseByField('id', id);
+      }
+      throw err;
+    }
   }
 
   async getProfile(id: string) {
@@ -127,13 +205,21 @@ export class MedicsService {
 
     let onlineDisabledReason: 'INACTIVE_5H' | null = null;
     if (this.isMedicOnlineStale(medic)) {
-      await this.medicRepo.update(id, { isOnline: false });
+      try {
+        await this.medicRepo.update(id, { isOnline: false });
+      } catch (err: unknown) {
+        if (!this.isMissingColumnError(err)) throw err;
+      }
       medic.isOnline = false;
       onlineDisabledReason = 'INACTIVE_5H';
     }
 
     medic.lastSeenAt = new Date();
-    await this.medicRepo.update(id, { lastSeenAt: medic.lastSeenAt });
+    try {
+      await this.medicRepo.update(id, { lastSeenAt: medic.lastSeenAt });
+    } catch (err: unknown) {
+      if (!this.isMissingColumnError(err)) throw err;
+    }
 
     return {
       id: medic.id,
@@ -190,7 +276,18 @@ export class MedicsService {
     medic.verificationRejectedReason =
       dto.status === VerificationStatus.REJECTED ? (dto.reason ?? null) : null;
 
-    return this.medicRepo.save(medic);
+    try {
+      return await this.medicRepo.save(medic);
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        await this.medicRepo.query(
+          `UPDATE medics SET "verificationStatus" = $1, "verificationRejectedReason" = $2 WHERE id = $3`,
+          [medic.verificationStatus, medic.verificationRejectedReason, id],
+        );
+        return (await this.findById(id)) as Medic;
+      }
+      throw err;
+    }
   }
 
   async blockMedic(id: string, isBlocked: boolean): Promise<void> {
@@ -201,11 +298,23 @@ export class MedicsService {
 
   /** Returns pending medics awaiting review (for admin dashboard) */
   async getPendingVerifications(): Promise<Partial<Medic>[]> {
-    return this.medicRepo.find({
-      where: { verificationStatus: VerificationStatus.PENDING },
-      select: ['id', 'name', 'phone', 'facePhotoUrl', 'licensePhotoUrl', 'created_at'],
-      order: { created_at: 'ASC' },
-    });
+    try {
+      return await this.medicRepo.find({
+        where: { verificationStatus: VerificationStatus.PENDING },
+        select: ['id', 'name', 'phone', 'facePhotoUrl', 'licensePhotoUrl', 'created_at'],
+        order: { created_at: 'ASC' },
+      });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        const rows = await this.medicRepo.query(
+          `SELECT id, name, phone, "facePhotoUrl", "licensePhotoUrl", created_at
+           FROM medics WHERE "verificationStatus" = $1 ORDER BY created_at ASC`,
+          [VerificationStatus.PENDING],
+        );
+        return rows;
+      }
+      throw err;
+    }
   }
 
   async findAllAdmin(
@@ -270,12 +379,25 @@ export class MedicsService {
   }
 
   async updateLocation(id: string, dto: UpdateLocationDto): Promise<void> {
-    await this.medicRepo.update(id, {
-      isOnline: dto.isOnline,
-      ...(dto.latitude != null ? { latitude: dto.latitude } : {}),
-      ...(dto.longitude != null ? { longitude: dto.longitude } : {}),
-      lastSeenAt: new Date(),
-    });
+    try {
+      await this.medicRepo.update(id, {
+        isOnline: dto.isOnline,
+        ...(dto.latitude != null ? { latitude: dto.latitude } : {}),
+        ...(dto.longitude != null ? { longitude: dto.longitude } : {}),
+        lastSeenAt: new Date(),
+      });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        // Fallback: update without lastSeenAt
+        await this.medicRepo.update(id, {
+          isOnline: dto.isOnline,
+          ...(dto.latitude != null ? { latitude: dto.latitude } : {}),
+          ...(dto.longitude != null ? { longitude: dto.longitude } : {}),
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (dto.latitude == null || dto.longitude == null) return;
 
@@ -319,10 +441,22 @@ export class MedicsService {
 
   async getOnlinePushTokens(): Promise<string[]> {
     await this.autoDisableStaleOnlineMedics();
-    const medics = await this.medicRepo.find({
-      where: { isOnline: true },
-      select: ['pushToken'],
-    });
+    let medics: Medic[];
+    try {
+      medics = await this.medicRepo.find({
+        where: { isOnline: true },
+        select: ['pushToken'],
+      });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        const rows = await this.medicRepo.query(
+          `SELECT "pushToken" FROM medics WHERE "isOnline" = true`,
+        );
+        medics = rows;
+      } else {
+        throw err;
+      }
+    }
     return medics
       .map((m) => m.pushToken)
       .filter((t): t is string => !!t);
@@ -330,7 +464,11 @@ export class MedicsService {
 
   /** Save Telegram chat_id for the medic (called after /start in bot) */
   async saveTelegramChatId(id: string, chatId: string | null): Promise<void> {
-    await this.medicRepo.update(id, { telegramChatId: chatId });
+    try {
+      await this.medicRepo.update(id, { telegramChatId: chatId });
+    } catch (err: unknown) {
+      if (!this.isMissingColumnError(err)) throw err;
+    }
   }
 
   // ── Work zone (geofence) ──────────────────────────────────────────────────
@@ -338,29 +476,47 @@ export class MedicsService {
   async setWorkZone(medicId: string, dto: SetWorkZoneDto): Promise<Medic> {
     const medic = await this.findById(medicId);
     if (!medic) throw new NotFoundException('Medic not found');
-    await this.medicRepo.update(medicId, {
-      workZoneLat: dto.lat,
-      workZoneLng: dto.lng,
-      workZoneRadius: dto.radius,
-    });
-    return this.medicRepo.findOne({ where: { id: medicId } }) as Promise<Medic>;
+    try {
+      await this.medicRepo.update(medicId, {
+        workZoneLat: dto.lat,
+        workZoneLng: dto.lng,
+        workZoneRadius: dto.radius,
+      });
+    } catch (err: unknown) {
+      // workZone columns may not exist on Railway — tolerate
+      if (!this.isMissingColumnError(err)) throw err;
+    }
+    return (await this.findById(medicId)) as Medic;
   }
 
   async clearWorkZone(medicId: string): Promise<void> {
-    await this.medicRepo.update(medicId, {
-      workZoneLat: null,
-      workZoneLng: null,
-      workZoneRadius: null,
-    });
+    try {
+      await this.medicRepo.update(medicId, {
+        workZoneLat: null,
+        workZoneLng: null,
+        workZoneRadius: null,
+      });
+    } catch (err: unknown) {
+      if (!this.isMissingColumnError(err)) throw err;
+    }
   }
 
   /** Returns chat_ids of all online medics (for new order broadcast) */
   async getOnlineTelegramChatIds(): Promise<string[]> {
     await this.autoDisableStaleOnlineMedics();
-    const medics = await this.medicRepo.find({
-      where: { isOnline: true },
-      select: ['telegramChatId'],
-    });
+    let medics: Medic[];
+    try {
+      medics = await this.medicRepo.find({
+        where: { isOnline: true },
+        select: ['telegramChatId'],
+      });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        // telegramChatId column may not exist — return empty
+        return [];
+      }
+      throw err;
+    }
     return medics
       .map((m) => m.telegramChatId)
       .filter((t): t is string => !!t);

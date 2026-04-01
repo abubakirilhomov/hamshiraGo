@@ -1,5 +1,12 @@
 # HamshiraGo — Выполненные задачи
 
+## 2026-03-31 (4 BLOCKER backend bug fixes — Railway DB column mismatch)
+
+- **[fix]** BE-BLK1 — Client registration 500: `users.service.ts` `create()` now catches missing-column errors from referral columns and falls back to raw INSERT with base columns only -- `users/users.service.ts`
+- **[fix]** BE-BLK2 — Medic login 500: added `isMissingColumnError` helper and `findBaseByField` fallback to `medics.service.ts`; wrapped `register()`, `login()`, `findById()`, `getProfile()`, `updateLocation()`, `setWorkZone()`, `clearWorkZone()`, `saveTelegramChatId()`, `getOnlinePushTokens()`, `getOnlineTelegramChatIds()`, `getPendingVerifications()`, `verifyMedic()`, `autoDisableStaleOnlineMedics()` with try-catch for missing columns -- `medics/medics.service.ts`
+- **[fix]** BE-BLK3 — Reviews endpoint 500: added `isTableOrColumnMissing` guard to `findByMedic()`, `findByClient()`, `findByOrder()`, `getTargetRatingStats()`, and `create()` — returns empty results when reviews table/columns missing on Railway -- `reviews/reviews.service.ts`
+- **[fix]** BE-BLK4 — AppSettings missing urgentFeePercent: raw SQL fallback now tries to include urgent fields with COALESCE defaults (50/22/7); nested try-catch falls back to base columns with in-memory defaults; `patch()` also wrapped for missing urgent columns -- `app-settings/app-settings.service.ts`
+
 ## 2026-03-31 (3 LOW bug fixes)
 
 - **[fix]** MED-L1 — Photo MIME type: `jpg` extension now correctly maps to `image/jpeg` instead of invalid `image/jpg`; added `.toLowerCase()` for case safety -- `medic/app/(tabs)/profile.tsx`

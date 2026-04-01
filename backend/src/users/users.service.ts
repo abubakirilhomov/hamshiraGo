@@ -11,8 +11,20 @@ export class UsersService {
   ) {}
 
   async create(data: { phone: string; passwordHash: string; name: string | null; referredBy?: string | null }): Promise<User> {
-    const user = this.userRepo.create(data);
-    return this.userRepo.save(user);
+    try {
+      const user = this.userRepo.create(data);
+      return await this.userRepo.save(user);
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) {
+        // Fallback: insert only base columns that definitely exist on Railway
+        const rows = await this.userRepo.query(
+          `INSERT INTO users (phone, "passwordHash", name) VALUES ($1, $2, $3) RETURNING *`,
+          [data.phone, data.passwordHash, data.name],
+        );
+        return this.userRepo.create(rows[0] as Partial<User>);
+      }
+      throw err;
+    }
   }
 
   private isMissingColumnError(err: unknown): boolean {

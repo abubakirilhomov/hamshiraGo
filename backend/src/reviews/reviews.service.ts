@@ -38,6 +38,14 @@ export class ReviewsService {
     private readonly telegramService: TelegramService,
   ) {}
 
+  private isTableOrColumnMissing(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    return (
+      /relation .* does not exist/i.test(err.message) ||
+      /column .* does not exist/i.test(err.message)
+    );
+  }
+
   async create(
     dto: CreateReviewDto,
     userId: string,
@@ -99,7 +107,15 @@ export class ReviewsService {
       comment: dto.comment ?? null,
     });
 
-    const saved = await this.reviewRepo.save(review);
+    let saved: Review;
+    try {
+      saved = await this.reviewRepo.save(review);
+    } catch (err: unknown) {
+      if (this.isTableOrColumnMissing(err)) {
+        throw new BadRequestException('Reviews are not available yet. Please try again later.');
+      }
+      throw err;
+    }
 
     // 8. Recalculate average rating asynchronously (don't block the response)
     this.recalcAverageRating(targetId, dto.targetRole).catch((err) => {
@@ -163,17 +179,24 @@ export class ReviewsService {
     targetId: string,
     targetRole: 'medic' | 'client',
   ): Promise<{ averageRating: number | null; reviewCount: number }> {
-    const result = await this.reviewRepo
-      .createQueryBuilder('r')
-      .select('AVG(r.rating)', 'avg')
-      .addSelect('COUNT(r.id)', 'cnt')
-      .where('r.targetId = :targetId', { targetId })
-      .andWhere('r.targetRole = :targetRole', { targetRole })
-      .getRawOne();
-    return {
-      averageRating: result?.avg ? parseFloat(result.avg) : null,
-      reviewCount: parseInt(result?.cnt ?? '0', 10),
-    };
+    try {
+      const result = await this.reviewRepo
+        .createQueryBuilder('r')
+        .select('AVG(r.rating)', 'avg')
+        .addSelect('COUNT(r.id)', 'cnt')
+        .where('r.targetId = :targetId', { targetId })
+        .andWhere('r.targetRole = :targetRole', { targetRole })
+        .getRawOne();
+      return {
+        averageRating: result?.avg ? parseFloat(result.avg) : null,
+        reviewCount: parseInt(result?.cnt ?? '0', 10),
+      };
+    } catch (err: unknown) {
+      if (this.isTableOrColumnMissing(err)) {
+        return { averageRating: null, reviewCount: 0 };
+      }
+      throw err;
+    }
   }
 
   /** Paginated list of reviews targeting a medic, newest first */
@@ -185,14 +208,21 @@ export class ReviewsService {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const [data, total] = await this.reviewRepo.findAndCount({
-      where: { targetId: medicId, targetRole: 'medic' },
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip,
-    });
-
-    return { data, total, page, limit };
+    try {
+      const [data, total] = await this.reviewRepo.findAndCount({
+        where: { targetId: medicId, targetRole: 'medic' },
+        order: { createdAt: 'DESC' },
+        take: limit,
+        skip,
+      });
+      return { data, total, page, limit };
+    } catch (err: unknown) {
+      if (this.isTableOrColumnMissing(err)) {
+        this.logger.warn('Reviews table/columns not available, returning empty result');
+        return { data: [], total: 0, page, limit };
+      }
+      throw err;
+    }
   }
 
   /** Paginated list of reviews targeting a client, newest first */
@@ -204,22 +234,37 @@ export class ReviewsService {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const [data, total] = await this.reviewRepo.findAndCount({
-      where: { targetId: clientId, targetRole: 'client' },
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip,
-    });
-
-    return { data, total, page, limit };
+    try {
+      const [data, total] = await this.reviewRepo.findAndCount({
+        where: { targetId: clientId, targetRole: 'client' },
+        order: { createdAt: 'DESC' },
+        take: limit,
+        skip,
+      });
+      return { data, total, page, limit };
+    } catch (err: unknown) {
+      if (this.isTableOrColumnMissing(err)) {
+        this.logger.warn('Reviews table/columns not available, returning empty result');
+        return { data: [], total: 0, page, limit };
+      }
+      throw err;
+    }
   }
 
-  /** Return both reviews for a given order (client→medic and medic→client) */
+  /** Return both reviews for a given order (client->medic and medic->client) */
   async findByOrder(orderId: string): Promise<Review[]> {
-    return this.reviewRepo.find({
-      where: { orderId },
-      order: { createdAt: 'ASC' },
-    });
+    try {
+      return await this.reviewRepo.find({
+        where: { orderId },
+        order: { createdAt: 'ASC' },
+      });
+    } catch (err: unknown) {
+      if (this.isTableOrColumnMissing(err)) {
+        this.logger.warn('Reviews table/columns not available, returning empty result');
+        return [];
+      }
+      throw err;
+    }
   }
 
   /**

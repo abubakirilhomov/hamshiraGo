@@ -24,17 +24,42 @@ export class AppSettingsService {
     try {
       settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
     } catch {
-      // Columns may not exist yet on Railway — fall back to raw query for safe columns only
-      const rows = await this.repo.query(
-        `SELECT id, "isPaidMode", "commissionRate" FROM app_settings WHERE id = $1 LIMIT 1`,
-        [SINGLETON_ID],
-      );
-      if (rows.length) {
-        settings = this.repo.create({
-          id: rows[0].id,
-          isPaidMode: rows[0].isPaidMode ?? false,
-          commissionRate: rows[0].commissionRate ?? 10,
-        });
+      // Columns may not exist yet on Railway — try including urgent fields with COALESCE
+      try {
+        const rows = await this.repo.query(
+          `SELECT id, "isPaidMode", "commissionRate",
+                  COALESCE("urgentFeePercent", 50) AS "urgentFeePercent",
+                  COALESCE("urgentStartHour", 22) AS "urgentStartHour",
+                  COALESCE("urgentEndHour", 7) AS "urgentEndHour"
+           FROM app_settings WHERE id = $1 LIMIT 1`,
+          [SINGLETON_ID],
+        );
+        if (rows.length) {
+          settings = this.repo.create({
+            id: rows[0].id,
+            isPaidMode: rows[0].isPaidMode ?? false,
+            commissionRate: rows[0].commissionRate ?? 10,
+            urgentFeePercent: rows[0].urgentFeePercent ?? 50,
+            urgentStartHour: rows[0].urgentStartHour ?? 22,
+            urgentEndHour: rows[0].urgentEndHour ?? 7,
+          });
+        }
+      } catch {
+        // Urgent columns also missing — fall back to base columns only
+        const rows = await this.repo.query(
+          `SELECT id, "isPaidMode", "commissionRate" FROM app_settings WHERE id = $1 LIMIT 1`,
+          [SINGLETON_ID],
+        );
+        if (rows.length) {
+          settings = this.repo.create({
+            id: rows[0].id,
+            isPaidMode: rows[0].isPaidMode ?? false,
+            commissionRate: rows[0].commissionRate ?? 10,
+            urgentFeePercent: 50,
+            urgentStartHour: 22,
+            urgentEndHour: 7,
+          });
+        }
       }
     }
     if (!settings) {
@@ -61,7 +86,19 @@ export class AppSettingsService {
     if (dto.urgentFeePercent !== undefined) update.urgentFeePercent = dto.urgentFeePercent;
     if (dto.urgentStartHour !== undefined) update.urgentStartHour = dto.urgentStartHour;
     if (dto.urgentEndHour !== undefined) update.urgentEndHour = dto.urgentEndHour;
-    await this.repo.upsert(update as AppSettings, ['id']);
+    try {
+      await this.repo.upsert(update as AppSettings, ['id']);
+    } catch (err: unknown) {
+      if (err instanceof Error && /column .* does not exist/i.test(err.message)) {
+        // Urgent columns missing — upsert only base columns
+        const baseUpdate: Partial<AppSettings> = { id: SINGLETON_ID };
+        if (dto.isPaidMode !== undefined) baseUpdate.isPaidMode = dto.isPaidMode;
+        if (dto.commissionRate !== undefined) baseUpdate.commissionRate = dto.commissionRate;
+        await this.repo.upsert(baseUpdate as AppSettings, ['id']);
+      } else {
+        throw err;
+      }
+    }
     this.cache = null; // invalidate cache
     return this.get();
   }
