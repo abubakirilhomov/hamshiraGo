@@ -1,6 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
 import { Theme, Radius, Spacing } from '@/constants/Theme';
@@ -103,6 +105,21 @@ export default function HomeScreen() {
         <Text style={styles.bannerTitle}>HamshiraGo</Text>
         <Text style={styles.bannerSubtitle}>{t('home.bannerSubtitle')}</Text>
       </LinearGradient>
+
+      {/* AI Assistant banner */}
+      <Pressable
+        style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.85 }]}
+        onPress={() => router.push('/ai-chat')}
+      >
+        <View style={styles.aiBannerIcon}>
+          <FontAwesome name="heartbeat" size={20} color={Theme.primary} />
+        </View>
+        <View style={styles.aiBannerTexts}>
+          <Text style={styles.aiBannerTitle}>{t('aiChat.banner')}</Text>
+          <Text style={styles.aiBannerDesc}>{t('aiChat.bannerDesc')}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={14} color={Theme.primary} />
+      </Pressable>
 
       {fromCache && (
         <View style={styles.cacheBanner}>
@@ -223,6 +240,38 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: `${Theme.warning}40`,
+  },
+  aiBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}25`,
+    gap: Spacing.md,
+  },
+  aiBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${Theme.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiBannerTexts: {
+    flex: 1,
+  },
+  aiBannerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Theme.text,
+  },
+  aiBannerDesc: {
+    fontSize: 12,
+    color: Theme.textSecondary,
+    marginTop: 1,
   },
   cacheBannerText: {
     fontSize: 13,

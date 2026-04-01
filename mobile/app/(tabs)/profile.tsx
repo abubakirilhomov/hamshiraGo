@@ -288,6 +288,16 @@ export default function ProfileScreen() {
           <Text style={styles.linkText}>{t('medcard.title')}</Text>
           <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
         </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/consultations')}>
+          <FontAwesome name="calendar" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('consultation.myConsultations')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/ai-chat')}>
+          <FontAwesome name="commenting" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('aiChat.title')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
       </View>
 
       {/* App info */}

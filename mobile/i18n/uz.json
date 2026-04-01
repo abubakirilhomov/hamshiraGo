@@ -291,5 +291,40 @@
     "noHistory": "Hozircha tranzaksiyalar yo'q",
     "pointsEarned": "+{{points}} ball topildi!",
     "availableDiscount": "Ballardan chegirma: {{amount}} UZS gacha"
+  },
+  "aiChat": {
+    "title": "Tibbiy yordamchi",
+    "greeting": "Assalomu alaykum! Men HamshiraGo tibbiy yordamchisiman. Alomatlaringizni tasvirlab bering, men sizga kerakli mutaxassisni tanlashga yordam beraman.",
+    "placeholder": "Alomatlarni tasvirlang...",
+    "send": "Yuborish",
+    "typing": "Yozmoqda...",
+    "recommendation": "Tavsiya",
+    "suggestedSpec": "Tavsiya etilgan mutaxassis",
+    "findDoctor": "Shifokor topish",
+    "banner": "Qaysi xizmatni tanlashni bilmayapsizmi?",
+    "bannerDesc": "Alomatlarni AI yordamchiga tasvirlang",
+    "unavailable": "AI yordamchi vaqtincha ishlamayapti"
+  },
+  "doctors": {
+    "title": "Shifokorlar",
+    "price": "{{price}} UZS / konsultatsiya",
+    "rating": "{{rating}} ({{count}} konsultatsiya)",
+    "book": "Yozilish",
+    "noResults": "Shifokorlar topilmadi"
+  },
+  "consultation": {
+    "title": "Konsultatsiyaga yozilish",
+    "confirm": "Yozilishni tasdiqlash",
+    "symptoms": "Alomatlaringiz",
+    "price": "Narxi: {{price}} UZS",
+    "fee": "Xizmat komissiyasi: {{fee}} UZS",
+    "booked": "Konsultatsiya yozildi!",
+    "myConsultations": "Mening konsultatsiyalarim",
+    "pending": "Kutilmoqda",
+    "active": "Faol",
+    "completed": "Yakunlandi",
+    "canceled": "Bekor qilindi",
+    "doctorNotes": "Shifokor xulosasi",
+    "noConsultations": "Konsultatsiyalar yo'q"
   }
 }

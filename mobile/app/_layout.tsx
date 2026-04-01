@@ -212,6 +212,10 @@ function RootLayoutNav() {
         <Stack.Screen name="order" options={{ headerShown: false }} />
         <Stack.Screen name="loyalty" options={{ title: 'Loyalty' }} />
         <Stack.Screen name="subscriptions" options={{ title: 'Subscriptions' }} />
+        <Stack.Screen name="ai-chat" options={{ title: 'AI Chat' }} />
+        <Stack.Screen name="doctors" options={{ title: 'Doctors' }} />
+        <Stack.Screen name="consultation" options={{ title: 'Consultation' }} />
+        <Stack.Screen name="consultations" options={{ title: 'Consultations' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

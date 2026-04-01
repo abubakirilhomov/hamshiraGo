@@ -1,5 +1,30 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-03-31 (AI Chat + Consultations UI -- mobile client)
+
+- **[feature]** AI Chat screen `mobile/app/ai-chat.tsx` -- chat interface with AI medical assistant, message bubbles (user/assistant), typing indicator, recommendation cards with "Find Doctor" button, KeyboardAvoidingView, auto-scroll
+- **[feature]** Doctors list screen `mobile/app/doctors.tsx` -- filterable by specialization, doctor cards with photo (expo-image + blurhash), rating, price, "Book" button, empty state
+- **[feature]** Consultation booking screen `mobile/app/consultation.tsx` -- doctor info card, symptoms summary from AI chat, price/fee display, confirm booking flow
+- **[feature]** My Consultations screen `mobile/app/consultations.tsx` -- paginated FlashList, status badges (PENDING/ACTIVE/COMPLETED/CANCELED), doctor notes alert on tap, load more
+- **[feature]** AI assistant banner on home screen `mobile/app/(tabs)/index.tsx` -- prominent card linking to /ai-chat
+- **[feature]** Profile quick links `mobile/app/(tabs)/profile.tsx` -- added "My Consultations" and "AI Assistant" links
+- **[routing]** Registered 4 new Stack.Screen routes in `mobile/app/_layout.tsx` (ai-chat, doctors, consultation, consultations)
+- **[i18n]** Added `aiChat.*`, `doctors.*`, `consultation.*` keys to `mobile/i18n/ru.json` and `mobile/i18n/uz.json`
+
+## 2026-03-31 (AI Agent + Online Consultations module)
+
+- **[feature]** Complete Consultations module -- `backend/src/consultations/` (entities, services, controller, module, DTOs)
+  - Doctor entity: name, nameUz, specialization, bio, photoUrl, pricePerConsultation, phone, rating, consultationCount
+  - Consultation entity: clientId, doctorId, status (PENDING/ACTIVE/COMPLETED/CANCELED), symptoms, suggestedSpecialization, doctorNotes, createdOrderId, price, platformFee (15%)
+  - ChatMessage entity: consultationId (nullable for triage), userId, role (user/assistant/doctor), content
+  - AiAgentService: Claude Haiku integration via @anthropic-ai/sdk, medical triage system prompt, parseRecommendation() for specialization extraction, graceful fallback when API key missing
+  - ConsultationsService: getDoctors (with specialization filter), createConsultation, completeConsultation, cancelConsultation, getMyConsultations (paginated), getConsultation (with messages), saveChatMessage, admin CRUD for doctors, stats
+  - Client endpoints: POST /consultations/ai-chat, GET /consultations/doctors, GET /consultations/doctors/:id, POST /consultations, GET /consultations/my, GET /consultations/:id
+  - Admin endpoints: POST/PATCH/GET /consultations/admin/doctors, PATCH /consultations/admin/:id/complete, PATCH /consultations/admin/:id/cancel, GET /consultations/admin/stats
+- **[dependency]** Installed @anthropic-ai/sdk for Claude API integration -- `backend/package.json`
+- **[migration]** SQL migration `backend/migrations/004_consultations.sql` -- doctors, consultations, chat_messages tables, indexes, seed 6 sample doctors with different specializations
+- **[integration]** Registered ConsultationsModule in AppModule -- `backend/src/app.module.ts`
+
 ## 2026-03-31 (Subscriptions UI -- mobile client)
 
 - **[feature]** Subscriptions screen `mobile/app/subscriptions.tsx` -- active subscription card with progress bar and cancel button, available tiers list with purchase flow, i18n support (ru/uz)

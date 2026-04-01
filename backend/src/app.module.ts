@@ -24,6 +24,7 @@ import { TreatmentCoursesModule } from './treatment-courses/treatment-courses.mo
 import { ReviewsModule } from './reviews/reviews.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { ConsultationsModule } from './consultations/consultations.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     ReviewsModule,
     LoyaltyModule,
     SubscriptionsModule,
+    ConsultationsModule,
   ],
   controllers: [AppController],
   providers: [
