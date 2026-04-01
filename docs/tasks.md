@@ -314,37 +314,50 @@
 
 ---
 
-## ⚡ V2 — месяц 3–6
+## ⚡ V2 — месяц 3–6 (COMPLETED 2026-03-31)
 
-### Программа лояльности — Абубакир (backend)
-- [ ] Backend: счётчик заказов клиента, каждый 5-й заказ — автоматическая скидка
-- [ ] Backend: начисление бонусных баллов за заказы
-- [ ] Mobile/Web: экран «Мои бонусы» с прогресс-баром до следующей скидки
+### Программа лояльности — DONE
+- [x] Backend: LoyaltyTransaction entity, awardPoints с tier multipliers, spendPoints, getBalance, getHistory
+- [x] Backend: endpoints GET /loyalty/my, GET /loyalty/history, POST /loyalty/redeem
+- [x] Backend: автоначисление при DONE, milestone bonus каждые 5 заказов
+- [x] Mobile: экран «Мои бонусы» с прогресс-баром, тирами, историей, redemption
 
-### Семейные пакеты / подписки — Абубакир (backend) + Диёр (web/mobile)
-- [ ] Backend: сущность `Subscription` (тип пакета, кол-во визитов, цена, срок)
-- [ ] Backend: логика списания визитов из пакета при заказе
-- [ ] Mobile/Web: экран выбора подписки + управление пакетом
-- [ ] Admin: управление тарифами подписок
+### Семейные пакеты / подписки — DONE
+- [x] Backend: SubscriptionTier + Subscription entities, purchase с pessimistic lock
+- [x] Backend: endpoints GET /subscriptions/tiers, GET /subscriptions/my, POST /subscriptions/purchase, POST /subscriptions/cancel
+- [x] Backend: auto-discount при создании заказа, cron expiry ежедневно 3 AM
+- [x] Admin: CRUD тарифов + статистика
+- [x] Mobile: экран подписок с покупкой, отменой, info на confirm screen
 
 ### NPS-опросы — Абубакир (backend)
 - [ ] Backend: cron — раз в месяц отправка NPS-опроса активным клиентам (push/Telegram)
 - [ ] Backend: сбор и хранение NPS-ответов
 - [ ] Admin: дашборд NPS с графиком по месяцам
 
-### 🤖 ИИ-агент + онлайн-консультация — Абубакир (backend)
-- [ ] Backend: интеграция с AI API (Claude/OpenAI) — чат-бот для первичной сортировки симптомов
-- [ ] Backend: сущность `Doctor` (специализация, расписание, цена консультации)
-- [ ] Backend: логика маршрутизации — ИИ определяет специализацию → предлагает врача
-- [ ] Backend: видео/чат консультация (интеграция с Agora/WebRTC или Telegram видеозвонок)
-- [ ] Backend: связка — врач назначает лечение → автоматическое создание заказа на медсестру
-- [ ] Mobile/Web: экран чат-бота «Опишите симптомы»
-- [ ] Mobile/Web: экран онлайн-консультации с врачом
-- [ ] Комиссия 15–20% с консультации врача
+### ИИ-агент + онлайн-консультация — DONE
+- [x] Backend: AiAgentService (Claude Haiku), Doctor/Consultation/ChatMessage entities
+- [x] Backend: POST /consultations/ai-chat, GET /consultations/doctors, POST /consultations, GET /consultations/my
+- [x] Backend: Admin CRUD для врачей, complete/cancel консультаций, статистика
+- [x] Mobile: AI Chat screen, Doctors list, Consultation booking, My Consultations
+- [ ] Backend: видео/чат консультация (Agora/WebRTC) — перенесено в V3
+- [ ] Backend: связка — врач назначает лечение -> автосоздание заказа на медсестру — перенесено в V3
 
 ---
 
-## 💡 Идеи / V2+
+## ⚡ V3 — roadmap
+
+- [ ] Видео/чат консультация с врачом (Agora/WebRTC или Telegram видеозвонок)
+- [ ] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру
+- [ ] NPS-опросы: cron + дашборд в admin
+- [ ] Web: экран оценки после завершения заказа (звезды + комментарий)
+- [ ] Web: переключатель «Срочный вызов» при создании заказа
+- [ ] Web/Web-medic: глобальный error handler -> POST /client-errors
+- [ ] Admin: страница «User Support» — таблица ошибок с фильтрами + детальная карточка
+- [ ] Admin: счетчик новых ошибок в сайдбаре (бейдж)
+- [ ] Admin: на карте медиков отображать их геозоны
+- [ ] Loyalty/Subscriptions UI для web client
+
+## 💡 Идеи / V3+
 
 - [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
 - [ ] Аналитика в admin: графики заказов, выручка, топ медики

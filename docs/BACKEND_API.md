@@ -332,4 +332,231 @@ Allowlist задаётся в `backend/src/common/cors.config.ts` и испол�
 
 ---
 
-Последнее обновление: 2026-03-30
+## 18. Reviews
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/reviews` | JWT (client/medic) | Оставить отзыв после DONE |
+| `GET` | `/reviews/medic/:id` | No | Отзывы о медике (пагинация) |
+| `GET` | `/reviews/client/:id` | No | Отзывы о клиенте (пагинация) |
+| `GET` | `/reviews/order/:id` | JWT | Отзывы по заказу |
+
+`POST /reviews` body:
+
+```json
+{
+  "orderId": "uuid",
+  "rating": 5,
+  "comment": "Отличный специалист",
+  "targetRole": "medic"
+}
+```
+
+Notes:
+- `targetRole`: `medic` (клиент оценивает медика) или `client` (медик оценивает клиента)
+- Unique constraint: `(orderId, authorRole, targetRole)` — один отзыв на роль за заказ
+- Автоматически пересчитывает `averageRating` у целевого пользователя
+- Cron: каждые 15 мин отправляет push/Telegram напоминание если отзыв не оставлен через 1 час после DONE
+
+---
+
+## 19. Loyalty
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/loyalty/my` | Client JWT | Баланс очков + tier info |
+| `GET` | `/loyalty/history` | Client JWT | Пагинированная история транзакций |
+| `POST` | `/loyalty/redeem` | Client JWT | Списать баллы на скидку |
+
+`GET /loyalty/my` response:
+
+```json
+{
+  "points": 150,
+  "tier": "SILVER",
+  "nextTier": "GOLD",
+  "nextTierThreshold": 500,
+  "pointsToNextTier": 350
+}
+```
+
+`GET /loyalty/history?page=1&limit=20` response:
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "type": "EARNED",
+      "points": 10,
+      "description": "Order completed",
+      "createdAt": "2026-03-31T..."
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
+
+`POST /loyalty/redeem` body:
+
+```json
+{ "points": 100 }
+```
+
+Response:
+
+```json
+{
+  "discountAmount": 10000,
+  "remainingPoints": 50
+}
+```
+
+Notes:
+- Тиры: BRONZE (0), SILVER (100 points), GOLD (500 points)
+- Tier multipliers: BRONZE x1, SILVER x1.5, GOLD x2
+- Milestone bonus: каждые 5 заказов
+- Баллы начисляются автоматически при переходе заказа в DONE
+- Конвертация: очки -> UZS через `redemptionRate` из AppSettings
+- AppSettings: `pointsPerOrder`, `silverThreshold`, `goldThreshold`, `redemptionRate`
+
+---
+
+## 20. Subscriptions
+
+### Client endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/subscriptions/tiers` | No | Доступные тарифы подписок |
+| `GET` | `/subscriptions/my` | Client JWT | Активная подписка |
+| `POST` | `/subscriptions/purchase` | Client JWT | Купить подписку |
+| `POST` | `/subscriptions/cancel` | Client JWT | Отменить подписку |
+
+### Admin endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/subscriptions/admin/tiers` | Admin | Все тарифы (включая неактивные) |
+| `POST` | `/subscriptions/admin/tiers` | Admin | Создать тариф |
+| `PATCH` | `/subscriptions/admin/tiers/:id` | Admin | Обновить тариф |
+| `GET` | `/subscriptions/admin/stats` | Admin | Статистика подписок |
+
+`POST /subscriptions/purchase` body:
+
+```json
+{ "tierId": "uuid" }
+```
+
+`GET /subscriptions/tiers` response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Базовый",
+    "nameUz": "Asosiy",
+    "description": "5 визитов со скидкой 10%",
+    "price": 150000,
+    "billingDays": 30,
+    "maxOrders": 5,
+    "discountPercent": 10,
+    "sortOrder": 1
+  }
+]
+```
+
+Notes:
+- `purchase()` uses pessimistic lock to prevent double-purchase
+- При создании заказа автоматически применяется `discountPercent` из активной подписки
+- `ordersUsed` инкрементируется атомарно после создания заказа
+- Cron: ежедневно в 3:00 истекает просроченные подписки + push уведомление
+
+---
+
+## 21. Consultations / AI Agent
+
+### Client endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/consultations/ai-chat` | Client JWT | Чат с AI ассистентом |
+| `GET` | `/consultations/doctors` | No | Список врачей |
+| `GET` | `/consultations/doctors/:id` | No | Детали врача |
+| `POST` | `/consultations` | Client JWT | Создать консультацию |
+| `GET` | `/consultations/my` | Client JWT | Мои консультации (пагинация) |
+| `GET` | `/consultations/:id` | Client JWT | Детали консультации (с сообщениями) |
+
+### Admin endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/consultations/admin/doctors` | Admin | Добавить врача |
+| `PATCH` | `/consultations/admin/doctors/:id` | Admin | Обновить врача |
+| `GET` | `/consultations/admin/doctors` | Admin | Список врачей |
+| `PATCH` | `/consultations/admin/:id/complete` | Admin | Завершить консультацию |
+| `PATCH` | `/consultations/admin/:id/cancel` | Admin | Отменить консультацию |
+| `GET` | `/consultations/admin/stats` | Admin | Статистика консультаций |
+
+`POST /consultations/ai-chat` body:
+
+```json
+{
+  "messages": [
+    { "role": "user", "content": "У меня болит горло и температура 38" }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "reply": "Судя по вашим симптомам...",
+  "recommendation": {
+    "specialization": "therapist",
+    "urgency": "normal"
+  }
+}
+```
+
+`POST /consultations` body:
+
+```json
+{
+  "doctorId": "uuid",
+  "symptoms": "Боль в горле, температура",
+  "suggestedSpecialization": "therapist"
+}
+```
+
+`GET /consultations/doctors?specialization=therapist` response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Dr. Alisher Karimov",
+    "nameUz": "Dr. Alisher Karimov",
+    "specialization": "therapist",
+    "bio": "10 лет опыта...",
+    "photoUrl": "https://...",
+    "pricePerConsultation": 50000,
+    "rating": 4.8,
+    "consultationCount": 120
+  }
+]
+```
+
+Notes:
+- AI Agent использует Claude Haiku через `@anthropic-ai/sdk`
+- Если `ANTHROPIC_API_KEY` не задан — возвращает сообщение "ИИ-ассистент временно недоступен"
+- Статусы консультации: `PENDING -> ACTIVE -> COMPLETED` (или `CANCELED`)
+- `platformFee` = 15% от `pricePerConsultation`
+- Сущности: `Doctor`, `Consultation`, `ChatMessage`
+
+---
+
+Последнее обновление: 2026-03-31

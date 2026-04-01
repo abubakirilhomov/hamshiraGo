@@ -1,5 +1,21 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-03-31 (Full Documentation Sync)
+
+- **[docs]** Created `docs/PRODUCTION_SETUP.md` -- comprehensive production deployment guide with Railway env vars (critical/payments/AI/Telegram/Cloudinary/VAPID/optional), database migration instructions, mobile app EAS setup, web app deployment, security checklist, graceful fallbacks table, monitoring/cron jobs overview, architecture diagram
+- **[docs]** Updated `docs/BACKEND_API.md` -- added sections 18-21: Reviews (POST/GET endpoints, unique constraints, cron reminders), Loyalty (GET /loyalty/my, GET /loyalty/history, POST /loyalty/redeem with tier system), Subscriptions (client + admin endpoints, purchase/cancel/tiers), Consultations/AI Agent (ai-chat, doctors, consultations, admin CRUD)
+- **[docs]** Updated `docs/tasks.md` -- marked V2 section as COMPLETED (Loyalty, Subscriptions, AI Agent + Consultations), added V3 roadmap section with carried-over items (video consultations, NPS, web features, admin improvements), separated V3+ ideas
+- **[docs]** Updated `docs/done.md` -- added V2 consolidated summary section
+
+## 2026-03-31 (V2 Consolidated Summary)
+
+- **[backend]** V2-A Loyalty Points: complete module with LoyaltyTransaction entity, tier system (BRONZE/SILVER/GOLD with multipliers), awardPoints/spendPoints with pessimistic locks, milestone bonuses, 3 endpoints (GET /loyalty/my, GET /loyalty/history, POST /loyalty/redeem), auto-award on DONE, AppSettings config -- `backend/src/loyalty/`, `backend/migrations/002_loyalty.sql`
+- **[backend]** V2-B Subscriptions: complete module with SubscriptionTier + Subscription entities, purchase with pessimistic lock, cancel, getSubscriptionDiscount, incrementOrdersUsed, daily cron expiry at 3 AM with push, client + admin endpoints -- `backend/src/subscriptions/`, `backend/migrations/003_subscriptions.sql`
+- **[backend]** V2-C AI Agent + Consultations: complete module with Doctor/Consultation/ChatMessage entities, AiAgentService (Claude Haiku via @anthropic-ai/sdk), medical triage system prompt, specialization extraction, graceful fallback, client + admin endpoints, 15% platformFee -- `backend/src/consultations/`, `backend/migrations/004_consultations.sql`
+- **[mobile]** V2-A Loyalty UI: loyalty screen with points balance, tier badge, progress bar, redeem bottom sheet, paginated transaction history; profile card; order confirm info; order track earned notice -- `mobile/app/loyalty.tsx`
+- **[mobile]** V2-B Subscriptions UI: subscriptions screen with active sub card, available tiers, purchase/cancel flow; profile card; order confirm discount info -- `mobile/app/subscriptions.tsx`
+- **[mobile]** V2-C Consultations UI: AI Chat screen, Doctors list (filterable by specialization), Consultation booking, My Consultations (paginated), home banner, profile quick links -- `mobile/app/ai-chat.tsx`, `mobile/app/doctors.tsx`, `mobile/app/consultation.tsx`, `mobile/app/consultations.tsx`
+
 ## 2026-03-31 (AI Chat + Consultations UI -- mobile client)
 
 - **[feature]** AI Chat screen `mobile/app/ai-chat.tsx` -- chat interface with AI medical assistant, message bubbles (user/assistant), typing indicator, recommendation cards with "Find Doctor" button, KeyboardAvoidingView, auto-scroll
