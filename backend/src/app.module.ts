@@ -23,6 +23,7 @@ import { ReferralsModule } from './referrals/referrals.module';
 import { TreatmentCoursesModule } from './treatment-courses/treatment-courses.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { LoyaltyModule } from './loyalty/loyalty.module';
     TreatmentCoursesModule,
     ReviewsModule,
     LoyaltyModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -29,6 +29,21 @@ interface AppSettings {
   urgentEndHour: number;
 }
 
+interface SubscriptionTier {
+  id: string;
+  name: string;
+  nameUz: string;
+  discountPercent: number;
+  maxOrders: number;
+}
+
+interface ActiveSubscription {
+  id: string;
+  tier: SubscriptionTier;
+  status: 'ACTIVE' | 'EXPIRED' | 'CANCELED';
+  ordersUsed: number;
+}
+
 export default function OrderConfirmScreen() {
   const router = useRouter();
   const { token } = useAuth();
@@ -42,6 +57,7 @@ export default function OrderConfirmScreen() {
   const [isUrgent, setIsUrgent] = useState(false);
   const [urgentFeePercent, setUrgentFeePercent] = useState(50);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [activeSub, setActiveSub] = useState<ActiveSubscription | null>(null);
 
   const params = useLocalSearchParams<{
     serviceId: string;
@@ -70,6 +86,12 @@ export default function OrderConfirmScreen() {
 
     apiFetch<{ points: number }>('/loyalty/my', { token: token ?? undefined })
       .then((res) => setLoyaltyPoints(res?.points ?? 0))
+      .catch(() => {}); // non-critical
+
+    apiFetch<ActiveSubscription | null>('/subscriptions/my', { token: token ?? undefined })
+      .then((res) => {
+        if (res && res.status === 'ACTIVE') setActiveSub(res);
+      })
       .catch(() => {}); // non-critical
 
     apiFetch<AppSettings>('/settings')
@@ -221,6 +243,26 @@ export default function OrderConfirmScreen() {
           </Text>
           <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
         </Pressable>
+      )}
+
+      {/* Subscription discount info */}
+      {activeSub && activeSub.ordersUsed < activeSub.tier.maxOrders && (
+        <View style={styles.subscriptionInfoCard}>
+          <FontAwesome name="id-card" size={16} color={Theme.primary} />
+          <Text style={styles.subscriptionInfoText}>
+            {t('subscription.subscriptionDiscount', {
+              percent: String(activeSub.tier.discountPercent),
+            })} ({Math.round(basePrice * activeSub.tier.discountPercent / 100).toLocaleString('ru-RU')} UZS)
+          </Text>
+        </View>
+      )}
+      {activeSub && activeSub.ordersUsed >= activeSub.tier.maxOrders && (
+        <View style={styles.subscriptionWarningCard}>
+          <FontAwesome name="exclamation-triangle" size={16} color={Theme.warning} />
+          <Text style={styles.subscriptionWarningText}>
+            {t('subscription.limitReached')}
+          </Text>
+        </View>
       )}
 
       <View style={styles.priceBlock}>
@@ -425,6 +467,40 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Theme.primary,
+  },
+  subscriptionInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}30`,
+  },
+  subscriptionInfoText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.primary,
+  },
+  subscriptionWarningCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#fef3c7',
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  subscriptionWarningText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#854d0e',
   },
   buttons: { gap: Spacing.md },
   button: { paddingVertical: Spacing.lg, borderRadius: Radius.md, alignItems: 'center' },

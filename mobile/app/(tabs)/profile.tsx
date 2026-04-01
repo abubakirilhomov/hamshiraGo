@@ -25,6 +25,23 @@ interface LoyaltyBalance {
   nextTierName: string | null;
 }
 
+interface SubscriptionTier {
+  id: string;
+  name: string;
+  nameUz: string;
+  discountPercent: number;
+  maxOrders: number;
+}
+
+interface Subscription {
+  id: string;
+  tierId: string;
+  tier: SubscriptionTier;
+  status: 'ACTIVE' | 'EXPIRED' | 'CANCELED';
+  ordersUsed: number;
+  expiresAt: string;
+}
+
 const TIER_EMOJI: Record<string, string> = {
   BRONZE: '\uD83E\uDD49',
   SILVER: '\uD83E\uDD48',
@@ -53,6 +70,7 @@ export default function ProfileScreen() {
   const [activeOrders, setActiveOrders] = useState(0);
   const [logoutModal, setLogoutModal] = useState(false);
   const [loyalty, setLoyalty] = useState<LoyaltyBalance | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -68,6 +86,12 @@ export default function ProfileScreen() {
           if (cached) setLoyalty(cached);
         } catch {}
       });
+
+    apiFetch<Subscription | null>('/subscriptions/my', { token })
+      .then((data) => {
+        if (data) setSubscription(data);
+      })
+      .catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -167,6 +191,45 @@ export default function ProfileScreen() {
         </Pressable>
       )}
 
+      {/* Subscription card */}
+      {subscription && subscription.status === 'ACTIVE' ? (
+        <Pressable
+          style={({ pressed }) => [styles.subscriptionCard, pressed && { opacity: 0.85 }]}
+          onPress={() => router.push('/subscriptions')}
+        >
+          <View style={styles.loyaltyRow}>
+            <View style={styles.loyaltyLeft}>
+              <FontAwesome name="id-card" size={22} color={Theme.primary} />
+              <View>
+                <Text style={styles.loyaltyLabel}>
+                  {t('subscription.active')}: {language === 'uz' && subscription.tier.nameUz ? subscription.tier.nameUz : subscription.tier.name}
+                </Text>
+                <Text style={styles.subscriptionDetail}>
+                  {t('subscription.discountPercent', { percent: String(subscription.tier.discountPercent) })} | {subscription.ordersUsed}/{subscription.tier.maxOrders} {t('subscription.ordersLabel')}
+                </Text>
+              </View>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={Theme.primary} />
+          </View>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={({ pressed }) => [styles.subscriptionCardInactive, pressed && { opacity: 0.85 }]}
+          onPress={() => router.push('/subscriptions')}
+        >
+          <View style={styles.loyaltyRow}>
+            <View style={styles.loyaltyLeft}>
+              <FontAwesome name="id-card-o" size={22} color={Theme.textSecondary} />
+              <View>
+                <Text style={styles.loyaltyLabel}>{t('subscription.noSubscription')}</Text>
+                <Text style={styles.subscriptionViewPlans}>{t('subscription.viewPlans')}</Text>
+              </View>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={Theme.textSecondary} />
+          </View>
+        </Pressable>
+      )}
+
       {/* Info card */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('profile.accountInfo')}</Text>
@@ -198,6 +261,11 @@ export default function ProfileScreen() {
         <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/loyalty')}>
           <FontAwesome name="trophy" size={15} color={Theme.primary} style={styles.linkIcon} />
           <Text style={styles.linkText}>{t('loyalty.title')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/subscriptions')}>
+          <FontAwesome name="id-card" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('subscription.title')}</Text>
           <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
         </Pressable>
         <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/referral')}>
@@ -403,6 +471,37 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: Theme.primary,
+  },
+
+  subscriptionCard: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: `${Theme.primary}10`,
+    borderRadius: 14,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: `${Theme.primary}30`,
+  },
+  subscriptionCardInactive: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    backgroundColor: Theme.surface,
+    borderRadius: 14,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Theme.border,
+  },
+  subscriptionDetail: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Theme.primary,
+    marginTop: 2,
+  },
+  subscriptionViewPlans: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Theme.textTertiary,
+    marginTop: 2,
   },
 
   logoutBtn: {

@@ -17,6 +17,7 @@ import { ServicesService } from '../services/services.service';
 import { DispatchService } from './dispatch.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { LoyaltyService } from '../loyalty/loyalty.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
@@ -66,6 +67,7 @@ export class OrdersService {
     private dispatchService: DispatchService,
     private appSettingsService: AppSettingsService,
     private loyaltyService: LoyaltyService,
+    private subscriptionsService: SubscriptionsService,
     private dataSource: DataSource,
   ) {}
 
@@ -272,7 +274,24 @@ export class OrdersService {
     const isUrgent = dto.isUrgent === true || isNightHour;
     const urgentFee = isUrgent ? Math.round(service.price * urgentFeePercent / 100) : 0;
 
-    const netPrice = service.price + urgentFee - discountAmount;
+    // Apply subscription discount (if user has an active subscription with remaining orders)
+    let subDiscount = { discountPercent: 0, subscriptionId: null as string | null };
+    try {
+      subDiscount = await this.subscriptionsService.getSubscriptionDiscount(clientId);
+    } catch (err) {
+      this.logger.warn(`Subscription discount check failed: ${err}`);
+    }
+    let totalDiscount = discountAmount;
+    if (subDiscount.discountPercent > 0) {
+      const subDiscountAmount = Math.round(service.price * subDiscount.discountPercent / 100);
+      totalDiscount += subDiscountAmount;
+    }
+    // Cap total discount at service price + urgentFee
+    if (totalDiscount > service.price + urgentFee) {
+      totalDiscount = service.price + urgentFee;
+    }
+
+    const netPrice = service.price + urgentFee - totalDiscount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
     const saved = await this.dataSource.transaction(async (manager) => {
@@ -281,7 +300,7 @@ export class OrdersService {
         serviceId: service.id,
         serviceTitle: service.title,
         priceAmount: service.price,
-        discountAmount,
+        discountAmount: totalDiscount,
         isUrgent,
         urgentFee,
         platformFee,
@@ -299,6 +318,13 @@ export class OrdersService {
       return savedOrder;
     });
     const fullOrder = await this.findOne(saved.id);
+
+    // Increment subscription usage after successful order creation
+    if (subDiscount.subscriptionId) {
+      this.subscriptionsService.incrementOrdersUsed(subDiscount.subscriptionId).catch((err) => {
+        this.logger.error(`Failed to increment subscription usage: ${err}`);
+      });
+    }
 
     // Start automatic dispatch (Yandex-taxi-style push-based assignment)
     this.dispatchService.startDispatch(saved.id).catch((err) => {

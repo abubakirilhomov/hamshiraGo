@@ -1,5 +1,28 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-03-31 (Subscriptions UI -- mobile client)
+
+- **[feature]** Subscriptions screen `mobile/app/subscriptions.tsx` -- active subscription card with progress bar and cancel button, available tiers list with purchase flow, i18n support (ru/uz)
+- **[feature]** Subscription card on profile `mobile/app/(tabs)/profile.tsx` -- fetches `/subscriptions/my`, shows active subscription info or "no subscription" link, added subscriptions quick link
+- **[feature]** Subscription discount info on order confirm `mobile/app/order/confirm.tsx` -- fetches active subscription, shows discount percentage info card or limit reached warning
+- **[feature]** Subscriptions route registered in `mobile/app/_layout.tsx`
+- **[i18n]** Added `subscription.*` keys to `mobile/i18n/ru.json` and `mobile/i18n/uz.json` (22 keys each)
+
+## 2026-03-31 (Subscriptions/Packages module)
+
+- **[feature]** Complete Subscriptions module -- `backend/src/subscriptions/` (entities, service, controller, module, DTOs)
+  - SubscriptionTier entity: name, nameUz, description, price, billingDays, maxOrders, discountPercent, isActive, sortOrder
+  - Subscription entity: userId, tierId, status (ACTIVE/EXPIRED/CANCELED), ordersUsed, startDate, expiresAt
+  - `purchase()` with pessimistic lock to prevent double-purchase
+  - `cancel()` sets status=CANCELED
+  - `getSubscriptionDiscount()` checks active sub with remaining orders, returns discountPercent
+  - `incrementOrdersUsed()` atomic increment
+  - Daily cron at 3 AM expires overdue subscriptions and sends push notification
+  - Client endpoints: GET /subscriptions/tiers, GET /subscriptions/my, POST /subscriptions/purchase, POST /subscriptions/cancel
+  - Admin endpoints: GET/POST /subscriptions/admin/tiers, PATCH /subscriptions/admin/tiers/:id, GET /subscriptions/admin/stats
+- **[feature]** Integrated subscription discount into OrdersService `create()` -- applies discountPercent from active subscription, increments ordersUsed after order creation -- `backend/src/orders/orders.service.ts`
+- **[migration]** SQL migration `backend/migrations/003_subscriptions.sql` -- subscription_tiers, subscriptions tables, indexes, seed 3 default tiers
+
 ## 2026-03-31 (Loyalty Points UI -- mobile client)
 
 - **[feature]** Loyalty screen `mobile/app/loyalty.tsx` -- points balance card with gradient, tier badge (BRONZE/SILVER/GOLD), progress bar to next tier, redeem bottom sheet modal with preset buttons and discount estimate, paginated transaction history via FlashList
