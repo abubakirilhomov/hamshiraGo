@@ -4,7 +4,9 @@
   "description": "Playwright API tests for HamshiraGo backend",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test api/",
+    "test:api": "playwright test --project=api",
+    "test:web": "playwright test --project=web",
+    "test:admin": "playwright test --project=admin",
     "test:report": "playwright show-report"
   },
   "devDependencies": {
