@@ -174,7 +174,7 @@ export default function AuthScreen() {
             placeholder={t('auth.passwordPlaceholder')}
             placeholderTextColor={Theme.textSecondary}
             testID="auth_password_input"
-            secureTextEntry
+            secureTextEntry={!__DEV__}
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
             accessibilityLabel="Пароль"

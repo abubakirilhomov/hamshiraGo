@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -8,20 +9,33 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import {
-  LiveKitRoom,
-  VideoTrack,
-  AudioSession,
-  useTracks,
-  useParticipants,
-  isTrackReference,
-} from '@livekit/react-native';
-import { Track } from 'livekit-client';
 import { Text } from '@/components/Themed';
 import { Theme, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+
+// LiveKit is a native module — lazy load to avoid crash in Expo Go
+let LiveKitRoom: any = null;
+let VideoTrack: any = null;
+let AudioSession: any = null;
+let useTracks: any = () => [];
+let useParticipants: any = () => [];
+let isTrackReference: any = () => false;
+let Track: any = { Source: { Camera: 'camera', ScreenShare: 'screen_share' } };
+
+try {
+  const lk = require('@livekit/react-native');
+  LiveKitRoom = lk.LiveKitRoom;
+  VideoTrack = lk.VideoTrack;
+  AudioSession = lk.AudioSession;
+  useTracks = lk.useTracks;
+  useParticipants = lk.useParticipants;
+  isTrackReference = lk.isTrackReference;
+  Track = require('livekit-client').Track;
+} catch {
+  // LiveKit not available (Expo Go) — will show error UI
+}
 
 export default function VideoCallScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
@@ -36,13 +50,29 @@ export default function VideoCallScreen() {
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
 
+  // Check if LiveKit is available
+  if (!LiveKitRoom) {
+    return (
+      <View style={s.center}>
+        <FontAwesome name="video-camera" size={48} color="#6B7280" />
+        <Text style={s.errorText}>{t('videoCall.error')}</Text>
+        <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', paddingHorizontal: 32 }}>
+          Видеозвонки требуют dev build. Expo Go не поддерживается.
+        </Text>
+        <Pressable style={s.backBtn} onPress={() => router.back()}>
+          <Text style={s.backBtnText}>{t('nps.done')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   // Initialize call
   useEffect(() => {
     if (!consultationId || !authToken) return;
 
     (async () => {
       try {
-        await AudioSession.startAudioSession();
+        if (AudioSession) await AudioSession.startAudioSession();
 
         const res = await apiFetch(
           `/consultations/${consultationId}/call`,
@@ -65,7 +95,7 @@ export default function VideoCallScreen() {
     })();
 
     return () => {
-      AudioSession.stopAudioSession();
+      if (AudioSession) AudioSession.stopAudioSession();
     };
   }, [consultationId, authToken]);
 
@@ -156,15 +186,14 @@ function VideoLayout() {
   const participants = useParticipants();
 
   const remoteTracks = tracks.filter(
-    (t) => isTrackReference(t) && !t.participant.isLocal,
+    (t: any) => isTrackReference(t) && !t.participant.isLocal,
   );
   const localTrack = tracks.find(
-    (t) => isTrackReference(t) && t.participant.isLocal && t.source === Track.Source.Camera,
+    (t: any) => isTrackReference(t) && t.participant.isLocal && t.source === Track.Source.Camera,
   );
 
   return (
     <View style={s.videoContainer}>
-      {/* Remote video (full screen) */}
       {remoteTracks.length > 0 && isTrackReference(remoteTracks[0]) ? (
         <VideoTrack trackRef={remoteTracks[0]} style={s.remoteVideo} />
       ) : (
@@ -174,14 +203,12 @@ function VideoLayout() {
         </View>
       )}
 
-      {/* Local video (small pip) */}
-      {localTrack && isTrackReference(localTrack) && (
+      {localTrack && isTrackReference(localTrack) && VideoTrack && (
         <View style={s.localVideoWrapper}>
           <VideoTrack trackRef={localTrack} style={s.localVideo} />
         </View>
       )}
 
-      {/* Participant count */}
       <View style={s.participantBadge}>
         <FontAwesome name="users" size={12} color="#fff" />
         <Text style={s.participantText}>{participants.length}</Text>
@@ -238,7 +265,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Radius.full,
+    borderRadius: 999,
   },
   participantText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   controls: {
