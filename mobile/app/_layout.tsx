@@ -159,8 +159,7 @@ function RootLayoutNav() {
   // NPS: check if user should see survey (once per app open when logged in)
   useEffect(() => {
     if (!token || isLoading) return;
-    apiFetch('/nps/check', token)
-      .then((res) => (res.ok ? res.json() : null))
+    apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
       .then((data) => {
         if (data?.shouldShow) router.push('/nps');
       })
