@@ -340,37 +340,38 @@
 - [x] Backend: POST /consultations/ai-chat, GET /consultations/doctors, POST /consultations, GET /consultations/my
 - [x] Backend: Admin CRUD для врачей, complete/cancel консультаций, статистика
 - [x] Mobile: AI Chat screen, Doctors list, Consultation booking, My Consultations
+- [x] Backend: связка — врач назначает лечение -> автосоздание заказа на медсестру — **DONE** (Prescription entity)
 - [ ] Backend: видео/чат консультация (Agora/WebRTC) — перенесено в V3
-- [ ] Backend: связка — врач назначает лечение -> автосоздание заказа на медсестру — перенесено в V3
 
 ---
 
 ## 📌 Задачи Диёра (web / web-medic / admin / landing)
 
 > Backend и mobile части уже готовы. Диёр делает web/admin UI.
+> Анализ проведён 2026-04-02: сравнение mobile vs web, найдены все недостающие фичи.
 
-### V1 — до запуска (приоритет)
+### 🔴 Приоритет 1 — V1 до запуска
 
-#### 1. Web: экран оценки заказа
+#### D-1. Web: экран оценки заказа
 - [ ] Экран оценки после завершения заказа (звёзды + комментарий)
 - API: `POST /reviews` (body: `{ orderId, rating, comment, targetRole: "medic" }`)
 - API: `GET /reviews/order/:id` — проверить, оставлен ли отзыв
 - Референс: `mobile/components/RatingModal.tsx`
 
-#### 2. Web: срочный вызов при создании заказа
+#### D-2. Web: срочный вызов при создании заказа
 - [ ] Переключатель «Срочный вызов» на странице создания заказа
 - [ ] Отображение доплаты (urgentFee) в итоговой сумме
 - API: `POST /orders` принимает `isUrgent: true`
 - API: `GET /settings` — получить `urgentFeePercent`, `urgentStartHour`, `urgentEndHour`
 - Референс: `mobile/app/order/confirm.tsx`
 
-#### 3. Web / Web-medic: глобальный error handler
+#### D-3. Web / Web-medic: глобальный error handler
 - [ ] Перехват JS ошибок (window.onerror / ErrorBoundary)
 - [ ] Перехват ошибок API (fetch wrapper)
 - [ ] Отправка на `POST /client-errors` с полями: `message`, `stackTrace`, `screen`, `appType` (web/web-medic), `deviceInfo`, `appVersion`
 - Референс: `mobile/components/ErrorBoundary.tsx`
 
-#### 4. Admin: страница «User Support»
+#### D-4. Admin: страница «User Support»
 - [ ] Таблица ошибок: пользователь, сообщение, экран, устройство, дата, статус
 - [ ] Фильтры: по пользователю, дате, статусу (NEW / IN_PROGRESS / FIXED / IGNORED)
 - [ ] Детальная карточка ошибки: полный стек, устройство, история заказов пользователя
@@ -379,27 +380,116 @@
 - API: `GET /client-errors/admin/stats` — счётчики по статусам
 - API: `PATCH /client-errors/admin/:id` — смена статуса
 
-#### 5. Admin: геозоны медиков на карте
+#### D-5. Admin: геозоны медиков на карте
 - [ ] На карте медиков отображать workZone круги (полупрозрачные)
 - Данные: `workZoneLat`, `workZoneLng`, `workZoneRadius` из `GET /medics/admin/all`
 - Референс: `medic/app/work-zone.tsx` (circle overlay)
 
-### SEO лендинг
+### 🟠 Приоритет 2 — Фичи из mobile, отсутствующие в web
 
-#### 6. Landing: SEO-страницы
+#### D-6. Web: Loyalty (бонусная программа)
+- [ ] Страница `/loyalty` — баланс очков, тир (BRONZE/SILVER/GOLD), прогресс-бар до следующего тира
+- [ ] История транзакций (EARNED/SPENT/BONUS/MILESTONE) с пагинацией
+- [ ] Redemption: списание баллов на скидку (preset кнопки + manual input)
+- [ ] Карточка loyalty в профиле с очками и тиром
+- [ ] Info-блок на странице подтверждения заказа (доступная скидка)
+- API: `GET /loyalty/my`, `GET /loyalty/history?page=&limit=`, `POST /loyalty/redeem` (body: `{ points }`)
+- Референс: `mobile/app/loyalty.tsx`
+
+#### D-7. Web: Subscriptions (подписки)
+- [ ] Страница `/subscriptions` — доступные тарифы (название, цена, период, макс заказов, % скидки)
+- [ ] Активная подписка: карточка с прогресс-баром (использовано/доступно заказов), дата окончания
+- [ ] Покупка подписки + отмена
+- [ ] Info-блок на странице подтверждения заказа (% скидки от подписки)
+- API: `GET /subscriptions/tiers`, `GET /subscriptions/my`, `POST /subscriptions/purchase` (body: `{ tierId }`), `POST /subscriptions/cancel`
+- Референс: `mobile/app/subscriptions.tsx`
+
+#### D-8. Web: AI Chat (чат с ИИ-ассистентом)
+- [ ] Страница `/ai-chat` — чат-интерфейс с AI медицинским ассистентом
+- [ ] Сообщения user/assistant, индикатор набора текста
+- [ ] Карточка рекомендации (специализация + кнопка "Найти врача")
+- API: `POST /consultations/ai-chat` (body: `{ messages: [{ role, content }] }`)
+- Референс: `mobile/app/ai-chat.tsx`
+
+#### D-9. Web: Doctors (список врачей)
+- [ ] Страница `/doctors` — список врачей с фильтром по специализации
+- [ ] Карточка врача: фото, имя, специализация, рейтинг, цена, кол-во консультаций
+- [ ] Кнопка "Записаться" → переход на бронирование
+- API: `GET /consultations/doctors?specialization=`, `GET /consultations/doctors/:id`
+- Референс: `mobile/app/doctors.tsx`
+
+#### D-10. Web: Consultation (бронирование + история)
+- [ ] Страница `/consultation` — бронирование консультации (doctor info, symptoms, price, confirm)
+- [ ] Страница `/consultations` — история моих консультаций с пагинацией и статусами (PENDING/ACTIVE/COMPLETED/CANCELED)
+- [ ] Детали консультации: doctor notes, сообщения чата, связанный заказ
+- API: `POST /consultations` (body: `{ doctorId, symptoms, suggestedSpecialization }`), `GET /consultations/my?page=&limit=`, `GET /consultations/:id`
+- Референс: `mobile/app/consultation.tsx`, `mobile/app/consultations.tsx`
+
+#### D-11. Web: Prescriptions (назначения врача)
+- [ ] Страница `/prescriptions` — список назначений с статусами (PENDING/CONFIRMED/CANCELED/EXPIRED)
+- [ ] Страница `/prescription/[id]` — детали назначения: услуга, цена, рекомендации врача, срок действия
+- [ ] Форма подтверждения: ввод адреса (дом, этаж, квартира, телефон) + кнопка "Подтвердить и вызвать медсестру"
+- [ ] Отмена назначения
+- API: `GET /consultations/prescriptions/my?page=&limit=`, `POST /consultations/prescriptions/:id/confirm` (body: `{ location, isUrgent? }`), `POST /consultations/prescriptions/:id/cancel`
+- Референс: `mobile/app/prescription.tsx`, `mobile/app/prescriptions.tsx`
+
+#### D-12. Web: NPS (опрос удовлетворённости)
+- [ ] Страница `/nps` — шкала 0–10, комментарий, экран благодарности
+- [ ] Auto-check при загрузке приложения: `GET /nps/check` → если `shouldShow: true` → показать модал/redirect
+- API: `POST /nps/submit` (body: `{ score, comment? }`), `GET /nps/check`
+- Референс: `mobile/app/nps.tsx`
+
+### 🟡 Приоритет 3 — Admin панель
+
+#### D-13. Admin: NPS дашборд
+- [ ] Страница NPS: общий NPS score, количество promoters/passives/detractors
+- [ ] Тренд по месяцам (график или таблица)
+- [ ] Ссылка в сайдбаре
+- API: `GET /nps/admin/stats`
+
+#### D-14. Admin: управление назначениями (prescriptions)
+- [ ] На странице завершения консультации: dropdown выбора услуги (serviceId)
+- [ ] Отображение созданных назначений в деталях консультации
+- API: `PATCH /consultations/admin/:id/complete` (body: `{ doctorNotes, createOrderServiceId }`)
+- API: `GET /services` — список услуг для dropdown
+
+#### D-15. Admin: аналитика (графики)
+- [ ] Дашборд: графики заказов по дням/неделям, выручка, топ медики
+- [ ] Метрики: средний чек, время выполнения, конверсия
+- Данные: `GET /orders/admin/all` + агрегация на фронте или новый endpoint
+
+### 🔵 Приоритет 4 — SEO лендинг
+
+#### D-16. Landing: SEO-страницы
 - [ ] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu`
 - [ ] Страницы по районам: `/tashkent/chilanzar`, `/tashkent/yunusabad` и т.д.
 - [ ] Meta-теги, Open Graph, JSON-LD разметка для Google
 - [ ] Sitemap.xml + robots.txt
 
-### V3
+### 📊 Матрица: mobile vs web (результат анализа 2026-04-02)
 
-#### 7. Web: Loyalty / Subscriptions UI
-- [ ] Экран «Мои бонусы» — баланс, тир, прогресс, история, redemption
-- [ ] Экран «Подписки» — активная подписка, доступные тарифы, покупка/отмена
-- API: `GET /loyalty/my`, `GET /loyalty/history`, `POST /loyalty/redeem`
-- API: `GET /subscriptions/tiers`, `GET /subscriptions/my`, `POST /subscriptions/purchase`, `POST /subscriptions/cancel`
-- Референс: `mobile/app/loyalty.tsx`, `mobile/app/subscriptions.tsx`
+| Фича | Mobile | Web | Задача |
+|------|--------|-----|--------|
+| Каталог услуг | ✅ | ✅ | — |
+| Создание заказа + карта | ✅ | ✅ | — |
+| Трекинг заказа + WS | ✅ | ✅ | — |
+| История заказов | ✅ | ✅ | — |
+| Профиль | ✅ | ✅ | — |
+| Медкарта | ✅ | ✅ | — |
+| Курсы лечения | ✅ | ✅ | — |
+| Реферальная программа | ✅ | ✅ | — |
+| Избранные медики | ✅ | ✅ | — |
+| Отзывы медиков | ✅ | ✅ | — |
+| Оценка после DONE | ✅ | ❌ | D-1 |
+| Срочный вызов | ✅ | ❌ | D-2 |
+| Error handler | ✅ | ❌ | D-3 |
+| **Loyalty (бонусы)** | ✅ | ❌ | **D-6** |
+| **Subscriptions** | ✅ | ❌ | **D-7** |
+| **AI Chat** | ✅ | ❌ | **D-8** |
+| **Doctors list** | ✅ | ❌ | **D-9** |
+| **Consultations** | ✅ | ❌ | **D-10** |
+| **Prescriptions** | ✅ | ❌ | **D-11** |
+| **NPS survey** | ✅ | ❌ | **D-12** |
 
 ---
 
