@@ -1,0 +1,78 @@
+appId: com.hamshirago.client
+---
+# UI audit — визуальная проверка всех доступных экранов БЕЗ логина
+# Проверяет: onboarding, language picker, auth screen, UI элементы
+
+- launchApp:
+    clearState: true
+
+# === ONBOARDING ===
+- takeScreenshot: 01_onboarding_slide1
+
+# Swipe to next slide
+- swipe:
+    direction: LEFT
+    duration: 500
+- takeScreenshot: 02_onboarding_slide2
+
+- swipe:
+    direction: LEFT
+    duration: 500
+- takeScreenshot: 03_onboarding_slide3
+
+# Skip
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
+- tapOn:
+    text: ".*Далее.*|.*Начать.*"
+    optional: true
+
+- extendedWaitUntil:
+    visible: ".*Русский.*|.*Войти.*|.*tanlang.*"
+    timeout: 5000
+    optional: true
+
+- takeScreenshot: 04_language_picker
+
+# === LANGUAGE PICKER ===
+- tapOn:
+    text: ".*O'zbek.*"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Kirish.*|.*Войти.*"
+    timeout: 5000
+    optional: true
+- takeScreenshot: 05_auth_uzbek
+
+# Switch back to Russian
+- launchApp:
+    clearState: true
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Русский.*|.*Войти.*"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: ".*Русский.*"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Войти.*"
+    timeout: 5000
+    optional: true
+- takeScreenshot: 06_auth_russian
+
+# === AUTH SCREEN ===
+# Check register mode
+- tapOn:
+    text: ".*Регистрация.*"
+    optional: true
+- takeScreenshot: 07_register_mode
+
+# Check login mode
+- tapOn:
+    text: ".*Войти.*"
+    optional: true
+- takeScreenshot: 08_login_mode

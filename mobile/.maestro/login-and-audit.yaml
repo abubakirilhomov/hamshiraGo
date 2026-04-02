@@ -1,0 +1,74 @@
+appId: com.hamshirago.client
+---
+- launchApp:
+    clearState: true
+
+- takeScreenshot: 01_first_screen
+
+# Skip onboarding
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Русский.*|.*Войти.*"
+    timeout: 5000
+    optional: true
+
+# Language
+- tapOn:
+    text: ".*Русский.*"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Войти.*"
+    timeout: 5000
+    optional: true
+
+- takeScreenshot: 02_auth
+
+# === LOGIN via deep link (DEV only) ===
+- openLink: "hamshiragomobile://dev-login?phone=%2B998901234567&password=test1234"
+
+# iOS shows "Open in HamshiraGo?" dialog — tap Open
+- tapOn:
+    text: ".*Открыть.*|.*Open.*"
+    optional: true
+
+- extendedWaitUntil:
+    visible: ".*HamshiraGo.*|.*Капельниц.*|.*Укол.*|.*AI.*"
+    timeout: 15000
+    optional: true
+
+- takeScreenshot: 03_after_login
+
+# === HOME TAB ===
+- tapOn:
+    point: "15%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 04_home
+- scroll
+- takeScreenshot: 05_home_scroll
+
+# === ORDERS TAB ===
+- tapOn:
+    point: "50%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 06_orders
+
+# === PROFILE TAB ===
+- tapOn:
+    point: "85%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 07_profile
+- scroll
+- takeScreenshot: 08_profile_scroll
+- scroll
+- takeScreenshot: 09_profile_bottom

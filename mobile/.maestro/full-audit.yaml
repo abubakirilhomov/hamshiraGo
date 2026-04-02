@@ -1,88 +1,42 @@
 appId: com.hamshirago.client
 ---
-# Full app audit — screenshots of all accessible screens
-- launchApp:
-    clearState: true
+# Launch WITHOUT clearState — uses existing login session
+- launchApp
 
-- takeScreenshot: 01_onboarding
+- takeScreenshot: 01_current_screen
 
-# Skip onboarding
+# === HOME ===
 - tapOn:
-    text: ".*Пропустить.*"
+    point: "15%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
     optional: true
-- waitForAnimationToEnd
+- takeScreenshot: 02_home
 
-# Language picker — choose Russian
-- tapOn:
-    text: ".*Русский.*"
-    optional: true
-- waitForAnimationToEnd
-
-- takeScreenshot: 02_auth_screen
-
-# Login with test credentials
-- tapOn:
-    id: "auth_phone_input"
-- inputText: "+998901234567"
-- tapOn:
-    id: "auth_password_input"
-- inputText: "test1234"
-- tapOn:
-    id: "auth_submit_button"
-- waitForAnimationToEnd
-
-- takeScreenshot: 03_after_login
-
-# If login succeeded, navigate tabs
-# Home
-- takeScreenshot: 04_home
-
-# Orders tab
-- tapOn:
-    text: ".*Заказы.*"
-    optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 05_orders
-
-# Profile tab
-- tapOn:
-    text: ".*Профиль.*"
-    optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 06_profile
-
-# Scroll profile
 - scroll
-- takeScreenshot: 07_profile_links
+- takeScreenshot: 03_home_scrolled
 
-# Try loyalty
+# === ORDERS TAB ===
 - tapOn:
-    text: ".*бонус.*"
+    point: "50%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
     optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 08_loyalty
-- pressKey: back
+- takeScreenshot: 04_orders
 
-# Try subscriptions
+# === PROFILE TAB ===
 - tapOn:
-    text: ".*Подписк.*"
+    point: "85%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
     optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 09_subscriptions
-- pressKey: back
+- takeScreenshot: 05_profile
 
-# Try consultations
-- tapOn:
-    text: ".*консультац.*"
-    optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 10_consultations
-- pressKey: back
+- scroll
+- takeScreenshot: 06_profile_scrolled
 
-# Try prescriptions
-- tapOn:
-    text: ".*назначен.*"
-    optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 11_prescriptions
-- pressKey: back
+- scroll
+- takeScreenshot: 07_profile_bottom
