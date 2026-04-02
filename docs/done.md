@@ -1,5 +1,31 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (web-medic: интерактивная карта в рабочей зоне)
+- **[feat]** Добавлена интерактивная Leaflet карта на страницу work-zone — клик устанавливает центр, отображается круг зоны — web-medic/app/work-zone/page.tsx
+
+## 2026-04-02 (i18n: переводы названий услуг)
+- **[fix]** Добавлены поля titleUz/descriptionUz/categoryUz в интерфейс Service — web/lib/api.ts
+- **[fix]** Названия и описания услуг переводятся при language=uz через поля из API — web/app/page.tsx
+- **[fix]** Статическая карта SERVICE_TITLE_UZ для перевода serviceTitle в заказах медика — web-medic/app/page.tsx
+
+## 2026-04-02 (Landing: SEO-страницы по районам Ташкента)
+- **[feat]** Добавлены страницы по районам: Чиланзар, Юнусабад, Мирзо-Улугбек, Яккасарай (ru + uz) — landing/app/[lang]/[service]/page.tsx
+
+## 2026-04-02 (Admin: карта медиков с геозонами)
+- **[feat]** Добавлены поля workZoneLat/workZoneLng/workZoneRadius в интерфейс AdminMedic — admin/src/lib/api.ts
+- **[feat]** Вкладка "Карта" в странице медиков — react-leaflet карта с маркерами и Circle геозонами — admin/src/pages/Medics.tsx
+
+## 2026-04-02 (Аудит Диёра — подтверждение готовых задач)
+
+- **[verified]** Web: экран оценки после завершения заказа (звёзды + комментарий) — встроен в `/orders/[id]`, API `orders.rate()` — `web/app/orders/[id]/page.tsx`, `web/lib/api.ts`
+- **[verified]** Web: переключатель «Срочный вызов» при создании заказа + отображение доплаты — `web/app/order/confirm/page.tsx`
+- **[verified]** Web: глобальный error handler — `error.tsx` + `global-error.tsx` + `reportClientError()` → `POST /client-errors` — `web/app/error.tsx`, `web/app/global-error.tsx`, `web/lib/api.ts`
+- **[verified]** Web-medic: глобальный error handler — `error.tsx` + `global-error.tsx` + Sentry интеграция — `web-medic/app/error.tsx`, `web-medic/app/global-error.tsx`
+- **[verified]** Admin: страница «User Support» — таблица ошибок, фильтры (статус/поиск), статистика (NEW/IN_PROGRESS/FIXED/IGNORED) — `admin/src/pages/UserSupport.tsx`, `admin/src/lib/api.ts`
+- **[verified]** Landing: SEO страницы услуг — `/ru/ukol-na-domu`, `/ru/kapelnica-na-domu`, `/ru/izmerenie-davleniya`, `/ru/uxod-na-domu` + узбекские аналоги — `landing/app/[lang]/[service]/page.tsx`
+- **[verified]** Landing: Sitemap.xml + robots.txt — `landing/app/sitemap.ts`, `landing/app/robots.ts`
+- **[verified]** Landing: Meta-теги, Open Graph, JSON-LD (MedicalBusiness + FAQPage + MobileApplication), hreflang ru/uz — `landing/app/[lang]/layout.tsx`
+
 ## 2026-03-31 (Full Documentation Sync)
 
 - **[docs]** Created `docs/PRODUCTION_SETUP.md` -- comprehensive production deployment guide with Railway env vars (critical/payments/AI/Telegram/Cloudinary/VAPID/optional), database migration instructions, mobile app EAS setup, web app deployment, security checklist, graceful fallbacks table, monitoring/cron jobs overview, architecture diagram

@@ -274,13 +274,13 @@
 - [x] Mobile medic: экран с картой — медик ставит точку и слайдером выбирает радиус 0.5-50 км — `medic/app/work-zone.tsx`
 - [x] Mobile medic: визуальное отображение зоны на карте (полупрозрачный круг) — `medic/app/work-zone.tsx`
 - [x] Web-medic: экран с картой — медик ставит точку и слайдером выбирает радиус 0.5–50 км — `web-medic/app/work-zone/page.tsx`
-- [ ] Admin: на карте медиков отображать их геозоны
+- [x] Admin: на карте медиков отображать их геозоны — react-leaflet вкладка "Карта" с маркерами и Circle — `admin/src/pages/Medics.tsx`
 
 ### SEO-страницы на лендинге — Диёр
-- [ ] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu`
-- [ ] Страницы по районам: `/tashkent/chilanzar`, `/tashkent/yunusabad` и т.д.
-- [ ] Meta-теги, Open Graph, JSON-LD разметка для Google
-- [ ] Sitemap.xml + robots.txt
+- [x] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu` — landing/app/[lang]/[service]/page.tsx
+- [x] Страницы по районам: Чиланзар, Юнусабад, Мирзо-Улугбек, Яккасарай (ru+uz) — landing/app/[lang]/[service]/page.tsx
+- [x] Meta-теги, Open Graph, JSON-LD разметка для Google — landing/app/[lang]/layout.tsx
+- [x] Sitemap.xml + robots.txt — landing/app/sitemap.ts, landing/app/robots.ts
 
 ---
 
@@ -386,10 +386,10 @@
 ### SEO лендинг
 
 #### 6. Landing: SEO-страницы
-- [ ] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu`
-- [ ] Страницы по районам: `/tashkent/chilanzar`, `/tashkent/yunusabad` и т.д.
-- [ ] Meta-теги, Open Graph, JSON-LD разметка для Google
-- [ ] Sitemap.xml + robots.txt
+- [x] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu` — landing/app/[lang]/[service]/page.tsx
+- [x] Страницы по районам: Чиланзар, Юнусабад, Мирзо-Улугбек, Яккасарай (ru+uz) — landing/app/[lang]/[service]/page.tsx
+- [x] Meta-теги, Open Graph, JSON-LD разметка для Google — landing/app/[lang]/layout.tsx
+- [x] Sitemap.xml + robots.txt — landing/app/sitemap.ts, landing/app/robots.ts
 
 ### V3
 

@@ -76,7 +76,12 @@ export default function HomePage() {
   const q = search.trim().toLowerCase();
   const categories = [...new Set(services.map((s) => s.category))].sort((a, b) => a.localeCompare(b, "ru"));
   const filteredServices = services.filter((s) => {
-    const matchSearch = !q || s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.category.toLowerCase().includes(q);
+    const matchSearch = !q ||
+      s.title.toLowerCase().includes(q) ||
+      (s.titleUz ?? "").toLowerCase().includes(q) ||
+      (s.description ?? "").toLowerCase().includes(q) ||
+      (s.descriptionUz ?? "").toLowerCase().includes(q) ||
+      s.category.toLowerCase().includes(q);
     const matchCategory = !selectedCategory || s.category === selectedCategory;
     return matchSearch && matchCategory;
   });
@@ -301,7 +306,7 @@ export default function HomePage() {
                       <Icon size={14} color={TEAL.color} />
                     </div>
                     <h2 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.2px" }}>
-                      {language === "uz" ? (CATEGORY_UZ[category] ?? category) : category}
+                      {language === "uz" ? (items[0]?.categoryUz ?? CATEGORY_UZ[category] ?? category) : category}
                     </h2>
                   </div>
 
@@ -332,10 +337,10 @@ export default function HomePage() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>
-                              {service.title}
+                              {language === "uz" ? (service.titleUz ?? service.title) : service.title}
                             </p>
                             <p style={{ fontSize: 11, color: "#94a3b8", lineHeight: 1.4, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {service.description}
+                              {language === "uz" ? (service.descriptionUz ?? service.description) : service.description}
                             </p>
                             <p style={{ fontSize: 13, fontWeight: 700, color: TEAL.color }}>
                               {formatPrice(service.price)} UZS

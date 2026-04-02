@@ -275,6 +275,258 @@ const SERVICES: ServiceInfo[] = [
     ],
     ctaText: "Uyda parvarish uchun hamshira chaqirish",
   },
+
+  // ── РАЙОНЫ ТАШКЕНТА (RU) ─────────────────────────────────────────
+  {
+    slug: "tashkent-chilanzar",
+    lang: "ru",
+    altLang: "uz",
+    altSlug: "toshkent-chilonzor",
+    breadcrumbLabel: "Медик на дому Чиланзар",
+    h1: "Медик на дому в Чиланзаре",
+    title: "Медик на дому в Чиланзаре, Ташкент — за 30 минут | HamshiraGo",
+    description:
+      "Вызовите медика на дом в районе Чиланзар, Ташкент. Уколы, капельницы, измерение давления. Верифицированные медики приедут за 30 минут. 24/7.",
+    keywords:
+      "медик на дому Чиланзар, медсестра Чиланзар Ташкент, укол на дому Чиланзар, капельница дома Чиланзар, вызов медика Чиланзар, hamshira Chilonzor",
+    price: "от 80 000 сум",
+    intro:
+      "HamshiraGo — сервис вызова медика на дом в районе Чиланзар. Наши верифицированные медики обслуживают все улицы Чиланзара и приедут за 30 минут после оформления заказа. Работаем 24/7.",
+    benefits: [
+      { icon: "📍", title: "Покрываем весь Чиланзар", desc: "Работаем во всех микрорайонах Чиланзара — от м. Чиланзар до Сергели." },
+      { icon: "⚡", title: "За 30 минут", desc: "Медик выедет сразу после подтверждения заказа." },
+      { icon: "🩺", title: "Уколы и капельницы", desc: "Все виды инъекций, капельницы, измерение давления и ЭКГ на дому." },
+      { icon: "🌙", title: "24/7", desc: "Принимаем заказы круглосуточно, в том числе ночью и в праздники." },
+      { icon: "🔒", title: "Верифицированные медики", desc: "Каждый медик проверен — диплом, паспорт, лицензия." },
+      { icon: "💳", title: "Payme / Click", desc: "Оплата онлайн через приложение." },
+    ],
+    faq: [
+      { q: "Работаете ли вы в Чиланзаре?", a: "Да, HamshiraGo обслуживает весь район Чиланзар — все микрорайоны и улицы. Медик приедет за 30 минут." },
+      { q: "Какие услуги доступны в Чиланзаре?", a: "В Чиланзаре доступны все услуги: уколы, капельницы, измерение давления, ЭКГ, уход за больным на дому." },
+      { q: "Работаете ли ночью в Чиланзаре?", a: "Да, работаем 24/7 включая ночное время и выходные дни." },
+      { q: "Как вызвать медика в Чиланзаре?", a: "Оформите заказ через приложение HamshiraGo или сайт hamshirago.uz — укажите адрес в Чиланзаре и медик приедет за 30 минут." },
+    ],
+    ctaText: "Вызвать медика в Чиланзаре",
+  },
+  {
+    slug: "tashkent-yunusabad",
+    lang: "ru",
+    altLang: "uz",
+    altSlug: "toshkent-yunusobod",
+    breadcrumbLabel: "Медик на дому Юнусабад",
+    h1: "Медик на дому в Юнусабаде",
+    title: "Медик на дому в Юнусабаде, Ташкент — за 30 минут | HamshiraGo",
+    description:
+      "Вызовите медика на дом в районе Юнусабад, Ташкент. Уколы, капельницы, измерение давления. Верифицированные медики приедут за 30 минут. 24/7.",
+    keywords:
+      "медик на дому Юнусабад, медсестра Юнусабад Ташкент, укол на дому Юнусабад, капельница дома Юнусабад, вызов медика Юнусабад, hamshira Yunusobod",
+    price: "от 80 000 сум",
+    intro:
+      "HamshiraGo — сервис вызова медика на дом в районе Юнусабад. Наши верифицированные медики обслуживают все кварталы Юнусабада и приедут за 30 минут после оформления заказа. Работаем 24/7.",
+    benefits: [
+      { icon: "📍", title: "Покрываем весь Юнусабад", desc: "Работаем во всех кварталах Юнусабада — от массива Юнусабад до Яшнабада." },
+      { icon: "⚡", title: "За 30 минут", desc: "Медик выедет сразу после подтверждения заказа." },
+      { icon: "🩺", title: "Уколы и капельницы", desc: "Все виды инъекций, капельницы, измерение давления и ЭКГ на дому." },
+      { icon: "🌙", title: "24/7", desc: "Принимаем заказы круглосуточно, в том числе ночью и в праздники." },
+      { icon: "🔒", title: "Верифицированные медики", desc: "Каждый медик проверен — диплом, паспорт, лицензия." },
+      { icon: "💳", title: "Payme / Click", desc: "Оплата онлайн через приложение." },
+    ],
+    faq: [
+      { q: "Работаете ли вы в Юнусабаде?", a: "Да, HamshiraGo обслуживает весь район Юнусабад — все кварталы и улицы. Медик приедет за 30 минут." },
+      { q: "Какие услуги доступны в Юнусабаде?", a: "В Юнусабаде доступны все услуги: уколы, капельницы, измерение давления, ЭКГ, уход за больным на дому." },
+      { q: "Работаете ли ночью в Юнусабаде?", a: "Да, работаем 24/7 включая ночное время и выходные дни." },
+      { q: "Как вызвать медика в Юнусабаде?", a: "Оформите заказ через приложение HamshiraGo или сайт hamshirago.uz — укажите адрес в Юнусабаде и медик приедет за 30 минут." },
+    ],
+    ctaText: "Вызвать медика в Юнусабаде",
+  },
+  {
+    slug: "tashkent-mirzo-ulugbek",
+    lang: "ru",
+    altLang: "uz",
+    altSlug: "toshkent-mirzo-ulugbek",
+    breadcrumbLabel: "Медик на дому Мирзо-Улугбек",
+    h1: "Медик на дому в Мирзо-Улугбеке",
+    title: "Медик на дому в Мирзо-Улугбеке, Ташкент — за 30 минут | HamshiraGo",
+    description:
+      "Вызовите медика на дом в районе Мирзо-Улугбек, Ташкент. Уколы, капельницы, измерение давления. Верифицированные медики приедут за 30 минут. 24/7.",
+    keywords:
+      "медик на дому Мирзо-Улугбек, медсестра Мирзо-Улугбек Ташкент, укол на дому Мирзо-Улугбек, капельница дома Мирзо-Улугбек, вызов медика Мирзо-Улугбек, hamshira Mirzo Ulugbek",
+    price: "от 80 000 сум",
+    intro:
+      "HamshiraGo — сервис вызова медика на дом в районе Мирзо-Улугбек. Наши верифицированные медики обслуживают все кварталы района и приедут за 30 минут после оформления заказа. Работаем 24/7.",
+    benefits: [
+      { icon: "📍", title: "Покрываем весь Мирзо-Улугбек", desc: "Работаем во всех кварталах района Мирзо-Улугбек, включая Дархан и Куйлюк." },
+      { icon: "⚡", title: "За 30 минут", desc: "Медик выедет сразу после подтверждения заказа." },
+      { icon: "🩺", title: "Уколы и капельницы", desc: "Все виды инъекций, капельницы, измерение давления и ЭКГ на дому." },
+      { icon: "🌙", title: "24/7", desc: "Принимаем заказы круглосуточно, в том числе ночью и в праздники." },
+      { icon: "🔒", title: "Верифицированные медики", desc: "Каждый медик проверен — диплом, паспорт, лицензия." },
+      { icon: "💳", title: "Payme / Click", desc: "Оплата онлайн через приложение." },
+    ],
+    faq: [
+      { q: "Работаете ли вы в Мирзо-Улугбеке?", a: "Да, HamshiraGo обслуживает весь район Мирзо-Улугбек — все кварталы и улицы. Медик приедет за 30 минут." },
+      { q: "Какие услуги доступны в Мирзо-Улугбеке?", a: "В Мирзо-Улугбеке доступны все услуги: уколы, капельницы, измерение давления, ЭКГ, уход за больным на дому." },
+      { q: "Работаете ли ночью в Мирзо-Улугбеке?", a: "Да, работаем 24/7 включая ночное время и выходные дни." },
+      { q: "Как вызвать медика в Мирзо-Улугбеке?", a: "Оформите заказ через приложение HamshiraGo или сайт hamshirago.uz — укажите адрес в Мирзо-Улугбеке и медик приедет за 30 минут." },
+    ],
+    ctaText: "Вызвать медика в Мирзо-Улугбеке",
+  },
+  {
+    slug: "tashkent-yakkasaray",
+    lang: "ru",
+    altLang: "uz",
+    altSlug: "toshkent-yakkasaroy",
+    breadcrumbLabel: "Медик на дому Яккасарай",
+    h1: "Медик на дому в Яккасарае",
+    title: "Медик на дому в Яккасарае, Ташкент — за 30 минут | HamshiraGo",
+    description:
+      "Вызовите медика на дом в районе Яккасарай, Ташкент. Уколы, капельницы, измерение давления. Верифицированные медики приедут за 30 минут. 24/7.",
+    keywords:
+      "медик на дому Яккасарай, медсестра Яккасарай Ташкент, укол на дому Яккасарай, капельница дома Яккасарай, вызов медика Яккасарай, hamshira Yakkasaroy",
+    price: "от 80 000 сум",
+    intro:
+      "HamshiraGo — сервис вызова медика на дом в районе Яккасарай. Наши верифицированные медики обслуживают все улицы района и приедут за 30 минут после оформления заказа. Работаем 24/7.",
+    benefits: [
+      { icon: "📍", title: "Покрываем весь Яккасарай", desc: "Работаем во всех кварталах района Яккасарай, включая центральные улицы Ташкента." },
+      { icon: "⚡", title: "За 30 минут", desc: "Медик выедет сразу после подтверждения заказа." },
+      { icon: "🩺", title: "Уколы и капельницы", desc: "Все виды инъекций, капельницы, измерение давления и ЭКГ на дому." },
+      { icon: "🌙", title: "24/7", desc: "Принимаем заказы круглосуточно, в том числе ночью и в праздники." },
+      { icon: "🔒", title: "Верифицированные медики", desc: "Каждый медик проверен — диплом, паспорт, лицензия." },
+      { icon: "💳", title: "Payme / Click", desc: "Оплата онлайн через приложение." },
+    ],
+    faq: [
+      { q: "Работаете ли вы в Яккасарае?", a: "Да, HamshiraGo обслуживает весь район Яккасарай — все кварталы и улицы. Медик приедет за 30 минут." },
+      { q: "Какие услуги доступны в Яккасарае?", a: "В Яккасарае доступны все услуги: уколы, капельницы, измерение давления, ЭКГ, уход за больным на дому." },
+      { q: "Работаете ли ночью в Яккасарае?", a: "Да, работаем 24/7 включая ночное время и выходные дни." },
+      { q: "Как вызвать медика в Яккасарае?", a: "Оформите заказ через приложение HamshiraGo или сайт hamshirago.uz — укажите адрес в Яккасарае и медик приедет за 30 минут." },
+    ],
+    ctaText: "Вызвать медика в Яккасарае",
+  },
+
+  // ── РАЙОНЫ ТАШКЕНТА (UZ) ─────────────────────────────────────────
+  {
+    slug: "toshkent-chilonzor",
+    lang: "uz",
+    altLang: "ru",
+    altSlug: "tashkent-chilanzar",
+    breadcrumbLabel: "Chilonzorda uyda hamshira",
+    h1: "Chilonzorda uyda hamshira chaqirish",
+    title: "Chilonzorda uyda hamshira — 30 daqiqada | HamshiraGo",
+    description:
+      "Toshkent Chilonzor tumanida uyga hamshira chaqiring. Ukol, tomchi, qon bosimi o'lchash. Tasdiqlangan hamshiralar 30 daqiqada keladi. 24/7.",
+    keywords:
+      "hamshira Chilonzor, uyda hamshira Chilonzor Toshkent, ukol uyda Chilonzor, tomchi uyda Chilonzor, hamshira chaqirish Chilonzor, medik na domu Chilanzar",
+    price: "80 000 so'mdan",
+    intro:
+      "HamshiraGo — Toshkent Chilonzor tumanida uyga hamshira chaqirish xizmati. Tasdiqlangan hamshiralarimiz Chilonzorning barcha ko'chalarini qamrab oladi va buyurtmadan 30 daqiqa ichida keladi. 24/7 ishlaymiz.",
+    benefits: [
+      { icon: "📍", title: "Butun Chilonzorni qamrab olamiz", desc: "Chilonzorning barcha massivlarida ishlaymiz — Chilonzor metrosidan Sergeligacha." },
+      { icon: "⚡", title: "30 daqiqada", desc: "Buyurtma tasdiqlanganidan so'ng hamshira darhol yo'lga chiqadi." },
+      { icon: "🩺", title: "Ukol va tomchi", desc: "Barcha turdagi in'ektsiyalar, tomchi, qon bosimi o'lchash va EKG uyda." },
+      { icon: "🌙", title: "24/7", desc: "Kecha-kunduz buyurtma qabul qilamiz, shu jumladan kechasi va bayramlarda." },
+      { icon: "🔒", title: "Tasdiqlangan hamshiralar", desc: "Har bir hamshira tekshirilgan — diplom, pasport, litsenziya." },
+      { icon: "💳", title: "Payme / Click", desc: "Ilovada onlayn to'lov." },
+    ],
+    faq: [
+      { q: "Chilonzorda xizmat ko'rsatasizmi?", a: "Ha, HamshiraGo Chilonzor tumanining barcha massivi va ko'chalarini qamrab oladi. Hamshira 30 daqiqada keladi." },
+      { q: "Chilonzorda qanday xizmatlar mavjud?", a: "Chilonzorda barcha xizmatlar mavjud: ukol, tomchi, qon bosimi o'lchash, EKG, uyda bemor parvarishi." },
+      { q: "Chilonzorda kechasi ham ishlaysizmi?", a: "Ha, 24/7 ishlaymiz, shu jumladan kechasi va dam olish kunlari." },
+      { q: "Chilonzorda hamshirani qanday chaqirish mumkin?", a: "HamshiraGo ilovasi yoki hamshirago.uz saytida buyurtma bering — Chilonzordagi manzilingizni ko'rsating va hamshira 30 daqiqada keladi." },
+    ],
+    ctaText: "Chilonzorda hamshira chaqirish",
+  },
+  {
+    slug: "toshkent-yunusobod",
+    lang: "uz",
+    altLang: "ru",
+    altSlug: "tashkent-yunusabad",
+    breadcrumbLabel: "Yunusobodda uyda hamshira",
+    h1: "Yunusobodda uyda hamshira chaqirish",
+    title: "Yunusobodda uyda hamshira — 30 daqiqada | HamshiraGo",
+    description:
+      "Toshkent Yunusobod tumanida uyga hamshira chaqiring. Ukol, tomchi, qon bosimi o'lchash. Tasdiqlangan hamshiralar 30 daqiqada keladi. 24/7.",
+    keywords:
+      "hamshira Yunusobod, uyda hamshira Yunusobod Toshkent, ukol uyda Yunusobod, tomchi uyda Yunusobod, hamshira chaqirish Yunusobod, medik na domu Yunusabad",
+    price: "80 000 so'mdan",
+    intro:
+      "HamshiraGo — Toshkent Yunusobod tumanida uyga hamshira chaqirish xizmati. Tasdiqlangan hamshiralarimiz Yunusobodning barcha kvartallarini qamrab oladi va buyurtmadan 30 daqiqa ichida keladi. 24/7 ishlaymiz.",
+    benefits: [
+      { icon: "📍", title: "Butun Yunusobodni qamrab olamiz", desc: "Yunusobodning barcha kvartallarida ishlaymiz — Yunusobod massividan Yashnabodgacha." },
+      { icon: "⚡", title: "30 daqiqada", desc: "Buyurtma tasdiqlanganidan so'ng hamshira darhol yo'lga chiqadi." },
+      { icon: "🩺", title: "Ukol va tomchi", desc: "Barcha turdagi in'ektsiyalar, tomchi, qon bosimi o'lchash va EKG uyda." },
+      { icon: "🌙", title: "24/7", desc: "Kecha-kunduz buyurtma qabul qilamiz, shu jumladan kechasi va bayramlarda." },
+      { icon: "🔒", title: "Tasdiqlangan hamshiralar", desc: "Har bir hamshira tekshirilgan — diplom, pasport, litsenziya." },
+      { icon: "💳", title: "Payme / Click", desc: "Ilovada onlayn to'lov." },
+    ],
+    faq: [
+      { q: "Yunusobodda xizmat ko'rsatasizmi?", a: "Ha, HamshiraGo Yunusobod tumanining barcha kvartallari va ko'chalarini qamrab oladi. Hamshira 30 daqiqada keladi." },
+      { q: "Yunusobodda qanday xizmatlar mavjud?", a: "Yunusobodda barcha xizmatlar mavjud: ukol, tomchi, qon bosimi o'lchash, EKG, uyda bemor parvarishi." },
+      { q: "Yunusobodda kechasi ham ishlaysizmi?", a: "Ha, 24/7 ishlaymiz, shu jumladan kechasi va dam olish kunlari." },
+      { q: "Yunusobodda hamshirani qanday chaqirish mumkin?", a: "HamshiraGo ilovasi yoki hamshirago.uz saytida buyurtma bering — Yunusobodagi manzilingizni ko'rsating va hamshira 30 daqiqada keladi." },
+    ],
+    ctaText: "Yunusobodda hamshira chaqirish",
+  },
+  {
+    slug: "toshkent-mirzo-ulugbek",
+    lang: "uz",
+    altLang: "ru",
+    altSlug: "tashkent-mirzo-ulugbek",
+    breadcrumbLabel: "Mirzo Ulug'bekda uyda hamshira",
+    h1: "Mirzo Ulug'bekda uyda hamshira chaqirish",
+    title: "Mirzo Ulug'bekda uyda hamshira — 30 daqiqada | HamshiraGo",
+    description:
+      "Toshkent Mirzo Ulug'bek tumanida uyga hamshira chaqiring. Ukol, tomchi, qon bosimi o'lchash. Tasdiqlangan hamshiralar 30 daqiqada keladi. 24/7.",
+    keywords:
+      "hamshira Mirzo Ulugbek, uyda hamshira Mirzo Ulugbek Toshkent, ukol uyda Mirzo Ulugbek, tomchi uyda Mirzo Ulugbek, hamshira chaqirish Mirzo Ulugbek, medik na domu Mirzo-Ulugbek",
+    price: "80 000 so'mdan",
+    intro:
+      "HamshiraGo — Toshkent Mirzo Ulug'bek tumanida uyga hamshira chaqirish xizmati. Tasdiqlangan hamshiralarimiz tumanning barcha kvartallarini qamrab oladi va buyurtmadan 30 daqiqa ichida keladi. 24/7 ishlaymiz.",
+    benefits: [
+      { icon: "📍", title: "Butun Mirzo Ulug'bekni qamrab olamiz", desc: "Mirzo Ulug'bek tumanining barcha kvartallarida ishlaymiz, shu jumladan Darxon va Qo'yliq." },
+      { icon: "⚡", title: "30 daqiqada", desc: "Buyurtma tasdiqlanganidan so'ng hamshira darhol yo'lga chiqadi." },
+      { icon: "🩺", title: "Ukol va tomchi", desc: "Barcha turdagi in'ektsiyalar, tomchi, qon bosimi o'lchash va EKG uyda." },
+      { icon: "🌙", title: "24/7", desc: "Kecha-kunduz buyurtma qabul qilamiz, shu jumladan kechasi va bayramlarda." },
+      { icon: "🔒", title: "Tasdiqlangan hamshiralar", desc: "Har bir hamshira tekshirilgan — diplom, pasport, litsenziya." },
+      { icon: "💳", title: "Payme / Click", desc: "Ilovada onlayn to'lov." },
+    ],
+    faq: [
+      { q: "Mirzo Ulug'bekda xizmat ko'rsatasizmi?", a: "Ha, HamshiraGo Mirzo Ulug'bek tumanining barcha kvartallari va ko'chalarini qamrab oladi. Hamshira 30 daqiqada keladi." },
+      { q: "Mirzo Ulug'bekda qanday xizmatlar mavjud?", a: "Mirzo Ulug'bekda barcha xizmatlar mavjud: ukol, tomchi, qon bosimi o'lchash, EKG, uyda bemor parvarishi." },
+      { q: "Mirzo Ulug'bekda kechasi ham ishlaysizmi?", a: "Ha, 24/7 ishlaymiz, shu jumladan kechasi va dam olish kunlari." },
+      { q: "Mirzo Ulug'bekda hamshirani qanday chaqirish mumkin?", a: "HamshiraGo ilovasi yoki hamshirago.uz saytida buyurtma bering — Mirzo Ulug'bekdagi manzilingizni ko'rsating va hamshira 30 daqiqada keladi." },
+    ],
+    ctaText: "Mirzo Ulug'bekda hamshira chaqirish",
+  },
+  {
+    slug: "toshkent-yakkasaroy",
+    lang: "uz",
+    altLang: "ru",
+    altSlug: "tashkent-yakkasaray",
+    breadcrumbLabel: "Yakkasaroyda uyda hamshira",
+    h1: "Yakkasaroyda uyda hamshira chaqirish",
+    title: "Yakkasaroyda uyda hamshira — 30 daqiqada | HamshiraGo",
+    description:
+      "Toshkent Yakkasaroy tumanida uyga hamshira chaqiring. Ukol, tomchi, qon bosimi o'lchash. Tasdiqlangan hamshiralar 30 daqiqada keladi. 24/7.",
+    keywords:
+      "hamshira Yakkasaroy, uyda hamshira Yakkasaroy Toshkent, ukol uyda Yakkasaroy, tomchi uyda Yakkasaroy, hamshira chaqirish Yakkasaroy, medik na domu Yakkasaray",
+    price: "80 000 so'mdan",
+    intro:
+      "HamshiraGo — Toshkent Yakkasaroy tumanida uyga hamshira chaqirish xizmati. Tasdiqlangan hamshiralarimiz tumanning barcha ko'chalarini qamrab oladi va buyurtmadan 30 daqiqa ichida keladi. 24/7 ishlaymiz.",
+    benefits: [
+      { icon: "📍", title: "Butun Yakkasaroyni qamrab olamiz", desc: "Yakkasaroy tumanining barcha kvartallarida ishlaymiz, shu jumladan Toshkentning markaziy ko'chalari." },
+      { icon: "⚡", title: "30 daqiqada", desc: "Buyurtma tasdiqlanganidan so'ng hamshira darhol yo'lga chiqadi." },
+      { icon: "🩺", title: "Ukol va tomchi", desc: "Barcha turdagi in'ektsiyalar, tomchi, qon bosimi o'lchash va EKG uyda." },
+      { icon: "🌙", title: "24/7", desc: "Kecha-kunduz buyurtma qabul qilamiz, shu jumladan kechasi va bayramlarda." },
+      { icon: "🔒", title: "Tasdiqlangan hamshiralar", desc: "Har bir hamshira tekshirilgan — diplom, pasport, litsenziya." },
+      { icon: "💳", title: "Payme / Click", desc: "Ilovada onlayn to'lov." },
+    ],
+    faq: [
+      { q: "Yakkasaroyda xizmat ko'rsatasizmi?", a: "Ha, HamshiraGo Yakkasaroy tumanining barcha kvartallari va ko'chalarini qamrab oladi. Hamshira 30 daqiqada keladi." },
+      { q: "Yakkasaroyda qanday xizmatlar mavjud?", a: "Yakkasaroyda barcha xizmatlar mavjud: ukol, tomchi, qon bosimi o'lchash, EKG, uyda bemor parvarishi." },
+      { q: "Yakkasaroyda kechasi ham ishlaysizmi?", a: "Ha, 24/7 ishlaymiz, shu jumladan kechasi va dam olish kunlari." },
+      { q: "Yakkasaroyda hamshirani qanday chaqirish mumkin?", a: "HamshiraGo ilovasi yoki hamshirago.uz saytida buyurtma bering — Yakkasaroydagi manzilingizni ko'rsating va hamshira 30 daqiqada keladi." },
+    ],
+    ctaText: "Yakkasaroyda hamshira chaqirish",
+  },
 ];
 
 /* ── Helpers ────────────────────────────────────────────────────── */

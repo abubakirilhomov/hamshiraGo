@@ -130,6 +130,9 @@ export const api = {
 export interface Service {
   id: string;
   title: string;
+  titleUz: string | null;
+  descriptionUz: string | null;
+  categoryUz: string | null;
   description: string;
   category: string;
   price: number;
