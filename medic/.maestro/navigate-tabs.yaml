@@ -1,0 +1,21 @@
+appId: com.hamshirago.medic
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Home / Available orders
+- takeScreenshot: 01_available_orders
+
+# My Orders tab
+- tapOn: "Мои заказы"
+- waitForAnimationToEnd
+- takeScreenshot: 02_my_orders
+
+# Profile tab
+- tapOn: "Профиль"
+- waitForAnimationToEnd
+- takeScreenshot: 03_profile
+
+# Scroll profile
+- scroll
+- takeScreenshot: 04_profile_scrolled

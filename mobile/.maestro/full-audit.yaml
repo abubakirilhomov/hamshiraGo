@@ -1,0 +1,71 @@
+appId: com.hamshirago.client
+---
+# Full app audit — screenshots of all accessible screens
+- launchApp
+- waitForAnimationToEnd
+
+# Home
+- takeScreenshot: 01_home
+
+# Orders tab
+- tapOn: "Заказы"
+- waitForAnimationToEnd
+- takeScreenshot: 02_orders
+
+# Profile tab
+- tapOn: "Профиль"
+- waitForAnimationToEnd
+- takeScreenshot: 03_profile
+
+# Scroll profile to see links
+- scroll
+- takeScreenshot: 04_profile_links
+
+# Try loyalty
+- tapOn: "Мои бонусы"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 05_loyalty
+- pressKey: back
+
+# Try subscriptions
+- tapOn: "Подписки"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 06_subscriptions
+- pressKey: back
+
+# Try courses
+- tapOn: "Курсы лечения"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 07_courses
+- pressKey: back
+
+# Try referral
+- tapOn: "Пригласить друга"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 08_referral
+- pressKey: back
+
+# Try medical card
+- tapOn: "Медкарта"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 09_medical_card
+- pressKey: back
+
+# Try consultations
+- tapOn: "Мои консультации"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 10_consultations
+- pressKey: back
+
+# Try prescriptions
+- tapOn: "Мои назначения"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 11_prescriptions
+- pressKey: back

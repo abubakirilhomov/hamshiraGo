@@ -139,6 +139,7 @@ export default function AuthScreen() {
             <>
               <Text style={styles.label}>{t('auth.name')}</Text>
               <TextInput
+                testID="auth_name_input"
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
@@ -159,6 +160,7 @@ export default function AuthScreen() {
             placeholder={t('auth.phonePlaceholder')}
             placeholderTextColor={Theme.textSecondary}
             keyboardType="phone-pad"
+            testID="auth_phone_input"
             autoComplete="tel"
             returnKeyType="next"
             accessibilityLabel="Телефон"
@@ -171,6 +173,7 @@ export default function AuthScreen() {
             onChangeText={setPassword}
             placeholder={t('auth.passwordPlaceholder')}
             placeholderTextColor={Theme.textSecondary}
+            testID="auth_password_input"
             secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
@@ -215,6 +218,7 @@ export default function AuthScreen() {
           )}
 
           <Pressable
+            testID="auth_submit_button"
             style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, loading && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={loading}

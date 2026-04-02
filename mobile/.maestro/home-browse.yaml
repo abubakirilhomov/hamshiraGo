@@ -1,0 +1,26 @@
+appId: com.hamshirago.client
+---
+- launchApp
+
+# Wait for home screen to load
+- waitForAnimationToEnd
+- takeScreenshot: 01_home_screen
+
+# Check for service cards
+- assertVisible:
+    id: "home_screen"
+
+# Tap AI chat banner if visible
+- tapOn:
+    id: "ai_chat_banner"
+    optional: true
+
+- waitForAnimationToEnd
+- takeScreenshot: 02_ai_chat_or_home
+
+# Go back
+- pressKey: back
+
+# Scroll down to see more services
+- scroll
+- takeScreenshot: 03_home_scrolled

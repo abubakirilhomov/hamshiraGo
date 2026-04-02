@@ -1,0 +1,43 @@
+appId: com.hamshirago.medic
+---
+# Full medic app audit — screenshots of all screens
+- launchApp
+- waitForAnimationToEnd
+
+# Available orders
+- takeScreenshot: 01_available_orders
+
+# My Orders
+- tapOn: "Мои заказы"
+- waitForAnimationToEnd
+- takeScreenshot: 02_my_orders
+
+# Profile
+- tapOn: "Профиль"
+- waitForAnimationToEnd
+- takeScreenshot: 03_profile
+
+# Scroll profile for links
+- scroll
+- takeScreenshot: 04_profile_links
+
+# Try verification
+- tapOn: "Верификация"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 05_verification
+- pressKey: back
+
+# Try reviews
+- tapOn: "Отзывы"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 06_reviews
+- pressKey: back
+
+# Try work zone
+- tapOn: "Зона работы"
+  optional: true
+- waitForAnimationToEnd
+- takeScreenshot: 07_work_zone
+- pressKey: back

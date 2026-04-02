@@ -1,0 +1,28 @@
+appId: com.hamshirago.client
+---
+- launchApp:
+    clearState: true
+
+# Auth screen should appear
+- takeScreenshot: 01_auth_screen
+
+# Enter phone number
+- tapOn:
+    id: "auth_phone_input"
+- inputText: "+998901234567"
+
+# Enter password
+- tapOn:
+    id: "auth_password_input"
+- inputText: "test1234"
+
+- takeScreenshot: 02_auth_filled
+
+# Submit login
+- tapOn:
+    id: "auth_submit_button"
+
+# Wait for navigation or error
+- waitForAnimationToEnd
+
+- takeScreenshot: 03_after_login

@@ -1,0 +1,21 @@
+appId: com.hamshirago.client
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Screenshot home tab
+- takeScreenshot: 01_tab_home
+
+# Navigate to Orders tab
+- tapOn: "Заказы"
+- waitForAnimationToEnd
+- takeScreenshot: 02_tab_orders
+
+# Navigate to Profile tab
+- tapOn: "Профиль"
+- waitForAnimationToEnd
+- takeScreenshot: 03_tab_profile
+
+# Check profile sections are visible
+- scroll
+- takeScreenshot: 04_profile_scrolled
