@@ -8,6 +8,7 @@ import { ChatMessage } from './entities/chat-message.entity';
 import { Prescription } from './entities/prescription.entity';
 import { ConsultationsService } from './consultations.service';
 import { AiAgentService } from './ai-agent.service';
+import { VideoService } from './video.service';
 import { ConsultationsController } from './consultations.controller';
 import { OrdersModule } from '../orders/orders.module';
 import { ServicesModule } from '../services/services.module';
@@ -32,7 +33,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
     RealtimeModule,
   ],
   controllers: [ConsultationsController],
-  providers: [ConsultationsService, AiAgentService],
-  exports: [ConsultationsService, AiAgentService],
+  providers: [ConsultationsService, AiAgentService, VideoService],
+  exports: [ConsultationsService, AiAgentService, VideoService],
 })
 export class ConsultationsModule {}

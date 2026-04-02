@@ -363,5 +363,12 @@
     "thankYou": "Rahmat!",
     "thankYouSub": "Fikringiz bizga yaxshiroq bo'lishga yordam beradi",
     "done": "Tayyor"
+  },
+  "videoCall": {
+    "connecting": "Video qo'ng'iroqqa ulanish...",
+    "error": "Qo'ng'iroqqa ulanib bo'lmadi",
+    "callDoctor": "Shifokorga qo'ng'iroq qilish",
+    "endCall": "Qo'ng'iroqni tugatish",
+    "waitingDoctor": "Shifokor kutilmoqda..."
   }
 }

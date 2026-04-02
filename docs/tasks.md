@@ -495,7 +495,7 @@
 
 ## ⚡ V3 — roadmap (Абубакир — backend)
 
-- [ ] Видео/чат консультация с врачом (Agora/WebRTC или Telegram видеозвонок)
+- [x] Видео/чат консультация с врачом — **DONE** (LiveKit: VideoService + video-call screen + endpoints)
 - [x] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру — **DONE** (Prescription entity + endpoints + mobile UI)
 - [x] NPS-опросы: cron + дашборд в admin — **DONE** (NpsSurvey entity + cron monthly + mobile UI + admin stats)
 

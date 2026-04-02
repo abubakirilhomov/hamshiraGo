@@ -53,6 +53,14 @@ export class Consultation {
   @Column({ type: 'int', default: 0 })
   platformFee!: number;
 
+  /** LiveKit room name for video call */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  videoRoomName!: string | null;
+
+  /** Video call status */
+  @Column({ type: 'varchar', length: 20, nullable: true, default: null })
+  videoStatus!: 'CALLING' | 'ACTIVE' | 'ENDED' | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

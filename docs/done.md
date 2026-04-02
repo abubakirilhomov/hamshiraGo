@@ -1,5 +1,17 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (V3: Video Consultations — LiveKit)
+
+- **[feature]** VideoService: LiveKit integration — createRoom, generateToken, endCall, joinCall with RoomServiceClient -- `backend/src/consultations/video.service.ts`
+- **[feature]** Video endpoints: POST /:id/call (initiate), POST /:id/call/join, POST /:id/call/end, GET /:id/call/status -- `backend/src/consultations/consultations.controller.ts`
+- **[feature]** Consultation entity: added videoRoomName, videoStatus (CALLING/ACTIVE/ENDED) -- `backend/src/consultations/entities/consultation.entity.ts`
+- **[migration]** SQL migration `backend/migrations/007_video_consultations.sql` -- ALTER consultations ADD videoRoomName, videoStatus
+- **[dependency]** Installed `livekit-server-sdk` for backend -- `backend/package.json`
+- **[feature]** Mobile video call screen: LiveKit room, remote/local video tracks, mic/camera toggle, end call -- `mobile/app/video-call.tsx`
+- **[feature]** "Call Doctor" button on ACTIVE/PENDING consultations -- `mobile/app/consultations.tsx`
+- **[dependency]** Installed `@livekit/react-native`, `@livekit/react-native-expo-plugin` -- `mobile/package.json`
+- **[i18n]** Added `videoCall.*` keys to ru.json and uz.json (5 keys each)
+
 ## 2026-04-02 (V3: NPS Surveys)
 
 - **[feature]** NPS module: NpsSurvey entity (userId, score 0–10, comment), submit with 1/month limit, hasAnsweredThisMonth check -- `backend/src/nps/`

@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
+import { router } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
@@ -173,6 +174,16 @@ export default function ConsultationsScreen() {
               <Text style={styles.notesHintText}>{t('consultation.doctorNotes')}</Text>
             </View>
           )}
+
+          {(item.status === 'ACTIVE' || item.status === 'PENDING') && (
+            <Pressable
+              style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.8 }]}
+              onPress={() => router.push({ pathname: '/video-call', params: { consultationId: item.id } })}
+            >
+              <FontAwesome name="video-camera" size={14} color="#fff" />
+              <Text style={styles.callBtnText}>{t('videoCall.callDoctor')}</Text>
+            </Pressable>
+          )}
         </Pressable>
       );
     },
@@ -306,6 +317,21 @@ const styles = StyleSheet.create({
   notesHintText: {
     fontSize: 12,
     color: Theme.textTertiary,
+  },
+  callBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Theme.primary,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.sm,
+    marginTop: Spacing.sm,
+  },
+  callBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 
   // Empty

@@ -246,6 +246,7 @@ function RootLayoutNav() {
         <Stack.Screen name="prescription" options={{ title: 'Prescription' }} />
         <Stack.Screen name="prescriptions" options={{ title: 'Prescriptions' }} />
         <Stack.Screen name="nps" options={{ title: 'NPS', presentation: 'modal' }} />
+        <Stack.Screen name="video-call" options={{ title: 'Video Call', headerShown: false, orientation: 'portrait' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

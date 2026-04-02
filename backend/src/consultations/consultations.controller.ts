@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ConsultationsService } from './consultations.service';
 import { AiAgentService } from './ai-agent.service';
+import { VideoService } from './video.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { ClientId } from '../auth/decorators/client-id.decorator';
@@ -26,6 +27,7 @@ export class ConsultationsController {
   constructor(
     private readonly consultationsService: ConsultationsService,
     private readonly aiAgentService: AiAgentService,
+    private readonly videoService: VideoService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -157,6 +159,48 @@ export class ConsultationsController {
     @ClientId() userId: string,
   ) {
     return this.consultationsService.cancelPrescription(id, userId);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Video calls                                                        */
+  /* ------------------------------------------------------------------ */
+
+  /** Initiate a video call for a consultation */
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/call')
+  initiateCall(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() userId: string,
+  ) {
+    return this.videoService.initiateCall(id, userId);
+  }
+
+  /** Join an existing video call */
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/call/join')
+  joinCall(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() userId: string,
+    @Body('role') role: 'client' | 'doctor',
+  ) {
+    return this.videoService.joinCall(id, userId, role || 'client');
+  }
+
+  /** End a video call */
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/call/end')
+  endCall(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() userId: string,
+  ) {
+    return this.videoService.endCall(id, userId);
+  }
+
+  /** Get video call status */
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/call/status')
+  getCallStatus(@Param('id', ParseUUIDPipe) id: string) {
+    return this.videoService.getCallStatus(id);
   }
 
   /* ------------------------------------------------------------------ */
