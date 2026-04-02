@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -17,10 +18,17 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { SocketProvider } from '@/context/SocketContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { apiFetch } from '@/constants/api';
 import { registerPushToken } from '@/utils/registerPushToken';
 import { reportError } from '@/utils/reportError';
 import { trackEvent, flushPendingEvents } from '@/utils/analytics';
 import '@/i18n';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  enabled: !__DEV__,
+});
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -148,6 +156,17 @@ function RootLayoutNav() {
     flushPendingEvents().catch(() => {});
   }, [isLoading]);
 
+  // NPS: check if user should see survey (once per app open when logged in)
+  useEffect(() => {
+    if (!token || isLoading) return;
+    apiFetch('/nps/check', token)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.shouldShow) router.push('/nps');
+      })
+      .catch(() => {});
+  }, [token, isLoading]);
+
   // Navigate when user taps a push notification (app in background)
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
@@ -162,6 +181,10 @@ function RootLayoutNav() {
           router.push('/courses');
         } else if (data.type === 'referral') {
           router.push('/referral');
+        } else if (data.type === 'prescription' && data.prescriptionId) {
+          router.push(`/prescription?id=${data.prescriptionId}`);
+        } else if (data.type === 'nps') {
+          router.push('/nps');
         }
       },
     );
@@ -182,6 +205,10 @@ function RootLayoutNav() {
         router.push('/courses');
       } else if (data.type === 'referral') {
         router.push('/referral');
+      } else if (data.type === 'prescription' && data.prescriptionId) {
+        router.push(`/prescription?id=${data.prescriptionId}`);
+      } else if (data.type === 'nps') {
+        router.push('/nps');
       }
     });
   }, []);
@@ -216,6 +243,9 @@ function RootLayoutNav() {
         <Stack.Screen name="doctors" options={{ title: 'Doctors' }} />
         <Stack.Screen name="consultation" options={{ title: 'Consultation' }} />
         <Stack.Screen name="consultations" options={{ title: 'Consultations' }} />
+        <Stack.Screen name="prescription" options={{ title: 'Prescription' }} />
+        <Stack.Screen name="prescriptions" options={{ title: 'Prescriptions' }} />
+        <Stack.Screen name="nps" options={{ title: 'NPS', presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

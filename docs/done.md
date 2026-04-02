@@ -16,7 +16,6 @@
 - **[feat]** Вкладка "Карта" в странице медиков — react-leaflet карта с маркерами и Circle геозонами — admin/src/pages/Medics.tsx
 
 ## 2026-04-02 (Аудит Диёра — подтверждение готовых задач)
-
 - **[verified]** Web: экран оценки после завершения заказа (звёзды + комментарий) — встроен в `/orders/[id]`, API `orders.rate()` — `web/app/orders/[id]/page.tsx`, `web/lib/api.ts`
 - **[verified]** Web: переключатель «Срочный вызов» при создании заказа + отображение доплаты — `web/app/order/confirm/page.tsx`
 - **[verified]** Web: глобальный error handler — `error.tsx` + `global-error.tsx` + `reportClientError()` → `POST /client-errors` — `web/app/error.tsx`, `web/app/global-error.tsx`, `web/lib/api.ts`
@@ -25,6 +24,36 @@
 - **[verified]** Landing: SEO страницы услуг — `/ru/ukol-na-domu`, `/ru/kapelnica-na-domu`, `/ru/izmerenie-davleniya`, `/ru/uxod-na-domu` + узбекские аналоги — `landing/app/[lang]/[service]/page.tsx`
 - **[verified]** Landing: Sitemap.xml + robots.txt — `landing/app/sitemap.ts`, `landing/app/robots.ts`
 - **[verified]** Landing: Meta-теги, Open Graph, JSON-LD (MedicalBusiness + FAQPage + MobileApplication), hreflang ru/uz — `landing/app/[lang]/layout.tsx`
+
+## 2026-04-02 (V3: NPS Surveys)
+- **[feature]** NPS module: NpsSurvey entity (userId, score 0–10, comment), submit with 1/month limit, hasAnsweredThisMonth check -- `backend/src/nps/`
+- **[feature]** NPS cron: `@Cron('0 11 1 * *')` sends push to active clients (≥1 DONE order in 30 days), skips already-answered -- `backend/src/nps/nps.service.ts`
+- **[feature]** NPS admin stats: overall NPS score + monthly breakdown with promoters/passives/detractors -- `GET /nps/admin/stats`
+- **[feature]** NPS endpoints: POST /nps/submit, GET /nps/check, GET /nps/admin/stats -- `backend/src/nps/nps.controller.ts`
+- **[migration]** SQL migration `backend/migrations/006_nps.sql` -- nps_surveys table with indexes
+- **[feature]** Mobile NPS screen: 0–10 score buttons (color-coded), optional comment, thank-you screen -- `mobile/app/nps.tsx`
+- **[feature]** Auto-check NPS on app open (GET /nps/check → navigate to /nps if shouldShow) -- `mobile/app/_layout.tsx`
+- **[feature]** Push deep link for NPS (data.type === 'nps') -- `mobile/app/_layout.tsx`
+- **[i18n]** Added `nps.*` keys to ru.json and uz.json (13 keys each)
+
+## 2026-04-02 (V3: Doctor Prescription → Auto-Order)
+- **[feature]** Prescription entity: consultationId, clientId, serviceId, serviceTitle, servicePrice, status (PENDING/CONFIRMED/CANCELED/EXPIRED), orderId, doctorNotes, expiresAt (7 days) -- `backend/src/consultations/entities/prescription.entity.ts`
+- **[feature]** Prescription service methods: createPrescription (with push notification), confirmPrescription (creates order via OrdersService), getMyPrescriptions (paginated), cancelPrescription -- `backend/src/consultations/consultations.service.ts`
+- **[feature]** Prescription endpoints: GET /consultations/prescriptions/my, POST /consultations/prescriptions/:id/confirm, POST /consultations/prescriptions/:id/cancel -- `backend/src/consultations/consultations.controller.ts`
+- **[feature]** Admin complete consultation now auto-creates prescription if createOrderServiceId provided -- `backend/src/consultations/consultations.controller.ts`
+- **[feature]** ConfirmPrescriptionDto with OrderLocationDto -- `backend/src/consultations/dto/confirm-prescription.dto.ts`
+- **[migration]** SQL migration `backend/migrations/005_prescriptions.sql` -- prescriptions table with indexes
+- **[feature]** Mobile prescription screen: service info, doctor notes, expiry, location form, confirm/cancel flow -- `mobile/app/prescription.tsx`
+- **[feature]** Mobile prescriptions list screen with status badges, pagination, navigation -- `mobile/app/prescriptions.tsx`
+- **[feature]** Push notification deep link for prescriptions -- `mobile/app/_layout.tsx`
+- **[feature]** Profile quick link to prescriptions -- `mobile/app/(tabs)/profile.tsx`
+- **[i18n]** Added `prescription.*` keys to ru.json and uz.json (24 keys each)
+
+## 2026-04-02 (Sentry Error Tracking — ALL-L1)
+- **[infra]** Backend Sentry: `@sentry/nestjs` installed, `instrument.ts` with DSN from env, `SentryExceptionFilter` (5xx only) registered globally -- `backend/src/instrument.ts`, `backend/src/common/filters/sentry-exception.filter.ts`, `backend/src/app.module.ts`, `backend/src/main.ts`
+- **[infra]** Mobile Sentry: `@sentry/react-native` installed, `Sentry.init()` in `_layout.tsx`, `reportError()` sends to both Sentry + backend API -- `mobile/app/_layout.tsx`, `mobile/utils/reportError.ts`, `mobile/app.json` (plugin)
+- **[infra]** Medic Sentry: `@sentry/react-native` installed, `Sentry.init()` in `_layout.tsx`, `reportError()` sends to both Sentry + backend API -- `medic/app/_layout.tsx`, `medic/utils/reportError.ts`, `medic/app.json` (plugin)
+- **[docs]** Added Диёр's task list to `docs/tasks.md` with API refs and mobile references
 
 ## 2026-03-31 (Full Documentation Sync)
 

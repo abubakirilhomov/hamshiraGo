@@ -326,5 +326,42 @@
     "canceled": "Bekor qilindi",
     "doctorNotes": "Shifokor xulosasi",
     "noConsultations": "Konsultatsiyalar yo'q"
+  },
+  "prescription": {
+    "title": "Shifokor tayinlovi",
+    "service": "Tayinlangan protsedura",
+    "price": "Narxi",
+    "doctorNotes": "Shifokor tavsiyalari",
+    "expires": "Amal qilish muddati",
+    "expired": "Tayinlov muddati tugagan",
+    "confirmed": "Buyurtma yaratildi",
+    "canceled": "Tayinlov bekor qilindi",
+    "confirmAddress": "Manzilni tasdiqlash va hamshira chaqirish",
+    "cancel": "Tayinlovni bekor qilish",
+    "cancelConfirm": "Tayinlovni bekor qilmoqchimisiz?",
+    "house": "Ko'cha, uy",
+    "floor": "Qavat",
+    "apartment": "Xonadon",
+    "phone": "Telefon",
+    "myPrescriptions": "Tayinlovlarim",
+    "noPrescriptions": "Tayinlovlar yo'q",
+    "pending": "Tasdiqlash kutilmoqda",
+    "statusPending": "Kutilmoqda",
+    "statusConfirmed": "Tasdiqlandi",
+    "statusCanceled": "Bekor qilindi",
+    "statusExpired": "Muddati tugagan"
+  },
+  "nps": {
+    "question": "HamshiraGo'ni do'stlaringizga tavsiya qilasizmi?",
+    "subText": "0 dan 10 gacha baholang",
+    "notLikely": "Albatta yo'q",
+    "veryLikely": "Albatta ha",
+    "commentLabel": "Nimani yaxshilash mumkin?",
+    "commentPlaceholder": "Izohingiz (ixtiyoriy)",
+    "submit": "Yuborish",
+    "skip": "O'tkazib yuborish",
+    "thankYou": "Rahmat!",
+    "thankYouSub": "Fikringiz bizga yaxshiroq bo'lishga yordam beradi",
+    "done": "Tayyor"
   }
 }

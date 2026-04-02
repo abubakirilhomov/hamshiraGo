@@ -326,5 +326,42 @@
     "canceled": "Отменена",
     "doctorNotes": "Заключение врача",
     "noConsultations": "Нет консультаций"
+  },
+  "prescription": {
+    "title": "Назначение врача",
+    "service": "Назначенная процедура",
+    "price": "Стоимость",
+    "doctorNotes": "Рекомендации врача",
+    "expires": "Действительно до",
+    "expired": "Назначение истекло",
+    "confirmed": "Заказ создан",
+    "canceled": "Назначение отменено",
+    "confirmAddress": "Подтвердить адрес и вызвать медсестру",
+    "cancel": "Отменить назначение",
+    "cancelConfirm": "Вы уверены, что хотите отменить назначение?",
+    "house": "Улица, дом",
+    "floor": "Этаж",
+    "apartment": "Квартира",
+    "phone": "Телефон",
+    "myPrescriptions": "Мои назначения",
+    "noPrescriptions": "Нет назначений",
+    "pending": "Ожидает подтверждения",
+    "statusPending": "Ожидает",
+    "statusConfirmed": "Подтверждено",
+    "statusCanceled": "Отменено",
+    "statusExpired": "Истекло"
+  },
+  "nps": {
+    "question": "Порекомендуете ли вы HamshiraGo друзьям?",
+    "subText": "Оцените от 0 до 10",
+    "notLikely": "Точно нет",
+    "veryLikely": "Обязательно",
+    "commentLabel": "Что можно улучшить?",
+    "commentPlaceholder": "Ваш комментарий (необязательно)",
+    "submit": "Отправить",
+    "skip": "Пропустить",
+    "thankYou": "Спасибо!",
+    "thankYouSub": "Ваше мнение поможет нам стать лучше",
+    "done": "Готово"
   }
 }

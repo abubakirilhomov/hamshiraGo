@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -30,6 +31,12 @@ import {
 import { registerPushToken } from '@/utils/registerPushToken';
 import { reportError } from '@/utils/reportError';
 import { trackEvent, flushPendingEvents } from '@/utils/analytics';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  enabled: !__DEV__,
+});
 
 // Show notifications in foreground with sound
 Notifications.setNotificationHandler({

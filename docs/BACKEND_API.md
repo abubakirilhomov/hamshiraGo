@@ -559,4 +559,101 @@ Notes:
 
 ---
 
-Последнее обновление: 2026-03-31
+## 22. Prescriptions (врач → автозаказ)
+
+### Client endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/consultations/prescriptions/my` | Client JWT | Мои назначения (пагинация) |
+| `POST` | `/consultations/prescriptions/:id/confirm` | Client JWT | Подтвердить назначение (создать заказ) |
+| `POST` | `/consultations/prescriptions/:id/cancel` | Client JWT | Отменить назначение |
+
+`POST /consultations/prescriptions/:id/confirm` body:
+
+```json
+{
+  "location": {
+    "latitude": 41.2995,
+    "longitude": 69.2401,
+    "house": "ул. Навои 15",
+    "floor": "3",
+    "apartment": "12",
+    "phone": "+998901234567"
+  },
+  "isUrgent": false,
+  "discountAmount": 0
+}
+```
+
+`GET /consultations/prescriptions/my?page=1&limit=20` response:
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "consultationId": "uuid",
+      "serviceTitle": "Капельница",
+      "servicePrice": 150000,
+      "status": "PENDING",
+      "orderId": null,
+      "doctorNotes": "Рекомендуется курс из 5 капельниц",
+      "createdAt": "2026-04-02T...",
+      "expiresAt": "2026-04-09T..."
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+Notes:
+- Назначение создаётся автоматически при завершении консультации с `createOrderServiceId`
+- Статусы: `PENDING -> CONFIRMED` (или `CANCELED` / `EXPIRED`)
+- Срок действия: 7 дней
+- При confirm создаётся полноценный заказ через OrdersService (с dispatch, скидками и т.д.)
+- Push уведомление клиенту при создании назначения
+
+---
+
+## 23. NPS Surveys
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/nps/submit` | Client JWT | Отправить оценку NPS |
+| `GET` | `/nps/check` | Client JWT | Проверить нужно ли показывать опрос |
+| `GET` | `/nps/admin/stats` | Admin | Дашборд NPS |
+
+`POST /nps/submit` body:
+
+```json
+{ "score": 9, "comment": "Отличный сервис!" }
+```
+
+`GET /nps/check` response:
+
+```json
+{ "shouldShow": true }
+```
+
+`GET /nps/admin/stats` response:
+
+```json
+{
+  "overall": { "nps": 45, "total": 100, "promoters": 60, "passives": 25, "detractors": 15 },
+  "monthly": [
+    { "month": "2026-04", "nps": 50, "total": 20, "promoters": 14, "passives": 3, "detractors": 3 }
+  ]
+}
+```
+
+Notes:
+- NPS score = % Promoters (9–10) − % Detractors (0–6), range −100 to +100
+- Max 1 ответ в месяц на пользователя
+- Cron: 1-го числа каждого месяца в 11:00 UTC → push активным клиентам (≥1 DONE заказ за 30 дней)
+
+---
+
+Последнее обновление: 2026-04-02

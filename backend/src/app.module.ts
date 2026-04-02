@@ -3,7 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { CommonModule } from './common/common.module';
@@ -25,6 +26,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConsultationsModule } from './consultations/consultations.module';
+import { NpsModule } from './nps/nps.module';
 
 @Module({
   imports: [
@@ -97,10 +99,11 @@ import { ConsultationsModule } from './consultations/consultations.module';
     LoyaltyModule,
     SubscriptionsModule,
     ConsultationsModule,
+    NpsModule,
   ],
   controllers: [AppController],
   providers: [
-    // Apply global throttle guard
+    { provide: APP_FILTER, useClass: SentryExceptionFilter },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

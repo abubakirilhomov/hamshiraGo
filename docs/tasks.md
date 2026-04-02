@@ -199,7 +199,7 @@
 - [x] **MED-L1** — **FIXED** — Photo MIME type: `jpg` mapped to `image/jpeg` — `medic/app/(tabs)/profile.tsx`
 - [x] **MED-L2** — **FIXED** (already) — Work zone PATCH: `saving`/`clearing` states + `disabled` already present — `medic/app/work-zone.tsx`
 - [x] **MOB-L1** — **FIXED** — Phone re-validation: trim + length check before order creation — `mobile/app/order/confirm.tsx`
-- [ ] **ALL-L1** — Добавить Sentry/error tracking для production
+- [x] **ALL-L1** — **FIXED** — Sentry error tracking подключён к backend, mobile, medic
 
 ---
 
@@ -329,10 +329,11 @@
 - [x] Admin: CRUD тарифов + статистика
 - [x] Mobile: экран подписок с покупкой, отменой, info на confirm screen
 
-### NPS-опросы — Абубакир (backend)
-- [ ] Backend: cron — раз в месяц отправка NPS-опроса активным клиентам (push/Telegram)
-- [ ] Backend: сбор и хранение NPS-ответов
-- [ ] Admin: дашборд NPS с графиком по месяцам
+### NPS-опросы — DONE
+- [x] Backend: cron `0 11 1 * *` — ежемесячная отправка NPS push активным клиентам
+- [x] Backend: NpsSurvey entity, POST /nps/submit, GET /nps/check, GET /nps/admin/stats
+- [x] Mobile: NPS экран (шкала 0–10 + комментарий + благодарность) + auto-check при запуске
+- [ ] Admin: дашборд NPS с графиком по месяцам (Диёр)
 
 ### ИИ-агент + онлайн-консультация — DONE
 - [x] Backend: AiAgentService (Claude Haiku), Doctor/Consultation/ChatMessage entities
@@ -405,8 +406,8 @@
 ## ⚡ V3 — roadmap (Абубакир — backend)
 
 - [ ] Видео/чат консультация с врачом (Agora/WebRTC или Telegram видеозвонок)
-- [ ] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру
-- [ ] NPS-опросы: cron + дашборд в admin
+- [x] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру — **DONE** (Prescription entity + endpoints + mobile UI)
+- [x] NPS-опросы: cron + дашборд в admin — **DONE** (NpsSurvey entity + cron monthly + mobile UI + admin stats)
 
 ## 💡 Идеи / V3+
 

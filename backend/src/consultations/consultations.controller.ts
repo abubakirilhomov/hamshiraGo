@@ -19,6 +19,7 @@ import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
+import { ConfirmPrescriptionDto } from './dto/confirm-prescription.dto';
 
 @Controller('consultations')
 export class ConsultationsController {
@@ -116,6 +117,49 @@ export class ConsultationsController {
   }
 
   /* ------------------------------------------------------------------ */
+  /*  Prescriptions (client)                                             */
+  /* ------------------------------------------------------------------ */
+
+  /** List own prescriptions (paginated) */
+  @UseGuards(JwtAuthGuard)
+  @Get('prescriptions/my')
+  getMyPrescriptions(
+    @ClientId() userId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const l = Math.min(50, Math.max(1, parseInt(limit ?? '20', 10) || 20));
+    return this.consultationsService.getMyPrescriptions(userId, p, l);
+  }
+
+  /** Confirm prescription — provide location and create order */
+  @UseGuards(JwtAuthGuard)
+  @Post('prescriptions/:id/confirm')
+  confirmPrescription(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() userId: string,
+    @Body() dto: ConfirmPrescriptionDto,
+  ) {
+    return this.consultationsService.confirmPrescription(id, userId, {
+      serviceId: '', // will be overridden by prescription's serviceId
+      location: dto.location,
+      isUrgent: dto.isUrgent,
+      discountAmount: dto.discountAmount,
+    });
+  }
+
+  /** Cancel a pending prescription */
+  @UseGuards(JwtAuthGuard)
+  @Post('prescriptions/:id/cancel')
+  cancelPrescription(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() userId: string,
+  ) {
+    return this.consultationsService.cancelPrescription(id, userId);
+  }
+
+  /* ------------------------------------------------------------------ */
   /*  Admin endpoints                                                    */
   /* ------------------------------------------------------------------ */
 
@@ -143,19 +187,30 @@ export class ConsultationsController {
     return this.consultationsService.getAllDoctors();
   }
 
-  /** Admin: complete consultation with notes + optional auto-order */
+  /** Admin: complete consultation with notes + optional prescription */
   @UseGuards(AdminGuard)
   @Patch('admin/:id/complete')
-  completeConsultation(
+  async completeConsultation(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CompleteConsultationDto,
   ) {
-    // Note: auto-order creation would be handled by the caller
-    // passing the created order ID after creating it via OrdersService
-    return this.consultationsService.completeConsultation(
+    const consultation = await this.consultationsService.completeConsultation(
       id,
       dto.doctorNotes,
     );
+
+    // If a service was prescribed, create a prescription for the client
+    if (dto.createOrderServiceId) {
+      const prescription = await this.consultationsService.createPrescription(
+        consultation.id,
+        consultation.clientId,
+        dto.createOrderServiceId,
+        dto.doctorNotes,
+      );
+      return { ...consultation, prescription };
+    }
+
+    return consultation;
   }
 
   /** Admin: cancel a consultation */
