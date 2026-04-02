@@ -1,5 +1,12 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (Sentry Error Tracking — ALL-L1)
+
+- **[infra]** Backend Sentry: `@sentry/nestjs` installed, `instrument.ts` with DSN from env, `SentryExceptionFilter` (5xx only) registered globally -- `backend/src/instrument.ts`, `backend/src/common/filters/sentry-exception.filter.ts`, `backend/src/app.module.ts`, `backend/src/main.ts`
+- **[infra]** Mobile Sentry: `@sentry/react-native` installed, `Sentry.init()` in `_layout.tsx`, `reportError()` sends to both Sentry + backend API -- `mobile/app/_layout.tsx`, `mobile/utils/reportError.ts`, `mobile/app.json` (plugin)
+- **[infra]** Medic Sentry: `@sentry/react-native` installed, `Sentry.init()` in `_layout.tsx`, `reportError()` sends to both Sentry + backend API -- `medic/app/_layout.tsx`, `medic/utils/reportError.ts`, `medic/app.json` (plugin)
+- **[docs]** Added Диёр's task list to `docs/tasks.md` with API refs and mobile references
+
 ## 2026-03-31 (Full Documentation Sync)
 
 - **[docs]** Created `docs/PRODUCTION_SETUP.md` -- comprehensive production deployment guide with Railway env vars (critical/payments/AI/Telegram/Cloudinary/VAPID/optional), database migration instructions, mobile app EAS setup, web app deployment, security checklist, graceful fallbacks table, monitoring/cron jobs overview, architecture diagram

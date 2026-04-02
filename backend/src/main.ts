@@ -1,3 +1,4 @@
+import './instrument';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { getDataSourceToken } from '@nestjs/typeorm';

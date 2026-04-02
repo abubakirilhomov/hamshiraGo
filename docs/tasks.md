@@ -199,7 +199,7 @@
 - [x] **MED-L1** — **FIXED** — Photo MIME type: `jpg` mapped to `image/jpeg` — `medic/app/(tabs)/profile.tsx`
 - [x] **MED-L2** — **FIXED** (already) — Work zone PATCH: `saving`/`clearing` states + `disabled` already present — `medic/app/work-zone.tsx`
 - [x] **MOB-L1** — **FIXED** — Phone re-validation: trim + length check before order creation — `mobile/app/order/confirm.tsx`
-- [ ] **ALL-L1** — Добавить Sentry/error tracking для production
+- [x] **ALL-L1** — **FIXED** — Sentry error tracking подключён к backend, mobile, medic
 
 ---
 
