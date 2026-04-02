@@ -1,5 +1,17 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (V3: NPS Surveys)
+
+- **[feature]** NPS module: NpsSurvey entity (userId, score 0–10, comment), submit with 1/month limit, hasAnsweredThisMonth check -- `backend/src/nps/`
+- **[feature]** NPS cron: `@Cron('0 11 1 * *')` sends push to active clients (≥1 DONE order in 30 days), skips already-answered -- `backend/src/nps/nps.service.ts`
+- **[feature]** NPS admin stats: overall NPS score + monthly breakdown with promoters/passives/detractors -- `GET /nps/admin/stats`
+- **[feature]** NPS endpoints: POST /nps/submit, GET /nps/check, GET /nps/admin/stats -- `backend/src/nps/nps.controller.ts`
+- **[migration]** SQL migration `backend/migrations/006_nps.sql` -- nps_surveys table with indexes
+- **[feature]** Mobile NPS screen: 0–10 score buttons (color-coded), optional comment, thank-you screen -- `mobile/app/nps.tsx`
+- **[feature]** Auto-check NPS on app open (GET /nps/check → navigate to /nps if shouldShow) -- `mobile/app/_layout.tsx`
+- **[feature]** Push deep link for NPS (data.type === 'nps') -- `mobile/app/_layout.tsx`
+- **[i18n]** Added `nps.*` keys to ru.json and uz.json (13 keys each)
+
 ## 2026-04-02 (V3: Doctor Prescription → Auto-Order)
 
 - **[feature]** Prescription entity: consultationId, clientId, serviceId, serviceTitle, servicePrice, status (PENDING/CONFIRMED/CANCELED/EXPIRED), orderId, doctorNotes, expiresAt (7 days) -- `backend/src/consultations/entities/prescription.entity.ts`

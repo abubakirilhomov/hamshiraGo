@@ -350,5 +350,18 @@
     "statusConfirmed": "Подтверждено",
     "statusCanceled": "Отменено",
     "statusExpired": "Истекло"
+  },
+  "nps": {
+    "question": "Порекомендуете ли вы HamshiraGo друзьям?",
+    "subText": "Оцените от 0 до 10",
+    "notLikely": "Точно нет",
+    "veryLikely": "Обязательно",
+    "commentLabel": "Что можно улучшить?",
+    "commentPlaceholder": "Ваш комментарий (необязательно)",
+    "submit": "Отправить",
+    "skip": "Пропустить",
+    "thankYou": "Спасибо!",
+    "thankYouSub": "Ваше мнение поможет нам стать лучше",
+    "done": "Готово"
   }
 }

@@ -329,10 +329,11 @@
 - [x] Admin: CRUD тарифов + статистика
 - [x] Mobile: экран подписок с покупкой, отменой, info на confirm screen
 
-### NPS-опросы — Абубакир (backend)
-- [ ] Backend: cron — раз в месяц отправка NPS-опроса активным клиентам (push/Telegram)
-- [ ] Backend: сбор и хранение NPS-ответов
-- [ ] Admin: дашборд NPS с графиком по месяцам
+### NPS-опросы — DONE
+- [x] Backend: cron `0 11 1 * *` — ежемесячная отправка NPS push активным клиентам
+- [x] Backend: NpsSurvey entity, POST /nps/submit, GET /nps/check, GET /nps/admin/stats
+- [x] Mobile: NPS экран (шкала 0–10 + комментарий + благодарность) + auto-check при запуске
+- [ ] Admin: дашборд NPS с графиком по месяцам (Диёр)
 
 ### ИИ-агент + онлайн-консультация — DONE
 - [x] Backend: AiAgentService (Claude Haiku), Doctor/Consultation/ChatMessage entities
@@ -406,7 +407,7 @@
 
 - [ ] Видео/чат консультация с врачом (Agora/WebRTC или Telegram видеозвонок)
 - [x] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру — **DONE** (Prescription entity + endpoints + mobile UI)
-- [ ] NPS-опросы: cron + дашборд в admin
+- [x] NPS-опросы: cron + дашборд в admin — **DONE** (NpsSurvey entity + cron monthly + mobile UI + admin stats)
 
 ## 💡 Идеи / V3+
 

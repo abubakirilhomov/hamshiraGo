@@ -350,5 +350,18 @@
     "statusConfirmed": "Tasdiqlandi",
     "statusCanceled": "Bekor qilindi",
     "statusExpired": "Muddati tugagan"
+  },
+  "nps": {
+    "question": "HamshiraGo'ni do'stlaringizga tavsiya qilasizmi?",
+    "subText": "0 dan 10 gacha baholang",
+    "notLikely": "Albatta yo'q",
+    "veryLikely": "Albatta ha",
+    "commentLabel": "Nimani yaxshilash mumkin?",
+    "commentPlaceholder": "Izohingiz (ixtiyoriy)",
+    "submit": "Yuborish",
+    "skip": "O'tkazib yuborish",
+    "thankYou": "Rahmat!",
+    "thankYouSub": "Fikringiz bizga yaxshiroq bo'lishga yordam beradi",
+    "done": "Tayyor"
   }
 }

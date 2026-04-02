@@ -618,4 +618,42 @@ Notes:
 
 ---
 
+## 23. NPS Surveys
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/nps/submit` | Client JWT | Отправить оценку NPS |
+| `GET` | `/nps/check` | Client JWT | Проверить нужно ли показывать опрос |
+| `GET` | `/nps/admin/stats` | Admin | Дашборд NPS |
+
+`POST /nps/submit` body:
+
+```json
+{ "score": 9, "comment": "Отличный сервис!" }
+```
+
+`GET /nps/check` response:
+
+```json
+{ "shouldShow": true }
+```
+
+`GET /nps/admin/stats` response:
+
+```json
+{
+  "overall": { "nps": 45, "total": 100, "promoters": 60, "passives": 25, "detractors": 15 },
+  "monthly": [
+    { "month": "2026-04", "nps": 50, "total": 20, "promoters": 14, "passives": 3, "detractors": 3 }
+  ]
+}
+```
+
+Notes:
+- NPS score = % Promoters (9–10) − % Detractors (0–6), range −100 to +100
+- Max 1 ответ в месяц на пользователя
+- Cron: 1-го числа каждого месяца в 11:00 UTC → push активным клиентам (≥1 DONE заказ за 30 дней)
+
+---
+
 Последнее обновление: 2026-04-02

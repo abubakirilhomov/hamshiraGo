@@ -26,6 +26,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConsultationsModule } from './consultations/consultations.module';
+import { NpsModule } from './nps/nps.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { ConsultationsModule } from './consultations/consultations.module';
     LoyaltyModule,
     SubscriptionsModule,
     ConsultationsModule,
+    NpsModule,
   ],
   controllers: [AppController],
   providers: [
