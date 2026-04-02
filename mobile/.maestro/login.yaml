@@ -3,8 +3,30 @@ appId: com.hamshirago.client
 - launchApp:
     clearState: true
 
-# Auth screen should appear
-- takeScreenshot: 01_auth_screen
+- takeScreenshot: 01_onboarding
+
+# Skip onboarding
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
+
+- waitForAnimationToEnd
+
+# Language picker — choose Russian
+- tapOn:
+    text: ".*Русский.*"
+    optional: true
+
+- waitForAnimationToEnd
+- takeScreenshot: 02_after_lang
+
+# Maybe another onboarding or language screen
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
+
+- waitForAnimationToEnd
+- takeScreenshot: 03_auth_screen
 
 # Enter phone number
 - tapOn:
@@ -16,13 +38,11 @@ appId: com.hamshirago.client
     id: "auth_password_input"
 - inputText: "test1234"
 
-- takeScreenshot: 02_auth_filled
+- takeScreenshot: 04_auth_filled
 
 # Submit login
 - tapOn:
     id: "auth_submit_button"
 
-# Wait for navigation or error
 - waitForAnimationToEnd
-
-- takeScreenshot: 03_after_login
+- takeScreenshot: 05_after_login

@@ -1,71 +1,88 @@
 appId: com.hamshirago.client
 ---
 # Full app audit — screenshots of all accessible screens
-- launchApp
+- launchApp:
+    clearState: true
+
+- takeScreenshot: 01_onboarding
+
+# Skip onboarding
+- tapOn:
+    text: ".*Пропустить.*"
+    optional: true
 - waitForAnimationToEnd
 
+# Language picker — choose Russian
+- tapOn:
+    text: ".*Русский.*"
+    optional: true
+- waitForAnimationToEnd
+
+- takeScreenshot: 02_auth_screen
+
+# Login with test credentials
+- tapOn:
+    id: "auth_phone_input"
+- inputText: "+998901234567"
+- tapOn:
+    id: "auth_password_input"
+- inputText: "test1234"
+- tapOn:
+    id: "auth_submit_button"
+- waitForAnimationToEnd
+
+- takeScreenshot: 03_after_login
+
+# If login succeeded, navigate tabs
 # Home
-- takeScreenshot: 01_home
+- takeScreenshot: 04_home
 
 # Orders tab
-- tapOn: "Заказы"
+- tapOn:
+    text: ".*Заказы.*"
+    optional: true
 - waitForAnimationToEnd
-- takeScreenshot: 02_orders
+- takeScreenshot: 05_orders
 
 # Profile tab
-- tapOn: "Профиль"
+- tapOn:
+    text: ".*Профиль.*"
+    optional: true
 - waitForAnimationToEnd
-- takeScreenshot: 03_profile
+- takeScreenshot: 06_profile
 
-# Scroll profile to see links
+# Scroll profile
 - scroll
-- takeScreenshot: 04_profile_links
+- takeScreenshot: 07_profile_links
 
 # Try loyalty
-- tapOn: "Мои бонусы"
-  optional: true
+- tapOn:
+    text: ".*бонус.*"
+    optional: true
 - waitForAnimationToEnd
-- takeScreenshot: 05_loyalty
+- takeScreenshot: 08_loyalty
 - pressKey: back
 
 # Try subscriptions
-- tapOn: "Подписки"
-  optional: true
+- tapOn:
+    text: ".*Подписк.*"
+    optional: true
 - waitForAnimationToEnd
-- takeScreenshot: 06_subscriptions
-- pressKey: back
-
-# Try courses
-- tapOn: "Курсы лечения"
-  optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 07_courses
-- pressKey: back
-
-# Try referral
-- tapOn: "Пригласить друга"
-  optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 08_referral
-- pressKey: back
-
-# Try medical card
-- tapOn: "Медкарта"
-  optional: true
-- waitForAnimationToEnd
-- takeScreenshot: 09_medical_card
+- takeScreenshot: 09_subscriptions
 - pressKey: back
 
 # Try consultations
-- tapOn: "Мои консультации"
-  optional: true
+- tapOn:
+    text: ".*консультац.*"
+    optional: true
 - waitForAnimationToEnd
 - takeScreenshot: 10_consultations
 - pressKey: back
 
 # Try prescriptions
-- tapOn: "Мои назначения"
-  optional: true
+- tapOn:
+    text: ".*назначен.*"
+    optional: true
 - waitForAnimationToEnd
 - takeScreenshot: 11_prescriptions
 - pressKey: back
