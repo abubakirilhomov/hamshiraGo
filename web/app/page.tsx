@@ -7,7 +7,7 @@ import {
   FaSignOutAlt, FaListAlt, FaSyringe, FaThermometerHalf,
   FaFlask, FaBandAid,
 } from "react-icons/fa";
-import { api, Service, formatPrice } from "@/lib/api";
+import { api, Service, formatPrice, checkNps } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -70,6 +70,14 @@ export default function HomePage() {
       }
     } catch { /* ignore */ }
     loadServices();
+    // NPS auto-check — once per session
+    try {
+      if (!sessionStorage.getItem("nps_shown")) {
+        checkNps().then((res) => {
+          if (res.shouldShow) router.push("/nps");
+        }).catch(() => {});
+      }
+    } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 

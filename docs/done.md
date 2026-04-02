@@ -1,5 +1,16 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (D-12: Web NPS)
+- **[feature]** checkNps, submitNps API functions — web/lib/api.ts
+- **[feature]** `/nps` page — 0–10 score buttons (red/amber/green), comment textarea, thank-you screen — web/app/nps/page.tsx
+- **[feature]** Auto-check on main page load: GET /nps/check → if shouldShow redirect to /nps (once per session via sessionStorage) — web/app/page.tsx
+
+## 2026-04-02 (D-11: Web Prescriptions)
+- **[feature]** Prescription type + API functions (getMyPrescriptions, confirmPrescription, cancelPrescription) — web/lib/api.ts
+- **[feature]** `/prescriptions` page — list with PENDING/CONFIRMED/CANCELED/EXPIRED status badges, expiry check, pagination — web/app/prescriptions/page.tsx
+- **[feature]** `/prescriptions/[id]` page — service info, doctorNotes, expiry, GPS location, address form (house/floor/apt/phone), confirm/cancel modals — web/app/prescriptions/[id]/page.tsx
+- **[feature]** Prescriptions link added to profile page — web/app/profile/page.tsx
+
 ## 2026-04-02 (V3: Video Consultations — LiveKit)
 
 - **[feature]** VideoService: LiveKit integration — createRoom, generateToken, endCall, joinCall with RoomServiceClient -- `backend/src/consultations/video.service.ts`

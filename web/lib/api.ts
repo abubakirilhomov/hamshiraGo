@@ -361,6 +361,216 @@ export const getMedicalCard = () => request<MedicalCard | null>("/medical-card")
 export const saveMedicalCard = (data: MedicalCard) =>
   request<MedicalCard>("/medical-card", { method: "PUT", body: JSON.stringify(data) });
 
+// ─── Doctors / Consultations ─────────────────────────────────────────────────
+
+export interface Doctor {
+  id: string;
+  name: string;
+  nameUz: string | null;
+  specialization: string;
+  specializationUz: string | null;
+  bio: string | null;
+  photoUrl: string | null;
+  pricePerConsultation: number;
+  rating: number;
+  consultationCount: number;
+  isActive: boolean;
+}
+
+export interface Consultation {
+  id: string;
+  doctorId: string;
+  doctor: Doctor;
+  symptoms: string | null;
+  status: "PENDING" | "ACTIVE" | "COMPLETED" | "CANCELED";
+  createdAt: string;
+  doctorNotes: string | null;
+}
+
+export interface ConsultationListResponse {
+  data: Consultation[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const getDoctors = (specialization?: string) => {
+  const q = specialization ? `?specialization=${encodeURIComponent(specialization)}` : "";
+  return request<Doctor[]>(`/consultations/doctors${q}`);
+};
+
+export const getDoctorById = (id: string) =>
+  request<Doctor>(`/consultations/doctors/${id}`);
+
+export const createConsultation = (doctorId: string, symptoms?: string) =>
+  request<Consultation>("/consultations", {
+    method: "POST",
+    body: JSON.stringify({ doctorId, ...(symptoms ? { symptoms } : {}) }),
+  });
+
+export const getMyConsultations = (page = 1, limit = 10) =>
+  request<ConsultationListResponse>(`/consultations/my?page=${page}&limit=${limit}`);
+
+export const getConsultationById = (id: string) =>
+  request<Consultation>(`/consultations/${id}`);
+
+// ─── Prescriptions ────────────────────────────────────────────────────────────
+
+export interface Prescription {
+  id: string;
+  consultationId: string;
+  clientId: string;
+  serviceId: string;
+  serviceTitle: string;
+  servicePrice: number;
+  status: "PENDING" | "CONFIRMED" | "CANCELED" | "EXPIRED";
+  orderId: string | null;
+  doctorNotes: string | null;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface PrescriptionListResponse {
+  data: Prescription[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface ConfirmPrescriptionDto {
+  location: {
+    latitude: number;
+    longitude: number;
+    house: string;
+    floor?: string;
+    apartment?: string;
+    phone: string;
+  };
+}
+
+export const getMyPrescriptions = (page = 1, limit = 20) =>
+  request<PrescriptionListResponse>(`/consultations/prescriptions/my?page=${page}&limit=${limit}`);
+
+export const confirmPrescription = (id: string, data: ConfirmPrescriptionDto) =>
+  request<Prescription>(`/consultations/prescriptions/${id}/confirm`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const cancelPrescription = (id: string) =>
+  request<Prescription>(`/consultations/prescriptions/${id}/cancel`, { method: "POST" });
+
+// ─── NPS ──────────────────────────────────────────────────────────────────────
+
+export interface NpsCheckResponse {
+  shouldShow: boolean;
+}
+
+export const checkNps = () => request<NpsCheckResponse>("/nps/check");
+
+export const submitNps = (score: number, comment?: string) =>
+  request<void>("/nps/submit", {
+    method: "POST",
+    body: JSON.stringify({ score, ...(comment ? { comment } : {}) }),
+  });
+
+// ─── Consultations / AI Chat ──────────────────────────────────────────────────
+
+export interface AiChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface AiChatResponse {
+  reply: string;
+  recommendation?: { specialization: string; summary: string };
+}
+
+// Добавляем consultations в объект api ниже отдельно через расширение
+export const consultationsApi = {
+  aiChat: (messages: AiChatMessage[]) =>
+    request<AiChatResponse>("/consultations/ai-chat", {
+      method: "POST",
+      body: JSON.stringify({ messages }),
+    }),
+};
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+export interface SubscriptionTier {
+  id: string;
+  name: string;
+  nameUz: string | null;
+  description: string | null;
+  descriptionUz: string | null;
+  price: number;
+  billingDays: number;
+  maxOrders: number;
+  discountPercent: number;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface Subscription {
+  id: string;
+  tierId: string;
+  tier: SubscriptionTier;
+  status: "ACTIVE" | "EXPIRED" | "CANCELED";
+  ordersUsed: number;
+  startDate: string;
+  expiresAt: string;
+}
+
+export const getSubscriptionTiers = () =>
+  request<SubscriptionTier[]>("/subscriptions/tiers");
+
+export const getMySubscription = () =>
+  request<Subscription | null>("/subscriptions/my");
+
+export const purchaseSubscription = (tierId: string) =>
+  request<Subscription>("/subscriptions/purchase", {
+    method: "POST",
+    body: JSON.stringify({ tierId }),
+  });
+
+export const cancelSubscription = () =>
+  request<Subscription>("/subscriptions/cancel", { method: "POST" });
+
+// ─── Loyalty ──────────────────────────────────────────────────────────────────
+
+export interface LoyaltyBalance {
+  points: number;
+  tier: "BRONZE" | "SILVER" | "GOLD";
+  nextTierAt: number | null;
+  nextTierName: string | null;
+}
+
+export interface LoyaltyTransaction {
+  id: string;
+  type: "EARNED" | "SPENT" | "MILESTONE" | "BONUS";
+  points: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface LoyaltyHistoryResponse {
+  data: LoyaltyTransaction[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const getLoyaltyBalance = () => request<LoyaltyBalance>("/loyalty/my");
+
+export const getLoyaltyHistory = (page = 1, limit = 20) =>
+  request<LoyaltyHistoryResponse>(`/loyalty/history?page=${page}&limit=${limit}`);
+
+export const redeemLoyaltyPoints = (points: number) =>
+  request<{ discountAmount: number; remainingPoints: number }>("/loyalty/redeem", {
+    method: "POST",
+    body: JSON.stringify({ points }),
+  });
+
 // ─── Error Reporting ──────────────────────────────────────────────────────────
 
 export function reportClientError(message: string, stack?: string): void {

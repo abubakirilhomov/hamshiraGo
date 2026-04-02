@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift, FaStar, FaSyringe } from "react-icons/fa";
+import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift, FaStar, FaSyringe, FaCoins, FaLayerGroup, FaRobot, FaFileMedical } from "react-icons/fa";
 import { unsubscribeWebPush } from "@/lib/webPush";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
@@ -179,6 +179,52 @@ export default function ProfilePage() {
           </svg>
         </button>
 
+        {/* Loyalty */}
+        <button
+          onClick={() => router.push("/loyalty")}
+          style={{
+            width: "100%", background: "#fff", borderRadius: 16,
+            padding: "16px 16px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            border: "1px solid #f1f5f9",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 12,
+            marginBottom: 12, textAlign: "left",
+          }}
+        >
+          <div style={iconWrap}><FaCoins size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Мои бонусы</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>Баллы, тир и история начислений</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Subscriptions */}
+        <button
+          onClick={() => router.push("/subscriptions")}
+          style={{
+            width: "100%", background: "#fff", borderRadius: 16,
+            padding: "16px 16px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            border: "1px solid #f1f5f9",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 12,
+            marginBottom: 12, textAlign: "left",
+          }}
+        >
+          <div style={iconWrap}><FaLayerGroup size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Подписки</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>Скидки на заказы по подписке</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         {/* Referral */}
         <button
           onClick={() => router.push("/referral")}
@@ -200,6 +246,45 @@ export default function ProfilePage() {
           <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
+        </button>
+
+        {/* Consultations */}
+        <button
+          onClick={() => router.push("/consultations")}
+          style={{ width: "100%", background: "#fff", borderRadius: 16, padding: "16px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}
+        >
+          <div style={iconWrap}><FaHeartbeat size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Консультации</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>История онлайн-консультаций с врачами</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+
+        {/* Prescriptions */}
+        <button
+          onClick={() => router.push("/prescriptions")}
+          style={{ width: "100%", background: "#fff", borderRadius: 16, padding: "16px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}
+        >
+          <div style={iconWrap}><FaFileMedical size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>Мои рецепты</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>Рецепты от врачей и оформление заказов</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+
+        {/* AI Chat */}
+        <button
+          onClick={() => router.push("/ai-chat")}
+          style={{ width: "100%", background: "#fff", borderRadius: 16, padding: "16px 16px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}
+        >
+          <div style={iconWrap}><FaRobot size={14} color="#0d9488" /></div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>ИИ-ассистент</p>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>Медицинская консультация с ИИ</p>
+          </div>
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5-5 5" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
 
         {/* Favorites (My medics) */}

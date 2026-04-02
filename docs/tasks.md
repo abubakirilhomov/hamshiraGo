@@ -389,64 +389,50 @@
 
 
 #### D-6. Web: Loyalty (бонусная программа)
-- [ ] Страница `/loyalty` — баланс очков, тир (BRONZE/SILVER/GOLD), прогресс-бар до следующего тира
-- [ ] История транзакций (EARNED/SPENT/BONUS/MILESTONE) с пагинацией
-- [ ] Redemption: списание баллов на скидку (preset кнопки + manual input)
-- [ ] Карточка loyalty в профиле с очками и тиром
+- [x] Страница `/loyalty` — баланс очков, тир (BRONZE/SILVER/GOLD), прогресс-бар до следующего тира
+- [x] История транзакций (EARNED/SPENT/BONUS/MILESTONE) с пагинацией
+- [x] Redemption: списание баллов на скидку (preset кнопки + manual input)
+- [x] Карточка loyalty в профиле с очками и тиром
 - [ ] Info-блок на странице подтверждения заказа (доступная скидка)
 - API: `GET /loyalty/my`, `GET /loyalty/history?page=&limit=`, `POST /loyalty/redeem` (body: `{ points }`)
 - Референс: `mobile/app/loyalty.tsx`
 
 #### D-7. Web: Subscriptions (подписки)
-- [ ] Страница `/subscriptions` — доступные тарифы (название, цена, период, макс заказов, % скидки)
-- [ ] Активная подписка: карточка с прогресс-баром (использовано/доступно заказов), дата окончания
-- [ ] Покупка подписки + отмена
+- [x] Страница `/subscriptions` — доступные тарифы (название, цена, период, макс заказов, % скидки)
+- [x] Активная подписка: карточка с прогресс-баром (использовано/доступно заказов), дата окончания
+- [x] Покупка подписки + отмена
 - [ ] Info-блок на странице подтверждения заказа (% скидки от подписки)
 - API: `GET /subscriptions/tiers`, `GET /subscriptions/my`, `POST /subscriptions/purchase` (body: `{ tierId }`), `POST /subscriptions/cancel`
 - Референс: `mobile/app/subscriptions.tsx`
 
 #### D-8. Web: AI Chat (чат с ИИ-ассистентом)
-- [ ] Страница `/ai-chat` — чат-интерфейс с AI медицинским ассистентом
-- [ ] Сообщения user/assistant, индикатор набора текста
-- [ ] Карточка рекомендации (специализация + кнопка "Найти врача")
+- [x] Страница `/ai-chat` — чат-интерфейс с AI медицинским ассистентом
+- [x] Сообщения user/assistant, индикатор набора текста
+- [x] Карточка рекомендации (специализация + кнопка "Найти врача")
 - API: `POST /consultations/ai-chat` (body: `{ messages: [{ role, content }] }`)
 - Референс: `mobile/app/ai-chat.tsx`
 
 #### D-9. Web: Doctors (список врачей)
-- [ ] Страница `/doctors` — список врачей с фильтром по специализации
-- [ ] Карточка врача: фото, имя, специализация, рейтинг, цена, кол-во консультаций
-- [ ] Кнопка "Записаться" → переход на бронирование
+- [x] Страница `/doctors` — список врачей с фильтром по специализации
+- [x] Карточка врача: фото, имя, специализация, рейтинг, цена, кол-во консультаций
+- [x] Кнопка "Записаться" → переход на бронирование
 - API: `GET /consultations/doctors?specialization=`, `GET /consultations/doctors/:id`
 - Референс: `mobile/app/doctors.tsx`
 
 #### D-10. Web: Consultation (бронирование + история)
-- [ ] Страница `/consultation` — бронирование консультации (doctor info, symptoms, price, confirm)
-- [ ] Страница `/consultations` — история моих консультаций с пагинацией и статусами (PENDING/ACTIVE/COMPLETED/CANCELED)
-- [ ] Детали консультации: doctor notes, сообщения чата, связанный заказ
+- [x] Страница `/consultation` — бронирование консультации (doctor info, symptoms, price, confirm)
+- [x] Страница `/consultations` — история моих консультаций с пагинацией и статусами (PENDING/ACTIVE/COMPLETED/CANCELED)
+- [x] Детали консультации: doctor notes модал
 - API: `POST /consultations` (body: `{ doctorId, symptoms, suggestedSpecialization }`), `GET /consultations/my?page=&limit=`, `GET /consultations/:id`
 - Референс: `mobile/app/consultation.tsx`, `mobile/app/consultations.tsx`
 
-#### D-11. Web: Prescriptions (назначения врача)
-- [ ] Страница `/prescriptions` — список назначений с статусами (PENDING/CONFIRMED/CANCELED/EXPIRED)
-- [ ] Страница `/prescription/[id]` — детали назначения: услуга, цена, рекомендации врача, срок действия
-- [ ] Форма подтверждения: ввод адреса (дом, этаж, квартира, телефон) + кнопка "Подтвердить и вызвать медсестру"
-- [ ] Отмена назначения
-- API: `GET /consultations/prescriptions/my?page=&limit=`, `POST /consultations/prescriptions/:id/confirm` (body: `{ location, isUrgent? }`), `POST /consultations/prescriptions/:id/cancel`
-- Референс: `mobile/app/prescription.tsx`, `mobile/app/prescriptions.tsx`
+#### ~~D-11. Web: Prescriptions (назначения врача)~~ ✅ DONE
 
-#### D-12. Web: NPS (опрос удовлетворённости)
-- [ ] Страница `/nps` — шкала 0–10, комментарий, экран благодарности
-- [ ] Auto-check при загрузке приложения: `GET /nps/check` → если `shouldShow: true` → показать модал/redirect
-- API: `POST /nps/submit` (body: `{ score, comment? }`), `GET /nps/check`
-- Референс: `mobile/app/nps.tsx`
+#### ~~D-12. Web: NPS (опрос удовлетворённости)~~ ✅ DONE
 
 ### 🟡 Приоритет 3 — Admin панель
 
-#### D-13. Admin: NPS дашборд
-- [ ] Страница NPS: общий NPS score, количество promoters/passives/detractors
-- [ ] Тренд по месяцам (график или таблица)
-- [ ] Ссылка в сайдбаре
-- API: `GET /nps/admin/stats`
+#### ~~D-13. Admin: NPS дашборд~~ ✅ DONE
 
 #### D-14. Admin: управление назначениями (prescriptions)
 - [ ] На странице завершения консультации: dropdown выбора услуги (serviceId)
