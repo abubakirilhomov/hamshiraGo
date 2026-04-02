@@ -344,18 +344,69 @@
 
 ---
 
-## ⚡ V3 — roadmap
+## 📌 Задачи Диёра (web / web-medic / admin / landing)
+
+> Backend и mobile части уже готовы. Диёр делает web/admin UI.
+
+### V1 — до запуска (приоритет)
+
+#### 1. Web: экран оценки заказа
+- [ ] Экран оценки после завершения заказа (звёзды + комментарий)
+- API: `POST /reviews` (body: `{ orderId, rating, comment, targetRole: "medic" }`)
+- API: `GET /reviews/order/:id` — проверить, оставлен ли отзыв
+- Референс: `mobile/components/RatingModal.tsx`
+
+#### 2. Web: срочный вызов при создании заказа
+- [ ] Переключатель «Срочный вызов» на странице создания заказа
+- [ ] Отображение доплаты (urgentFee) в итоговой сумме
+- API: `POST /orders` принимает `isUrgent: true`
+- API: `GET /settings` — получить `urgentFeePercent`, `urgentStartHour`, `urgentEndHour`
+- Референс: `mobile/app/order/confirm.tsx`
+
+#### 3. Web / Web-medic: глобальный error handler
+- [ ] Перехват JS ошибок (window.onerror / ErrorBoundary)
+- [ ] Перехват ошибок API (fetch wrapper)
+- [ ] Отправка на `POST /client-errors` с полями: `message`, `stackTrace`, `screen`, `appType` (web/web-medic), `deviceInfo`, `appVersion`
+- Референс: `mobile/components/ErrorBoundary.tsx`
+
+#### 4. Admin: страница «User Support»
+- [ ] Таблица ошибок: пользователь, сообщение, экран, устройство, дата, статус
+- [ ] Фильтры: по пользователю, дате, статусу (NEW / IN_PROGRESS / FIXED / IGNORED)
+- [ ] Детальная карточка ошибки: полный стек, устройство, история заказов пользователя
+- [ ] Счётчик новых ошибок в сайдбаре (бейдж)
+- API: `GET /client-errors/admin` (query: userId, appType, status, dateFrom, dateTo, page, limit)
+- API: `GET /client-errors/admin/stats` — счётчики по статусам
+- API: `PATCH /client-errors/admin/:id` — смена статуса
+
+#### 5. Admin: геозоны медиков на карте
+- [ ] На карте медиков отображать workZone круги (полупрозрачные)
+- Данные: `workZoneLat`, `workZoneLng`, `workZoneRadius` из `GET /medics/admin/all`
+- Референс: `medic/app/work-zone.tsx` (circle overlay)
+
+### SEO лендинг
+
+#### 6. Landing: SEO-страницы
+- [ ] Страницы услуг: `/uslugi/ukol-na-domu`, `/uslugi/kapelnica-na-domu`
+- [ ] Страницы по районам: `/tashkent/chilanzar`, `/tashkent/yunusabad` и т.д.
+- [ ] Meta-теги, Open Graph, JSON-LD разметка для Google
+- [ ] Sitemap.xml + robots.txt
+
+### V3
+
+#### 7. Web: Loyalty / Subscriptions UI
+- [ ] Экран «Мои бонусы» — баланс, тир, прогресс, история, redemption
+- [ ] Экран «Подписки» — активная подписка, доступные тарифы, покупка/отмена
+- API: `GET /loyalty/my`, `GET /loyalty/history`, `POST /loyalty/redeem`
+- API: `GET /subscriptions/tiers`, `GET /subscriptions/my`, `POST /subscriptions/purchase`, `POST /subscriptions/cancel`
+- Референс: `mobile/app/loyalty.tsx`, `mobile/app/subscriptions.tsx`
+
+---
+
+## ⚡ V3 — roadmap (Абубакир — backend)
 
 - [ ] Видео/чат консультация с врачом (Agora/WebRTC или Telegram видеозвонок)
 - [ ] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру
 - [ ] NPS-опросы: cron + дашборд в admin
-- [ ] Web: экран оценки после завершения заказа (звезды + комментарий)
-- [ ] Web: переключатель «Срочный вызов» при создании заказа
-- [ ] Web/Web-medic: глобальный error handler -> POST /client-errors
-- [ ] Admin: страница «User Support» — таблица ошибок с фильтрами + детальная карточка
-- [ ] Admin: счетчик новых ошибок в сайдбаре (бейдж)
-- [ ] Admin: на карте медиков отображать их геозоны
-- [ ] Loyalty/Subscriptions UI для web client
 
 ## 💡 Идеи / V3+
 
