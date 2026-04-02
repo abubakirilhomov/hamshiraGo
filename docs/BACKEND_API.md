@@ -656,4 +656,49 @@ Notes:
 
 ---
 
+## 24. Video Consultations (LiveKit)
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/consultations/:id/call` | Client JWT | Инициировать видеозвонок |
+| `POST` | `/consultations/:id/call/join` | JWT | Присоединиться к звонку |
+| `POST` | `/consultations/:id/call/end` | JWT | Завершить звонок |
+| `GET` | `/consultations/:id/call/status` | JWT | Статус звонка |
+
+`POST /consultations/:id/call` response:
+
+```json
+{
+  "token": "eyJ...",
+  "serverUrl": "wss://livekit.example.com",
+  "roomName": "consultation-uuid"
+}
+```
+
+`POST /consultations/:id/call/join` body:
+
+```json
+{ "role": "client" }
+```
+
+`GET /consultations/:id/call/status` response:
+
+```json
+{
+  "videoStatus": "ACTIVE",
+  "roomName": "consultation-uuid",
+  "serverUrl": "wss://livekit.example.com"
+}
+```
+
+Notes:
+- LiveKit WebRTC SFU — open-source, self-hostable
+- 1-к-1 звонки (клиент + врач), max 2 участника
+- Env vars: `LIVEKIT_API_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+- Если LiveKit не настроен → 400 "Video consultations are not configured"
+- `videoStatus`: `null` → `CALLING` → `ACTIVE` → `ENDED`
+- Комната автоматически удаляется через 5 мин без участников
+
+---
+
 Последнее обновление: 2026-04-02
