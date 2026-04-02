@@ -293,6 +293,11 @@ export default function ProfileScreen() {
           <Text style={styles.linkText}>{t('consultation.myConsultations')}</Text>
           <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
         </Pressable>
+        <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/prescriptions')}>
+          <FontAwesome name="file-text-o" size={15} color={Theme.primary} style={styles.linkIcon} />
+          <Text style={styles.linkText}>{t('prescription.myPrescriptions')}</Text>
+          <FontAwesome name="chevron-right" size={12} color={Theme.textSecondary} />
+        </Pressable>
         <Pressable style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.7 }]} onPress={() => router.push('/ai-chat')}>
           <FontAwesome name="commenting" size={15} color={Theme.primary} style={styles.linkIcon} />
           <Text style={styles.linkText}>{t('aiChat.title')}</Text>

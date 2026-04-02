@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,9 +10,19 @@ import { Repository } from 'typeorm';
 import { Doctor } from './entities/doctor.entity';
 import { Consultation } from './entities/consultation.entity';
 import { ChatMessage } from './entities/chat-message.entity';
+import { Prescription } from './entities/prescription.entity';
+import { OrdersService } from '../orders/orders.service';
+import { ServicesService } from '../services/services.service';
+import { UsersService } from '../users/users.service';
+import { PushNotificationsService } from '../realtime/push-notifications.service';
+import { WebPushService } from '../realtime/web-push.service';
+import { CreateOrderDto } from '../orders/dto/create-order.dto';
 
 /** Platform commission rate for consultations (15%) */
 const PLATFORM_FEE_RATE = 0.15;
+
+/** Prescription expiry period in days */
+const PRESCRIPTION_EXPIRY_DAYS = 7;
 
 @Injectable()
 export class ConsultationsService {
@@ -24,6 +35,13 @@ export class ConsultationsService {
     private readonly consultationRepo: Repository<Consultation>,
     @InjectRepository(ChatMessage)
     private readonly chatMessageRepo: Repository<ChatMessage>,
+    @InjectRepository(Prescription)
+    private readonly prescriptionRepo: Repository<Prescription>,
+    private readonly ordersService: OrdersService,
+    private readonly servicesService: ServicesService,
+    private readonly usersService: UsersService,
+    private readonly pushService: PushNotificationsService,
+    private readonly webPushService: WebPushService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -237,5 +255,151 @@ export class ConsultationsService {
     } catch {
       return {};
     }
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Prescriptions                                                      */
+  /* ------------------------------------------------------------------ */
+
+  /** Create a prescription when doctor completes consultation */
+  async createPrescription(
+    consultationId: string,
+    clientId: string,
+    serviceId: string,
+    doctorNotes?: string,
+  ): Promise<Prescription> {
+    const service = await this.servicesService.getActiveServiceOrThrow(serviceId);
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + PRESCRIPTION_EXPIRY_DAYS);
+
+    const prescription = this.prescriptionRepo.create({
+      consultationId,
+      clientId,
+      serviceId: service.id,
+      serviceTitle: service.title,
+      servicePrice: service.price,
+      doctorNotes: doctorNotes ?? null,
+      status: 'PENDING',
+      expiresAt,
+    });
+
+    const saved = await this.prescriptionRepo.save(prescription);
+
+    // Send push notification to client (fire-and-forget)
+    this.notifyClientPrescription(clientId, service.title, saved.id).catch(
+      (err) => this.logger.warn(`Prescription push failed: ${err}`),
+    );
+
+    return saved;
+  }
+
+  /** Client confirms prescription — creates an order */
+  async confirmPrescription(
+    prescriptionId: string,
+    clientId: string,
+    orderDto: CreateOrderDto,
+  ): Promise<Prescription> {
+    const prescription = await this.prescriptionRepo.findOne({
+      where: { id: prescriptionId },
+    });
+    if (!prescription) throw new NotFoundException('Prescription not found');
+    if (prescription.clientId !== clientId) {
+      throw new ForbiddenException('Not your prescription');
+    }
+    if (prescription.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Prescription already ${prescription.status.toLowerCase()}`,
+      );
+    }
+    if (new Date() > prescription.expiresAt) {
+      prescription.status = 'EXPIRED';
+      await this.prescriptionRepo.save(prescription);
+      throw new BadRequestException('Prescription has expired');
+    }
+
+    // Override serviceId from prescription (ignore any client-sent serviceId)
+    orderDto.serviceId = prescription.serviceId;
+
+    const order = await this.ordersService.create(clientId, orderDto);
+
+    prescription.status = 'CONFIRMED';
+    prescription.orderId = order.id;
+    await this.prescriptionRepo.save(prescription);
+
+    // Update consultation's createdOrderId
+    this.consultationRepo
+      .update(prescription.consultationId, { createdOrderId: order.id })
+      .catch((err) =>
+        this.logger.warn(`Failed to update consultation order link: ${err}`),
+      );
+
+    return prescription;
+  }
+
+  /** Client: list own prescriptions */
+  async getMyPrescriptions(
+    clientId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ data: Prescription[]; total: number; page: number; limit: number }> {
+    const [data, total] = await this.prescriptionRepo.findAndCount({
+      where: { clientId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { data, total, page, limit };
+  }
+
+  /** Client: cancel a pending prescription */
+  async cancelPrescription(
+    prescriptionId: string,
+    clientId: string,
+  ): Promise<Prescription> {
+    const prescription = await this.prescriptionRepo.findOne({
+      where: { id: prescriptionId },
+    });
+    if (!prescription) throw new NotFoundException('Prescription not found');
+    if (prescription.clientId !== clientId) {
+      throw new ForbiddenException('Not your prescription');
+    }
+    if (prescription.status !== 'PENDING') {
+      throw new BadRequestException(
+        `Prescription already ${prescription.status.toLowerCase()}`,
+      );
+    }
+
+    prescription.status = 'CANCELED';
+    return this.prescriptionRepo.save(prescription);
+  }
+
+  /** Send push to client about new prescription */
+  private async notifyClientPrescription(
+    clientId: string,
+    serviceTitle: string,
+    prescriptionId: string,
+  ): Promise<void> {
+    const title = 'Назначение от врача';
+    const body = `Вам назначена процедура: ${serviceTitle}. Подтвердите адрес для вызова медсестры.`;
+
+    const expoToken = await this.usersService.getPushToken(clientId);
+    if (expoToken) {
+      await this.pushService.send([expoToken], {
+        title,
+        body,
+        sound: 'default',
+        data: { prescriptionId, type: 'prescription' },
+        channelId: 'order_updates',
+        priority: 'high',
+      });
+    }
+
+    await this.webPushService.sendToSubscriber('client', clientId, {
+      title,
+      body,
+      data: { prescriptionId, type: 'prescription' },
+      url: `/prescriptions/${prescriptionId}`,
+    });
   }
 }

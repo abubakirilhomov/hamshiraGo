@@ -559,4 +559,63 @@ Notes:
 
 ---
 
-Последнее обновление: 2026-03-31
+## 22. Prescriptions (врач → автозаказ)
+
+### Client endpoints
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/consultations/prescriptions/my` | Client JWT | Мои назначения (пагинация) |
+| `POST` | `/consultations/prescriptions/:id/confirm` | Client JWT | Подтвердить назначение (создать заказ) |
+| `POST` | `/consultations/prescriptions/:id/cancel` | Client JWT | Отменить назначение |
+
+`POST /consultations/prescriptions/:id/confirm` body:
+
+```json
+{
+  "location": {
+    "latitude": 41.2995,
+    "longitude": 69.2401,
+    "house": "ул. Навои 15",
+    "floor": "3",
+    "apartment": "12",
+    "phone": "+998901234567"
+  },
+  "isUrgent": false,
+  "discountAmount": 0
+}
+```
+
+`GET /consultations/prescriptions/my?page=1&limit=20` response:
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "consultationId": "uuid",
+      "serviceTitle": "Капельница",
+      "servicePrice": 150000,
+      "status": "PENDING",
+      "orderId": null,
+      "doctorNotes": "Рекомендуется курс из 5 капельниц",
+      "createdAt": "2026-04-02T...",
+      "expiresAt": "2026-04-09T..."
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+Notes:
+- Назначение создаётся автоматически при завершении консультации с `createOrderServiceId`
+- Статусы: `PENDING -> CONFIRMED` (или `CANCELED` / `EXPIRED`)
+- Срок действия: 7 дней
+- При confirm создаётся полноценный заказ через OrdersService (с dispatch, скидками и т.д.)
+- Push уведомление клиенту при создании назначения
+
+---
+
+Последнее обновление: 2026-04-02

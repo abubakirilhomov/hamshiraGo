@@ -2,7 +2,7 @@ import { IsString, IsUUID, IsNumber, IsOptional, IsBoolean, Min, ValidateNested 
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
-class OrderLocationDto {
+export class OrderLocationDto {
   @ApiProperty({ example: 41.2995 })
   @IsNumber()
   latitude!: number;

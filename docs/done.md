@@ -1,5 +1,19 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-02 (V3: Doctor Prescription → Auto-Order)
+
+- **[feature]** Prescription entity: consultationId, clientId, serviceId, serviceTitle, servicePrice, status (PENDING/CONFIRMED/CANCELED/EXPIRED), orderId, doctorNotes, expiresAt (7 days) -- `backend/src/consultations/entities/prescription.entity.ts`
+- **[feature]** Prescription service methods: createPrescription (with push notification), confirmPrescription (creates order via OrdersService), getMyPrescriptions (paginated), cancelPrescription -- `backend/src/consultations/consultations.service.ts`
+- **[feature]** Prescription endpoints: GET /consultations/prescriptions/my, POST /consultations/prescriptions/:id/confirm, POST /consultations/prescriptions/:id/cancel -- `backend/src/consultations/consultations.controller.ts`
+- **[feature]** Admin complete consultation now auto-creates prescription if createOrderServiceId provided -- `backend/src/consultations/consultations.controller.ts`
+- **[feature]** ConfirmPrescriptionDto with OrderLocationDto -- `backend/src/consultations/dto/confirm-prescription.dto.ts`
+- **[migration]** SQL migration `backend/migrations/005_prescriptions.sql` -- prescriptions table with indexes
+- **[feature]** Mobile prescription screen: service info, doctor notes, expiry, location form, confirm/cancel flow -- `mobile/app/prescription.tsx`
+- **[feature]** Mobile prescriptions list screen with status badges, pagination, navigation -- `mobile/app/prescriptions.tsx`
+- **[feature]** Push notification deep link for prescriptions -- `mobile/app/_layout.tsx`
+- **[feature]** Profile quick link to prescriptions -- `mobile/app/(tabs)/profile.tsx`
+- **[i18n]** Added `prescription.*` keys to ru.json and uz.json (24 keys each)
+
 ## 2026-04-02 (Sentry Error Tracking — ALL-L1)
 
 - **[infra]** Backend Sentry: `@sentry/nestjs` installed, `instrument.ts` with DSN from env, `SentryExceptionFilter` (5xx only) registered globally -- `backend/src/instrument.ts`, `backend/src/common/filters/sentry-exception.filter.ts`, `backend/src/app.module.ts`, `backend/src/main.ts`

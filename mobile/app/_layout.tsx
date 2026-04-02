@@ -169,6 +169,8 @@ function RootLayoutNav() {
           router.push('/courses');
         } else if (data.type === 'referral') {
           router.push('/referral');
+        } else if (data.type === 'prescription' && data.prescriptionId) {
+          router.push(`/prescription?id=${data.prescriptionId}`);
         }
       },
     );
@@ -189,6 +191,8 @@ function RootLayoutNav() {
         router.push('/courses');
       } else if (data.type === 'referral') {
         router.push('/referral');
+      } else if (data.type === 'prescription' && data.prescriptionId) {
+        router.push(`/prescription?id=${data.prescriptionId}`);
       }
     });
   }, []);
@@ -223,6 +227,8 @@ function RootLayoutNav() {
         <Stack.Screen name="doctors" options={{ title: 'Doctors' }} />
         <Stack.Screen name="consultation" options={{ title: 'Consultation' }} />
         <Stack.Screen name="consultations" options={{ title: 'Consultations' }} />
+        <Stack.Screen name="prescription" options={{ title: 'Prescription' }} />
+        <Stack.Screen name="prescriptions" options={{ title: 'Prescriptions' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
