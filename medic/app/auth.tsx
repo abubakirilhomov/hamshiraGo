@@ -151,12 +151,14 @@ export default function AuthScreen() {
             onChangeText={setPhone}
             placeholder={t('auth.phonePlaceholder')}
             placeholderTextColor={Theme.textSecondary}
+            testID="auth_phone_input"
             keyboardType="phone-pad"
             accessibilityLabel="Телефон"
           />
 
           <Text style={styles.label}>{t('auth.password')} *</Text>
           <TextInput
+            testID="auth_password_input"
             style={styles.input}
             value={password}
             onChangeText={setPassword}
@@ -176,6 +178,7 @@ export default function AuthScreen() {
           )}
 
           <Pressable
+            testID="auth_submit_button"
             style={({ pressed }) => [
               styles.submitBtn,
               pressed && styles.submitBtnPressed,

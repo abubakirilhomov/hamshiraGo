@@ -6,7 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
@@ -106,7 +106,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { token, isLoading } = useAuth();
+  const { token, isLoading, login } = useAuth();
   const { isLoaded, isFirstLaunch } = useLanguage();
   const segments = useSegments();
   const router = useRouter();
@@ -157,15 +157,36 @@ function RootLayoutNav() {
   }, [isLoading]);
 
   // NPS: check if user should see survey (once per app open when logged in)
+  // Disabled until nps_surveys table is migrated on production
+  // useEffect(() => {
+  //   if (!token || isLoading) return;
+  //   apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
+  //     .then((data) => {
+  //       if (data?.shouldShow) router.push('/nps');
+  //     })
+  //     .catch(() => {});
+  // }, [token, isLoading]);
+
+  // DEV ONLY: deep link login for Maestro testing
+  // Usage: xcrun simctl openurl booted "hamshiragomobile://dev-login?phone=X&password=Y"
   useEffect(() => {
-    if (!token || isLoading) return;
-    apiFetch('/nps/check', token)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.shouldShow) router.push('/nps');
-      })
-      .catch(() => {});
-  }, [token, isLoading]);
+    if (!__DEV__) return;
+    const handleUrl = ({ url }: { url: string }) => {
+      if (!url.includes('dev-login')) return;
+      const params = new URL(url).searchParams;
+      const phone = params.get('phone');
+      const password = params.get('password');
+      if (phone && password) {
+        login(phone, password).catch(() => {});
+      }
+    };
+    const sub = Linking.addEventListener('url', handleUrl);
+    // Check if app was opened with dev-login URL
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl({ url });
+    });
+    return () => sub.remove();
+  }, []);
 
   // Navigate when user taps a push notification (app in background)
   useEffect(() => {

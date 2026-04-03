@@ -92,6 +92,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      testID="home_screen"
       style={styles.scroll}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -109,6 +110,7 @@ export default function HomeScreen() {
       {/* AI Assistant banner */}
       <Pressable
         style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.85 }]}
+        testID="ai_chat_banner"
         onPress={() => router.push('/ai-chat')}
       >
         <View style={styles.aiBannerIcon}>

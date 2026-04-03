@@ -1,0 +1,25 @@
+appId: com.hamshirago.medic
+---
+- launchApp:
+    clearState: true
+
+- takeScreenshot: 01_auth_screen
+
+# Enter phone
+- tapOn:
+    id: "auth_phone_input"
+- inputText: "+998901234567"
+
+# Enter password
+- tapOn:
+    id: "auth_password_input"
+- inputText: "test1234"
+
+- takeScreenshot: 02_auth_filled
+
+# Submit
+- tapOn:
+    id: "auth_submit_button"
+
+- waitForAnimationToEnd
+- takeScreenshot: 03_after_login

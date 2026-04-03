@@ -1,0 +1,42 @@
+appId: com.hamshirago.client
+---
+# Launch WITHOUT clearState — uses existing login session
+- launchApp
+
+- takeScreenshot: 01_current_screen
+
+# === HOME ===
+- tapOn:
+    point: "15%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 02_home
+
+- scroll
+- takeScreenshot: 03_home_scrolled
+
+# === ORDERS TAB ===
+- tapOn:
+    point: "50%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 04_orders
+
+# === PROFILE TAB ===
+- tapOn:
+    point: "85%,97%"
+- extendedWaitUntil:
+    visible: ".*"
+    timeout: 3000
+    optional: true
+- takeScreenshot: 05_profile
+
+- scroll
+- takeScreenshot: 06_profile_scrolled
+
+- scroll
+- takeScreenshot: 07_profile_bottom
