@@ -58,6 +58,10 @@ export default function OrderConfirmScreen() {
   const [urgentFeePercent, setUrgentFeePercent] = useState(50);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [activeSub, setActiveSub] = useState<ActiveSubscription | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoId, setPromoId] = useState<string | null>(null);
+  const [promoStatus, setPromoStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
 
   const params = useLocalSearchParams<{
     serviceId: string;
@@ -106,9 +110,31 @@ export default function OrderConfirmScreen() {
   // TODO: discount should be validated server-side (see BE-L7).
   // Client computes it for display purposes only; the backend must
   // independently verify eligibility and cap the amount.
-  const discountAmount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
+  const firstOrderDiscount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
+  const discountAmount = firstOrderDiscount + promoDiscount;
   const urgentFee = isUrgent ? Math.round(basePrice * urgentFeePercent / 100) : 0;
-  const finalPrice = basePrice + urgentFee - discountAmount;
+  const finalPrice = Math.max(0, basePrice + urgentFee - discountAmount);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim() || !token) return;
+    try {
+      const res = await apiFetch<{ valid: boolean; discountAmount: number; promoId: string | null }>(
+        '/promo/validate',
+        { token, method: 'POST', body: JSON.stringify({ code: promoCode.trim() }) },
+      );
+      if (res.valid) {
+        setPromoDiscount(res.discountAmount);
+        setPromoId(res.promoId);
+        setPromoStatus('valid');
+      } else {
+        setPromoDiscount(0);
+        setPromoId(null);
+        setPromoStatus('invalid');
+      }
+    } catch {
+      setPromoStatus('invalid');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!service) return;
@@ -228,6 +254,36 @@ export default function OrderConfirmScreen() {
           <Text style={styles.urgentFeeHint}>
             {t('urgent.fee')}: +{urgentFee.toLocaleString('ru-RU')} {t('common.sum')} ({urgentFeePercent}%)
           </Text>
+        )}
+      </View>
+
+      {/* Promo code */}
+      <View style={styles.urgentCard}>
+        <Text style={styles.urgentLabel}>{t('promo.enterCode')}</Text>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+          <TextInput
+            style={[styles.promoInput, promoStatus === 'valid' && { borderColor: Theme.success }, promoStatus === 'invalid' && { borderColor: Theme.error }]}
+            value={promoCode}
+            onChangeText={(v) => { setPromoCode(v.toUpperCase()); setPromoStatus('idle'); setPromoDiscount(0); }}
+            placeholder={t('promo.placeholder')}
+            placeholderTextColor={Theme.textSecondary}
+            autoCapitalize="characters"
+            maxLength={50}
+          />
+          <Pressable
+            style={({ pressed }) => [styles.promoBtn, pressed && { opacity: 0.8 }]}
+            onPress={handleApplyPromo}
+          >
+            <Text style={styles.promoBtnText}>{t('promo.apply')}</Text>
+          </Pressable>
+        </View>
+        {promoStatus === 'valid' && (
+          <Text style={{ color: Theme.success, fontSize: 13, marginTop: 4 }}>
+            {t('promo.applied')}: -{promoDiscount.toLocaleString('ru-RU')} UZS
+          </Text>
+        )}
+        {promoStatus === 'invalid' && (
+          <Text style={{ color: Theme.error, fontSize: 13, marginTop: 4 }}>{t('promo.invalid')}</Text>
         )}
       </View>
 
@@ -450,6 +506,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: Theme.error,
+  },
+  promoInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: Theme.border,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: 15,
+    color: Theme.text,
+  },
+  promoBtn: {
+    backgroundColor: Theme.primary,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: 'center',
+  },
+  promoBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   loyaltyInfoCard: {
     flexDirection: 'row',

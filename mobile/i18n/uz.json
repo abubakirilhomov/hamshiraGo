@@ -364,6 +364,25 @@
     "thankYouSub": "Fikringiz bizga yaxshiroq bo'lishga yordam beradi",
     "done": "Tayyor"
   },
+  "chat": {
+    "title": "Chat",
+    "empty": "Xabarlar yo'q. Birinchi bo'lib yozing!",
+    "placeholder": "Xabar...",
+    "openChat": "Yozish"
+  },
+  "promo": {
+    "enterCode": "Promo-kod",
+    "apply": "Qo'llash",
+    "applied": "Chegirma qo'llanildi",
+    "invalid": "Promo-kod yaroqsiz",
+    "placeholder": "Promo-kodni kiriting"
+  },
+  "editProfile": {
+    "title": "Profilni tahrirlash",
+    "name": "Ism",
+    "save": "Saqlash",
+    "saved": "Profil yangilandi"
+  },
   "videoCall": {
     "connecting": "Video qo'ng'iroqqa ulanish...",
     "error": "Qo'ng'iroqqa ulanib bo'lmadi",

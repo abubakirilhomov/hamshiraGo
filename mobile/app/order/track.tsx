@@ -416,6 +416,24 @@ export default function TrackOrderScreen() {
         </View>
       )}
 
+      {/* Chat button — visible when medic is assigned and order is active */}
+      {order.medic && !['DONE', 'CANCELED'].includes(order.status) && (
+        <Pressable
+          style={({ pressed }) => [
+            { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: '#fff', borderWidth: 1, borderColor: Theme.primary, borderRadius: 12,
+              paddingVertical: 12, marginBottom: 12 },
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => router.push({ pathname: '/order/chat', params: { orderId: order.id } })}
+        >
+          <FontAwesome name="comments" size={18} color={Theme.primary} />
+          <Text style={{ color: Theme.primary, fontWeight: '600', fontSize: 15 }}>
+            {t('chat.openChat')}
+          </Text>
+        </Pressable>
+      )}
+
       {/* Action buttons */}
       <TrackActions
         orderStatus={order.status}

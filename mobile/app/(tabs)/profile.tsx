@@ -1,10 +1,12 @@
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AppModal from '@/components/AppModal';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -130,6 +132,24 @@ export default function ProfileScreen() {
 
   const handleLogout = () => setLogoutModal(true);
 
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  const handleSaveName = useCallback(async () => {
+    if (!token || !newName.trim()) return;
+    setSavingName(true);
+    try {
+      await apiFetch('/auth/profile', {
+        token,
+        method: 'PATCH',
+        body: JSON.stringify({ name: newName.trim() }),
+      });
+      setEditingName(false);
+    } catch { /* ignore */ }
+    finally { setSavingName(false); }
+  }, [token, newName]);
+
   if (!user) return null;
 
   const initials = user.name
@@ -234,7 +254,30 @@ export default function ProfileScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t('profile.accountInfo')}</Text>
         <InfoRow icon="phone" label={t('profile.phone')} value={user.phone} />
-        {user.name && <InfoRow icon="user" label={t('profile.name')} value={user.name} />}
+        {editingName ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <FontAwesome name="user" size={15} color={Theme.primary} style={{ width: 20 }} />
+            <TextInput
+              style={{ flex: 1, borderWidth: 1, borderColor: Theme.border, borderRadius: 8, padding: 10, fontSize: 15 }}
+              value={newName}
+              onChangeText={setNewName}
+              placeholder={t('editProfile.name')}
+              autoFocus
+            />
+            <Pressable
+              style={{ backgroundColor: Theme.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10 }}
+              onPress={handleSaveName}
+              disabled={savingName}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{t('editProfile.save')}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={() => { setNewName(user.name ?? ''); setEditingName(true); }}>
+            <InfoRow icon="user" label={t('profile.name')} value={user.name ?? '—'} />
+            <Text style={{ color: Theme.primary, fontSize: 12, marginLeft: 28, marginTop: -4 }}>{t('editProfile.title')}</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Language picker */}
