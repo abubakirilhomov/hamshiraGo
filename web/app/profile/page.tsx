@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift, FaStar, FaSyringe, FaCoins, FaLayerGroup, FaRobot, FaFileMedical } from "react-icons/fa";
+import { FaArrowLeft, FaUser, FaPhone, FaListAlt, FaSignOutAlt, FaHeartbeat, FaGift, FaStar, FaSyringe, FaCoins, FaLayerGroup, FaRobot, FaFileMedical, FaPen } from "react-icons/fa";
 import { unsubscribeWebPush } from "@/lib/webPush";
+import { api } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -18,6 +19,10 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [editModal, setEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -35,6 +40,23 @@ export default function ProfilePage() {
       router.push("/auth");
     }
   }, [router]);
+
+  async function handleSaveName() {
+    if (!editName.trim()) return;
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const updated = await api.auth.updateProfile(editName.trim());
+      const newUser = { ...user!, name: updated.name };
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+      setEditModal(false);
+    } catch (e: unknown) {
+      setEditError(e instanceof Error ? e.message : "Ошибка сохранения");
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   function handleLogout() {
     unsubscribeWebPush();
@@ -116,10 +138,16 @@ export default function ProfilePage() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: "1px solid #f1f5f9" }}>
             <div style={iconWrap}><FaUser size={14} color="#0d9488" /></div>
-            <div>
+            <div style={{ flex: 1 }}>
               <p style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 2 }}>{t("profile.name")}</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{user.name ?? "—"}</p>
             </div>
+            <button
+              onClick={() => { setEditName(user.name ?? ""); setEditError(""); setEditModal(true); }}
+              style={{ background: "#f0fdf9", border: "1px solid #99f6e4", borderRadius: 8, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, color: "#0d9488", fontSize: 12, fontWeight: 600 }}
+            >
+              <FaPen size={11} /> Изменить
+            </button>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -372,6 +400,30 @@ export default function ProfilePage() {
           {t("profile.logout")}
         </button>
       </div>
+
+      {/* Edit name modal */}
+      {editModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: "24px", width: "100%", maxWidth: 400 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 16 }}>Изменить имя</p>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+              placeholder="Ваше имя"
+              autoFocus
+              style={{ width: "100%", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "12px 14px", fontSize: 15, outline: "none", boxSizing: "border-box", marginBottom: 12 }}
+            />
+            {editError && <p style={{ fontSize: 13, color: "#dc2626", marginBottom: 10 }}>{editError}</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setEditModal(false)} style={{ flex: 1, background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Отмена</button>
+              <button onClick={handleSaveName} disabled={editLoading || !editName.trim()} style={{ flex: 1, background: editLoading || !editName.trim() ? "#94a3b8" : "#0d9488", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 600, cursor: editLoading ? "not-allowed" : "pointer" }}>
+                {editLoading ? "Сохраняем..." : "Сохранить"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

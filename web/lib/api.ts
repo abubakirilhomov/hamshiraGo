@@ -81,6 +81,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ name, phone, password }),
       }),
+    updateProfile: (name: string) =>
+      request<{ id: string; phone: string; name: string }>("/auth/profile", {
+        method: "PATCH",
+        body: JSON.stringify({ name }),
+      }),
   },
 
   orders: {
@@ -413,6 +418,14 @@ export const getMyConsultations = (page = 1, limit = 10) =>
 
 export const getConsultationById = (id: string) =>
   request<Consultation>(`/consultations/${id}`);
+
+export const initiateCall = (consultationId: string) =>
+  request<{ token: string; serverUrl: string }>(`/consultations/${consultationId}/call`, {
+    method: "POST",
+  });
+
+export const endCall = (consultationId: string) =>
+  request<void>(`/consultations/${consultationId}/call/end`, { method: "POST" });
 
 // ─── Prescriptions ────────────────────────────────────────────────────────────
 

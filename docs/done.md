@@ -1,5 +1,37 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-03 (Web + Web-Medic: Онбординг)
+- **[feature]** /onboarding — 3 слайда (стетоскоп, карта, звезда), CSS анимация, localStorage flag — web/app/onboarding/page.tsx
+- **[feature]** Редирект на /onboarding если флаг не стоит — web/app/auth/page.tsx
+- **[feature]** /onboarding — 3 слайда для медика (чемодан, карта, кошелёк) — web-medic/app/onboarding/page.tsx
+- **[feature]** Редирект на /onboarding если флаг не стоит — web-medic/app/auth/page.tsx
+
+## 2026-04-03 (Web-Medic: Кошелёк медика)
+- **[feature]** urgentFee, isUrgent добавлены в Order интерфейс — web-medic/lib/api.ts
+- **[feature]** /wallet — balance + earnings карточки, история DONE заказов с разбивкой (цена, срочный, скидка, комиссия 10%) — web-medic/app/wallet/page.tsx
+- **[feature]** Кнопка "Кошелёк" с балансом в профиле медика — web-medic/app/profile/page.tsx
+
+## 2026-04-03 (Web-Medic: Отзывы медика)
+- **[feature]** reviews.getByMedic(medicId, page) — web-medic/lib/api.ts
+- **[feature]** /reviews страница — рейтинг summary, список карточек с звёздами и датой, пагинация — web-medic/app/reviews/page.tsx
+- **[feature]** Кнопка "Мои отзывы" с рейтингом и счётчиком — web-medic/app/profile/page.tsx
+
+## 2026-04-03 (Web: Видеозвонок LiveKit)
+- **[deps]** @livekit/components-react + livekit-client установлены — web/package.json
+- **[feature]** initiateCall(), endCall() — web/lib/api.ts
+- **[feature]** /video-call/[id] страница — LiveKitRoom, custom UI (mic/cam toggle, PiP локальное видео, remote видео) — web/app/video-call/[id]/page.tsx
+- **[feature]** Кнопка "Видеозвонок" для PENDING/ACTIVE консультаций — web/app/consultations/page.tsx
+
+## 2026-04-03 (Web: Редактирование профиля)
+- **[backend]** updateName(id, name) в UsersService — backend/src/users/users.service.ts
+- **[backend]** PATCH /auth/profile endpoint (JwtAuthGuard) — backend/src/auth/auth.controller.ts
+- **[feature]** api.auth.updateProfile(name) функция — web/lib/api.ts
+- **[feature]** Кнопка "Изменить" (FaPen) рядом с именем + модал с input → PATCH /auth/profile → обновляет localStorage — web/app/profile/page.tsx
+
+## 2026-04-03 (Web-Medic: История заказов)
+- **[feature]** `/orders` страница — табы Активные/История, KPI (выполнено/заработано/отменено), список с кликом на детали, pull-to-refresh — web-medic/app/orders/page.tsx
+- **[feature]** Кнопка "Вся история →" на дашборде рядом с заголовком "Мои заказы" — web-medic/app/page.tsx
+
 ## 2026-04-03 (D-15: Admin Analytics)
 - **[feature]** /analytics page — period switcher (30/90 days), KPI cards (avg check, platform revenue, conversion %, avg completion time), weekly ComposedChart (bars+line), top medics table (orders + revenue, medic name lookup), top services table — admin/src/pages/Analytics.tsx
 - **[feature]** Route /analytics + PieChart sidebar link added — admin/src/App.tsx, AdminSidebar.tsx

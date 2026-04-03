@@ -130,6 +130,13 @@ export class UsersService {
     }
   }
 
+  async updateName(id: string, name: string): Promise<{ id: string; phone: string; name: string }> {
+    await this.userRepo.update(id, { name });
+    const user = await this.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+    return { id: user.id, phone: user.phone, name: user.name ?? '' };
+  }
+
   async savePushToken(id: string, token: string): Promise<void> {
     await this.userRepo.update(id, { pushToken: token });
   }

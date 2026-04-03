@@ -55,6 +55,14 @@ export class AuthController {
     return this.authService.loginClient(dto);
   }
 
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить имя профиля клиента' })
+  updateProfile(@ClientId() clientId: string, @Body('name') name: string) {
+    return this.usersService.updateName(clientId, (name ?? '').trim());
+  }
+
   @Patch('push-token')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

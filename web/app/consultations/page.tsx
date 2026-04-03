@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaCalendarAlt, FaFileAlt } from "react-icons/fa";
+import { FaArrowLeft, FaCalendarAlt, FaFileAlt, FaVideo } from "react-icons/fa";
 import { getMyConsultations, Consultation } from "@/lib/api";
 
 const STATUS_CONFIG: Record<Consultation["status"], { color: string; bg: string; label: string }> = {
@@ -101,15 +101,26 @@ export default function ConsultationsPage() {
                 )}
               </div>
 
-              {item.doctorNotes && (
-                <button
-                  onClick={() => setNotesModal(item.doctorNotes!)}
-                  style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  <FaFileAlt size={12} color="#64748b" />
-                  <span style={{ fontSize: 12, color: "#64748b", textDecoration: "underline" }}>Заметки врача</span>
-                </button>
-              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                {(item.status === "PENDING" || item.status === "ACTIVE") && (
+                  <button
+                    onClick={() => router.push(`/video-call/${item.id}`)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    <FaVideo size={12} />
+                    Видеозвонок
+                  </button>
+                )}
+                {item.doctorNotes && (
+                  <button
+                    onClick={() => setNotesModal(item.doctorNotes!)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+                  >
+                    <FaFileAlt size={12} color="#64748b" />
+                    <span style={{ fontSize: 12, color: "#64748b", textDecoration: "underline" }}>Заметки врача</span>
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

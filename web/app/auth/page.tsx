@@ -55,6 +55,12 @@ export default function AuthPage() {
   }
 
   useEffect(() => {
+    if (!localStorage.getItem("onboarding_completed")) {
+      router.push("/onboarding");
+    }
+  }, [router]);
+
+  useEffect(() => {
     if (mode === "register") {
       const tgName = getTelegramUserName();
       if (tgName) setName(tgName);
