@@ -434,16 +434,9 @@
 
 #### ~~D-13. Admin: NPS дашборд~~ ✅ DONE
 
-#### D-14. Admin: управление назначениями (prescriptions)
-- [ ] На странице завершения консультации: dropdown выбора услуги (serviceId)
-- [ ] Отображение созданных назначений в деталях консультации
-- API: `PATCH /consultations/admin/:id/complete` (body: `{ doctorNotes, createOrderServiceId }`)
-- API: `GET /services` — список услуг для dropdown
+#### ~~D-14. Admin: управление назначениями (prescriptions)~~ ✅ DONE
 
-#### D-15. Admin: аналитика (графики)
-- [ ] Дашборд: графики заказов по дням/неделям, выручка, топ медики
-- [ ] Метрики: средний чек, время выполнения, конверсия
-- Данные: `GET /orders/admin/all` + агрегация на фронте или новый endpoint
+#### ~~D-15. Admin: аналитика (графики)~~ ✅ DONE
 
 ### 🔵 Приоритет 4 — SEO лендинг
 

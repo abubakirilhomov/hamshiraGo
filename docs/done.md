@@ -1,5 +1,22 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-03 (D-15: Admin Analytics)
+- **[feature]** /analytics page — period switcher (30/90 days), KPI cards (avg check, platform revenue, conversion %, avg completion time), weekly ComposedChart (bars+line), top medics table (orders + revenue, medic name lookup), top services table — admin/src/pages/Analytics.tsx
+- **[feature]** Route /analytics + PieChart sidebar link added — admin/src/App.tsx, AdminSidebar.tsx
+
+## 2026-04-03 (D-14: Admin Consultations + Prescriptions)
+- **[backend]** getAllConsultations(page, limit, status?) method — backend/src/consultations/consultations.service.ts
+- **[backend]** GET /consultations/admin/all endpoint (AdminGuard, paginated, filterable by status) — backend/src/consultations/consultations.controller.ts
+- **[feature]** AdminConsultation type + getAdminConsultations, completeConsultation, cancelAdminConsultation API functions — admin/src/lib/api.ts
+- **[feature]** /consultations admin page — list table with status filter, pagination, "Детали" modal, "Завершить" modal (doctorNotes + service dropdown → creates prescription), "Отменить" action — admin/src/pages/Consultations.tsx
+- **[feature]** Route /consultations + MessageSquare sidebar link added — admin/src/App.tsx, AdminSidebar.tsx
+
+## 2026-04-03 (D-13: Admin NPS Dashboard)
+- **[feature]** getNpsStats API function + NpsStats/NpsMonthStat types — admin/src/lib/api.ts
+- **[feature]** `/nps` page — overall NPS gauge (color-coded), promoters/passives/detractors cards with progress bars, monthly bar chart (recharts), monthly breakdown table — admin/src/pages/Nps.tsx
+- **[feature]** Route /nps added — admin/src/App.tsx
+- **[feature]** NPS link (ThumbsUp icon) added to sidebar — admin/src/components/AdminSidebar.tsx
+
 ## 2026-04-02 (D-12: Web NPS)
 - **[feature]** checkNps, submitNps API functions — web/lib/api.ts
 - **[feature]** `/nps` page — 0–10 score buttons (red/amber/green), comment textarea, thank-you screen — web/app/nps/page.tsx

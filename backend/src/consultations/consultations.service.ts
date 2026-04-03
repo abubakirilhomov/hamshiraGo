@@ -234,6 +234,31 @@ export class ConsultationsService {
   }
 
   /* ------------------------------------------------------------------ */
+  /*  Admin: list all consultations                                      */
+  /* ------------------------------------------------------------------ */
+
+  async getAllConsultations(page: number, limit: number, status?: string) {
+    const qb = this.consultationRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.doctor', 'doctor')
+      .orderBy('c.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (status) {
+      qb.where('c.status = :status', { status });
+    }
+
+    const [data, total] = await qb.getManyAndCount();
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
   /*  Admin stats                                                        */
   /* ------------------------------------------------------------------ */
 

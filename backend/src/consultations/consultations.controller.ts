@@ -231,6 +231,19 @@ export class ConsultationsController {
     return this.consultationsService.getAllDoctors();
   }
 
+  /** Admin: list all consultations (paginated, filterable by status) */
+  @UseGuards(AdminGuard)
+  @Get('admin/all')
+  getAllConsultations(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const l = Math.min(50, Math.max(1, parseInt(limit ?? '20', 10) || 20));
+    return this.consultationsService.getAllConsultations(p, l, status);
+  }
+
   /** Admin: complete consultation with notes + optional prescription */
   @UseGuards(AdminGuard)
   @Patch('admin/:id/complete')
