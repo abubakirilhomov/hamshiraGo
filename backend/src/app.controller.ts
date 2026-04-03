@@ -1,9 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { AdminGuard } from './auth/guards/admin.guard';
+import { AuditLogService } from './common/audit-log.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
   @Get('health')
   health() {
@@ -55,5 +60,17 @@ export class AppController {
       memory: Math.round(process.memoryUsage().rss / 1024 / 1024),
       checks,
     };
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('admin/audit-log')
+  getAuditLog(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('action') action?: string,
+  ) {
+    const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const l = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
+    return this.auditLogService.findAll(p, l, action);
   }
 }
