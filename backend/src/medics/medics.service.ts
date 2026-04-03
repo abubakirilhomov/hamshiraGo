@@ -244,6 +244,13 @@ export class MedicsService {
     };
   }
 
+  async updateProfile(id: string, data: { name?: string }): Promise<Medic> {
+    const medic = await this.findById(id);
+    if (!medic) throw new UnauthorizedException();
+    if (data.name !== undefined) medic.name = data.name;
+    return this.medicRepo.save(medic);
+  }
+
   async saveProfilePhotoUrl(id: string, url: string): Promise<void> {
     await this.medicRepo.update(id, { profilePhotoUrl: url });
   }

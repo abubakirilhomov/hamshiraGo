@@ -420,6 +420,26 @@ export class OrdersService {
     return updated;
   }
 
+  /** Reorder — create a new order from a previous one (same service + location) */
+  async reorder(orderId: string, clientId: string): Promise<Order> {
+    const order = await this.findOne(orderId);
+    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
+    if (!order.serviceId) throw new BadRequestException('Original order has no service');
+    if (!order.location) throw new BadRequestException('Original order has no location');
+
+    return this.create(clientId, {
+      serviceId: order.serviceId,
+      location: {
+        latitude: Number(order.location.latitude),
+        longitude: Number(order.location.longitude),
+        house: order.location.house,
+        floor: order.location.floor ?? undefined,
+        apartment: order.location.apartment ?? undefined,
+        phone: order.location.phone,
+      },
+    });
+  }
+
   /** Client rates the medic after order is DONE */
   async rateOrder(orderId: string, clientId: string, dto: RateOrderDto): Promise<Order> {
     const order = await this.findOneBasic(orderId);

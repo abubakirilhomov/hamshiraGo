@@ -157,15 +157,14 @@ function RootLayoutNav() {
   }, [isLoading]);
 
   // NPS: check if user should see survey (once per app open when logged in)
-  // Disabled until nps_surveys table is migrated on production
-  // useEffect(() => {
-  //   if (!token || isLoading) return;
-  //   apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
-  //     .then((data) => {
-  //       if (data?.shouldShow) router.push('/nps');
-  //     })
-  //     .catch(() => {});
-  // }, [token, isLoading]);
+  useEffect(() => {
+    if (!token || isLoading) return;
+    apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
+      .then((data) => {
+        if (data && data.shouldShow === true) router.push('/nps');
+      })
+      .catch(() => { /* silently ignore — table may not exist yet */ });
+  }, [token, isLoading]);
 
   // DEV ONLY: deep link login for Maestro testing
   // Usage: xcrun simctl openurl booted "hamshiragomobile://dev-login?phone=X&password=Y"

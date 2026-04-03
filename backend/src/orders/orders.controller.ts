@@ -79,6 +79,17 @@ export class OrdersController {
     return this.ordersService.cancelOrder(id, clientId, dto.reason);
   }
 
+  /** Reorder — create a new order from a previous one */
+  @Post(':id/reorder')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Повторный заказ (копия предыдущего)' })
+  reorder(
+    @Param('id') id: string,
+    @ClientId() clientId: string,
+  ) {
+    return this.ordersService.reorder(id, clientId);
+  }
+
   /** Client rates the medic after order is DONE */
   @Post(':id/rate')
   @UseGuards(JwtAuthGuard)

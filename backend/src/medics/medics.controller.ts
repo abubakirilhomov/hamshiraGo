@@ -27,6 +27,7 @@ import { RegisterMedicDto } from './dto/register-medic.dto';
 import { LoginMedicDto } from './dto/login-medic.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { VerifyMedicDto } from './dto/verify-medic.dto';
+import { UpdateMedicProfileDto } from './dto/update-medic-profile.dto';
 import { VerificationStatus } from './entities/verification-status.enum';
 import { MedicAuthGuard } from '../auth/guards/medic-auth.guard';
 import { MedicId } from '../auth/decorators/medic-id.decorator';
@@ -74,6 +75,14 @@ export class MedicsController {
   @ApiOperation({ summary: 'Профиль текущего медика' })
   getProfile(@MedicId() medicId: string) {
     return this.medicsService.getProfile(medicId);
+  }
+
+  @Patch('profile')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить профиль медика' })
+  updateProfile(@MedicId() medicId: string, @Body() dto: UpdateMedicProfileDto) {
+    return this.medicsService.updateProfile(medicId, dto);
   }
 
   // ── Location & online status ──────────────────────────────────────────────

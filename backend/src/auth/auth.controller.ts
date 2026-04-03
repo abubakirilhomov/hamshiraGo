@@ -26,6 +26,7 @@ import { WebPushService } from '../realtime/web-push.service';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 import { BlockUserDto } from './dto/block-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -55,12 +56,20 @@ export class AuthController {
     return this.authService.loginClient(dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Профиль текущего клиента' })
+  async getMe(@ClientId() clientId: string) {
+    return this.usersService.findById(clientId);
+  }
+
   @Patch('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Обновить имя профиля клиента' })
-  updateProfile(@ClientId() clientId: string, @Body('name') name: string) {
-    return this.usersService.updateName(clientId, (name ?? '').trim());
+  @ApiOperation({ summary: 'Обновить профиль клиента' })
+  async updateProfile(@ClientId() clientId: string, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(clientId, dto);
   }
 
   @Patch('push-token')
