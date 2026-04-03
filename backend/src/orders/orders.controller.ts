@@ -18,6 +18,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { RateOrderDto } from './dto/rate-order.dto';
 import { CancelOrderDto } from './dto/cancel-order.dto';
+import { SendMessageDto } from './dto/send-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MedicAuthGuard } from '../auth/guards/medic-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -90,6 +91,29 @@ export class OrdersController {
     return this.ordersService.reorder(id, clientId);
   }
 
+  /** Send a chat message in an order (client) */
+  @Post(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Отправить сообщение в чат заказа (клиент)' })
+  sendMessage(
+    @Param('id') id: string,
+    @ClientId() clientId: string,
+    @Body() dto: SendMessageDto,
+  ) {
+    return this.ordersService.sendMessage(id, clientId, 'client', dto.content);
+  }
+
+  /** Get chat messages for an order */
+  @Get(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Получить сообщения чата заказа' })
+  getMessages(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: string; role: string } },
+  ) {
+    return this.ordersService.getMessages(id, req.user.id, req.user.role);
+  }
+
   /** Client rates the medic after order is DONE */
   @Post(':id/rate')
   @UseGuards(JwtAuthGuard)
@@ -150,6 +174,18 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   declineOrder(@Param('id') id: string, @MedicId() medicId: string) {
     return this.ordersService.declineOrder(id, medicId);
+  }
+
+  /** Send a chat message in an order (medic) */
+  @Post(':id/medic-messages')
+  @UseGuards(MedicAuthGuard)
+  @ApiOperation({ summary: 'Отправить сообщение в чат заказа (медик)' })
+  sendMedicMessage(
+    @Param('id') id: string,
+    @MedicId() medicId: string,
+    @Body() dto: SendMessageDto,
+  ) {
+    return this.ordersService.sendMessage(id, medicId, 'medic', dto.content);
   }
 
   /** Update order status (ON_THE_WAY, ARRIVED, SERVICE_STARTED, DONE) */

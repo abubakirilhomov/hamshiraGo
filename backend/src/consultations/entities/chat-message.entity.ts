@@ -16,6 +16,11 @@ export class ChatMessage {
   @Index()
   consultationId!: string | null;
 
+  /** Order ID (for client ↔ medic chat within an order) */
+  @Column('uuid', { nullable: true })
+  @Index()
+  orderId!: string | null;
+
   /** Who sent this message */
   @Column('uuid')
   userId!: string;

@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -54,6 +55,16 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Неверный телефон или пароль' })
   loginClient(@Body() dto: LoginDto) {
     return this.authService.loginClient(dto);
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить JWT токен' })
+  async refreshToken(
+    @Req() req: any,
+  ) {
+    return this.authService.refreshToken(req.user.id ?? req.user.sub, req.user.role);
   }
 
   @Get('me')

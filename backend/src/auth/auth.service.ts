@@ -92,6 +92,18 @@ export class AuthService {
     return { access_token: this.jwtService.sign({ sub: user.id, role: 'client' }), user: { id: user.id, phone: user.phone, name: user.name } };
   }
 
+  /** Refresh token — issue a new JWT from an existing valid one */
+  async refreshToken(userId: string, role: string): Promise<{ access_token: string }> {
+    if (role === 'client') {
+      const user = await this.usersService.findById(userId);
+      if (!user) throw new UnauthorizedException('User not found');
+      if (user.isBlocked) throw new ForbiddenException('Account blocked');
+      return { access_token: this.jwtService.sign({ sub: user.id, role: 'client' }) };
+    }
+    // For admin role, just re-sign
+    return { access_token: this.jwtService.sign({ sub: userId, role }, { expiresIn: '12h' }) };
+  }
+
   /** Validates ADMIN_USERNAME + ADMIN_PASSWORD from env, returns a JWT with role "admin" */
   async adminLogin(username: string, password: string): Promise<{ access_token: string }> {
     const adminUsername = this.config.get<string>('ADMIN_USERNAME');

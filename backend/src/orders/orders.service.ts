@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './entities/order-status.enum';
+import { ChatMessage } from '../consultations/entities/chat-message.entity';
 import { OrderLocation } from './entities/order-location.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -57,6 +58,8 @@ export class OrdersService {
     private locationRepo: Repository<OrderLocation>,
     @InjectRepository(Referral)
     private referralRepo: Repository<Referral>,
+    @InjectRepository(ChatMessage)
+    private chatMessageRepo: Repository<ChatMessage>,
     private orderEventsGateway: OrderEventsGateway,
     private pushService: PushNotificationsService,
     private webPushService: WebPushService,
@@ -948,5 +951,67 @@ export class OrdersService {
       url: `/orders/${updated.id}`,
     });
     return updated;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Order Chat                                                         */
+  /* ------------------------------------------------------------------ */
+
+  /** Send a chat message in an order */
+  async sendMessage(
+    orderId: string,
+    userId: string,
+    role: 'client' | 'medic',
+    content: string,
+  ): Promise<ChatMessage> {
+    const order = await this.findOneBasic(orderId);
+    if (role === 'client' && order.clientId !== userId) {
+      throw new ForbiddenException('Not your order');
+    }
+    if (role === 'medic' && order.medicId !== userId) {
+      throw new ForbiddenException('Not your order');
+    }
+    const terminal = [OrderStatus.DONE, OrderStatus.CANCELED];
+    if (terminal.includes(order.status)) {
+      throw new BadRequestException('Cannot send messages to a completed order');
+    }
+
+    const message = this.chatMessageRepo.create({
+      orderId,
+      userId,
+      role: role === 'client' ? 'user' : 'doctor',
+      content,
+    });
+    const saved = await this.chatMessageRepo.save(message);
+
+    // Emit via Socket.IO for real-time delivery
+    this.orderEventsGateway.server
+      .to(`order_${orderId}`)
+      .emit('order_message', {
+        orderId,
+        message: { id: saved.id, userId, role: saved.role, content, createdAt: saved.createdAt },
+      });
+
+    return saved;
+  }
+
+  /** Get chat messages for an order */
+  async getMessages(
+    orderId: string,
+    userId: string,
+    role: string,
+  ): Promise<ChatMessage[]> {
+    const order = await this.findOneBasic(orderId);
+    if (role === 'client' && order.clientId !== userId) {
+      throw new ForbiddenException('Not your order');
+    }
+    if (role === 'medic' && order.medicId !== userId) {
+      throw new ForbiddenException('Not your order');
+    }
+
+    return this.chatMessageRepo.find({
+      where: { orderId },
+      order: { createdAt: 'ASC' },
+    });
   }
 }
