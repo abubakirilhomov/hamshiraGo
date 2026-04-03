@@ -352,38 +352,20 @@
 
 ### 🔴 Приоритет 1 — V1 до запуска
 
-#### D-1. Web: экран оценки заказа
-- [ ] Экран оценки после завершения заказа (звёзды + комментарий)
-- API: `POST /reviews` (body: `{ orderId, rating, comment, targetRole: "medic" }`)
-- API: `GET /reviews/order/:id` — проверить, оставлен ли отзыв
-- Референс: `mobile/components/RatingModal.tsx`
+#### ~~D-1. Web: экран оценки заказа~~ ✅ DONE
+- Звёзды + комментарий в `web/app/orders/[id]/page.tsx` — `api.orders.rate()`
 
-#### D-2. Web: срочный вызов при создании заказа
-- [ ] Переключатель «Срочный вызов» на странице создания заказа
-- [ ] Отображение доплаты (urgentFee) в итоговой сумме
-- API: `POST /orders` принимает `isUrgent: true`
-- API: `GET /settings` — получить `urgentFeePercent`, `urgentStartHour`, `urgentEndHour`
-- Референс: `mobile/app/order/confirm.tsx`
+#### ~~D-2. Web: срочный вызов при создании заказа~~ ✅ DONE
+- Переключатель isUrgent + urgentFee в `web/app/order/confirm/page.tsx`
 
-#### D-3. Web / Web-medic: глобальный error handler
-- [ ] Перехват JS ошибок (window.onerror / ErrorBoundary)
-- [ ] Перехват ошибок API (fetch wrapper)
-- [ ] Отправка на `POST /client-errors` с полями: `message`, `stackTrace`, `screen`, `appType` (web/web-medic), `deviceInfo`, `appVersion`
-- Референс: `mobile/components/ErrorBoundary.tsx`
+#### ~~D-3. Web / Web-medic: глобальный error handler~~ ✅ DONE
+- `web/app/error.tsx` + `global-error.tsx` — `reportClientError()` → POST /client-errors
 
-#### D-4. Admin: страница «User Support»
-- [ ] Таблица ошибок: пользователь, сообщение, экран, устройство, дата, статус
-- [ ] Фильтры: по пользователю, дате, статусу (NEW / IN_PROGRESS / FIXED / IGNORED)
-- [ ] Детальная карточка ошибки: полный стек, устройство, история заказов пользователя
-- [ ] Счётчик новых ошибок в сайдбаре (бейдж)
-- API: `GET /client-errors/admin` (query: userId, appType, status, dateFrom, dateTo, page, limit)
-- API: `GET /client-errors/admin/stats` — счётчики по статусам
-- API: `PATCH /client-errors/admin/:id` — смена статуса
+#### ~~D-4. Admin: страница «User Support»~~ ✅ DONE
+- `admin/src/pages/UserSupport.tsx` — таблица, фильтры, детали, бейдж в сайдбаре
 
-#### D-5. Admin: геозоны медиков на карте
-- [ ] На карте медиков отображать workZone круги (полупрозрачные)
-- Данные: `workZoneLat`, `workZoneLng`, `workZoneRadius` из `GET /medics/admin/all`
-- Референс: `medic/app/work-zone.tsx` (circle overlay)
+#### ~~D-5. Admin: геозоны медиков на карте~~ ✅ DONE
+- `admin/src/pages/Medics.tsx` — workZoneRadius Circle overlay на карте
 
 ### 🟠 Приоритет 2 — Фичи из mobile, отсутствующие в web
 
@@ -393,7 +375,7 @@
 - [x] История транзакций (EARNED/SPENT/BONUS/MILESTONE) с пагинацией
 - [x] Redemption: списание баллов на скидку (preset кнопки + manual input)
 - [x] Карточка loyalty в профиле с очками и тиром
-- [ ] Info-блок на странице подтверждения заказа (доступная скидка)
+- [x] Info-блок на странице подтверждения заказа (доступная скидка)
 - API: `GET /loyalty/my`, `GET /loyalty/history?page=&limit=`, `POST /loyalty/redeem` (body: `{ points }`)
 - Референс: `mobile/app/loyalty.tsx`
 
@@ -401,7 +383,7 @@
 - [x] Страница `/subscriptions` — доступные тарифы (название, цена, период, макс заказов, % скидки)
 - [x] Активная подписка: карточка с прогресс-баром (использовано/доступно заказов), дата окончания
 - [x] Покупка подписки + отмена
-- [ ] Info-блок на странице подтверждения заказа (% скидки от подписки)
+- [x] Info-блок на странице подтверждения заказа (% скидки от подписки)
 - API: `GET /subscriptions/tiers`, `GET /subscriptions/my`, `POST /subscriptions/purchase` (body: `{ tierId }`), `POST /subscriptions/cancel`
 - Референс: `mobile/app/subscriptions.tsx`
 
