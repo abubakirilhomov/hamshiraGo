@@ -41,18 +41,14 @@ export default function NpsScreen() {
 
     setSubmitting(true);
     try {
-      const res = await apiFetch('/nps/submit', token, {
+      await apiFetch('/nps/submit', {
+        token,
         method: 'POST',
         body: JSON.stringify({
           score: selectedScore,
           comment: comment.trim() || undefined,
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Error');
-      }
 
       setSubmitted(true);
     } catch (err: any) {

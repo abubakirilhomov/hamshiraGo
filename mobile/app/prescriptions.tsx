@@ -49,12 +49,10 @@ export default function PrescriptionsScreen() {
       if (p === 1) setLoading(true);
       else setLoadingMore(true);
       try {
-        const res = await apiFetch(
+        const json = await apiFetch<{ data: PrescriptionItem[]; total: number }>(
           `/consultations/prescriptions/my?page=${p}&limit=20`,
-          token,
+          { token },
         );
-        if (!res.ok) return;
-        const json = await res.json();
         if (p === 1) setData(json.data);
         else setData((prev) => [...prev, ...json.data]);
         setTotal(json.total);

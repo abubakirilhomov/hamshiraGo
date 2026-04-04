@@ -175,7 +175,7 @@ export default function ConsultationsScreen() {
             </View>
           )}
 
-          {(item.status === 'ACTIVE' || item.status === 'PENDING') && (
+          {item.status === 'ACTIVE' && (
             <Pressable
               style={({ pressed }) => [styles.callBtn, pressed && { opacity: 0.8 }]}
               onPress={() => router.push({ pathname: '/video-call', params: { consultationId: item.id } })}
