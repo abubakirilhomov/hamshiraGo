@@ -428,77 +428,135 @@
 - [x] Meta-теги, Open Graph, JSON-LD разметка для Google — landing/app/[lang]/layout.tsx
 - [x] Sitemap.xml + robots.txt — landing/app/sitemap.ts, landing/app/robots.ts
 
-### 📊 Матрица: mobile vs web (результат анализа 2026-04-02)
+### 📊 Матрица: mobile vs web (обновлено 2026-04-04)
 
-| Фича | Mobile | Web | Задача |
+#### Web client (web/) vs Mobile (mobile/)
+
+| Фича | Mobile | Web | Статус |
 |------|--------|-----|--------|
-| Каталог услуг | ✅ | ✅ | — |
-| Создание заказа + карта | ✅ | ✅ | — |
-| Трекинг заказа + WS | ✅ | ✅ | — |
-| История заказов | ✅ | ✅ | — |
-| Профиль | ✅ | ✅ | — |
-| Медкарта | ✅ | ✅ | — |
-| Курсы лечения | ✅ | ✅ | — |
-| Реферальная программа | ✅ | ✅ | — |
-| Избранные медики | ✅ | ✅ | — |
-| Отзывы медиков | ✅ | ✅ | — |
-| Оценка после DONE | ✅ | ❌ | D-1 |
-| Срочный вызов | ✅ | ❌ | D-2 |
-| Error handler | ✅ | ❌ | D-3 |
-| **Loyalty (бонусы)** | ✅ | ❌ | **D-6** |
-| **Subscriptions** | ✅ | ❌ | **D-7** |
-| **AI Chat** | ✅ | ❌ | **D-8** |
-| **Doctors list** | ✅ | ❌ | **D-9** |
-| **Consultations** | ✅ | ❌ | **D-10** |
-| **Prescriptions** | ✅ | ❌ | **D-11** |
-| **NPS survey** | ✅ | ❌ | **D-12** |
+| Каталог услуг | ✅ | ✅ | Паритет |
+| Создание заказа + карта | ✅ | ✅ | Паритет |
+| Срочный вызов | ✅ | ✅ | Паритет |
+| Трекинг заказа + WS | ✅ | ✅ | Паритет |
+| История заказов + reorder | ✅ | ✅ | Паритет |
+| Оценка после DONE | ✅ | ✅ | Паритет |
+| Профиль + edit name | ✅ | ✅ | Паритет |
+| Медкарта | ✅ | ✅ | Паритет |
+| Курсы лечения | ✅ | ✅ | Паритет |
+| Реферальная программа | ✅ | ✅ | Паритет |
+| Избранные медики | ✅ | ✅ | Паритет |
+| Loyalty (бонусы) | ✅ | ✅ | Паритет |
+| Subscriptions | ✅ | ✅ | Паритет |
+| AI Chat | ✅ | ✅ | Паритет |
+| Doctors list | ✅ | ✅ | Паритет |
+| Consultations | ✅ | ✅ | Паритет |
+| Prescriptions | ✅ | ✅ | Паритет |
+| NPS survey | ✅ | ✅ | Паритет |
+| Video call | ✅ | ✅ | Паритет |
+| Error handler | ✅ | ✅ | Паритет |
+| **Чат в заказе** | ✅ | ❌ | **D-17** |
+| **Промо-коды** | ✅ | ❌ | **D-18** |
+
+#### Web-medic (web-medic/) vs Mobile medic (medic/)
+
+| Фича | Mobile | Web-Medic | Статус |
+|------|--------|-----------|--------|
+| Auth + profile | ✅ | ✅ | Паритет |
+| Online/offline toggle | ✅ | ✅ | Паритет |
+| Заказы + трекинг | ✅ | ✅ | Паритет |
+| Work zone | ✅ | ✅ | Паритет |
+| Reviews | ✅ | ✅ | Паритет |
+| Photo upload | ✅ | ✅ | Паритет |
+| Wallet | ✅ | ✅ | Паритет |
+| **Редактирование имени** | ✅ | ❌ | **D-19** |
+| **Чат в заказе (медик)** | ✅ | ❌ | **D-20** |
+| **Экран верификации** | ✅ | ❌ | **D-21** |
+| **Статистика заказов** | ✅ | ❌ | **D-22** |
+
+### 🔴 Новые задачи Диёра (web догоняет mobile)
+
+#### D-17. Web: чат в заказе (client ↔ medic)
+- [ ] Компонент чата на странице заказа `/orders/[id]` (или отдельная страница `/orders/[id]/chat`)
+- [ ] Отправка сообщений: `POST /orders/:id/messages` (body: `{ content }`)
+- [ ] Получение истории: `GET /orders/:id/messages`
+- [ ] Real-time через Socket.IO: event `order_message`
+- [ ] Показывать кнопку "Чат" когда медик назначен и заказ активен
+- Референс: `mobile/app/order/chat.tsx`
+
+#### D-18. Web: промо-коды на странице подтверждения заказа
+- [ ] Поле ввода промо-кода + кнопка "Применить" на `/order/confirm`
+- [ ] Валидация: `POST /promo/validate` (body: `{ code }`)
+- [ ] Отображение скидки в итоговой сумме
+- [ ] Состояния: idle / valid (зелёная рамка + сумма) / invalid (красная рамка + ошибка)
+- Референс: `mobile/app/order/confirm.tsx` (promoCode state + handleApplyPromo)
+
+#### D-19. Web-medic: редактирование имени в профиле
+- [ ] Кнопка "Редактировать" рядом с именем на `/profile`
+- [ ] Inline input + кнопка "Сохранить"
+- [ ] API: `PATCH /medics/profile` (body: `{ name }`)
+- Референс: `medic/app/(tabs)/profile.tsx` (editingName + handleSaveName)
+
+#### D-20. Web-medic: чат в заказе (medic side)
+- [ ] Компонент чата на странице заказа `/order/[id]`
+- [ ] Отправка: `POST /orders/:id/medic-messages` (body: `{ content }`)
+- [ ] Получение: `GET /orders/:id/messages`
+- [ ] Socket.IO: event `order_message`
+- Референс: `mobile/app/order/chat.tsx`
+
+#### D-21. Web-medic: экран верификации
+- [ ] Страница `/verification` — загрузка face photo + license photo
+- [ ] Отображение статуса верификации (PENDING / APPROVED / REJECTED)
+- [ ] API: `POST /medics/documents` (multipart: facePhoto + licensePhoto)
+- Референс: `medic/app/verification.tsx`
+
+#### D-22. Web-medic: статистика заказов
+- [ ] Компонент на `/profile` или отдельная страница
+- [ ] Показать: всего заказов, выполнено, средний рейтинг, заработок
+- [ ] API: `GET /orders/medic/my?limit=1` (total из pagination) + `GET /medics/me` (balance, earnings, rating)
+- Референс: `medic/app/(tabs)/profile.tsx` (StatsSection)
 
 ---
 
-## ⚡ V3 — roadmap (Абубакир — backend)
+## ⚡ V3 — roadmap (Абубакир — backend) — ВСЁ ВЫПОЛНЕНО
 
-- [x] Видео/чат консультация с врачом — **DONE** (LiveKit: VideoService + video-call screen + endpoints)
-- [x] Связка: врач назначает лечение -> автоматическое создание заказа на медсестру — **DONE** (Prescription entity + endpoints + mobile UI)
-- [x] NPS-опросы: cron + дашборд в admin — **DONE** (NpsSurvey entity + cron monthly + mobile UI + admin stats)
+- [x] Видео/чат консультация — LiveKit (VideoService + video-call screen + endpoints)
+- [x] Связка врач → автозаказ — Prescription entity + endpoints + mobile UI
+- [x] NPS-опросы — cron monthly + mobile + admin stats
+- [x] Чат клиент ↔ медик — Socket.IO + ChatMessage.orderId + mobile UI
+- [x] Повторный заказ — POST /orders/:id/reorder + mobile кнопка
+- [x] Редактирование профиля — PATCH /auth/profile + /medics/profile + mobile UI
+- [x] Token refresh — POST /auth/refresh
+- [x] Промо-коды — PromoCode entity + CRUD + validate + mobile UI
+- [x] Аудит-лог admin — AdminAuditLog entity + GET /admin/audit-log
+- [x] Healthcheck расширенный — GET /health/detailed (DB, Cloudinary, Expo Push)
+- [x] Sentry error tracking — backend + mobile + medic
+- [x] Playwright тесты — API (10 specs) + Web UI (7 specs)
+- [x] Maestro тесты — mobile (5 flows) + medic (3 flows)
 
-## 💡 Идеи / V3+ (существующие)
-
-- [ ] Разделить таблицу `payments` — отдельный `payments_ledger` для прозрачности финансов
-- [ ] Аналитика в admin: графики заказов, выручка, топ медики
-- [ ] Фильтр услуг по категории на главном экране mobile/web
-- [ ] Повторный заказ (кнопка "Заказать снова" в истории)
-- [ ] История платежей клиента: `GET /payments/my`
-- [ ] Редактирование профиля: `PATCH /auth/profile`, `PATCH /medics/profile`
-- [ ] Token refresh mechanism (вместо hard logout при 401)
-- [ ] `/orders/stats` endpoint для подсчёта заказов без загрузки данных
-- [ ] Certificate pinning для mobile apps
-- [ ] httpOnly cookies вместо JWT в localStorage
-
-## 💡 Новые идеи (добавлены 2026-04-02)
+## 💡 V4 — идеи для будущего развития
 
 ### Рост и удержание
-- [ ] **Промо-коды** — admin создаёт код → клиент вводит при заказе → скидка. Entity PromoCode (code, discount%, maxUses, expiresAt). Позволяет маркетинговые кампании вне реферальной программы
-- [ ] **Расписание медика** — медик указывает рабочие часы (Пн 09–18, Сб 10–14). Dispatch отправляет только в рабочее время. Уменьшает отклонения заказов
-- [ ] **Push-сегментация** — admin отправляет push по сегментам (новые клиенты, неактивные 30+ дней, тир GOLD). Endpoint `POST /admin/push-campaign` + UI в admin
-- [ ] **Фото до/после процедуры** — медик загружает фото в заказе (Cloudinary). Клиент видит в истории. Повышает доверие
+- [ ] **Расписание медика** — медик указывает рабочие часы (Пн 09–18, Сб 10–14). Dispatch отправляет только в рабочее время. Уменьшает отклонения заказов. **Реализация:** Entity `MedicSchedule` с массивом `{ dayOfWeek, startHour, endHour }`. В `selectBestMedic` — фильтр по текущему дню/часу. UI в medic app: выбор дней + range slider для часов. Оценка: ~4 часа backend + ~3 часа mobile
+- [ ] **Push-сегментация** — admin отправляет push по сегментам (новые клиенты, неактивные 30+ дней, тир GOLD). **Реализация:** Endpoint `POST /admin/push-campaign` с body `{ segment, title, body }`. Segments: `new_7d` (регистрация <7 дней), `inactive_30d` (нет заказов 30+ дней), `tier_gold`, `all`. SQL query фильтрует users, шлёт push батчами по 100. Admin UI: форма с dropdown сегмента + textarea. Оценка: ~3 часа backend + ~2 часа admin
+- [ ] **Фото до/после процедуры** — медик загружает фото в заказе (Cloudinary). **Реализация:** Поля `beforePhotoUrl`, `afterPhotoUrl` в Order entity. Endpoint `POST /orders/:id/photo` (multipart, field: before/after). Медик загружает с камеры в деталях заказа. Клиент видит в истории заказа. Повышает доверие и прозрачность. Оценка: ~2 часа backend + ~3 часа mobile
+- [ ] **Уведомления в Telegram для клиентов** — аналогично медикам. **Реализация:** Добавить `telegramChatId` в User entity. Telegram bot обрабатывает `/start` от клиентов (по аналогии с медиками). В `notifyClient()` — отправка в Telegram если chatId есть. Клиент привязывает через deep link в профиле. Оценка: ~2 часа backend + ~1 час mobile
 
 ### UX и удобство
-- [ ] **Чат клиент ↔ медик** — real-time текстовый чат внутри заказа через Socket.IO. ChatMessage entity привязана к orderId. Заменяет звонки для простых вопросов ("через сколько будете?")
-- [ ] **Повторный заказ** — кнопка "Заказать снова" в истории: копирует serviceId + location из прошлого заказа → сразу на confirm. Экономит время для курсовых процедур
-- [ ] **Мульти-услуга в одном заказе** — клиент выбирает несколько услуг (укол + капельница). Order содержит массив serviceIds, цена суммируется. Снижает кол-во отдельных визитов
-- [ ] **Оценка времени прибытия** — при ACCEPTED/ON_THE_WAY показывать ETA на основе OSRM route. Медик видит расстояние, клиент видит "~15 мин"
-- [ ] **Уведомления в Telegram для клиентов** — аналогично медикам: клиент привязывает Telegram → получает статусы заказа в чат-боте
+- [ ] **Мульти-услуга в одном заказе** — клиент выбирает несколько услуг (укол + капельница). **Реализация:** Поле `serviceIds` (jsonb массив) в Order вместо/наряду с `serviceId`. UI: checkbox на каталоге, корзина внизу, суммарная цена. Backend: validate все serviceIds, суммировать цены. Сложность средняя — нужно менять flow создания заказа. Оценка: ~6 часов backend + ~4 часа mobile
+- [ ] **ETA (оценка времени прибытия)** — при ACCEPTED/ON_THE_WAY показывать "~15 мин". **Реализация:** Уже есть OSRM интеграция для route. Добавить `duration` парсинг из OSRM response (поле `routes[0].duration` в секундах). Показать на track screen: "Медик будет через ~{min} мин". Обновлять при каждом `medic_location` event. Оценка: ~2 часа
+- [ ] **`/orders/stats` endpoint** — подсчёт заказов без загрузки данных. **Реализация:** `GET /orders/stats` → `{ total, active, completed, canceled }`. Один SQL `SELECT status, COUNT(*) GROUP BY status WHERE clientId = :id`. Используется на profile screen вместо `GET /orders?limit=1` hack. Оценка: ~30 мин
 
-### Безопасность и инфраструктура
-- [ ] **Rate limiting по IP** — текущий throttle привязан к route, добавить per-IP лимит на login/register (защита от брутфорса с разных аккаунтов)
-- [ ] **Аудит-лог действий admin** — Entity AdminAuditLog (adminId, action, targetId, timestamp). Записывать: блокировки, верификации, отмены заказов, изменения настроек
-- [ ] **Soft-delete для заказов** — вместо физического удаления данных, `deletedAt` timestamp. Для compliance и разбора споров
-- [ ] **Healthcheck расширенный** — `GET /health/detailed` для мониторинга: DB connection, Redis (если будет), Cloudinary, Telegram bot, Expo push. Для Grafana/alerting
+### Безопасность
+- [ ] **Rate limiting по IP** — текущий throttle привязан к route, не к IP. **Реализация:** Добавить кастомный ThrottlerGuard с `getTracker()` → `req.ip`. Или использовать `@nestjs/throttler` с `generateKey: (req) => req.ip`. Применить к `/auth/login`, `/auth/register`, `/medics/login`. Защита от distributed brute-force. Оценка: ~1 час
+- [ ] **Soft-delete для заказов** — `deletedAt` timestamp вместо физического удаления. **Реализация:** Добавить `@DeleteDateColumn()` в Order entity. TypeORM автоматически фильтрует `deletedAt IS NULL`. Admin может "удалить" заказ, но данные остаются для compliance. Оценка: ~30 мин
+- [ ] **Certificate pinning** — защита от MITM на mobile. **Реализация:** `expo-certificate-pinning` или кастомный fetch adapter с проверкой SSL fingerprint. Pinning к Railway SSL certificate. Обновлять при ротации сертификата. Оценка: ~2 часа
+- [ ] **httpOnly cookies** — заменить JWT в localStorage (web) на httpOnly cookies. **Реализация:** Backend: `res.cookie('token', jwt, { httpOnly: true, secure: true, sameSite: 'strict' })`. Frontend: убрать `localStorage.setItem('token')`, использовать `credentials: 'include'` в fetch. CORS: `credentials: true`. Это защитит от XSS-кражи токенов в web-приложениях. Оценка: ~3 часа backend + ~2 часа web
 
-### Масштабирование
-- [ ] **Redis кэш** — заменить in-memory кэш (AppSettings 30s TTL) на Redis. Нужен при горизонтальном масштабировании (несколько инстансов на Railway)
-- [ ] **Очередь задач (BullMQ)** — перенести fire-and-forget операции (push, email, Telegram) в очередь. Устойчивость к сбоям, retry, мониторинг
-- [ ] **Файловое хранилище CDN** — вместо Cloudinary для документов медика использовать S3-совместимое хранилище (дешевле для объёма)
+### Масштабирование (при росте >1000 заказов/день)
+- [ ] **Redis кэш** — заменить in-memory кэш (AppSettings 30s TTL) на Redis. **Зачем:** Сейчас каждый инстанс backend хранит свой кэш. При горизонтальном масштабировании (2+ pods на Railway) — кэш рассинхронизирован. Redis = единый кэш для всех инстансов. **Реализация:** `@nestjs/cache-manager` + `cache-manager-redis-store`. Подключить Redis addon на Railway ($5/мес). Кэшировать: AppSettings, services list, doctor list. Оценка: ~2 часа
+- [ ] **BullMQ очередь задач** — перенести fire-and-forget операции в очередь. **Зачем:** Сейчас push, Telegram, email отправляются в `.catch()` — если сервер падает во время отправки, сообщение теряется. BullMQ: retry, delay, dead-letter queue, мониторинг через Bull Board. **Реализация:** `@nestjs/bullmq` + Redis. Queues: `push-notifications`, `telegram-messages`, `email`. Оценка: ~4 часа
+- [ ] **Payments ledger** — отдельная таблица для финансовой прозрачности. **Зачем:** Сейчас earnings считаются на лету из orders. Для бухгалтерии нужен аудит-трейл: кто, когда, сколько получил/заплатил. **Реализация:** Entity `PaymentLedger` (orderId, medicId, amount, type: EARNING/COMMISSION/REFUND, createdAt). Записывать при DONE. Admin endpoint: `GET /admin/ledger` с фильтрами. Оценка: ~3 часа
+- [ ] **S3-совместимое хранилище** — вместо Cloudinary для объёмных файлов. **Зачем:** Cloudinary бесплатный tier = 25 credits/мес. При росте медиков (фото лицензий, профили) может не хватить. **Реализация:** MinIO на Railway или Backblaze B2 ($0.005/GB). Медиа-документы → S3, фото профилей → Cloudinary. Оценка: ~3 часа
 
 ---
 

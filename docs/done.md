@@ -1,5 +1,25 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-04 (Этапы 1–5: Infrastructure + Features + Mobile UI)
+
+- **[infra]** Миграции 001–010 запущены на Railway production DB (25 таблиц) — prescriptions, nps_surveys, video fields, order chat, promo_codes, admin_audit_logs
+- **[feature]** GET /health/detailed — проверка DB, Cloudinary, Expo Push с latency -- `backend/src/app.controller.ts`
+- **[feature]** GET /auth/me — профиль клиента -- `backend/src/auth/auth.controller.ts`
+- **[feature]** PATCH /auth/profile — обновление имени клиента -- `backend/src/auth/auth.controller.ts`
+- **[feature]** PATCH /medics/profile — обновление имени медика -- `backend/src/medics/medics.controller.ts`
+- **[feature]** POST /auth/refresh — обновление JWT токена -- `backend/src/auth/auth.controller.ts`
+- **[feature]** POST /orders/:id/reorder — повторный заказ (копия service + location) -- `backend/src/orders/orders.service.ts`
+- **[feature]** Order chat: POST /orders/:id/messages, POST /:id/medic-messages, GET /:id/messages, Socket.IO event order_message -- `backend/src/orders/`
+- **[feature]** PromoCode entity + CRUD: POST /promo/validate, GET/POST/PATCH /promo/admin -- `backend/src/promo/`
+- **[feature]** AdminAuditLog entity + GET /admin/audit-log (paginated + filter) -- `backend/src/common/audit-log.service.ts`
+- **[feature]** Mobile: order chat screen (FlatList, Socket.IO real-time, send/receive) -- `mobile/app/order/chat.tsx`
+- **[feature]** Mobile: promo code input on confirm screen (validate + discount display) -- `mobile/app/order/confirm.tsx`
+- **[feature]** Mobile: inline edit name on profile screen -- `mobile/app/(tabs)/profile.tsx`
+- **[feature]** Mobile: chat button on order track screen -- `mobile/app/order/track.tsx`
+- **[i18n]** Added chat.*, promo.*, editProfile.* keys to ru.json + uz.json
+- **[migration]** 008_order_chat.sql, 009_promo_codes.sql, 010_admin_audit_log.sql
+- **[docs]** Full mobile vs web gap analysis (updated 2026-04-04): web client at parity except chat + promo codes
+
 ## 2026-04-03 (Web + Web-Medic: Онбординг)
 - **[feature]** /onboarding — 3 слайда (стетоскоп, карта, звезда), CSS анимация, localStorage flag — web/app/onboarding/page.tsx
 - **[feature]** Редирект на /onboarding если флаг не стоит — web/app/auth/page.tsx

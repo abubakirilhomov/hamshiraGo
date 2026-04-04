@@ -701,4 +701,69 @@ Notes:
 
 ---
 
-Последнее обновление: 2026-04-02
+## 25. Order Chat
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/orders/:id/messages` | Client JWT | Отправить сообщение (клиент) |
+| `POST` | `/orders/:id/medic-messages` | Medic JWT | Отправить сообщение (медик) |
+| `GET` | `/orders/:id/messages` | JWT | История сообщений заказа |
+
+Body: `{ "content": "Через сколько будете?" }`
+
+Socket.IO event: `order_message` → `{ orderId, message: { id, userId, role, content, createdAt } }`
+
+---
+
+## 26. Reorder
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/orders/:id/reorder` | Client JWT | Создать заказ-копию (тот же сервис + адрес) |
+
+---
+
+## 27. Profile Edit
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/auth/me` | Client JWT | Профиль клиента |
+| `PATCH` | `/auth/profile` | Client JWT | Обновить имя |
+| `POST` | `/auth/refresh` | JWT | Обновить JWT токен |
+| `PATCH` | `/medics/profile` | Medic JWT | Обновить имя медика |
+
+---
+
+## 28. Promo Codes
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `POST` | `/promo/validate` | Client JWT | Проверить промо-код |
+| `GET` | `/promo/admin` | Admin | Список всех кодов |
+| `POST` | `/promo/admin` | Admin | Создать код |
+| `PATCH` | `/promo/admin/:id/deactivate` | Admin | Деактивировать код |
+
+`POST /promo/admin` body:
+```json
+{ "code": "WELCOME50", "discountAmount": 50000, "maxUses": 100, "expiresAt": "2026-06-01" }
+```
+
+---
+
+## 29. Admin Audit Log
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/admin/audit-log` | Admin | Лог действий (пагинация + фильтр по action) |
+
+---
+
+## 30. Health (extended)
+
+| Method | URL | Auth | Description |
+|---|---|---|---|
+| `GET` | `/health/detailed` | No | Детальный healthcheck (DB, Cloudinary, Expo Push) |
+
+---
+
+Последнее обновление: 2026-04-04
