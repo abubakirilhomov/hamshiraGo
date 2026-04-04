@@ -348,7 +348,8 @@
 ## 📌 Задачи Диёра (web / web-medic / admin / landing)
 
 > Backend и mobile части уже готовы. Диёр делает web/admin UI.
-> Анализ проведён 2026-04-02: сравнение mobile vs web, найдены все недостающие фичи.
+> Анализ mobile vs web обновлён 2026-04-04.
+> Анализ admin панели проведён 2026-04-04.
 
 ### 🔴 Приоритет 1 — V1 до запуска
 
@@ -514,6 +515,70 @@
 - [ ] Показать: всего заказов, выполнено, средний рейтинг, заработок
 - [ ] API: `GET /orders/medic/my?limit=1` (total из pagination) + `GET /medics/me` (balance, earnings, rating)
 - Референс: `medic/app/(tabs)/profile.tsx` (StatsSection)
+
+### 🟣 Admin панель — недостающие фичи (анализ 2026-04-04)
+
+> Admin: 15 страниц, shadcn/ui + Recharts. Уже есть: Dashboard, Verification, Medics (с картой),
+> Clients, Orders (WS real-time), Services CRUD, Reports (CSV), Analytics, User Support (badges),
+> Reviews, Consultations (complete/cancel), NPS, Settings.
+> **Не хватает 4 страницы**, backend endpoints готовы.
+
+#### D-23. Admin: Промо-коды
+- [ ] Страница `/promo-codes` — таблица всех кодов (code, discountAmount/Percent, maxUses, usedCount, expiresAt, isActive)
+- [ ] Создание промо-кода: dialog с полями code, discountAmount, discountPercent, maxUses, expiresAt
+- [ ] Деактивация кода (кнопка в Actions)
+- [ ] Фильтр: активные / все
+- API: `GET /promo/admin`, `POST /promo/admin`, `PATCH /promo/admin/:id/deactivate`
+- Добавить в api.ts: `getPromoCodes()`, `createPromoCode()`, `deactivatePromoCode()`
+- Добавить в sidebar: "Промо-коды" с иконкой ticket
+
+#### D-24. Admin: Управление тарифами подписок
+- [ ] Страница `/subscription-tiers` — таблица тарифов (name, price, billingDays, maxOrders, discountPercent, isActive, sortOrder)
+- [ ] Создание/редактирование тарифа: dialog
+- [ ] Статистика подписок (active/expired/canceled count)
+- [ ] Toggle isActive
+- API: `GET /subscriptions/admin/tiers`, `POST /subscriptions/admin/tiers`, `PATCH /subscriptions/admin/tiers/:id`, `GET /subscriptions/admin/stats`
+- Добавить в api.ts: `getAdminTiers()`, `createTier()`, `updateTier()`, `getSubscriptionStats()`
+- Добавить в sidebar: "Подписки" с иконкой credit-card
+
+#### D-25. Admin: CRUD врачей (Doctors)
+- [ ] Страница `/doctors` — таблица врачей (name, specialization, phone, pricePerConsultation, rating, consultationCount, isActive)
+- [ ] Создание врача: dialog с полями name, nameUz, specialization, specializationUz, bio, photoUrl, pricePerConsultation, phone
+- [ ] Редактирование врача
+- [ ] Toggle isActive
+- API: `GET /consultations/admin/doctors`, `POST /consultations/admin/doctors`, `PATCH /consultations/admin/doctors/:id`
+- Добавить в api.ts: `getAdminDoctors()`, `createDoctor()`, `updateDoctor()`
+- Добавить в sidebar: "Врачи" рядом с "Консультации"
+
+#### D-26. Admin: Аудит-лог
+- [ ] Страница `/audit-log` — таблица действий admin (adminId, action, targetType, targetId, details, ip, createdAt)
+- [ ] Пагинация + фильтр по action (dropdown: all / block / verify / cancel / settings и т.д.)
+- [ ] Expandable row: показать details (JSON) и IP
+- API: `GET /admin/audit-log?page=&limit=&action=`
+- Добавить в api.ts: `getAuditLog()`
+- Добавить в sidebar: "Аудит-лог" внизу, с иконкой shield
+
+### 📊 Admin: текущее покрытие (15 страниц)
+
+| Страница | Статус | Описание |
+|----------|--------|----------|
+| Dashboard | ✅ | KPI, тренды, auto-refresh 30s |
+| Verification | ✅ | Очередь верификации медиков |
+| Medics | ✅ | Таблица + карта с геозонами |
+| Clients | ✅ | Таблица + block/unblock |
+| Orders | ✅ | Таблица + WS real-time + cancel |
+| Services | ✅ | CRUD услуг |
+| Reports | ✅ | График + CSV export |
+| Analytics | ✅ | Недельные тренды + utilization |
+| User Support | ✅ | Ошибки + badge в sidebar |
+| Reviews | ✅ | Отзывы по медику |
+| Consultations | ✅ | Complete/cancel + service selector |
+| NPS | ✅ | Score gauge + monthly trend |
+| Settings | ✅ | Commission, urgent fee, paid mode |
+| **Промо-коды** | ❌ | **D-23** |
+| **Тарифы подписок** | ❌ | **D-24** |
+| **Врачи (CRUD)** | ❌ | **D-25** |
+| **Аудит-лог** | ❌ | **D-26** |
 
 ---
 
