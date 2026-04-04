@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -111,7 +111,8 @@ export default function OrderConfirmScreen() {
   // Client computes it for display purposes only; the backend must
   // independently verify eligibility and cap the amount.
   const firstOrderDiscount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
-  const discountAmount = firstOrderDiscount + promoDiscount;
+  const subDiscount = activeSub ? Math.round(basePrice * (activeSub.discountPercent ?? 0) / 100) : 0;
+  const discountAmount = firstOrderDiscount + promoDiscount + subDiscount;
   const urgentFee = isUrgent ? Math.round(basePrice * urgentFeePercent / 100) : 0;
   const finalPrice = Math.max(0, basePrice + urgentFee - discountAmount);
 
@@ -161,6 +162,7 @@ export default function OrderConfirmScreen() {
         body: JSON.stringify({
           serviceId: service.id,
           ...(discountAmount > 0 ? { discountAmount } : {}),
+          ...(promoId ? { promoId } : {}),
           ...(isUrgent ? { isUrgent: true } : {}),
           location: {
             latitude: lat,
@@ -264,7 +266,7 @@ export default function OrderConfirmScreen() {
           <TextInput
             style={[styles.promoInput, promoStatus === 'valid' && { borderColor: Theme.success }, promoStatus === 'invalid' && { borderColor: Theme.error }]}
             value={promoCode}
-            onChangeText={(v) => { setPromoCode(v.toUpperCase()); setPromoStatus('idle'); setPromoDiscount(0); }}
+            onChangeText={(v) => { const upper = v.toUpperCase(); setPromoCode(upper); if (promoStatus !== 'idle') { setPromoStatus('idle'); setPromoDiscount(0); setPromoId(null); } }}
             placeholder={t('promo.placeholder')}
             placeholderTextColor={Theme.textSecondary}
             autoCapitalize="characters"

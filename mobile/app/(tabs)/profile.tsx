@@ -145,10 +145,16 @@ export default function ProfileScreen() {
         method: 'PATCH',
         body: JSON.stringify({ name: newName.trim() }),
       });
+      // Force re-login to refresh user object in AuthContext
+      // (workaround: update displayed name locally until next app restart)
+      if (user) (user as any).name = newName.trim();
       setEditingName(false);
-    } catch { /* ignore */ }
-    finally { setSavingName(false); }
-  }, [token, newName]);
+    } catch {
+      Alert.alert('Error', 'Failed to save');
+    } finally {
+      setSavingName(false);
+    }
+  }, [token, newName, user]);
 
   if (!user) return null;
 

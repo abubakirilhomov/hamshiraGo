@@ -12,21 +12,21 @@
 > Паттерн `apiFetch(url, token, options)` — неверная сигнатура. Правильно: `apiFetch(url, { token, method, body })`.
 > Затронуты: prescription.tsx, prescriptions.tsx, nps.tsx, video-call.tsx — **экраны не работают**.
 
-- [ ] **MOB-BUG-1** — CRITICAL — `prescription.tsx:57` — apiFetch вызывается с 3 аргументами → запрос без auth, `res.json()` крашит (apiFetch возвращает parsed data, не Response)
-- [ ] **MOB-BUG-2** — CRITICAL — `prescription.tsx:100,144` — confirm и cancel тоже с 3 аргументами → не работают
-- [ ] **MOB-BUG-3** — CRITICAL — `prescriptions.tsx:52` — список назначений: тот же баг с apiFetch → экран крашит
-- [ ] **MOB-BUG-4** — CRITICAL — `nps.tsx:44` — отправка NPS: 3 аргумента + `res.ok` на parsed data → не работает
-- [ ] **MOB-BUG-5** — CRITICAL — `video-call.tsx:54` — early return до hooks → нарушение Rules of Hooks, React crash
-- [ ] **MOB-BUG-6** — HIGH — `video-call.tsx:77,105` — apiFetch с 3 аргументами → звонки не работают
-- [ ] **MOB-BUG-7** — HIGH — `order/confirm.tsx:158` — promoId не отправляется на backend → промо не отслеживается
-- [ ] **MOB-BUG-8** — HIGH — `profile.tsx:139` — после save name user object в AuthContext не обновляется → старое имя до рестарта
-- [ ] **MOB-BUG-9** — MEDIUM — `order/chat.tsx:79` — текст сообщения очищается до подтверждения отправки → потеря при ошибке
-- [ ] **MOB-BUG-10** — MEDIUM — `order/confirm.tsx:109` — subscription discount отображается но не применяется к finalPrice
-- [ ] **MOB-BUG-11** — MEDIUM — `order/confirm.tsx:264` — TextInput не импортирован → crash при открытии промо-кода
-- [ ] **MOB-BUG-12** — MEDIUM — `order/confirm.tsx:267` — ввод в промо поле сбрасывает уже применённую скидку
-- [ ] **MOB-BUG-13** — MEDIUM — `video-call.tsx:151` — mic/cam toggle меняет иконку но не мутит реально (не wired к LiveKit)
-- [ ] **MOB-BUG-14** — MEDIUM — `consultations.tsx:178` — кнопка "Позвонить" видна для PENDING (врач ещё не принял)
-- [ ] **MOB-BUG-15** — MEDIUM — `_layout.tsx:160` — NPS check гонится с auth redirect → navigation glitch
+- [x] **MOB-BUG-1** — CRITICAL — `prescription.tsx:57` — apiFetch вызывается с 3 аргументами → запрос без auth, `res.json()` крашит (apiFetch возвращает parsed data, не Response)
+- [x] **MOB-BUG-2** — CRITICAL — `prescription.tsx:100,144` — confirm и cancel тоже с 3 аргументами → не работают
+- [x] **MOB-BUG-3** — CRITICAL — `prescriptions.tsx:52` — список назначений: тот же баг с apiFetch → экран крашит
+- [x] **MOB-BUG-4** — CRITICAL — `nps.tsx:44` — отправка NPS: 3 аргумента + `res.ok` на parsed data → не работает
+- [x] **MOB-BUG-5** — CRITICAL — `video-call.tsx:54` — early return до hooks → нарушение Rules of Hooks, React crash
+- [x] **MOB-BUG-6** — HIGH — `video-call.tsx:77,105` — apiFetch с 3 аргументами → звонки не работают
+- [x] **MOB-BUG-7** — HIGH — `order/confirm.tsx:158` — promoId не отправляется на backend → промо не отслеживается
+- [x] **MOB-BUG-8** — HIGH — `profile.tsx:139` — после save name user object в AuthContext не обновляется → старое имя до рестарта
+- [x] **MOB-BUG-9** — MEDIUM — `order/chat.tsx:79` — текст сообщения очищается до подтверждения отправки → потеря при ошибке
+- [x] **MOB-BUG-10** — MEDIUM — `order/confirm.tsx:109` — subscription discount отображается но не применяется к finalPrice
+- [x] **MOB-BUG-11** — MEDIUM — `order/confirm.tsx:264` — TextInput не импортирован → crash при открытии промо-кода
+- [x] **MOB-BUG-12** — MEDIUM — `order/confirm.tsx:267` — ввод в промо поле сбрасывает уже применённую скидку
+- [x] **MOB-BUG-13** — MEDIUM — `video-call.tsx:151` — mic/cam toggle меняет иконку но не мутит реально (не wired к LiveKit)
+- [x] **MOB-BUG-14** — MEDIUM — `consultations.tsx:178` — кнопка "Позвонить" видна для PENDING (врач ещё не принял)
+- [x] **MOB-BUG-15** — MEDIUM — `_layout.tsx:160` — NPS check гонится с auth redirect → navigation glitch
 
 ## ✅ Аудит 2026-04-04 (Admin) — ВСЁ ИСПРАВЛЕНО 2026-04-05
 

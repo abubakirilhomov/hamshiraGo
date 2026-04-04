@@ -76,7 +76,6 @@ export default function OrderChatScreen() {
   const handleSend = useCallback(async () => {
     if (!text.trim() || !token || !orderId || sending) return;
     const content = text.trim();
-    setText('');
     setSending(true);
     try {
       const msg = await apiFetch<Message>(`/orders/${orderId}/messages`, {
@@ -84,6 +83,7 @@ export default function OrderChatScreen() {
         method: 'POST',
         body: JSON.stringify({ content }),
       });
+      setText(''); // Clear only on success
       if (msg) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev;
@@ -91,8 +91,11 @@ export default function OrderChatScreen() {
         });
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       }
-    } catch { /* ignore */ }
-    finally { setSending(false); }
+    } catch {
+      toast.show('Failed to send', 'error');
+    } finally {
+      setSending(false);
+    }
   }, [text, token, orderId, sending]);
 
   const renderMessage = ({ item }: { item: Message }) => {

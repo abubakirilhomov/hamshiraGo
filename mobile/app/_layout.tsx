@@ -157,13 +157,17 @@ function RootLayoutNav() {
   }, [isLoading]);
 
   // NPS: check if user should see survey (once per app open when logged in)
+  // Delayed 3s to avoid race with auth redirect
   useEffect(() => {
     if (!token || isLoading) return;
-    apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
-      .then((data) => {
-        if (data && data.shouldShow === true) router.push('/nps');
-      })
-      .catch(() => { /* silently ignore — table may not exist yet */ });
+    const timer = setTimeout(() => {
+      apiFetch<{ shouldShow: boolean }>('/nps/check', { token })
+        .then((data) => {
+          if (data && data.shouldShow === true) router.push('/nps');
+        })
+        .catch(() => { /* silently ignore */ });
+    }, 3000);
+    return () => clearTimeout(timer);
   }, [token, isLoading]);
 
   // DEV ONLY: deep link login for Maestro testing

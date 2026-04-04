@@ -54,10 +54,8 @@ export default function PrescriptionScreen() {
     if (!id || !token) return;
     (async () => {
       try {
-        const res = await apiFetch(`/consultations/prescriptions/my?limit=50`, token);
-        if (!res.ok) throw new Error('Failed to load');
-        const json = await res.json();
-        const found = json.data?.find((p: PrescriptionData) => p.id === id);
+        const json = await apiFetch<{ data: PrescriptionData[] }>(`/consultations/prescriptions/my?limit=50`, { token });
+        const found = json?.data?.find((p: PrescriptionData) => p.id === id);
         if (found) setPrescription(found);
       } catch {
         toast.show(t('home.loading'), 'error');
@@ -97,7 +95,8 @@ export default function PrescriptionScreen() {
 
     setSubmitting(true);
     try {
-      const res = await apiFetch(`/consultations/prescriptions/${prescription.id}/confirm`, token, {
+      const result = await apiFetch<PrescriptionData>(`/consultations/prescriptions/${prescription.id}/confirm`, {
+        token,
         method: 'POST',
         body: JSON.stringify({
           location: {
@@ -110,13 +109,6 @@ export default function PrescriptionScreen() {
           },
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Error');
-      }
-
-      const result = await res.json();
       toast.show(t('prescription.confirmed'), 'success');
 
       // Navigate to order tracking
@@ -141,7 +133,8 @@ export default function PrescriptionScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            await apiFetch(`/consultations/prescriptions/${prescription.id}/cancel`, token, {
+            await apiFetch(`/consultations/prescriptions/${prescription.id}/cancel`, {
+              token,
               method: 'POST',
             });
             toast.show(t('prescription.canceled'), 'success');

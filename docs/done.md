@@ -22,6 +22,13 @@
 - **[fix]** ADM-BUG-13 — api.ts base64url → base64 конвертация перед atob
 - **[fix]** ADM-BUG-14 — api.ts 401: custom event + useNavigate в AdminLayout (SPA навигация)
 
+## 2026-04-04 (Bug Audit + Fixes — Абубакир)
+
+- **[audit]** Full bug audit: 15 mobile bugs + 14 admin bugs found and documented in tasks.md
+- **[fix]** MOB-BUG-1–4 (CRITICAL): Fixed apiFetch 3-argument pattern in prescription.tsx, prescriptions.tsx, nps.tsx
+- **[fix]** MOB-BUG-5 (CRITICAL): Fixed Rules of Hooks violation in video-call.tsx
+- **[fix]** MOB-BUG-6–15: Various mobile fixes (promoId, user.name, chat, subscription discount, TextInput, LiveKit, NPS race)
+
 ## 2026-04-04 (D-22: Статистика заказов медика)
 - **[feature]** Счётчик DONE заказов в стат-блоке профиля (4-я колонка грид), загружается параллельно с профилем — web-medic/app/profile/page.tsx
 
