@@ -1,5 +1,25 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-04 (Bug Audit + Fixes)
+
+- **[audit]** Full bug audit: 15 mobile bugs + 14 admin bugs found and documented in tasks.md
+- **[fix]** MOB-BUG-1–4 (CRITICAL): Fixed apiFetch 3-argument pattern in prescription.tsx, prescriptions.tsx, nps.tsx — screens were completely broken
+- **[fix]** MOB-BUG-5 (CRITICAL): Fixed Rules of Hooks violation in video-call.tsx — early return moved after all hooks
+- **[fix]** MOB-BUG-6 (HIGH): Fixed apiFetch in video-call.tsx call start/end
+- **[fix]** MOB-BUG-7 (HIGH): promoId now sent to backend in order creation body — `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-BUG-8 (HIGH): user.name updated locally after profile save — `mobile/app/(tabs)/profile.tsx`
+- **[fix]** MOB-BUG-9 (MEDIUM): chat message text cleared only after successful send — `mobile/app/order/chat.tsx`
+- **[fix]** MOB-BUG-10 (MEDIUM): subscription discount now included in finalPrice display — `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-BUG-11 (MEDIUM): TextInput import added — `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-BUG-12 (MEDIUM): promo code reset only when code text changes, not on every focus — `mobile/app/order/confirm.tsx`
+- **[fix]** MOB-BUG-13 (MEDIUM): mic/cam wired to LiveKit via audio/video props — `mobile/app/video-call.tsx`
+- **[fix]** MOB-BUG-14 (MEDIUM): video call button only shown for ACTIVE consultations, not PENDING — `mobile/app/consultations.tsx`
+- **[fix]** MOB-BUG-15 (MEDIUM): NPS auto-check delayed 3s to avoid auth redirect race — `mobile/app/_layout.tsx`
+- **[docs]** Admin panel analysis: 15 existing pages, 4 missing (D-23–D-26: promo codes, subscription tiers, doctors CRUD, audit log)
+- **[docs]** Updated mobile vs web matrix (2026-04-04): web client missing only chat + promo (D-17–D-18), web-medic missing 4 features (D-19–D-22)
+- **[docs]** V4 roadmap: 14 ideas with detailed implementation plans and time estimates
+- **[docs]** BACKEND_API.md: added sections 25–30 (chat, reorder, profile, promo, audit, health)
+
 ## 2026-04-04 (D-22: Статистика заказов медика)
 - **[feature]** Счётчик DONE заказов в стат-блоке профиля (4-я колонка грид), загружается параллельно с профилем — web-medic/app/profile/page.tsx
 
