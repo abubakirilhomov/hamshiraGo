@@ -28,24 +28,24 @@
 - [ ] **MOB-BUG-14** — MEDIUM — `consultations.tsx:178` — кнопка "Позвонить" видна для PENDING (врач ещё не принял)
 - [ ] **MOB-BUG-15** — MEDIUM — `_layout.tsx:160` — NPS check гонится с auth redirect → navigation glitch
 
-## 🔴 CRITICAL — Аудит 2026-04-04 (Admin)
+## ✅ Аудит 2026-04-04 (Admin) — ВСЁ ИСПРАВЛЕНО 2026-04-05
 
-- [ ] **ADM-BUG-1** — HIGH — `Dashboard.tsx:39` — revenue считается client-side, скачивая ВСЕ DONE заказы каждые 30с → тормозит при росте
-- [ ] **ADM-BUG-2** — HIGH — `Dashboard.tsx:282` — "Сегодня в обработке" считает all-time, а не сегодня
-- [ ] **ADM-BUG-3** — HIGH — `Orders.tsx:71` — поиск только по первым 100 заказам → пропускает результаты
-- [ ] **ADM-BUG-4** — HIGH — `Analytics.tsx:56` — скачивает ВСЕ заказы в браузер для графиков → не масштабируется
-- [ ] **ADM-BUG-5** — HIGH — `Reports.tsx:80` — скачивает ВСЕ DONE заказы для отчётов → тормозит
-- [ ] **ADM-BUG-6** — MEDIUM — `Medics.tsx:48` — только первые 100 медиков, нет пагинации
-- [ ] **ADM-BUG-7** — MEDIUM — `Clients.tsx:42` — двойная загрузка при открытии (два одинаковых API call)
-- [ ] **ADM-BUG-8** — MEDIUM — `Services.tsx:270` — отрицательная цена допускается (нет min=0)
-- [ ] **ADM-BUG-9** — MEDIUM — `Consultations.tsx:85` — `clientId.slice(0,8)` крашит при null
-- [ ] **ADM-BUG-10** — MEDIUM — `Consultations.tsx:231` — `alert()` вместо toast для ошибок
-- [ ] **ADM-BUG-11** — MEDIUM — `Settings.tsx:73` — commission slider шлёт запрос на каждое перетаскивание (debounce 500ms недостаточно)
-- [ ] **ADM-BUG-12** — MEDIUM — `UserSupport.tsx:96` — поиск только по текущей странице (20 элементов)
-- [ ] **ADM-BUG-13** — MEDIUM — `api.ts:109` — `atob` для JWT декодирования может крашить при URL-safe base64
-- [ ] **ADM-BUG-14** — LOW — `api.ts:116` — 401 делает `window.location.href` (full reload вместо router navigate)
+- [x] **ADM-BUG-1** — FIXED — revenue грузится один раз при монтировании (`loadRevenue`), не каждые 30с
+- [x] **ADM-BUG-2** — FIXED — timezone fix (`toLocaleDateString("sv")`), лейбл "В процессе сейчас"
+- [x] **ADM-BUG-3** — FIXED — поиск грузит до 1000 заказов (10 страниц × 100) параллельно
+- [x] **ADM-BUG-4** — FIXED — Analytics грузит только 90 дней, останавливается по cutoff
+- [x] **ADM-BUG-5** — FIXED — Reports грузит только DONE заказы начиная с даты `from`
+- [x] **ADM-BUG-6** — FIXED — Medics грузит все страницы параллельно
+- [x] **ADM-BUG-7** — FIXED — `isMounted` ref предотвращает двойную загрузку
+- [x] **ADM-BUG-8** — FIXED — `min={0}` + `Math.max(0, ...)` на price input
+- [x] **ADM-BUG-9** — FIXED — `(clientId ?? "").slice(0, 8)` в двух местах
+- [x] **ADM-BUG-10** — FIXED — `alert()` заменён на `toast.error()`
+- [x] **ADM-BUG-11** — FIXED — `onValueCommit` вместо `onValueChange` — запрос только при отпускании
+- [x] **ADM-BUG-12** — FIXED — поиск грузит до 500 ошибок (5 страниц × 100)
+- [x] **ADM-BUG-13** — FIXED — base64url → base64 конвертация перед `atob`
+- [x] **ADM-BUG-14** — FIXED — custom event `admin:unauthorized` + `useNavigate` в AdminLayout
 
-## 🟡 Medic app — не хватает
+## 🟡 Medic app — не хватает (Абубакир — mobile)
 
 - [ ] **MED-MISS-1** — Нет inline edit name в профиле (в отличие от mobile)
 - [ ] **MED-MISS-2** — Нет чата в заказе (medic side) — клиент пишет, медик не видит
@@ -547,40 +547,17 @@
 > Reviews, Consultations (complete/cancel), NPS, Settings.
 > **Не хватает 4 страницы**, backend endpoints готовы.
 
-#### D-23. Admin: Промо-коды
-- [ ] Страница `/promo-codes` — таблица всех кодов (code, discountAmount/Percent, maxUses, usedCount, expiresAt, isActive)
-- [ ] Создание промо-кода: dialog с полями code, discountAmount, discountPercent, maxUses, expiresAt
-- [ ] Деактивация кода (кнопка в Actions)
-- [ ] Фильтр: активные / все
-- API: `GET /promo/admin`, `POST /promo/admin`, `PATCH /promo/admin/:id/deactivate`
-- Добавить в api.ts: `getPromoCodes()`, `createPromoCode()`, `deactivatePromoCode()`
-- Добавить в sidebar: "Промо-коды" с иконкой ticket
+#### ~~D-23. Admin: Промо-коды~~ ✅ DONE
+- Страница `/promo-codes`, таблица, фильтр активные/все, создание + деактивация — `admin/src/pages/PromoCodes.tsx`
 
-#### D-24. Admin: Управление тарифами подписок
-- [ ] Страница `/subscription-tiers` — таблица тарифов (name, price, billingDays, maxOrders, discountPercent, isActive, sortOrder)
-- [ ] Создание/редактирование тарифа: dialog
-- [ ] Статистика подписок (active/expired/canceled count)
-- [ ] Toggle isActive
-- API: `GET /subscriptions/admin/tiers`, `POST /subscriptions/admin/tiers`, `PATCH /subscriptions/admin/tiers/:id`, `GET /subscriptions/admin/stats`
-- Добавить в api.ts: `getAdminTiers()`, `createTier()`, `updateTier()`, `getSubscriptionStats()`
-- Добавить в sidebar: "Подписки" с иконкой credit-card
+#### ~~D-24. Admin: Управление тарифами подписок~~ ✅ DONE
+- Страница `/subscription-tiers`, CRUD через диалог, статистика, toggle isActive — `admin/src/pages/SubscriptionTiers.tsx`
 
-#### D-25. Admin: CRUD врачей (Doctors)
-- [ ] Страница `/doctors` — таблица врачей (name, specialization, phone, pricePerConsultation, rating, consultationCount, isActive)
-- [ ] Создание врача: dialog с полями name, nameUz, specialization, specializationUz, bio, photoUrl, pricePerConsultation, phone
-- [ ] Редактирование врача
-- [ ] Toggle isActive
-- API: `GET /consultations/admin/doctors`, `POST /consultations/admin/doctors`, `PATCH /consultations/admin/doctors/:id`
-- Добавить в api.ts: `getAdminDoctors()`, `createDoctor()`, `updateDoctor()`
-- Добавить в sidebar: "Врачи" рядом с "Консультации"
+#### ~~D-25. Admin: CRUD врачей (Doctors)~~ ✅ DONE
+- Страница `/doctors`, таблица с фото/рейтингом, CRUD диалог, toggle isActive — `admin/src/pages/Doctors.tsx`
 
-#### D-26. Admin: Аудит-лог
-- [ ] Страница `/audit-log` — таблица действий admin (adminId, action, targetType, targetId, details, ip, createdAt)
-- [ ] Пагинация + фильтр по action (dropdown: all / block / verify / cancel / settings и т.д.)
-- [ ] Expandable row: показать details (JSON) и IP
-- API: `GET /admin/audit-log?page=&limit=&action=`
-- Добавить в api.ts: `getAuditLog()`
-- Добавить в sidebar: "Аудит-лог" внизу, с иконкой shield
+#### ~~D-26. Admin: Аудит-лог~~ ✅ DONE
+- Страница `/audit-log`, пагинация, фильтр по action, expandable row с JSON деталями — `admin/src/pages/AuditLog.tsx`
 
 ### 📊 Admin: текущее покрытие (15 страниц)
 
@@ -599,10 +576,10 @@
 | Consultations | ✅ | Complete/cancel + service selector |
 | NPS | ✅ | Score gauge + monthly trend |
 | Settings | ✅ | Commission, urgent fee, paid mode |
-| **Промо-коды** | ❌ | **D-23** |
-| **Тарифы подписок** | ❌ | **D-24** |
-| **Врачи (CRUD)** | ❌ | **D-25** |
-| **Аудит-лог** | ❌ | **D-26** |
+| Промо-коды | ✅ | D-23 DONE |
+| Тарифы подписок | ✅ | D-24 DONE |
+| Врачи (CRUD) | ✅ | D-25 DONE |
+| Аудит-лог | ✅ | D-26 DONE |
 
 ---
 

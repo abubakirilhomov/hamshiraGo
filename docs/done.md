@@ -1,5 +1,27 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (D-23–D-26: Admin новые страницы + ADM-BUG-1–14)
+
+- **[feature]** D-23 — Admin Промо-коды: таблица, фильтр, создание/деактивация — `admin/src/pages/PromoCodes.tsx`
+- **[feature]** D-24 — Admin Тарифы подписок: CRUD диалог, статистика, toggle isActive — `admin/src/pages/SubscriptionTiers.tsx`
+- **[feature]** D-25 — Admin Врачи: таблица с фото/рейтингом, CRUD диалог, toggle isActive — `admin/src/pages/Doctors.tsx`
+- **[feature]** D-26 — Admin Аудит-лог: пагинация, фильтр по action, expandable JSON row — `admin/src/pages/AuditLog.tsx`
+- **[api]** Добавлены типы и функции: PromoCode, SubscriptionTier, Doctor, AuditLog — `admin/src/lib/api.ts`
+- **[fix]** ADM-BUG-1 — Dashboard revenue грузится один раз при монтировании, не каждые 30с
+- **[fix]** ADM-BUG-2 — Dashboard timezone fix (toLocaleDateString("sv")), лейбл "В процессе сейчас"
+- **[fix]** ADM-BUG-3 — Orders поиск по до 1000 заказов (10 страниц × 100)
+- **[fix]** ADM-BUG-4 — Analytics грузит только 90 дней с cutoff stop
+- **[fix]** ADM-BUG-5 — Reports грузит DONE заказы только с даты `from`
+- **[fix]** ADM-BUG-6 — Medics грузит все страницы параллельно
+- **[fix]** ADM-BUG-7 — Clients isMounted ref предотвращает двойную загрузку
+- **[fix]** ADM-BUG-8 — Services min=0 + Math.max(0) на цену
+- **[fix]** ADM-BUG-9 — Consultations (clientId ?? "").slice(0,8) в двух местах
+- **[fix]** ADM-BUG-10 — Consultations alert() → toast.error()
+- **[fix]** ADM-BUG-11 — Settings slider onValueCommit вместо onValueChange
+- **[fix]** ADM-BUG-12 — UserSupport поиск по 500 ошибкам с debounce
+- **[fix]** ADM-BUG-13 — api.ts base64url → base64 конвертация перед atob
+- **[fix]** ADM-BUG-14 — api.ts 401: custom event + useNavigate в AdminLayout (SPA навигация)
+
 ## 2026-04-04 (D-22: Статистика заказов медика)
 - **[feature]** Счётчик DONE заказов в стат-блоке профиля (4-я колонка грид), загружается параллельно с профилем — web-medic/app/profile/page.tsx
 
