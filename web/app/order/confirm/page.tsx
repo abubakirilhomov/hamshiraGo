@@ -9,6 +9,7 @@ import {
   FaPhone,
   FaMedkit,
   FaExclamationCircle,
+  FaTag,
 } from "react-icons/fa";
 import { api, formatPrice } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -34,7 +35,14 @@ function ConfirmForm() {
   const [isUrgent, setIsUrgent] = useState(false);
   const [urgentFeePercent, setUrgentFeePercent] = useState(50);
   const urgentFee = isUrgent ? Math.round(price * urgentFeePercent / 100) : 0;
-  const total = price + urgentFee - discount;
+
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoStatus, setPromoStatus] = useState<"idle" | "valid" | "invalid">("idle");
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const totalDiscount = discount + promoDiscount;
+  const total = price + urgentFee - totalDiscount;
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
@@ -78,7 +86,7 @@ function ConfirmForm() {
     setLoading(true);
     const body = {
       serviceId,
-      discountAmount: discount || undefined,
+      discountAmount: totalDiscount || undefined,
       isUrgent: isUrgent || undefined,
       location: {
         latitude:  lat,
@@ -97,6 +105,25 @@ function ConfirmForm() {
       notify("error");
       setError(err instanceof Error ? err.message : t("common.error"));
       setLoading(false);
+    }
+  }
+
+  async function handleApplyPromo() {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const res = await api.promo.validate(promoCode.trim());
+      if (res.valid) {
+        setPromoDiscount(res.discountAmount);
+        setPromoStatus("valid");
+      } else {
+        setPromoDiscount(0);
+        setPromoStatus("invalid");
+      }
+    } catch {
+      setPromoStatus("invalid");
+    } finally {
+      setPromoLoading(false);
     }
   }
 
@@ -220,6 +247,50 @@ function ConfirmForm() {
           )}
         </div>
 
+        {/* Promo code */}
+        <div style={cardStyle}>
+          <h2 style={sectionTitle}>Промо-код</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={promoCode}
+              onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoStatus("idle"); setPromoDiscount(0); }}
+              onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+              placeholder="Введите промо-код"
+              maxLength={50}
+              style={{
+                flex: 1, border: `1.5px solid ${promoStatus === "valid" ? "#22c55e" : promoStatus === "invalid" ? "#ef4444" : "#e2e8f0"}`,
+                borderRadius: 12, padding: "11px 14px", fontSize: 14,
+                outline: "none", fontFamily: "inherit", textTransform: "uppercase",
+                color: "#0f172a", background: "#fff",
+              }}
+            />
+            <button
+              onClick={handleApplyPromo}
+              disabled={promoLoading || !promoCode.trim()}
+              style={{
+                background: "#0d9488", color: "#fff", border: "none",
+                borderRadius: 12, padding: "11px 18px", fontSize: 14,
+                fontWeight: 600, cursor: "pointer",
+                opacity: promoLoading || !promoCode.trim() ? 0.6 : 1,
+                display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+              }}
+            >
+              <FaTag size={12} />
+              {promoLoading ? "..." : "Применить"}
+            </button>
+          </div>
+          {promoStatus === "valid" && (
+            <p style={{ fontSize: 13, color: "#22c55e", fontWeight: 600, marginTop: 8 }}>
+              ✓ Скидка {formatPrice(promoDiscount)} UZS применена
+            </p>
+          )}
+          {promoStatus === "invalid" && (
+            <p style={{ fontSize: 13, color: "#ef4444", fontWeight: 600, marginTop: 8 }}>
+              ✗ Промо-код не найден или истёк
+            </p>
+          )}
+        </div>
+
         {/* Price */}
         <div style={cardStyle}>
           <h2 style={sectionTitle}>{t("confirm.price")}</h2>
@@ -260,6 +331,17 @@ function ConfirmForm() {
                 </span>
                 <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 700 }}>
                   −{formatPrice(discount)} UZS
+                </span>
+              </div>
+            )}
+
+            {promoDiscount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#16a34a", fontWeight: 600 }}>
+                  🏷️ Промо-код
+                </span>
+                <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 700 }}>
+                  −{formatPrice(promoDiscount)} UZS
                 </span>
               </div>
             )}

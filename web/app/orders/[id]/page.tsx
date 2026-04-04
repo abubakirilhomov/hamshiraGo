@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import dynamic from "next/dynamic";
@@ -15,6 +15,8 @@ import {
   FaPhone,
   FaBriefcaseMedical,
   FaTimes,
+  FaComments,
+  FaPaperPlane,
 } from "react-icons/fa";
 import {
   api,
@@ -27,6 +29,7 @@ import {
   PaymentProvider,
   getFavorites,
   addFavorite,
+  ChatMessage,
 } from "@/lib/api";
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -130,7 +133,13 @@ export default function OrderDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoritesChecked, setFavoritesChecked] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
+  const myUserId = useRef<string>("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -176,9 +185,38 @@ export default function OrderDetailPage() {
       setMedicLocation({ lat: payload.latitude, lng: payload.longitude, heading: payload.heading, updatedAt: payload.updatedAt });
     });
 
+    socket.on("order_message", (payload: { orderId: string; message: ChatMessage }) => {
+      if (payload.orderId !== id) return;
+      setMessages((prev) => prev.find((m) => m.id === payload.message.id) ? prev : [...prev, payload.message]);
+    });
+
+    try {
+      const u = JSON.parse(localStorage.getItem("user") ?? "{}");
+      if (u?.id) myUserId.current = u.id;
+    } catch {}
+
     return () => { socket.emit("unsubscribe_order", id); socket.disconnect(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    api.chat.getMessages(id).then(setMessages).catch(() => {});
+  }, [chatOpen, id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMsg = useCallback(async () => {
+    if (!chatInput.trim() || sendingMsg) return;
+    setSendingMsg(true);
+    try {
+      await api.chat.sendMessage(id, chatInput.trim());
+      setChatInput("");
+    } catch {}
+    finally { setSendingMsg(false); }
+  }, [chatInput, id, sendingMsg]);
 
   async function loadOrder() {
     setLoading(true);
@@ -682,6 +720,22 @@ export default function OrderDetailPage() {
           </div>
         )}
 
+        {/* Chat button */}
+        {order.medicId && order.status !== "CREATED" && (
+          <button
+            onClick={() => setChatOpen(true)}
+            style={{
+              width: "100%", background: "#f0fdf9", color: "#0d9488",
+              border: "1.5px solid #99f6e4", borderRadius: 14, padding: "14px 16px",
+              fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 10,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            <FaComments size={15} />
+            Чат с медиком
+          </button>
+        )}
+
         {/* Cancel button */}
         {canCancel && (
           <button
@@ -702,6 +756,79 @@ export default function OrderDetailPage() {
           </button>
         )}
       </div>
+
+      {/* Chat panel */}
+      {chatOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, background: "rgba(0,0,0,0.3)" }} onClick={() => setChatOpen(false)} />
+          <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", height: "70vh", display: "flex", flexDirection: "column" }}>
+            {/* Chat header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <FaComments size={16} color="#0d9488" />
+                <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Чат с медиком</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
+                <FaTimes size={18} />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {messages.length === 0 && (
+                <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, marginTop: 40 }}>Сообщений пока нет</p>
+              )}
+              {messages.map((msg) => {
+                const isMe = msg.userId === myUserId.current || msg.role === "user";
+                return (
+                  <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                    <div style={{
+                      maxWidth: "75%", padding: "10px 14px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      background: isMe ? "#0d9488" : "#f1f5f9",
+                      color: isMe ? "#fff" : "#0f172a",
+                    }}>
+                      <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>{msg.content}</p>
+                      <p style={{ fontSize: 10, opacity: 0.7, margin: "4px 0 0", textAlign: isMe ? "right" : "left" }}>
+                        {new Date(msg.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10, alignItems: "flex-end" }}>
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMsg(); } }}
+                placeholder={order?.status === "DONE" || order?.status === "CANCELED" ? "Заказ завершён" : "Написать сообщение..."}
+                disabled={order?.status === "DONE" || order?.status === "CANCELED"}
+                rows={1}
+                maxLength={2000}
+                style={{
+                  flex: 1, border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "10px 14px",
+                  fontSize: 14, resize: "none", outline: "none", fontFamily: "inherit",
+                  background: (order?.status === "DONE" || order?.status === "CANCELED") ? "#f8fafc" : "#fff",
+                }}
+              />
+              <button
+                onClick={handleSendMsg}
+                disabled={sendingMsg || !chatInput.trim() || order?.status === "DONE" || order?.status === "CANCELED"}
+                style={{
+                  width: 44, height: 44, borderRadius: "50%", background: "#0d9488", border: "none",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  opacity: sendingMsg || !chatInput.trim() ? 0.5 : 1, flexShrink: 0,
+                }}
+              >
+                <FaPaperPlane size={16} color="#fff" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

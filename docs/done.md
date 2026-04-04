@@ -1,5 +1,26 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-04 (D-22: Статистика заказов медика)
+- **[feature]** Счётчик DONE заказов в стат-блоке профиля (4-я колонка грид), загружается параллельно с профилем — web-medic/app/profile/page.tsx
+
+## 2026-04-04 (D-21: Верификация медика — отдельная страница)
+- **[feature]** /verification — статус карточка (APPROVED/PENDING/REJECTED), dnd загрузка facePhoto + licensePhoto, кнопка отправки — web-medic/app/verification/page.tsx
+- **[feature]** Кнопка "Верификация" с цветным статусом в профиле медика — web-medic/app/profile/page.tsx
+
+## 2026-04-04 (D-19: Редактирование имени медика)
+- **[feature]** medicApi.auth.updateProfile(name) → PATCH /medics/profile — web-medic/lib/api.ts
+- **[feature]** Кнопка FaPen рядом с именем в хедере профиля, inline input с Enter/Escape, ✓/✗ кнопки, обновляет localStorage — web-medic/app/profile/page.tsx
+
+## 2026-04-04 (D-18: Промо-коды на подтверждении заказа)
+- **[feature]** api.promo.validate(code) → POST /promo/validate — web/lib/api.ts
+- **[feature]** Поле промо-кода + кнопка "Применить", зелёная/красная рамка по статусу, строка скидки в итоге — web/app/order/confirm/page.tsx
+
+## 2026-04-04 (D-17 + D-20: Чат в заказе — web + web-medic)
+- **[feature]** ChatMessage интерфейс + api.chat.getMessages/sendMessage — web/lib/api.ts
+- **[feature]** Кнопка "Чат с медиком" + slide-up панель, Socket.IO order_message listener — web/app/orders/[id]/page.tsx
+- **[feature]** ChatMessage интерфейс + medicApi.chat.getMessages/sendMessage (medic-messages endpoint) — web-medic/lib/api.ts
+- **[feature]** Кнопка "Чат с клиентом" + slide-up панель, Socket.IO order_message listener — web-medic/app/order/[id]/page.tsx
+
 ## 2026-04-04 (Этапы 1–5: Infrastructure + Features + Mobile UI)
 
 - **[infra]** Миграции 001–010 запущены на Railway production DB (25 таблиц) — prescriptions, nps_surveys, video fields, order chat, promo_codes, admin_audit_logs

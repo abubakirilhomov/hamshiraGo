@@ -128,6 +128,24 @@ export const api = {
     getPaymentStatus: (orderId: string) =>
       request<PaymentStatusResponse>(`/payments/${orderId}/status`),
   },
+
+  chat: {
+    getMessages: (orderId: string) =>
+      request<ChatMessage[]>(`/orders/${orderId}/messages`),
+    sendMessage: (orderId: string, content: string) =>
+      request<ChatMessage>(`/orders/${orderId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content }),
+      }),
+  },
+
+  promo: {
+    validate: (code: string) =>
+      request<{ valid: boolean; discountAmount: number; promoId: string | null }>("/promo/validate", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+  },
 };
 
 // ─── Types ───────────────────────────────────────────────
@@ -161,6 +179,14 @@ export interface OrderLocation {
   floor: string | null;
   apartment: string | null;
   phone: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  userId: string;
+  role: "user" | "doctor" | "assistant";
+  content: string;
+  createdAt: string;
 }
 
 export interface Order {
