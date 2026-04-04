@@ -3,6 +3,52 @@
 > Обновляется при каждом изменении. Выполненные задачи → `done.md`.
 > **Этапы 1–18 выполнены** — подробности в `done.md`.
 > **Полный аудит проведён 2026-03-28** — backend (41), mobile (25), medic (26).
+> **Аудит багов 2026-04-04** — mobile (28 issues), admin (40+ issues).
+
+---
+
+## 🔴 CRITICAL — Аудит 2026-04-04 (Mobile)
+
+> Паттерн `apiFetch(url, token, options)` — неверная сигнатура. Правильно: `apiFetch(url, { token, method, body })`.
+> Затронуты: prescription.tsx, prescriptions.tsx, nps.tsx, video-call.tsx — **экраны не работают**.
+
+- [ ] **MOB-BUG-1** — CRITICAL — `prescription.tsx:57` — apiFetch вызывается с 3 аргументами → запрос без auth, `res.json()` крашит (apiFetch возвращает parsed data, не Response)
+- [ ] **MOB-BUG-2** — CRITICAL — `prescription.tsx:100,144` — confirm и cancel тоже с 3 аргументами → не работают
+- [ ] **MOB-BUG-3** — CRITICAL — `prescriptions.tsx:52` — список назначений: тот же баг с apiFetch → экран крашит
+- [ ] **MOB-BUG-4** — CRITICAL — `nps.tsx:44` — отправка NPS: 3 аргумента + `res.ok` на parsed data → не работает
+- [ ] **MOB-BUG-5** — CRITICAL — `video-call.tsx:54` — early return до hooks → нарушение Rules of Hooks, React crash
+- [ ] **MOB-BUG-6** — HIGH — `video-call.tsx:77,105` — apiFetch с 3 аргументами → звонки не работают
+- [ ] **MOB-BUG-7** — HIGH — `order/confirm.tsx:158` — promoId не отправляется на backend → промо не отслеживается
+- [ ] **MOB-BUG-8** — HIGH — `profile.tsx:139` — после save name user object в AuthContext не обновляется → старое имя до рестарта
+- [ ] **MOB-BUG-9** — MEDIUM — `order/chat.tsx:79` — текст сообщения очищается до подтверждения отправки → потеря при ошибке
+- [ ] **MOB-BUG-10** — MEDIUM — `order/confirm.tsx:109` — subscription discount отображается но не применяется к finalPrice
+- [ ] **MOB-BUG-11** — MEDIUM — `order/confirm.tsx:264` — TextInput не импортирован → crash при открытии промо-кода
+- [ ] **MOB-BUG-12** — MEDIUM — `order/confirm.tsx:267` — ввод в промо поле сбрасывает уже применённую скидку
+- [ ] **MOB-BUG-13** — MEDIUM — `video-call.tsx:151` — mic/cam toggle меняет иконку но не мутит реально (не wired к LiveKit)
+- [ ] **MOB-BUG-14** — MEDIUM — `consultations.tsx:178` — кнопка "Позвонить" видна для PENDING (врач ещё не принял)
+- [ ] **MOB-BUG-15** — MEDIUM — `_layout.tsx:160` — NPS check гонится с auth redirect → navigation glitch
+
+## 🔴 CRITICAL — Аудит 2026-04-04 (Admin)
+
+- [ ] **ADM-BUG-1** — HIGH — `Dashboard.tsx:39` — revenue считается client-side, скачивая ВСЕ DONE заказы каждые 30с → тормозит при росте
+- [ ] **ADM-BUG-2** — HIGH — `Dashboard.tsx:282` — "Сегодня в обработке" считает all-time, а не сегодня
+- [ ] **ADM-BUG-3** — HIGH — `Orders.tsx:71` — поиск только по первым 100 заказам → пропускает результаты
+- [ ] **ADM-BUG-4** — HIGH — `Analytics.tsx:56` — скачивает ВСЕ заказы в браузер для графиков → не масштабируется
+- [ ] **ADM-BUG-5** — HIGH — `Reports.tsx:80` — скачивает ВСЕ DONE заказы для отчётов → тормозит
+- [ ] **ADM-BUG-6** — MEDIUM — `Medics.tsx:48` — только первые 100 медиков, нет пагинации
+- [ ] **ADM-BUG-7** — MEDIUM — `Clients.tsx:42` — двойная загрузка при открытии (два одинаковых API call)
+- [ ] **ADM-BUG-8** — MEDIUM — `Services.tsx:270` — отрицательная цена допускается (нет min=0)
+- [ ] **ADM-BUG-9** — MEDIUM — `Consultations.tsx:85` — `clientId.slice(0,8)` крашит при null
+- [ ] **ADM-BUG-10** — MEDIUM — `Consultations.tsx:231` — `alert()` вместо toast для ошибок
+- [ ] **ADM-BUG-11** — MEDIUM — `Settings.tsx:73` — commission slider шлёт запрос на каждое перетаскивание (debounce 500ms недостаточно)
+- [ ] **ADM-BUG-12** — MEDIUM — `UserSupport.tsx:96` — поиск только по текущей странице (20 элементов)
+- [ ] **ADM-BUG-13** — MEDIUM — `api.ts:109` — `atob` для JWT декодирования может крашить при URL-safe base64
+- [ ] **ADM-BUG-14** — LOW — `api.ts:116` — 401 делает `window.location.href` (full reload вместо router navigate)
+
+## 🟡 Medic app — не хватает
+
+- [ ] **MED-MISS-1** — Нет inline edit name в профиле (в отличие от mobile)
+- [ ] **MED-MISS-2** — Нет чата в заказе (medic side) — клиент пишет, медик не видит
 
 ---
 
@@ -348,7 +394,8 @@
 ## 📌 Задачи Диёра (web / web-medic / admin / landing)
 
 > Backend и mobile части уже готовы. Диёр делает web/admin UI.
-> Анализ проведён 2026-04-02: сравнение mobile vs web, найдены все недостающие фичи.
+> Анализ mobile vs web обновлён 2026-04-04.
+> Анализ admin панели проведён 2026-04-04.
 
 ### 🔴 Приоритет 1 — V1 до запуска
 
@@ -492,6 +539,70 @@
 
 #### ~~D-22. Web-medic: статистика заказов~~ ✅ DONE
 - "Выполнено" 4-я колонка в стат-блоке профиля — `web-medic/app/profile/page.tsx`
+
+### 🟣 Admin панель — недостающие фичи (анализ 2026-04-04)
+
+> Admin: 15 страниц, shadcn/ui + Recharts. Уже есть: Dashboard, Verification, Medics (с картой),
+> Clients, Orders (WS real-time), Services CRUD, Reports (CSV), Analytics, User Support (badges),
+> Reviews, Consultations (complete/cancel), NPS, Settings.
+> **Не хватает 4 страницы**, backend endpoints готовы.
+
+#### D-23. Admin: Промо-коды
+- [ ] Страница `/promo-codes` — таблица всех кодов (code, discountAmount/Percent, maxUses, usedCount, expiresAt, isActive)
+- [ ] Создание промо-кода: dialog с полями code, discountAmount, discountPercent, maxUses, expiresAt
+- [ ] Деактивация кода (кнопка в Actions)
+- [ ] Фильтр: активные / все
+- API: `GET /promo/admin`, `POST /promo/admin`, `PATCH /promo/admin/:id/deactivate`
+- Добавить в api.ts: `getPromoCodes()`, `createPromoCode()`, `deactivatePromoCode()`
+- Добавить в sidebar: "Промо-коды" с иконкой ticket
+
+#### D-24. Admin: Управление тарифами подписок
+- [ ] Страница `/subscription-tiers` — таблица тарифов (name, price, billingDays, maxOrders, discountPercent, isActive, sortOrder)
+- [ ] Создание/редактирование тарифа: dialog
+- [ ] Статистика подписок (active/expired/canceled count)
+- [ ] Toggle isActive
+- API: `GET /subscriptions/admin/tiers`, `POST /subscriptions/admin/tiers`, `PATCH /subscriptions/admin/tiers/:id`, `GET /subscriptions/admin/stats`
+- Добавить в api.ts: `getAdminTiers()`, `createTier()`, `updateTier()`, `getSubscriptionStats()`
+- Добавить в sidebar: "Подписки" с иконкой credit-card
+
+#### D-25. Admin: CRUD врачей (Doctors)
+- [ ] Страница `/doctors` — таблица врачей (name, specialization, phone, pricePerConsultation, rating, consultationCount, isActive)
+- [ ] Создание врача: dialog с полями name, nameUz, specialization, specializationUz, bio, photoUrl, pricePerConsultation, phone
+- [ ] Редактирование врача
+- [ ] Toggle isActive
+- API: `GET /consultations/admin/doctors`, `POST /consultations/admin/doctors`, `PATCH /consultations/admin/doctors/:id`
+- Добавить в api.ts: `getAdminDoctors()`, `createDoctor()`, `updateDoctor()`
+- Добавить в sidebar: "Врачи" рядом с "Консультации"
+
+#### D-26. Admin: Аудит-лог
+- [ ] Страница `/audit-log` — таблица действий admin (adminId, action, targetType, targetId, details, ip, createdAt)
+- [ ] Пагинация + фильтр по action (dropdown: all / block / verify / cancel / settings и т.д.)
+- [ ] Expandable row: показать details (JSON) и IP
+- API: `GET /admin/audit-log?page=&limit=&action=`
+- Добавить в api.ts: `getAuditLog()`
+- Добавить в sidebar: "Аудит-лог" внизу, с иконкой shield
+
+### 📊 Admin: текущее покрытие (15 страниц)
+
+| Страница | Статус | Описание |
+|----------|--------|----------|
+| Dashboard | ✅ | KPI, тренды, auto-refresh 30s |
+| Verification | ✅ | Очередь верификации медиков |
+| Medics | ✅ | Таблица + карта с геозонами |
+| Clients | ✅ | Таблица + block/unblock |
+| Orders | ✅ | Таблица + WS real-time + cancel |
+| Services | ✅ | CRUD услуг |
+| Reports | ✅ | График + CSV export |
+| Analytics | ✅ | Недельные тренды + utilization |
+| User Support | ✅ | Ошибки + badge в sidebar |
+| Reviews | ✅ | Отзывы по медику |
+| Consultations | ✅ | Complete/cancel + service selector |
+| NPS | ✅ | Score gauge + monthly trend |
+| Settings | ✅ | Commission, urgent fee, paid mode |
+| **Промо-коды** | ❌ | **D-23** |
+| **Тарифы подписок** | ❌ | **D-24** |
+| **Врачи (CRUD)** | ❌ | **D-25** |
+| **Аудит-лог** | ❌ | **D-26** |
 
 ---
 
