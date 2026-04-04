@@ -214,6 +214,24 @@ export default function OrderDetailScreen() {
         </View>
       )}
 
+      {/* Chat button */}
+      {!['DONE', 'CANCELED', 'CREATED'].includes(order.status) && (
+        <Pressable
+          style={({ pressed }) => [
+            { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+              backgroundColor: '#fff', borderWidth: 1, borderColor: Theme.primary, borderRadius: 12,
+              paddingVertical: 12, marginHorizontal: 16, marginBottom: 12 },
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => router.push({ pathname: '/order/chat', params: { orderId: order.id } })}
+        >
+          <FontAwesome name="comments" size={18} color={Theme.primary} />
+          <Text style={{ color: Theme.primary, fontWeight: '600', fontSize: 15 }}>
+            {t('chat.openChat')}
+          </Text>
+        </Pressable>
+      )}
+
       {/* Status + action buttons */}
       <StatusActions
         status={order.status}

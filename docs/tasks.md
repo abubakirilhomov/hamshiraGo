@@ -47,8 +47,8 @@
 
 ## 🟡 Medic app — не хватает (Абубакир — mobile)
 
-- [ ] **MED-MISS-1** — Нет inline edit name в профиле (в отличие от mobile)
-- [ ] **MED-MISS-2** — Нет чата в заказе (medic side) — клиент пишет, медик не видит
+- [x] **MED-MISS-1** — Нет inline edit name в профиле (в отличие от mobile)
+- [x] **MED-MISS-2** — Нет чата в заказе (medic side) — клиент пишет, медик не видит
 
 ---
 

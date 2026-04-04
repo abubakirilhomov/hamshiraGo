@@ -289,6 +289,12 @@ export default function ProfileScreen() {
         onPickPhoto={handlePickPhoto}
         reviewLabel={t('review.reviews')}
         noReviewsLabel={t('review.noReviews')}
+        onSaveName={async (name: string) => {
+          await apiFetch('/medics/profile', { token, method: 'PATCH', body: JSON.stringify({ name }) });
+          (medic as any).name = name; // update locally
+        }}
+        editNameLabel={t('editProfile.title', { defaultValue: 'Редактировать' })}
+        saveLabel={t('editProfile.save', { defaultValue: 'Сохранить' })}
       />
 
       {/* Verification status card */}

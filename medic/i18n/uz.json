@@ -266,5 +266,15 @@
     "permissionDenied": "Ruxsat rad etildi",
     "close": "Yopish",
     "cachedData": "Saqlangan ma'lumotlar ko'rsatilmoqda"
+  },
+  "editProfile": {
+    "title": "Tahrirlash",
+    "save": "Saqlash"
+  },
+  "chat": {
+    "title": "Chat",
+    "empty": "Xabarlar yo'q",
+    "placeholder": "Xabar...",
+    "openChat": "Mijozga yozish"
   }
 }
