@@ -229,7 +229,7 @@
 - [x] Backend: `POST /reviews` — клиент или медик оставляет отзыв после DONE — `backend/src/reviews/reviews.controller.ts`
 - [x] Backend: `GET /reviews/medic/:id` — отзывы медика — `backend/src/reviews/reviews.controller.ts`
 - [x] Backend: автоматический пересчёт `averageRating` (`medics.rating`) у медика — `backend/src/reviews/reviews.service.ts`
-- [ ] Web: экран оценки после завершения заказа (звёзды + комментарий)
+- [x] Web: экран оценки после завершения заказа (звёзды + комментарий) — D-1 DONE
 - [x] Web: отображение рейтинга и отзывов в профиле медика — `/reviews/medic/[medicId]` + кнопка на странице заказа
 **Новое (медик → клиент):**
 - [x] Backend: `Review` поддерживает `authorRole` [client/medic], `targetRole` [medic/client] — двусторонние отзывы — `backend/src/reviews/entities/review.entity.ts`
@@ -250,7 +250,7 @@
 - [x] Mobile: бейдж «Срочный» в OrderCard и track screen — `mobile/components/OrderCard.tsx`, `mobile/app/order/track.tsx`
 - [x] Medic: баннер срочного заказа в OrderInviteModal — `medic/components/OrderInviteModal.tsx`
 - [x] Medic: бейдж «Срочный» и urgentFee в деталях заказа — `medic/app/order/[id].tsx`
-- [ ] Web: переключатель «Срочный вызов» при создании заказа с отображением доплаты
+- [x] Web: переключатель «Срочный вызов» при создании заказа с отображением доплаты — D-2 DONE
 
 ### Система трекинга ошибок пользователей (User Support / Error Tracking) — Абубакир (backend) + Диёр (admin/web/mobile)
 - [x] Backend: расширена сущность `ClientError` — добавлены `status`, `deviceInfo`, `appVersion`, `errorCode`, `count`, `resolvedAt`
@@ -260,11 +260,11 @@
 - [x] Backend: `GET /client-errors/admin/stats` — счётчики по статусам
 - [x] Backend: автоматическая группировка одинаковых ошибок (по errorCode + appType, окно 24 ч)
 - [x] Mobile: глобальный error boundary — перехватывает все падения и отправляет на backend с userId, экраном, устройством
-- [ ] Web/Web-medic: глобальный error handler — перехватывает ошибки API и JS и отправляет на backend
-- [ ] Admin: новая страница «User Support» — таблица ошибок с колонками: пользователь, ошибка, экран, устройство, дата, статус
-- [ ] Admin: фильтры — по пользователю, по дате, по статусу (новые/в работе/исправлены)
-- [ ] Admin: детальная карточка ошибки — полный стек, информация об устройстве, история заказов пользователя
-- [ ] Admin: счётчик новых ошибок в сайдбаре (бейдж)
+- [x] Web/Web-medic: глобальный error handler — D-3 DONE — `web/app/error.tsx`, `web/app/global-error.tsx`
+- [x] Admin: новая страница «User Support» — D-4 DONE — `admin/src/pages/UserSupport.tsx`
+- [x] Admin: фильтры — по пользователю, по дате, по статусу — D-4 DONE
+- [x] Admin: детальная карточка ошибки — D-4 DONE
+- [x] Admin: счётчик новых ошибок в сайдбаре (бейдж) — D-4 DONE
 
 ### Ограничение зоны работы для медиков (геозона) — Абубакир (backend) + Диёр (web-medic/mobile medic)
 - [x] Backend: поля у медика — `workZoneLat`, `workZoneLng`, `workZoneRadius` (в км, nullable)
@@ -333,7 +333,7 @@
 - [x] Backend: cron `0 11 1 * *` — ежемесячная отправка NPS push активным клиентам
 - [x] Backend: NpsSurvey entity, POST /nps/submit, GET /nps/check, GET /nps/admin/stats
 - [x] Mobile: NPS экран (шкала 0–10 + комментарий + благодарность) + auto-check при запуске
-- [ ] Admin: дашборд NPS с графиком по месяцам (Диёр)
+- [x] Admin: дашборд NPS с графиком по месяцам (Диёр) — D-13 DONE — `admin/src/pages/Nps.tsx`
 
 ### ИИ-агент + онлайн-консультация — DONE
 - [x] Backend: AiAgentService (Claude Haiku), Doctor/Consultation/ChatMessage entities
@@ -454,8 +454,8 @@
 | NPS survey | ✅ | ✅ | Паритет |
 | Video call | ✅ | ✅ | Паритет |
 | Error handler | ✅ | ✅ | Паритет |
-| **Чат в заказе** | ✅ | ❌ | **D-17** |
-| **Промо-коды** | ✅ | ❌ | **D-18** |
+| Чат в заказе | ✅ | ✅ | D-17 DONE |
+| Промо-коды | ✅ | ✅ | D-18 DONE |
 
 #### Web-medic (web-medic/) vs Mobile medic (medic/)
 
@@ -468,52 +468,30 @@
 | Reviews | ✅ | ✅ | Паритет |
 | Photo upload | ✅ | ✅ | Паритет |
 | Wallet | ✅ | ✅ | Паритет |
-| **Редактирование имени** | ✅ | ❌ | **D-19** |
-| **Чат в заказе (медик)** | ✅ | ❌ | **D-20** |
-| **Экран верификации** | ✅ | ❌ | **D-21** |
-| **Статистика заказов** | ✅ | ❌ | **D-22** |
+| Редактирование имени | ✅ | ✅ | D-19 DONE |
+| Чат в заказе (медик) | ✅ | ✅ | D-20 DONE |
+| Экран верификации | ✅ | ✅ | D-21 DONE |
+| Статистика заказов | ✅ | ✅ | D-22 DONE |
 
 ### 🔴 Новые задачи Диёра (web догоняет mobile)
 
-#### D-17. Web: чат в заказе (client ↔ medic)
-- [ ] Компонент чата на странице заказа `/orders/[id]` (или отдельная страница `/orders/[id]/chat`)
-- [ ] Отправка сообщений: `POST /orders/:id/messages` (body: `{ content }`)
-- [ ] Получение истории: `GET /orders/:id/messages`
-- [ ] Real-time через Socket.IO: event `order_message`
-- [ ] Показывать кнопку "Чат" когда медик назначен и заказ активен
-- Референс: `mobile/app/order/chat.tsx`
+#### ~~D-17. Web: чат в заказе (client ↔ medic)~~ ✅ DONE
+- Slide-up панель + Socket.IO `order_message` + история — `web/app/orders/[id]/page.tsx`
 
-#### D-18. Web: промо-коды на странице подтверждения заказа
-- [ ] Поле ввода промо-кода + кнопка "Применить" на `/order/confirm`
-- [ ] Валидация: `POST /promo/validate` (body: `{ code }`)
-- [ ] Отображение скидки в итоговой сумме
-- [ ] Состояния: idle / valid (зелёная рамка + сумма) / invalid (красная рамка + ошибка)
-- Референс: `mobile/app/order/confirm.tsx` (promoCode state + handleApplyPromo)
+#### ~~D-18. Web: промо-коды на странице подтверждения заказа~~ ✅ DONE
+- Поле + кнопка "Применить" + зелёная/красная рамка + строка в итоге — `web/app/order/confirm/page.tsx`
 
-#### D-19. Web-medic: редактирование имени в профиле
-- [ ] Кнопка "Редактировать" рядом с именем на `/profile`
-- [ ] Inline input + кнопка "Сохранить"
-- [ ] API: `PATCH /medics/profile` (body: `{ name }`)
-- Референс: `medic/app/(tabs)/profile.tsx` (editingName + handleSaveName)
+#### ~~D-19. Web-medic: редактирование имени в профиле~~ ✅ DONE
+- Inline input в хедере + PATCH /medics/profile + обновление localStorage — `web-medic/app/profile/page.tsx`
 
-#### D-20. Web-medic: чат в заказе (medic side)
-- [ ] Компонент чата на странице заказа `/order/[id]`
-- [ ] Отправка: `POST /orders/:id/medic-messages` (body: `{ content }`)
-- [ ] Получение: `GET /orders/:id/messages`
-- [ ] Socket.IO: event `order_message`
-- Референс: `mobile/app/order/chat.tsx`
+#### ~~D-20. Web-medic: чат в заказе (medic side)~~ ✅ DONE
+- Slide-up панель + Socket.IO `order_message` + medic-messages endpoint — `web-medic/app/order/[id]/page.tsx`
 
-#### D-21. Web-medic: экран верификации
-- [ ] Страница `/verification` — загрузка face photo + license photo
-- [ ] Отображение статуса верификации (PENDING / APPROVED / REJECTED)
-- [ ] API: `POST /medics/documents` (multipart: facePhoto + licensePhoto)
-- Референс: `medic/app/verification.tsx`
+#### ~~D-21. Web-medic: экран верификации~~ ✅ DONE
+- Страница `/verification` + статус карточка + загрузка фото — `web-medic/app/verification/page.tsx`
 
-#### D-22. Web-medic: статистика заказов
-- [ ] Компонент на `/profile` или отдельная страница
-- [ ] Показать: всего заказов, выполнено, средний рейтинг, заработок
-- [ ] API: `GET /orders/medic/my?limit=1` (total из pagination) + `GET /medics/me` (balance, earnings, rating)
-- Референс: `medic/app/(tabs)/profile.tsx` (StatsSection)
+#### ~~D-22. Web-medic: статистика заказов~~ ✅ DONE
+- "Выполнено" 4-я колонка в стат-блоке профиля — `web-medic/app/profile/page.tsx`
 
 ---
 
