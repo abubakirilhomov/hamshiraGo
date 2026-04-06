@@ -626,6 +626,202 @@
 
 ---
 
+## 🎙️ V5 — Голосовой AI Ассистент (новая бизнес-модель)
+
+> **Бизнес-логика:** AI Агент (голос) → Врач (видеозвонок + рецепт) → Медсестра (выезд на дом)
+> Клиент может пропустить шаг 1–2 и сразу вызвать медсестру если уже есть назначение.
+> Анализ проведён 2026-04-06.
+
+### Стек
+- **STT (речь → текст):** Groq Whisper API (бесплатно, лимит 28 800 сек/день) или OpenAI Whisper API ($0.006/мин)
+- **LLM (мозг):** Claude Haiku через Anthropic API (уже используется в проекте)
+- **TTS (текст → голос):** OpenAI TTS `alloy` голос для RU ($15/1M символов) или Groq TTS (бесплатно в лимитах)
+- **UZ голос:** ElevenLabs Voice Clone — записать диктора ~60 мин → обучить модель (~$22/мес)
+
+---
+
+### 📌 Фаза 1 — Backend: Voice Agent API (Абубакир)
+
+#### VA-BE-1. Новый модуль `voice-agent/`
+- [ ] Создать `backend/src/voice-agent/voice-agent.module.ts`
+- [ ] Создать `VoiceSession` entity — `sessionId`, `clientId`, `messages` (jsonb), `status` (ACTIVE/COMPLETED), `recommendation` (DOCTOR/NURSE/NONE), `createdAt`, `updatedAt`
+- [ ] Migration: таблица `voice_sessions`
+- [ ] Файлы: `voice-agent.entity.ts`, `voice-agent.service.ts`, `voice-agent.controller.ts`
+
+#### VA-BE-2. STT endpoint — транскрипция голоса
+- [ ] `POST /voice-agent/transcribe` — принимает аудио файл (multipart, форматы: webm, mp4, m4a, wav)
+- [ ] Отправляет в Groq Whisper API (`https://api.groq.com/openai/v1/audio/transcriptions`)
+- [ ] Параметры: `model: "whisper-large-v3"`, `language: "ru"` или `"uz"` (из query `?lang=ru`)
+- [ ] Возвращает `{ text: string, language: string, duration: number }`
+- [ ] Fallback: если Groq недоступен → OpenAI Whisper API
+- [ ] `GROQ_API_KEY` в `.env` и Railway environment variables
+
+#### VA-BE-3. AI диалог с медицинским контекстом
+- [ ] `POST /voice-agent/chat` — body: `{ sessionId?, message: string, lang: "ru" | "uz" }`
+- [ ] Системный промпт: медицинский ассистент HamshiraGo, цель — выяснить симптомы и порекомендовать услугу
+- [ ] Промпт включает: список доступных услуг из AppSettings, правила (не ставить диагноз, рекомендовать врача при серьёзных симптомах)
+- [ ] Поддержка истории диалога (сохранять в `VoiceSession.messages`)
+- [ ] После 3–5 обменов — принять решение: `recommendation: DOCTOR | NURSE | NONE`
+- [ ] Возвращает `{ sessionId, reply: string, recommendation?, suggestedSpecialization?, sessionComplete: boolean }`
+
+#### VA-BE-4. TTS endpoint — озвучка ответа
+- [ ] `POST /voice-agent/synthesize` — body: `{ text: string, lang: "ru" | "uz", voice?: string }`
+- [ ] RU: OpenAI TTS API (`model: "tts-1"`, `voice: "alloy"`) или Groq TTS
+- [ ] UZ: ElevenLabs API с кастомным voice_id (настраивается через `ELEVENLABS_VOICE_ID_UZ` в `.env`)
+- [ ] Возвращает audio stream (Content-Type: `audio/mpeg`)
+- [ ] Кэшировать частые фразы (приветствие, прощание) в Cloudinary или локально
+
+#### VA-BE-5. Session management
+- [ ] `GET /voice-agent/session/:sessionId` — получить историю сессии
+- [ ] `DELETE /voice-agent/session/:sessionId` — завершить/удалить сессию
+- [ ] Автоудаление сессий старше 24 часов (cron `0 3 * * *`)
+- [ ] Привязка к clientId если пользователь авторизован (из JWT)
+
+#### VA-BE-6. Интеграция с существующим флоу
+- [ ] После `recommendation: DOCTOR` → сессия предлагает список врачей (`GET /consultations/doctors`)
+- [ ] После `recommendation: NURSE` → сессия предлагает создать заказ (передать `suggestedServiceId`)
+- [ ] `POST /voice-agent/session/:sessionId/book-nurse` — создаёт черновик заказа с предзаполненными данными
+- [ ] `POST /voice-agent/session/:sessionId/book-doctor` — создаёт консультацию с заполненными симптомами
+
+#### VA-BE-7. Admin: мониторинг голосовых сессий
+- [ ] `GET /admin/voice-sessions` — список сессий с фильтрами (дата, статус, recommendation)
+- [ ] `GET /admin/voice-sessions/stats` — кол-во сессий, конверсия в заказы, топ симптомы
+- [ ] Добавить в AuditLog действие `voice_session_complete`
+
+---
+
+### 📌 Фаза 2 — Mobile: голосовой интерфейс (Абубакир)
+
+#### VA-MOB-1. Экран голосового ассистента `app/voice-agent.tsx`
+- [ ] Кнопка-микрофон по центру (большая, анимированная пульсация при записи)
+- [ ] Запись через `expo-av` (`Audio.Recording`) — формат m4a
+- [ ] При отпускании → отправить на `POST /voice-agent/transcribe`
+- [ ] Показать распознанный текст пользователю (для проверки)
+- [ ] Отправить в `POST /voice-agent/chat` → получить ответ
+- [ ] Воспроизвести аудио ответ через `POST /voice-agent/synthesize` → `Audio.Sound`
+
+#### VA-MOB-2. UI состояния
+- [ ] IDLE: большая кнопка микрофона + текст "Нажмите и говорите"
+- [ ] RECORDING: анимация звуковых волн (пульсация), таймер записи
+- [ ] PROCESSING: spinner "Думаю..."
+- [ ] SPEAKING: анимация динамика, текст ответа ассистента
+- [ ] RECOMMENDATION: карточка с рекомендацией + кнопки "Записаться к врачу" / "Вызвать медсестру"
+
+#### VA-MOB-3. История диалога
+- [ ] Bubble-чат под кнопкой микрофона (прокручиваемый)
+- [ ] Сообщения пользователя (правый пузырь) + ассистент (левый пузырь с иконкой)
+- [ ] Текст ответа отображается одновременно с озвучкой
+
+#### VA-MOB-4. Переход к заказу/консультации
+- [ ] При `recommendation: NURSE` → кнопка "Вызвать медсестру" → `router.push("/order/location")`
+- [ ] При `recommendation: DOCTOR` → кнопка "Записаться к врачу" → `router.push("/doctors")`
+- [ ] Передать симптомы через params чтобы предзаполнить поля
+
+#### VA-MOB-5. Навигация
+- [ ] Добавить кнопку на главном экране (index.tsx) — "Голосовой ассистент" с иконкой микрофона
+- [ ] Или таб в нижней панели (заменить один из менее используемых)
+
+---
+
+### 📌 Фаза 3 — Web: голосовой интерфейс (Диёр)
+
+#### VA-WEB-1. Страница `/voice-agent` в web/
+- [ ] Большая кнопка микрофона (Web Speech API или MediaRecorder → отправка на backend)
+- [ ] `MediaRecorder` → blob (webm) → FormData → `POST /voice-agent/transcribe`
+- [ ] Отображение распознанного текста
+- [ ] Отправка в `POST /voice-agent/chat`
+- [ ] Получение аудио из `POST /voice-agent/synthesize` → `new Audio(url).play()`
+
+#### VA-WEB-2. UI компонент `VoiceAssistant`
+- [ ] `web/components/VoiceAssistant.tsx` — переиспользуемый компонент
+- [ ] Состояния: idle / recording / processing / speaking
+- [ ] CSS анимации: pulse при записи, wave при воспроизведении
+- [ ] Чат-история под микрофоном
+
+#### VA-WEB-3. Переход к флоу
+- [ ] При `recommendation: NURSE` → `router.push("/order/confirm")`
+- [ ] При `recommendation: DOCTOR` → `router.push("/doctors")`
+- [ ] Кнопка "Голосовой ассистент" на главной странице `/`
+
+---
+
+### 📌 Фаза 4 — Расписание врачей (Абубакир)
+
+> Необходимо для полноценного шага 2 (клиент записывается к врачу на конкретное время)
+
+#### VA-SCH-1. Backend: DoctorSchedule
+- [ ] Entity `DoctorSlot` — `doctorId`, `startsAt` (timestamp), `endsAt`, `isBooked` (bool), `consultationId` (nullable FK)
+- [ ] `POST /doctors/:id/slots` (admin) — создать слоты (bulk: дата + время + кол-во)
+- [ ] `GET /doctors/:id/slots?date=YYYY-MM-DD` — доступные слоты на дату
+- [ ] При создании консультации → занять слот (`isBooked = true`)
+- [ ] При отмене консультации → освободить слот
+
+#### VA-SCH-2. Mobile: выбор времени при записи к врачу
+- [ ] На экране бронирования (`consultation.tsx`) — добавить календарь + список доступных слотов
+- [ ] При выборе слота — `slotId` передаётся в `POST /consultations`
+
+#### VA-SCH-3. Web: выбор времени (Диёр)
+- [ ] На странице `/consultation` — добавить DatePicker + слоты
+- [ ] Компонент `SlotPicker` — сетка времени (09:00, 09:30, 10:00...) с пометкой занятых
+
+---
+
+### 📌 Фаза 5 — Admin: мониторинг голосового ассистента (Диёр)
+
+#### VA-ADM-1. Admin страница «Голосовой агент»
+- [ ] Новая страница `admin/src/pages/VoiceAgent.tsx`
+- [ ] Карточки статистики: всего сессий, конверсия в заказы (%), топ-5 симптомов
+- [ ] Таблица сессий: дата, клиент (id), длительность, кол-во обменов, рекомендация, результат (заказ создан?)
+- [ ] Фильтры: по дате, по recommendation (DOCTOR/NURSE/NONE), по результату
+- [ ] Клик на сессию → модал с полной историей диалога
+
+#### VA-ADM-2. Sidebar и роутинг
+- [ ] Добавить в `AdminSidebar.tsx` пункт «Голосовой агент» (иконка `Mic`)
+- [ ] Добавить роут `/voice-agent` в `App.tsx`
+
+---
+
+### 💰 Оценка затрат (V5)
+
+| Компонент | Бесплатный вариант | Платный вариант |
+|-----------|-------------------|-----------------|
+| STT | Groq Whisper (28 800 сек/день бесплатно) | OpenAI Whisper $0.006/мин |
+| LLM | Groq LLaMA 3.3 70B (лимиты/день) | Claude Haiku ~$0.001/запрос |
+| TTS RU | — | OpenAI TTS ~$0.015/1000 символов |
+| TTS UZ | Piper TTS self-hosted | ElevenLabs $22/мес + диктор $50 разово |
+| **Итого MVP** | **$0** (Groq лимиты) | **~$30-50/мес** при 1000 сессий/день |
+
+### 📐 Архитектура потока
+
+```
+[Клиент нажимает кнопку микрофона]
+        ↓
+[Запись аудио — expo-av / MediaRecorder]
+        ↓
+POST /voice-agent/transcribe  →  [Groq Whisper]  →  { text }
+        ↓
+POST /voice-agent/chat  →  [Claude Haiku]  →  { reply, recommendation }
+        ↓
+POST /voice-agent/synthesize  →  [OpenAI TTS / ElevenLabs]  →  audio/mpeg
+        ↓
+[Воспроизведение ответа + отображение текста]
+        ↓
+[Если recommendation != NONE → кнопки перехода к заказу/врачу]
+```
+
+### 🚦 Порядок реализации
+
+1. **VA-BE-1, VA-BE-2** — базовый модуль + STT (можно тестировать сразу через Postman)
+2. **VA-BE-3** — AI диалог (самое важное)
+3. **VA-BE-4** — TTS озвучка
+4. **VA-MOB-1, VA-MOB-2** — mobile UI
+5. **VA-BE-5, VA-BE-6** — session management + интеграция с заказами
+6. **VA-WEB-1, VA-WEB-2** — web версия
+7. **VA-SCH-1–3** — расписание врачей
+8. **VA-ADM-1, VA-ADM-2** — admin мониторинг
+
+---
+
 ## 📋 Документация (правило)
 
 > После каждого выполненного этапа — обновить `done.md` с датой, описанием, файлами.
