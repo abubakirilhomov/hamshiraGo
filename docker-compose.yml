@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # ── Database ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hamshira_go
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Backend (NestJS API) ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - ./backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Admin Panel (React/Vite) ──────────────────────────────────────────────
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      VITE_API_URL: http://localhost:3000
+
+  # ── Web Client (Next.js) ─────────────────────────────────────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+
+  # ── Web Medic (Next.js) ──────────────────────────────────────────────────
+  web-medic:
+    build:
+      context: ./web-medic
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3002:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+
+  # ── OSRM Routing ─────────────────────────────────────────────────────────
+  osrm:
+    build:
+      context: ./osrm
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+
+  # ── pgAdmin (optional, dev only) ─────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hamshirago.uz
+      PGADMIN_DEFAULT_PASSWORD: admin
+    profiles:
+      - tools
+
+volumes:
+  pgdata:

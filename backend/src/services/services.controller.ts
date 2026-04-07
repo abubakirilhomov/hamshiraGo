@@ -28,7 +28,7 @@ export class ServicesController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const service = await this.servicesService.findOne(id);
-    if (!service) throw new NotFoundException('Service not found');
+    if (!service) throw new NotFoundException('SERVICE_NOT_FOUND');
     return service;
   }
 

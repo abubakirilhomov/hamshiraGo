@@ -50,7 +50,7 @@ export class MedicalCardService {
     });
 
     if (!activeOrder) {
-      throw new ForbiddenException('You are not assigned to an active order for this client');
+      throw new ForbiddenException('MEDIC_NOT_ASSIGNED_ORDER');
     }
 
     return this.cardRepo.findOne({ where: { userId: clientId } });

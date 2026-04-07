@@ -1,5 +1,19 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05
+
+- **[backend]** i18n error keys — replaced all hardcoded English error messages with translation keys in DTOs (register-client, login, register-medic, login-medic, create-doctor) and services/guards/decorators (auth.service, admin.guard, medic-auth.guard, jwt.strategy, client-id.decorator, medic-id.decorator, users.service)
+- **[backend]** i18n error keys (phase 2) — replaced all hardcoded English error messages with translation keys in orders/orders.service.ts (34 throws), orders/dispatch.service.ts (2 throws), payments/payments.service.ts (3 throws), payments/payme.service.ts (2 throws), payments/payments.controller.ts (2 throws), reviews/reviews.controller.ts (1 throw)
+- **[backend]** i18n error keys (phase 3) — replaced hardcoded English error messages with translation keys in 17 files: reviews (service+controller), medics (service+controller), consultations (service+video.service), loyalty, subscriptions, nps, treatment-courses, medical-card, promo, client-errors, services (service+controller), referrals, telegram-bot.controller
+
+- **[backend]** X-Request-Id middleware — генерация уникального ID для каждого запроса, проброс в response headers — `backend/src/common/middleware/request-id.middleware.ts` (new), `backend/src/app.module.ts`, `backend/src/main.ts`
+- **[backend]** WebSocket event logging — логирование subscribe_order, unsubscribe_order, dispatch_invite_expired, dispatch_update, medic_location — `backend/src/realtime/order-events.gateway.ts`
+- **[backend]** Telegram bot interactive commands — полный rewrite: inline buttons accept/decline, callback query handler, уведомления клиенту в Telegram, telegramChatId в User entity — `backend/src/telegram/telegram-bot.service.ts`, `backend/src/telegram/telegram-bot.module.ts`, `backend/src/common/telegram.service.ts` (sendMessageWithButtons, answerCallbackQuery, editMessageText), `backend/src/orders/dispatch.service.ts`, `backend/src/orders/orders.service.ts`, `backend/src/users/entities/user.entity.ts`, `backend/src/users/users.service.ts`, `backend/src/medics/medics.service.ts`
+- **[config]** Docker Compose + Backend Dockerfile — postgres, backend, admin, web, web-medic, osrm, pgadmin — `docker-compose.yml` (new), `backend/Dockerfile` (new)
+- **[backend]** AI Analytics module — Claude AI chat, feedback summary, top issues classification — `backend/src/analytics/analytics.module.ts`, `backend/src/analytics/analytics.service.ts`, `backend/src/analytics/analytics.controller.ts`
+- **[feature]** AI Ассистент страница в admin — чат с AI + сводка проблем (два таба) — `admin/src/pages/AiChat.tsx`, API functions in `api.ts`, sidebar + route + i18n (ru/uz)
+- **[mobile]** Nearby medics map screen — MapView с маркерами медиков, геолокация, bottom card — `mobile/app/nearby-medics.tsx` (new), `mobile/app/(tabs)/index.tsx` (banner link)
+
 ## 2026-04-05 (D-23–D-26: Admin новые страницы + ADM-BUG-1–14)
 
 - **[feature]** D-23 — Admin Промо-коды: таблица, фильтр, создание/деактивация — `admin/src/pages/PromoCodes.tsx`

@@ -17,7 +17,7 @@ export class PromoService {
   /** Admin: create a promo code */
   async create(data: Partial<PromoCode>): Promise<PromoCode> {
     const existing = await this.promoRepo.findOne({ where: { code: data.code } });
-    if (existing) throw new BadRequestException('Promo code already exists');
+    if (existing) throw new BadRequestException('PROMO_CODE_EXISTS');
     const promo = this.promoRepo.create({
       ...data,
       code: data.code?.toUpperCase(),
@@ -33,7 +33,7 @@ export class PromoService {
   /** Admin: deactivate a promo code */
   async deactivate(id: string): Promise<PromoCode> {
     const promo = await this.promoRepo.findOne({ where: { id } });
-    if (!promo) throw new NotFoundException('Promo code not found');
+    if (!promo) throw new NotFoundException('PROMO_CODE_NOT_FOUND');
     promo.isActive = false;
     return this.promoRepo.save(promo);
   }

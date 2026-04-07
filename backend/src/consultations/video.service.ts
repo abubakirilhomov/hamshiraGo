@@ -46,9 +46,7 @@ export class VideoService {
   /** Check if LiveKit is configured */
   private ensureConfigured(): void {
     if (!this.apiKey || !this.apiSecret || !this.livekitUrl) {
-      throw new BadRequestException(
-        'Video consultations are not configured. Contact administrator.',
-      );
+      throw new BadRequestException('VIDEO_CONSULTATIONS_NOT_CONFIGURED');
     }
   }
 
@@ -62,12 +60,12 @@ export class VideoService {
     const consultation = await this.consultationRepo.findOne({
       where: { id: consultationId },
     });
-    if (!consultation) throw new NotFoundException('Consultation not found');
+    if (!consultation) throw new NotFoundException('CONSULTATION_NOT_FOUND');
     if (consultation.clientId !== userId) {
-      throw new ForbiddenException('Not your consultation');
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
     }
     if (consultation.status !== 'ACTIVE' && consultation.status !== 'PENDING') {
-      throw new BadRequestException('Consultation is not active');
+      throw new BadRequestException('CONSULTATION_NOT_ACTIVE');
     }
     if (consultation.videoStatus === 'ACTIVE' || consultation.videoStatus === 'CALLING') {
       // Already in a call — return join token
@@ -112,17 +110,17 @@ export class VideoService {
     const consultation = await this.consultationRepo.findOne({
       where: { id: consultationId },
     });
-    if (!consultation) throw new NotFoundException('Consultation not found');
+    if (!consultation) throw new NotFoundException('CONSULTATION_NOT_FOUND');
 
     // Verify access
     if (role === 'client' && consultation.clientId !== userId) {
-      throw new ForbiddenException('Not your consultation');
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
     }
     // For doctor role — userId check against doctor ID is more complex
     // In MVP, we trust JWT role and check consultation exists
 
     if (!consultation.videoRoomName) {
-      throw new BadRequestException('No active call');
+      throw new BadRequestException('NO_ACTIVE_CALL');
     }
 
     // If doctor joins, update status to ACTIVE
@@ -139,7 +137,7 @@ export class VideoService {
     const consultation = await this.consultationRepo.findOne({
       where: { id: consultationId },
     });
-    if (!consultation) throw new NotFoundException('Consultation not found');
+    if (!consultation) throw new NotFoundException('CONSULTATION_NOT_FOUND');
 
     if (consultation.videoRoomName && this.roomService) {
       try {
@@ -160,7 +158,7 @@ export class VideoService {
     const consultation = await this.consultationRepo.findOne({
       where: { id: consultationId },
     });
-    if (!consultation) throw new NotFoundException('Consultation not found');
+    if (!consultation) throw new NotFoundException('CONSULTATION_NOT_FOUND');
 
     return {
       videoStatus: consultation.videoStatus,

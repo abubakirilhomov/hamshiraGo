@@ -132,7 +132,7 @@ export class UsersService {
 
   async updateProfile(id: string, data: { name?: string }): Promise<User> {
     const user = await this.findById(id);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
     if (data.name !== undefined) user.name = data.name;
     return this.userRepo.save(user);
   }
@@ -146,9 +146,18 @@ export class UsersService {
     return user?.pushToken ?? null;
   }
 
+  async saveTelegramChatId(id: string, chatId: string | null): Promise<void> {
+    await this.userRepo.update(id, { telegramChatId: chatId });
+  }
+
+  async getTelegramChatId(id: string): Promise<string | null> {
+    const user = await this.userRepo.findOne({ where: { id }, select: ['id', 'telegramChatId'] });
+    return user?.telegramChatId ?? null;
+  }
+
   async blockUser(id: string, isBlocked: boolean): Promise<void> {
     const user = await this.findById(id);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
     await this.userRepo.update(id, { isBlocked });
   }
 

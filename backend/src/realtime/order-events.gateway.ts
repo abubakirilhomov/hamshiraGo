@@ -174,7 +174,10 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     const role = (client as any).role as 'client' | 'medic' | 'admin';
     const userId = (client as any).userId as string;
     const allowed = await this.canAccessOrderRoom(userId, role, orderId);
-    if (!allowed) return;
+    if (!allowed) {
+      this.logger.warn(`subscribe_order denied user=${userId} role=${role} orderId=${orderId}`);
+      return;
+    }
 
     const room = `order:${orderId}`;
     client.join(room);
@@ -184,12 +187,14 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       this.clientOrderRooms.set(client.id, set);
     }
     set.add(orderId);
+    this.logger.log(`subscribe_order user=${userId} role=${role} orderId=${orderId}`);
   }
 
   @SubscribeMessage('unsubscribe_order')
   handleUnsubscribeOrder(client: any, orderId: string) {
     client.leave(`order:${orderId}`);
     this.clientOrderRooms.get(client.id)?.delete(orderId);
+    this.logger.log(`unsubscribe_order user=${(client as any).userId} orderId=${orderId}`);
   }
 
   /** Call this from OrdersService when status changes to notify clients */
@@ -231,6 +236,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       'socket',
       payload.heading ?? null,
     );
+    this.logger.debug(`medic_location received medic=${medicId} orderId=${payload.orderId}`);
   }
 
   /** Send dispatch invite to a specific medic's personal room */
@@ -242,6 +248,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   /** Notify a medic that their invite expired or was revoked */
   emitDispatchInviteExpired(medicId: string, payload: { orderId: string }) {
     this.server.to(`medic:${medicId}`).emit('dispatch_invite_expired', payload);
+    this.logger.log(`Emitted dispatch_invite_expired medic=${medicId} orderId=${payload.orderId}`);
   }
 
   /** Notify the client (order room) about current dispatch state */
@@ -259,6 +266,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     },
   ) {
     this.server.to(`order:${orderId}`).emit('dispatch_update', { orderId, ...payload });
+    this.logger.log(`Emitted dispatch_update orderId=${orderId} status=${payload.status}`);
   }
 
   emitMedicLocation(

@@ -123,6 +123,22 @@ export default function HomeScreen() {
         <FontAwesome name="chevron-right" size={14} color={Theme.primary} />
       </Pressable>
 
+      {/* Nearby medics banner */}
+      <Pressable
+        style={({ pressed }) => [styles.aiBanner, pressed && { opacity: 0.85 }]}
+        testID="nearby_medics_banner"
+        onPress={() => router.push('/nearby-medics')}
+      >
+        <View style={styles.aiBannerIcon}>
+          <FontAwesome name="map-marker" size={20} color={Theme.primary} />
+        </View>
+        <View style={styles.aiBannerTexts}>
+          <Text style={styles.aiBannerTitle}>{t('nearby.banner', 'Медики рядом')}</Text>
+          <Text style={styles.aiBannerDesc}>{t('nearby.bannerDesc', 'Посмотреть доступных медиков на карте')}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={14} color={Theme.primary} />
+      </Pressable>
+
       {fromCache && (
         <View style={styles.cacheBanner}>
           <Text style={styles.cacheBannerText}>{t('common.cachedData')}</Text>

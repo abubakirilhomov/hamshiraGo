@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import i18n, { DEFAULT_LANGUAGE, Language } from '@/i18n';
+import { setApiLanguage } from '@/constants/api';
 
 const LANGUAGE_KEY = 'app_language';
 
@@ -31,6 +32,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         if (stored === 'ru' || stored === 'uz') {
           setLanguageState(stored);
           i18n.changeLanguage(stored);
+          setApiLanguage(stored);
           setIsFirstLaunch(false);
         } else {
           setIsFirstLaunch(true);
@@ -47,6 +49,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
     setIsFirstLaunch(false);
+    setApiLanguage(lang);
     await i18n.changeLanguage(lang);
     await SecureStore.setItemAsync(LANGUAGE_KEY, lang);
   };

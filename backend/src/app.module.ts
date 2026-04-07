@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
+import { I18nExceptionFilter } from './common/filters/i18n-exception.filter';
+import { I18nService } from './common/i18n/i18n.service';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { CommonModule } from './common/common.module';
@@ -28,6 +30,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConsultationsModule } from './consultations/consultations.module';
 import { NpsModule } from './nps/nps.module';
 import { PromoModule } from './promo/promo.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -77,7 +80,7 @@ import { PromoModule } from './promo/promo.module';
         password: process.env.DB_PASSWORD ?? 'postgres',
         database: process.env.DB_NAME ?? 'hamshira_go',
         autoLoadEntities: true,
-        synchronize: false, // Always false — use TypeORM migrations for schema changes
+        synchronize: process.env.NODE_ENV !== 'production', // true in dev for auto-schema sync
         extra: { max: 20, min: 2, idleTimeoutMillis: 30000 },
       }),
     }),
@@ -102,11 +105,16 @@ import { PromoModule } from './promo/promo.module';
     ConsultationsModule,
     NpsModule,
     PromoModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
-    { provide: APP_FILTER, useClass: SentryExceptionFilter },
+    { provide: APP_FILTER, useFactory: (i18n: I18nService) => new I18nExceptionFilter(i18n), inject: [I18nService] },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

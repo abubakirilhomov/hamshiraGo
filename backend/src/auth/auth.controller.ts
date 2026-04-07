@@ -39,7 +39,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Регистрация клиента' })
   @ApiResponse({ status: 201, description: 'Клиент зарегистрирован, возвращает access_token' })
   @ApiResponse({ status: 409, description: 'Телефон уже зарегистрирован' })
@@ -48,7 +48,7 @@ export class AuthController {
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 900_000, limit: 5 } })
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин клиента' })
   @ApiResponse({ status: 200, description: 'Успешный логин, возвращает access_token' })

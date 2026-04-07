@@ -1,8 +1,9 @@
 import { IsBoolean, IsNumber, IsOptional, Max, Min } from 'class-validator';
 
 export class UpdateLocationDto {
+  @IsOptional()
   @IsBoolean()
-  isOnline!: boolean;
+  isOnline?: boolean;
 
   @IsOptional()
   @IsNumber()

@@ -97,7 +97,7 @@ export class MedicsService {
         throw err;
       }
     }
-    if (existing) throw new ConflictException('Medic with this phone already exists');
+    if (existing) throw new ConflictException('MEDIC_PHONE_EXISTS');
     const passwordHash = await bcrypt.hash(dto.password, 10);
     let saved: Medic;
     try {
@@ -136,10 +136,10 @@ export class MedicsService {
         throw err;
       }
     }
-    if (!medic) throw new UnauthorizedException('Invalid phone or password');
+    if (!medic) throw new UnauthorizedException('INVALID_CREDENTIALS');
     const ok = await bcrypt.compare(dto.password, medic.passwordHash);
-    if (!ok) throw new UnauthorizedException('Invalid phone or password');
-    if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked. Contact support.');
+    if (!ok) throw new UnauthorizedException('INVALID_CREDENTIALS');
+    if (medic.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED_CONTACT_SUPPORT');
 
     let onlineDisabledReason: 'INACTIVE_5H' | null = null;
     if (this.isMedicOnlineStale(medic)) {
@@ -265,7 +265,7 @@ export class MedicsService {
     const update: Partial<Medic> = {};
     if (facePhotoUrl) update.facePhotoUrl = facePhotoUrl;
     if (licensePhotoUrl) update.licensePhotoUrl = licensePhotoUrl;
-    if (!Object.keys(update).length) throw new BadRequestException('No files provided');
+    if (!Object.keys(update).length) throw new BadRequestException('NO_FILES_PROVIDED');
 
     // Re-set status to PENDING whenever documents are (re-)uploaded
     update.verificationStatus = VerificationStatus.PENDING;
@@ -277,7 +277,7 @@ export class MedicsService {
 
   async verifyMedic(id: string, dto: VerifyMedicDto): Promise<Medic> {
     const medic = await this.findById(id);
-    if (!medic) throw new NotFoundException('Medic not found');
+    if (!medic) throw new NotFoundException('MEDIC_NOT_FOUND');
 
     medic.verificationStatus = dto.status;
     medic.verificationRejectedReason =
@@ -299,7 +299,7 @@ export class MedicsService {
 
   async blockMedic(id: string, isBlocked: boolean): Promise<void> {
     const medic = await this.findById(id);
-    if (!medic) throw new NotFoundException('Medic not found');
+    if (!medic) throw new NotFoundException('MEDIC_NOT_FOUND');
     await this.medicRepo.update(id, { isBlocked });
   }
 
@@ -388,7 +388,7 @@ export class MedicsService {
   async updateLocation(id: string, dto: UpdateLocationDto): Promise<void> {
     try {
       await this.medicRepo.update(id, {
-        isOnline: dto.isOnline,
+        ...(dto.isOnline != null ? { isOnline: dto.isOnline } : {}),
         ...(dto.latitude != null ? { latitude: dto.latitude } : {}),
         ...(dto.longitude != null ? { longitude: dto.longitude } : {}),
         lastSeenAt: new Date(),
@@ -397,7 +397,7 @@ export class MedicsService {
       if (this.isMissingColumnError(err)) {
         // Fallback: update without lastSeenAt
         await this.medicRepo.update(id, {
-          isOnline: dto.isOnline,
+          ...(dto.isOnline != null ? { isOnline: dto.isOnline } : {}),
           ...(dto.latitude != null ? { latitude: dto.latitude } : {}),
           ...(dto.longitude != null ? { longitude: dto.longitude } : {}),
         });
@@ -478,11 +478,21 @@ export class MedicsService {
     }
   }
 
+  /** Find a medic by their Telegram chat ID */
+  async findByTelegramChatId(chatId: string): Promise<Medic | null> {
+    try {
+      return await this.medicRepo.findOne({ where: { telegramChatId: chatId } });
+    } catch (err: unknown) {
+      if (this.isMissingColumnError(err)) return null;
+      throw err;
+    }
+  }
+
   // ── Work zone (geofence) ──────────────────────────────────────────────────
 
   async setWorkZone(medicId: string, dto: SetWorkZoneDto): Promise<Medic> {
     const medic = await this.findById(medicId);
-    if (!medic) throw new NotFoundException('Medic not found');
+    if (!medic) throw new NotFoundException('MEDIC_NOT_FOUND');
     try {
       await this.medicRepo.update(medicId, {
         workZoneLat: dto.lat,

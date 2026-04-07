@@ -53,7 +53,7 @@ export class SubscriptionsService {
     data: Partial<SubscriptionTier>,
   ): Promise<SubscriptionTier> {
     const tier = await this.tierRepo.findOne({ where: { id } });
-    if (!tier) throw new NotFoundException('Tier not found');
+    if (!tier) throw new NotFoundException('TIER_NOT_FOUND');
     Object.assign(tier, data);
     return this.tierRepo.save(tier);
   }
@@ -84,16 +84,14 @@ export class SubscriptionsService {
         .getOne();
 
       if (existing) {
-        throw new BadRequestException(
-          'You already have an active subscription. Cancel it before purchasing a new one.',
-        );
+        throw new BadRequestException('SUBSCRIPTION_ALREADY_ACTIVE');
       }
 
       const tier = await manager.findOne(SubscriptionTier, {
         where: { id: tierId, isActive: true },
       });
       if (!tier) {
-        throw new NotFoundException('Subscription tier not found or inactive');
+        throw new NotFoundException('SUBSCRIPTION_TIER_NOT_FOUND');
       }
 
       const now = new Date();
@@ -127,7 +125,7 @@ export class SubscriptionsService {
       relations: { tier: true },
     });
     if (!sub) {
-      throw new BadRequestException('No active subscription to cancel');
+      throw new BadRequestException('NO_ACTIVE_SUBSCRIPTION');
     }
     sub.status = 'CANCELED';
     return this.subRepo.save(sub);

@@ -27,7 +27,7 @@ export class AuthService {
   async registerClient(dto: RegisterClientDto) {
     const existing = await this.usersService.findByPhone(dto.phone);
     if (existing) {
-      throw new ConflictException('User with this phone already exists');
+      throw new ConflictException('USER_PHONE_EXISTS');
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
@@ -82,13 +82,13 @@ export class AuthService {
   async loginClient(dto: LoginDto) {
     const user = await this.usersService.findByPhone(dto.phone);
     if (!user) {
-      throw new UnauthorizedException('Invalid phone or password');
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) {
-      throw new UnauthorizedException('Invalid phone or password');
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
-    if (user.isBlocked) throw new ForbiddenException('Your account has been blocked. Contact support.');
+    if (user.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED_CONTACT_SUPPORT');
     return { access_token: this.jwtService.sign({ sub: user.id, role: 'client' }), user: { id: user.id, phone: user.phone, name: user.name } };
   }
 
@@ -96,8 +96,8 @@ export class AuthService {
   async refreshToken(userId: string, role: string): Promise<{ access_token: string }> {
     if (role === 'client') {
       const user = await this.usersService.findById(userId);
-      if (!user) throw new UnauthorizedException('User not found');
-      if (user.isBlocked) throw new ForbiddenException('Account blocked');
+      if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+      if (user.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED');
       return { access_token: this.jwtService.sign({ sub: user.id, role: 'client' }) };
     }
     // For admin role, just re-sign
@@ -110,7 +110,7 @@ export class AuthService {
     const adminPassword = this.config.get<string>('ADMIN_PASSWORD');
 
     if (!adminUsername || !adminPassword) {
-      throw new UnauthorizedException('Admin credentials are not configured on the server.');
+      throw new UnauthorizedException('ADMIN_CREDENTIALS_NOT_CONFIGURED');
     }
 
     // Timing-safe comparison to prevent timing attacks
@@ -127,7 +127,7 @@ export class AuthService {
       crypto.timingSafeEqual(passBuf, expectedPassBuf);
 
     if (!userMatch || !passMatch) {
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException('INVALID_CREDENTIALS');
     }
 
     const token = this.jwtService.sign(

@@ -2,7 +2,7 @@ import { IsInt, Min, Max, IsOptional, IsString, MaxLength } from 'class-validato
 
 export class SubmitNpsDto {
   @IsInt()
-  @Min(0)
+  @Min(1)
   @Max(10)
   score!: number;
 

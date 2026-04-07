@@ -38,7 +38,7 @@ export class PaymeService {
     // Constant-time comparison to prevent timing attacks
     if (expectedBuf.length !== providedBuf.length ||
         !crypto.timingSafeEqual(expectedBuf, providedBuf)) {
-      throw new UnauthorizedException('Invalid Payme credentials');
+      throw new UnauthorizedException('INVALID_PAYME_CREDENTIALS');
     }
   }
 
@@ -47,7 +47,7 @@ export class PaymeService {
   validateIp(ip: string | undefined): void {
     if (this.config.get<string>('NODE_ENV') !== 'production') return;
     if (!this.isPaymeIp(ip ?? '')) {
-      throw new ForbiddenException('Forbidden');
+      throw new ForbiddenException('FORBIDDEN');
     }
   }
 

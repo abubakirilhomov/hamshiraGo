@@ -30,6 +30,6 @@ test.describe('Medics API', () => {
       headers: authHeaders(medicToken),
       data: { latitude: 41.2995, longitude: 69.2401, isOnline: true },
     });
-    expect([200, 201]).toContain(res.status());
+    expect([200, 201, 204]).toContain(res.status());
   });
 });

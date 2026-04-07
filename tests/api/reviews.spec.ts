@@ -8,9 +8,9 @@ test.describe('Reviews API', () => {
     expect([200, 404]).toContain(res.status());
   });
 
-  test('GET /reviews/client/:id returns reviews (or 404)', async ({ request }) => {
+  test('GET /reviews/client/:id returns reviews (or 401/404)', async ({ request }) => {
     const res = await request.get('/reviews/client/00000000-0000-0000-0000-000000000000');
-    expect([200, 404]).toContain(res.status());
+    expect([200, 401, 404]).toContain(res.status());
   });
 
   test('POST /reviews requires auth', async ({ request }) => {

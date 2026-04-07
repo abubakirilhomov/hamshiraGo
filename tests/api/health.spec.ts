@@ -22,14 +22,14 @@ test.describe('Health Check', () => {
     expect(typeof service.title).toBe('string');
   });
 
-  test('GET /services returns services with priceAmount', async ({ request }) => {
+  test('GET /services returns services with price', async ({ request }) => {
     const res = await request.get('/services');
     const services = await res.json();
 
     for (const service of services) {
-      expect(service).toHaveProperty('priceAmount');
-      expect(typeof service.priceAmount).toBe('number');
-      expect(service.priceAmount).toBeGreaterThan(0);
+      expect(service).toHaveProperty('price');
+      expect(typeof service.price).toBe('number');
+      expect(service.price).toBeGreaterThan(0);
     }
   });
 });

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -19,6 +19,7 @@ import { FavoritesModule } from '../favorites/favorites.module';
 import { ReviewsModule } from '../reviews/reviews.module';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { TelegramBotModule } from '../telegram/telegram-bot.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
     ReviewsModule,
     LoyaltyModule,
     SubscriptionsModule,
+    forwardRef(() => TelegramBotModule),
   ],
   controllers: [OrdersController],
   providers: [OrdersService, DispatchService],

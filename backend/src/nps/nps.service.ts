@@ -30,7 +30,7 @@ export class NpsService {
   ): Promise<NpsSurvey> {
     const answered = await this.hasAnsweredThisMonth(userId);
     if (answered) {
-      throw new BadRequestException('Already submitted NPS this month');
+      throw new BadRequestException('NPS_ALREADY_SUBMITTED');
     }
 
     const survey = this.npsRepo.create({

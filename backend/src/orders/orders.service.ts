@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
@@ -22,6 +22,7 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { haversineKm } from '../utils/geo';
 
 /** Safely convert a DB value (possibly string from decimal columns) to a number.
@@ -71,6 +72,8 @@ export class OrdersService {
     private appSettingsService: AppSettingsService,
     private loyaltyService: LoyaltyService,
     private subscriptionsService: SubscriptionsService,
+    @Inject(forwardRef(() => TelegramBotService))
+    private telegramBotService: TelegramBotService,
     private dataSource: DataSource,
   ) {}
 
@@ -205,6 +208,11 @@ export class OrdersService {
       data: { orderId: order.id, status },
       url: `/orders/${order.id}`,
     });
+
+    // Telegram notification
+    this.telegramBotService
+      .notifyClientStatus(order.clientId, order.id, status, order.serviceTitle ?? undefined)
+      .catch(() => {});
   }
 
   /** Send Expo push notification to the medic of a given order */
@@ -233,7 +241,7 @@ export class OrdersService {
 
     const discountAmount = (dto.discountAmount ?? 0) + referralBonus;
     if (discountAmount > service.price) {
-      throw new BadRequestException('Discount cannot exceed the service price');
+      throw new BadRequestException('DISCOUNT_EXCEEDS_PRICE');
     }
     // TODO: replace this first-order check with a real promo-code/coupon system
     // For now: only first-time clients (0 DONE orders) may use a discount, capped at 15% of price.
@@ -244,14 +252,14 @@ export class OrdersService {
       });
       if (doneCount > 0) {
         throw new BadRequestException(
-          'Discount is only available for your first order',
+          'FIRST_ORDER_DISCOUNT_ONLY',
         );
       }
       const FIRST_ORDER_DISCOUNT_PERCENT = 15;
       const maxDiscount = Math.round(service.price * FIRST_ORDER_DISCOUNT_PERCENT / 100);
       if (clientDiscount > maxDiscount) {
         throw new BadRequestException(
-          `First-order discount cannot exceed ${FIRST_ORDER_DISCOUNT_PERCENT}% of the service price (max ${maxDiscount} UZS)`,
+          'FIRST_ORDER_DISCOUNT_LIMIT',
         );
       }
     }
@@ -348,7 +356,7 @@ export class OrdersService {
       if (!this.isMissingColumnError(err)) throw err;
       order = await this.findOneLegacy(id, true);
     }
-    if (!order) throw new NotFoundException('Order not found');
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
     return order;
   }
 
@@ -364,7 +372,7 @@ export class OrdersService {
       if (!this.isMissingColumnError(err)) throw err;
       order = await this.findOneLegacy(id, false);
     }
-    if (!order) throw new NotFoundException('Order not found');
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
     return order;
   }
 
@@ -377,13 +385,13 @@ export class OrdersService {
     if (role === 'admin') return order;
     if (role === 'client' && order.clientId === actorId) return order;
     if (role === 'medic' && order.medicId === actorId) return order;
-    throw new ForbiddenException('You do not have access to this order');
+    throw new ForbiddenException('NO_ORDER_ACCESS');
   }
 
   /** Client cancels their own order — only allowed while CREATED or ASSIGNED */
   async cancelOrder(orderId: string, clientId: string, reason?: string): Promise<Order> {
     const order = await this.findOneBasic(orderId);
-    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
+    if (order.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_ORDER');
     const cancellable: OrderStatus[] = [OrderStatus.CREATED, OrderStatus.ASSIGNED];
     // Atomic UPDATE with WHERE status IN (cancellable) prevents race condition:
     // if a medic transitions the order to SERVICE_STARTED between the read above
@@ -396,9 +404,9 @@ export class OrdersService {
     if (!cancelResult.affected) {
       // Re-fetch to give the client an accurate error message
       const fresh = await this.findOneBasic(orderId);
-      if (fresh.clientId !== clientId) throw new ForbiddenException('Not your order');
+      if (fresh.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_ORDER');
       throw new ConflictException(
-        `Cannot cancel an order with status "${fresh.status}". Only CREATED or ASSIGNED orders can be cancelled.`,
+        'CANNOT_CANCEL_ORDER_STATUS',
       );
     }
     // Cancel any active dispatch search
@@ -426,9 +434,9 @@ export class OrdersService {
   /** Reorder — create a new order from a previous one (same service + location) */
   async reorder(orderId: string, clientId: string): Promise<Order> {
     const order = await this.findOne(orderId);
-    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
-    if (!order.serviceId) throw new BadRequestException('Original order has no service');
-    if (!order.location) throw new BadRequestException('Original order has no location');
+    if (order.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_ORDER');
+    if (!order.serviceId) throw new BadRequestException('ORDER_NO_SERVICE');
+    if (!order.location) throw new BadRequestException('ORDER_NO_LOCATION');
 
     return this.create(clientId, {
       serviceId: order.serviceId,
@@ -446,9 +454,9 @@ export class OrdersService {
   /** Client rates the medic after order is DONE */
   async rateOrder(orderId: string, clientId: string, dto: RateOrderDto): Promise<Order> {
     const order = await this.findOneBasic(orderId);
-    if (order.clientId !== clientId) throw new ForbiddenException('Not your order');
-    if (order.status !== OrderStatus.DONE) throw new BadRequestException('Can only rate a completed order');
-    if (!order.medicId) throw new BadRequestException('No medic assigned to this order');
+    if (order.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_ORDER');
+    if (order.status !== OrderStatus.DONE) throw new BadRequestException('RATE_ORDER_NOT_COMPLETED');
+    if (!order.medicId) throw new BadRequestException('ORDER_NO_MEDIC');
 
     // Fetch medic before transaction so we can calculate new rating
     const medic = await this.medicsService.findById(order.medicId);
@@ -462,7 +470,7 @@ export class OrdersService {
         { id: orderId, clientRating: IsNull() },
         { clientRating: dto.rating, clientReview: dto.review ?? null },
       );
-      if (!rateResult.affected) throw new BadRequestException('Order already rated');
+      if (!rateResult.affected) throw new BadRequestException('ORDER_ALREADY_RATED');
 
       // Recalculate medic's weighted average rating inline (mirrors medicsService.updateRating)
       if (medic) {
@@ -484,12 +492,12 @@ export class OrdersService {
   ): Promise<Order> {
     const order = await this.findOneBasic(id);
     if (order.clientId !== clientId) {
-      throw new ForbiddenException('Not your order');
+      throw new ForbiddenException('NOT_YOUR_ORDER');
     }
     // Client can only confirm completion once medic started service.
     if (dto.status !== OrderStatus.DONE || order.status !== OrderStatus.SERVICE_STARTED) {
       throw new BadRequestException(
-        `Client cannot transition from "${order.status}" to "${dto.status}"`,
+        'ORDER_INVALID_TRANSITION',
       );
     }
     const netPrice = safeNumber(order.priceAmount) + safeNumber(order.urgentFee) - safeNumber(order.discountAmount);
@@ -502,7 +510,7 @@ export class OrdersService {
         { status: OrderStatus.DONE },
       );
       if (!result.affected) {
-        throw new BadRequestException('Order status has already changed, please refresh');
+        throw new BadRequestException('ORDER_STATUS_CHANGED_RETRY');
       }
       if (order.medicId) {
         await manager.increment(Medic, { id: order.medicId }, 'earnings', earnings);
@@ -694,15 +702,15 @@ export class OrdersService {
   /** Medic accepts a CREATED order → status becomes ACCEPTED (skips ASSIGNED) */
   async acceptOrder(orderId: string, medicId: string): Promise<Order> {
     const medic = await this.medicsService.findById(medicId);
-    if (!medic) throw new ForbiddenException('Medic not found');
+    if (!medic) throw new ForbiddenException('MEDIC_NOT_FOUND');
     if (medic.verificationStatus !== 'APPROVED') {
       throw new ForbiddenException(
-        'Your account is not yet verified. Upload your documents and wait for approval.',
+        'MEDIC_NOT_VERIFIED',
       );
     }
-    if (medic.isBlocked) throw new ForbiddenException('Your account has been blocked.');
+    if (medic.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED');
     if (!medic.profilePhotoUrl) {
-      throw new ForbiddenException('Please upload a profile photo before accepting orders.');
+      throw new ForbiddenException('PROFILE_PHOTO_REQUIRED');
     }
 
     const order = await this.findOneBasic(orderId);
@@ -718,7 +726,7 @@ export class OrdersService {
         const dist = haversineKm(zoneLat, zoneLng, orderLat, orderLng);
         if (dist > zoneRadius) {
           throw new BadRequestException(
-            'Order is outside your work zone. Adjust your work zone or decline.',
+            'MEDIC_ORDER_OUTSIDE_ZONE',
           );
         }
       }
@@ -741,7 +749,7 @@ export class OrdersService {
         { medicId, status: OrderStatus.ACCEPTED },
       );
       if (!result.affected) {
-        throw new BadRequestException('Order is no longer available');
+        throw new BadRequestException('ORDER_NOT_AVAILABLE');
       }
 
       if (paidMode) {
@@ -784,7 +792,7 @@ export class OrdersService {
     status: OrderStatus,
   ): Promise<Order> {
     const order = await this.findOneBasic(orderId);
-    if (order.medicId !== medicId) throw new ForbiddenException('Order not assigned to you');
+    if (order.medicId !== medicId) throw new ForbiddenException('ORDER_NOT_ASSIGNED_TO_YOU');
 
     const allowedTransitions: Partial<Record<OrderStatus, OrderStatus[]>> = {
       [OrderStatus.ASSIGNED]:        [OrderStatus.ACCEPTED, OrderStatus.CANCELED],
@@ -796,7 +804,7 @@ export class OrdersService {
     const allowed = allowedTransitions[order.status] ?? [];
     if (!allowed.includes(status)) {
       throw new BadRequestException(
-        `Cannot transition from "${order.status}" to "${status}"`,
+        'ORDER_INVALID_STATUS_TRANSITION',
       );
     }
 
@@ -814,7 +822,7 @@ export class OrdersService {
           { status: OrderStatus.DONE },
         );
         if (!result.affected) {
-          throw new BadRequestException('Status changed concurrently, please retry');
+          throw new BadRequestException('ORDER_STATUS_CHANGED_RETRY');
         }
         await manager.increment(Medic, { id: medicId }, 'earnings', earnings);
       });
@@ -825,7 +833,7 @@ export class OrdersService {
         { status },
       );
       if (!result.affected) {
-        throw new BadRequestException('Status changed concurrently, please retry');
+        throw new BadRequestException('ORDER_STATUS_CHANGED_RETRY');
       }
     }
 
@@ -926,7 +934,7 @@ export class OrdersService {
       { status: OrderStatus.CANCELED, cancelReason },
     );
     if (!cancelResult.affected) {
-      throw new BadRequestException('Order is already DONE or CANCELED, or not found');
+      throw new BadRequestException('ORDER_FINAL_OR_NOT_FOUND');
     }
     // Best-effort cancel dispatch (may have already been CREATED)
     this.dispatchService.cancelDispatch(orderId).catch(() => {});
@@ -966,14 +974,14 @@ export class OrdersService {
   ): Promise<ChatMessage> {
     const order = await this.findOneBasic(orderId);
     if (role === 'client' && order.clientId !== userId) {
-      throw new ForbiddenException('Not your order');
+      throw new ForbiddenException('NOT_YOUR_ORDER');
     }
     if (role === 'medic' && order.medicId !== userId) {
-      throw new ForbiddenException('Not your order');
+      throw new ForbiddenException('NOT_YOUR_ORDER');
     }
     const terminal = [OrderStatus.DONE, OrderStatus.CANCELED];
     if (terminal.includes(order.status)) {
-      throw new BadRequestException('Cannot send messages to a completed order');
+      throw new BadRequestException('MESSAGE_COMPLETED_ORDER');
     }
 
     const message = this.chatMessageRepo.create({
@@ -1003,10 +1011,10 @@ export class OrdersService {
   ): Promise<ChatMessage[]> {
     const order = await this.findOneBasic(orderId);
     if (role === 'client' && order.clientId !== userId) {
-      throw new ForbiddenException('Not your order');
+      throw new ForbiddenException('NOT_YOUR_ORDER');
     }
     if (role === 'medic' && order.medicId !== userId) {
-      throw new ForbiddenException('Not your order');
+      throw new ForbiddenException('NOT_YOUR_ORDER');
     }
 
     return this.chatMessageRepo.find({

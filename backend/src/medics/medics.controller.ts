@@ -51,7 +51,7 @@ export class MedicsController {
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   @Post('register')
-  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Регистрация медика' })
   @ApiResponse({ status: 201, description: 'Медик зарегистрирован' })
   register(@Body() dto: RegisterMedicDto) {
@@ -59,7 +59,7 @@ export class MedicsController {
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 900_000, limit: 5 } })
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин медика' })
   @ApiResponse({ status: 200, description: 'Успешный логин медика' })
@@ -129,7 +129,7 @@ export class MedicsController {
     @UploadedFiles() files: { facePhoto?: Express.Multer.File[]; licensePhoto?: Express.Multer.File[] },
   ) {
     if (!this.cloudinaryService.isConfigured()) {
-      throw new ServiceUnavailableException('File storage is not configured on this server');
+      throw new ServiceUnavailableException('FILE_STORAGE_NOT_CONFIGURED');
     }
 
     const [faceUrl, licenseUrl] = await Promise.all([
@@ -177,9 +177,9 @@ export class MedicsController {
     @MedicId() medicId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) throw new BadRequestException('No file provided');
+    if (!file) throw new BadRequestException('NO_FILE_PROVIDED');
     if (!this.cloudinaryService.isConfigured()) {
-      throw new ServiceUnavailableException('File storage is not configured on this server');
+      throw new ServiceUnavailableException('FILE_STORAGE_NOT_CONFIGURED');
     }
     const url = await this.cloudinaryService.uploadBuffer(
       file.buffer,
@@ -257,7 +257,7 @@ export class MedicsController {
     @Body('amount') amount: number,
   ): Promise<void> {
     if (!amount || !Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException('Amount must be a positive number');
+      throw new BadRequestException('AMOUNT_POSITIVE');
     }
     await this.medicsService.addBalance(id, amount);
   }
@@ -284,7 +284,7 @@ export class MedicsController {
   async saveTelegramChatId(@MedicId() medicId: string, @Body() body: { chatId: string | null }) {
     // chatId: null disconnects Telegram
     const chatId = body?.chatId === null ? null : body?.chatId ? String(body.chatId) : null;
-    if (chatId === undefined) throw new BadRequestException('chatId is required');
+    if (chatId === undefined) throw new BadRequestException('CHATID_REQUIRED');
     await this.medicsService.saveTelegramChatId(medicId, chatId);
   }
 

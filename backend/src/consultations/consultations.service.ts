@@ -60,7 +60,7 @@ export class ConsultationsService {
   /** Get a single doctor by ID */
   async getDoctorById(id: string): Promise<Doctor> {
     const doctor = await this.doctorRepo.findOne({ where: { id } });
-    if (!doctor) throw new NotFoundException('Doctor not found');
+    if (!doctor) throw new NotFoundException('DOCTOR_NOT_FOUND');
     return doctor;
   }
 
@@ -78,7 +78,7 @@ export class ConsultationsService {
   /** Admin: update a doctor */
   async updateDoctor(id: string, data: Partial<Doctor>): Promise<Doctor> {
     const doctor = await this.doctorRepo.findOne({ where: { id } });
-    if (!doctor) throw new NotFoundException('Doctor not found');
+    if (!doctor) throw new NotFoundException('DOCTOR_NOT_FOUND');
     Object.assign(doctor, data);
     return this.doctorRepo.save(doctor);
   }
@@ -98,7 +98,7 @@ export class ConsultationsService {
       where: { id: doctorId, isActive: true },
     });
     if (!doctor) {
-      throw new NotFoundException('Doctor not found or inactive');
+      throw new NotFoundException('DOCTOR_NOT_FOUND_OR_INACTIVE');
     }
 
     const price = doctor.pricePerConsultation;
@@ -142,12 +142,13 @@ export class ConsultationsService {
       where: { id: consultationId },
     });
     if (!consultation) {
-      throw new NotFoundException('Consultation not found');
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
     }
-    if (consultation.status === 'COMPLETED' || consultation.status === 'CANCELED') {
-      throw new BadRequestException(
-        `Consultation already ${consultation.status.toLowerCase()}`,
-      );
+    if (consultation.status === 'COMPLETED') {
+      throw new BadRequestException('CONSULTATION_ALREADY_COMPLETED');
+    }
+    if (consultation.status === 'CANCELED') {
+      throw new BadRequestException('CONSULTATION_ALREADY_CANCELED');
     }
 
     consultation.status = 'COMPLETED';
@@ -163,12 +164,13 @@ export class ConsultationsService {
       where: { id: consultationId },
     });
     if (!consultation) {
-      throw new NotFoundException('Consultation not found');
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
     }
-    if (consultation.status === 'COMPLETED' || consultation.status === 'CANCELED') {
-      throw new BadRequestException(
-        `Consultation already ${consultation.status.toLowerCase()}`,
-      );
+    if (consultation.status === 'COMPLETED') {
+      throw new BadRequestException('CONSULTATION_ALREADY_COMPLETED');
+    }
+    if (consultation.status === 'CANCELED') {
+      throw new BadRequestException('CONSULTATION_ALREADY_CANCELED');
     }
 
     consultation.status = 'CANCELED';
@@ -197,7 +199,7 @@ export class ConsultationsService {
       where: { id },
     });
     if (!consultation) {
-      throw new NotFoundException('Consultation not found');
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
     }
 
     let messages: ChatMessage[] = [];
@@ -328,19 +330,17 @@ export class ConsultationsService {
     const prescription = await this.prescriptionRepo.findOne({
       where: { id: prescriptionId },
     });
-    if (!prescription) throw new NotFoundException('Prescription not found');
+    if (!prescription) throw new NotFoundException('PRESCRIPTION_NOT_FOUND');
     if (prescription.clientId !== clientId) {
-      throw new ForbiddenException('Not your prescription');
+      throw new ForbiddenException('NOT_YOUR_PRESCRIPTION');
     }
     if (prescription.status !== 'PENDING') {
-      throw new BadRequestException(
-        `Prescription already ${prescription.status.toLowerCase()}`,
-      );
+      throw new BadRequestException('PRESCRIPTION_ALREADY_PROCESSED');
     }
     if (new Date() > prescription.expiresAt) {
       prescription.status = 'EXPIRED';
       await this.prescriptionRepo.save(prescription);
-      throw new BadRequestException('Prescription has expired');
+      throw new BadRequestException('PRESCRIPTION_EXPIRED');
     }
 
     // Override serviceId from prescription (ignore any client-sent serviceId)
@@ -385,14 +385,12 @@ export class ConsultationsService {
     const prescription = await this.prescriptionRepo.findOne({
       where: { id: prescriptionId },
     });
-    if (!prescription) throw new NotFoundException('Prescription not found');
+    if (!prescription) throw new NotFoundException('PRESCRIPTION_NOT_FOUND');
     if (prescription.clientId !== clientId) {
-      throw new ForbiddenException('Not your prescription');
+      throw new ForbiddenException('NOT_YOUR_PRESCRIPTION');
     }
     if (prescription.status !== 'PENDING') {
-      throw new BadRequestException(
-        `Prescription already ${prescription.status.toLowerCase()}`,
-      );
+      throw new BadRequestException('PRESCRIPTION_ALREADY_PROCESSED');
     }
 
     prescription.status = 'CANCELED';

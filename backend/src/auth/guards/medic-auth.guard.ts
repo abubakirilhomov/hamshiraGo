@@ -7,7 +7,7 @@ export class MedicAuthGuard extends AuthGuard('jwt') implements CanActivate {
     await super.canActivate(context);
     const request = context.switchToHttp().getRequest<{ user?: { id: string; role: string } }>();
     if (!request.user) throw new UnauthorizedException();
-    if (request.user.role !== 'medic') throw new ForbiddenException('Medic access only');
+    if (request.user.role !== 'medic') throw new ForbiddenException('MEDIC_ACCESS_ONLY');
     return true;
   }
 }

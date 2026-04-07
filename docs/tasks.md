@@ -52,6 +52,21 @@
 
 ---
 
+## 📋 Задачи
+
+- [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
+
+### MVP V0.1 Gap Closures — DONE 2026-04-05
+
+- [x] **GAP-1** — X-Request-Id middleware — `backend/src/common/middleware/request-id.middleware.ts`, `app.module.ts`, `main.ts`
+- [x] **GAP-2** — WebSocket event logging (subscribe/unsubscribe/dispatch/location) — `backend/src/realtime/order-events.gateway.ts`
+- [x] **GAP-3** — Telegram bot interactive commands (inline buttons, callback queries, client notifications) — `backend/src/telegram/`, `backend/src/orders/dispatch.service.ts`, `backend/src/orders/orders.service.ts`, `backend/src/users/`, `backend/src/medics/medics.service.ts`
+- [x] **GAP-4** — Docker Compose + Backend Dockerfile — `docker-compose.yml`, `backend/Dockerfile`
+- [x] **GAP-5** — AI Analytics module (Claude AI chat, feedback summary, top issues) — `backend/src/analytics/`, `admin/src/pages/AiChat.tsx`
+- [x] **GAP-6** — Nearby medics map screen — `mobile/app/nearby-medics.tsx`, `mobile/app/(tabs)/index.tsx`
+
+---
+
 ## 👥 Роли разработки
 
 | Роль | Зона ответственности |

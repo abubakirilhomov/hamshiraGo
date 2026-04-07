@@ -20,8 +20,8 @@ export class PaymentsService {
 
   async verifyOrderOwnership(orderId: string, userId: string): Promise<void> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
-    if (!order) throw new NotFoundException(`Order ${orderId} not found`);
-    if (order.clientId !== userId) throw new ForbiddenException('Not your order');
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
+    if (order.clientId !== userId) throw new ForbiddenException('NOT_YOUR_ORDER');
   }
 
   async initiatePayment(orderId: string): Promise<{
@@ -30,7 +30,7 @@ export class PaymentsService {
     payment: Payment;
   }> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
-    if (!order) throw new NotFoundException(`Order ${orderId} not found`);
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
 
     const amount = (order.priceAmount ?? 0) - (order.discountAmount ?? 0); // netPrice: скидка уже вычтена
 
@@ -56,7 +56,7 @@ export class PaymentsService {
 
   async getPaymentStatus(orderId: string): Promise<Payment | null> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
-    if (!order) throw new NotFoundException(`Order ${orderId} not found`);
+    if (!order) throw new NotFoundException('ORDER_NOT_FOUND');
 
     return this.paymentRepo.findOne({
       where: { orderId },

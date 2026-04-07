@@ -83,11 +83,11 @@ export class PaymentsController {
     const normalized = (ip ?? '').replace(/^::ffff:/, '');
     const parts = normalized.split('.').map(Number);
     if (parts.length !== 4 || parts.some((p) => isNaN(p))) {
-      throw new ForbiddenException('Forbidden');
+      throw new ForbiddenException('FORBIDDEN');
     }
     const isClick =
       (parts[0] === 185 && parts[1] === 8 && parts[2] === 212) ||
       (parts[0] === 195 && parts[1] === 158 && parts[2] === 28);
-    if (!isClick) throw new ForbiddenException('Forbidden');
+    if (!isClick) throw new ForbiddenException('FORBIDDEN');
   }
 }

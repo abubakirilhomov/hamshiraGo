@@ -25,7 +25,7 @@ export class TelegramBotController {
     @Body() update: any,
   ): Promise<void> {
     if (this.webhookSecret && secretToken !== this.webhookSecret) {
-      throw new ForbiddenException('Invalid webhook secret');
+      throw new ForbiddenException('INVALID_WEBHOOK_SECRET');
     }
     await this.botService.handleUpdate(update);
   }

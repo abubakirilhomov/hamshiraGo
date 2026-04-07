@@ -46,8 +46,8 @@ export class TreatmentCoursesService {
 
   async update(id: string, clientId: string, dto: UpdateTreatmentCourseDto): Promise<TreatmentCourse> {
     const course = await this.courseRepo.findOne({ where: { id } });
-    if (!course) throw new NotFoundException('Treatment course not found');
-    if (course.clientId !== clientId) throw new ForbiddenException('Not your course');
+    if (!course) throw new NotFoundException('TREATMENT_COURSE_NOT_FOUND');
+    if (course.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_COURSE');
 
     if (dto.markComplete) {
       course.completedProcedures += 1;
@@ -87,8 +87,8 @@ export class TreatmentCoursesService {
 
   async delete(id: string, clientId: string): Promise<void> {
     const course = await this.courseRepo.findOne({ where: { id } });
-    if (!course) throw new NotFoundException('Treatment course not found');
-    if (course.clientId !== clientId) throw new ForbiddenException('Not your course');
+    if (!course) throw new NotFoundException('TREATMENT_COURSE_NOT_FOUND');
+    if (course.clientId !== clientId) throw new ForbiddenException('NOT_YOUR_COURSE');
     await this.courseRepo.remove(course);
   }
 

@@ -3,6 +3,8 @@ import {
   Logger,
   ForbiddenException,
   OnApplicationBootstrap,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, MoreThan, Repository } from 'typeorm';
@@ -18,6 +20,7 @@ import { UsersService } from '../users/users.service';
 import { FavoritesService } from '../favorites/favorites.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { Medic } from '../medics/entities/medic.entity';
+import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { haversineKm } from '../utils/geo';
 
 @Injectable()
@@ -43,6 +46,8 @@ export class DispatchService implements OnApplicationBootstrap {
     private favoritesService: FavoritesService,
     private reviewsService: ReviewsService,
     private configService: ConfigService,
+    @Inject(forwardRef(() => TelegramBotService))
+    private telegramBotService: TelegramBotService,
   ) {}
 
   /** On startup: recover stale PENDING attempts left from before a Railway restart */
@@ -164,6 +169,20 @@ export class DispatchService implements OnApplicationBootstrap {
           channelId: 'new_orders',
           priority: 'high',
         })
+        .catch(() => {});
+    }
+
+    // Telegram invite with accept/decline buttons
+    if (medic.telegramChatId) {
+      const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+      this.telegramBotService
+        .sendDispatchInvite(
+          medic.telegramChatId,
+          orderId,
+          order.serviceTitle ?? 'Услуга',
+          netPrice,
+          order.location?.house ?? undefined,
+        )
         .catch(() => {});
     }
 
@@ -310,10 +329,10 @@ export class DispatchService implements OnApplicationBootstrap {
       where: { orderId, medicId, result: DispatchResult.PENDING },
     });
     if (!attempt) {
-      throw new ForbiddenException('No active dispatch invite for this order');
+      throw new ForbiddenException('NO_DISPATCH_INVITE');
     }
     if (attempt.expiresAt < new Date()) {
-      throw new ForbiddenException('Dispatch invite has expired');
+      throw new ForbiddenException('DISPATCH_EXPIRED');
     }
     return attempt;
   }

@@ -54,28 +54,28 @@ export class ReviewsService {
     // 1. Load order
     const order = await this.orderRepo.findOne({ where: { id: dto.orderId } });
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('ORDER_NOT_FOUND');
     }
 
     // 2. Order must be DONE
     if (order.status !== OrderStatus.DONE) {
-      throw new BadRequestException('Reviews can only be submitted for completed orders');
+      throw new BadRequestException('REVIEW_ORDER_NOT_COMPLETED');
     }
 
     // 3. Author must be a participant of this order
     if (role === 'client' && order.clientId !== userId) {
-      throw new ForbiddenException('You are not the client of this order');
+      throw new ForbiddenException('NOT_CLIENT_OF_ORDER');
     }
     if (role === 'medic' && order.medicId !== userId) {
-      throw new ForbiddenException('You are not the medic of this order');
+      throw new ForbiddenException('NOT_MEDIC_OF_ORDER');
     }
 
     // 4. targetRole must be the opposite of authorRole
     if (role === 'client' && dto.targetRole !== 'medic') {
-      throw new BadRequestException('Client can only review a medic');
+      throw new BadRequestException('REVIEW_CLIENT_MUST_REVIEW_MEDIC');
     }
     if (role === 'medic' && dto.targetRole !== 'client') {
-      throw new BadRequestException('Medic can only review a client');
+      throw new BadRequestException('REVIEW_MEDIC_MUST_REVIEW_CLIENT');
     }
 
     // 5. Resolve targetId
@@ -85,7 +85,7 @@ export class ReviewsService {
         : order.clientId;
 
     if (!targetId) {
-      throw new BadRequestException('No target participant found for this order');
+      throw new BadRequestException('REVIEW_NO_TARGET_PARTICIPANT');
     }
 
     // 6. Check not already reviewed (unique constraint will catch it too, but give a friendly error)
@@ -93,7 +93,7 @@ export class ReviewsService {
       where: { orderId: dto.orderId, authorRole: role },
     });
     if (existing) {
-      throw new BadRequestException('You have already submitted a review for this order');
+      throw new BadRequestException('REVIEW_ALREADY_SUBMITTED');
     }
 
     // 7. Save review
@@ -112,7 +112,7 @@ export class ReviewsService {
       saved = await this.reviewRepo.save(review);
     } catch (err: unknown) {
       if (this.isTableOrColumnMissing(err)) {
-        throw new BadRequestException('Reviews are not available yet. Please try again later.');
+        throw new BadRequestException('REVIEW_NOT_AVAILABLE');
       }
       throw err;
     }

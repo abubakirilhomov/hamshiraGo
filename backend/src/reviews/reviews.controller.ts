@@ -25,7 +25,7 @@ interface RequestUser {
 const GetUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): RequestUser => {
     const req = ctx.switchToHttp().getRequest<{ user?: RequestUser }>();
-    if (!req.user) throw new UnauthorizedException('Not authenticated');
+    if (!req.user) throw new UnauthorizedException('NOT_AUTHENTICATED');
     return req.user;
   },
 );

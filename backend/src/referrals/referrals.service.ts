@@ -20,7 +20,7 @@ export class ReferralsService {
     pendingReferralDiscount: number;
   }> {
     const user = await this.usersService.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
     const [referrals, referredCount] = await this.referralRepo.findAndCount({
       where: { referrerId: userId },

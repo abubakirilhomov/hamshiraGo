@@ -45,6 +45,9 @@ export class User {
   @Column({ type: 'int', default: 0, nullable: true })
   pendingReferralDiscount!: number;
 
+  @Column({ type: 'bigint', nullable: true, default: null })
+  telegramChatId!: string | null;
+
   @Column({ type: 'int', nullable: true, default: 0 })
   loyaltyPoints!: number | null;
 

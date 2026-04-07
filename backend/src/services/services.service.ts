@@ -26,7 +26,7 @@ export class ServicesService {
   /** Validate that a service exists, is active, and return its price */
   async getActiveServiceOrThrow(id: string): Promise<Service> {
     const service = await this.serviceRepo.findOne({ where: { id, isActive: true } });
-    if (!service) throw new NotFoundException('Service not found or not available');
+    if (!service) throw new NotFoundException('SERVICE_NOT_FOUND');
     return service;
   }
 
@@ -38,7 +38,7 @@ export class ServicesService {
 
   async update(id: string, dto: Partial<CreateServiceDto>): Promise<Service> {
     const service = await this.serviceRepo.findOne({ where: { id } });
-    if (!service) throw new NotFoundException('Service not found');
+    if (!service) throw new NotFoundException('SERVICE_NOT_FOUND');
     Object.assign(service, dto);
     return this.serviceRepo.save(service);
   }

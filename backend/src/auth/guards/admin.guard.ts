@@ -29,9 +29,9 @@ export class AdminGuard implements CanActivate {
         });
         if (payload.role === 'admin') return true;
       } catch {
-        throw new UnauthorizedException('Invalid or expired admin token');
+        throw new UnauthorizedException('INVALID_ADMIN_TOKEN');
       }
-      throw new UnauthorizedException('Token does not have admin role');
+      throw new UnauthorizedException('NO_ADMIN_ROLE');
     }
 
     // ── Option 2: Legacy X-Admin-Secret header (kept for backward compat) ──
@@ -43,6 +43,6 @@ export class AdminGuard implements CanActivate {
       if (s.length === p.length && crypto.timingSafeEqual(s, p)) return true;
     }
 
-    throw new UnauthorizedException('Admin authentication required');
+    throw new UnauthorizedException('ADMIN_AUTH_REQUIRED');
   }
 }

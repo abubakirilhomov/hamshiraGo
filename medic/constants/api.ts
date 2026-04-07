@@ -9,6 +9,12 @@ export function setUnauthorizedHandler(fn: () => void) {
   _onUnauthorized = fn;
 }
 
+// Current language for Accept-Language header (set by LanguageContext)
+let _currentLanguage = 'ru';
+export function setApiLanguage(lang: string) {
+  _currentLanguage = lang;
+}
+
 import { Alert } from 'react-native';
 
 let _unauthorizedFired = false;
@@ -45,6 +51,7 @@ export async function apiFetch<T>(
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
+          'Accept-Language': _currentLanguage,
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(rest.headers ?? {}),
         },

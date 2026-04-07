@@ -114,7 +114,7 @@ export class ClientErrorsService {
   async updateStatus(id: string, status: ClientErrorStatus): Promise<ClientError> {
     const entry = await this.repo.findOne({ where: { id } });
     if (!entry) {
-      throw new BadRequestException(`ClientError ${id} not found`);
+      throw new BadRequestException('CLIENT_ERROR_NOT_FOUND');
     }
 
     entry.status = status;

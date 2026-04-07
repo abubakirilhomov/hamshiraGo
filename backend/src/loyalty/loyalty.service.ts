@@ -59,7 +59,7 @@ export class LoyaltyService {
         .where('u.id = :id', { id: userId })
         .getOne();
 
-      if (!user) throw new NotFoundException('User not found');
+      if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
       const currentTier = (user as any).loyaltyTier ?? 'BRONZE';
       const currentPoints: number = (user as any).loyaltyPoints ?? 0;
@@ -128,7 +128,7 @@ export class LoyaltyService {
     points: number,
   ): Promise<{ discountAmountUZS: number }> {
     if (points <= 0) {
-      throw new BadRequestException('Points must be positive');
+      throw new BadRequestException('LOYALTY_POINTS_POSITIVE');
     }
 
     const settings = await this.appSettingsService.get();
@@ -142,13 +142,11 @@ export class LoyaltyService {
         .where('u.id = :id', { id: userId })
         .getOne();
 
-      if (!user) throw new NotFoundException('User not found');
+      if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
       const currentPoints: number = (user as any).loyaltyPoints ?? 0;
       if (currentPoints < points) {
-        throw new BadRequestException(
-          `Insufficient points: have ${currentPoints}, need ${points}`,
-        );
+        throw new BadRequestException('INSUFFICIENT_LOYALTY_POINTS');
       }
 
       const discountAmountUZS = Math.round(points * (redemptionRate / 100));

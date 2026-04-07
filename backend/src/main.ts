@@ -43,7 +43,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Secret', 'X-Request-Id'],
   });
 
   // ── Swagger / OpenAPI (dev only) ───────────────────────────────────────────
