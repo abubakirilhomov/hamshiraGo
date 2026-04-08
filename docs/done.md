@@ -1,5 +1,17 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (V5 Voice Agent backend module)
+
+- **[backend]** Create VoiceSession entity with jsonb messages, recommendation, suggestedSpecialization, suggestedServiceId, exchangeCount -- `src/voice-agent/entities/voice-session.entity.ts`
+- **[backend]** Create VoiceAgentService: STT via Groq Whisper, chat via Claude Haiku with RU/UZ system prompts, TTS placeholder, session CRUD, book-nurse/book-doctor helpers, admin stats/list, stale session cron cleanup -- `src/voice-agent/voice-agent.service.ts`
+- **[backend]** Create VoiceAgentController: POST transcribe (multipart), POST chat, POST synthesize, GET/DELETE session, POST book-nurse/book-doctor, admin sessions/stats endpoints with AdminGuard -- `src/voice-agent/voice-agent.controller.ts`
+- **[backend]** Create VoiceAgentModule importing TypeOrm, Config, Services, JWT -- `src/voice-agent/voice-agent.module.ts`
+- **[backend]** Create VoiceChatDto and VoiceSynthesizeDto with class-validator -- `src/voice-agent/dto/voice-chat.dto.ts`
+- **[backend]** Register VoiceAgentModule in AppModule -- `src/app.module.ts`
+- **[backend]** Add i18n keys for voice agent errors (5 keys) -- `src/common/i18n/ru.json`, `src/common/i18n/uz.json`
+- **[backend]** Add GROQ_API_KEY and OPENAI_API_KEY to .env.example -- `.env.example`
+- **[backend]** Install form-data dependency for Groq API multipart upload -- `package.json`
+
 ## 2026-04-05 (Doctor Auth system)
 
 - **[backend]** Extend Doctor entity with auth columns (passwordHash, isOnline, isBlocked, verificationStatus, facePhotoUrl, licensePhotoUrl, balance, earnings, lastSeenAt, updatedAt) + unique phone index -- `src/consultations/entities/doctor.entity.ts`

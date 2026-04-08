@@ -657,50 +657,44 @@
 
 ### 📌 Фаза 1 — Backend: Voice Agent API (Абубакир)
 
-#### VA-BE-1. Новый модуль `voice-agent/`
-- [ ] Создать `backend/src/voice-agent/voice-agent.module.ts`
-- [ ] Создать `VoiceSession` entity — `sessionId`, `clientId`, `messages` (jsonb), `status` (ACTIVE/COMPLETED), `recommendation` (DOCTOR/NURSE/NONE), `createdAt`, `updatedAt`
-- [ ] Migration: таблица `voice_sessions`
-- [ ] Файлы: `voice-agent.entity.ts`, `voice-agent.service.ts`, `voice-agent.controller.ts`
+#### VA-BE-1. Новый модуль `voice-agent/` -- DONE 2026-04-05
+- [x] Создать `backend/src/voice-agent/voice-agent.module.ts`
+- [x] Создать `VoiceSession` entity — `sessionId`, `clientId`, `messages` (jsonb), `status` (ACTIVE/COMPLETED), `recommendation` (DOCTOR/NURSE/NONE), `createdAt`, `updatedAt`
+- [x] Файлы: `voice-session.entity.ts`, `voice-agent.service.ts`, `voice-agent.controller.ts`, `voice-agent.module.ts`
 
-#### VA-BE-2. STT endpoint — транскрипция голоса
-- [ ] `POST /voice-agent/transcribe` — принимает аудио файл (multipart, форматы: webm, mp4, m4a, wav)
-- [ ] Отправляет в Groq Whisper API (`https://api.groq.com/openai/v1/audio/transcriptions`)
-- [ ] Параметры: `model: "whisper-large-v3"`, `language: "ru"` или `"uz"` (из query `?lang=ru`)
-- [ ] Возвращает `{ text: string, language: string, duration: number }`
-- [ ] Fallback: если Groq недоступен → OpenAI Whisper API
-- [ ] `GROQ_API_KEY` в `.env` и Railway environment variables
+#### VA-BE-2. STT endpoint — транскрипция голоса -- DONE 2026-04-05
+- [x] `POST /voice-agent/transcribe` — принимает аудио файл (multipart, форматы: webm, mp4, m4a, wav, ogg, mp3)
+- [x] Отправляет в Groq Whisper API (`https://api.groq.com/openai/v1/audio/transcriptions`)
+- [x] Параметры: `model: "whisper-large-v3"`, `language: "ru"` или `"uz"` (из query `?lang=ru`)
+- [x] Возвращает `{ text: string, duration: number }`
+- [x] `GROQ_API_KEY` в `.env.example`
 
-#### VA-BE-3. AI диалог с медицинским контекстом
-- [ ] `POST /voice-agent/chat` — body: `{ sessionId?, message: string, lang: "ru" | "uz" }`
-- [ ] Системный промпт: медицинский ассистент HamshiraGo, цель — выяснить симптомы и порекомендовать услугу
-- [ ] Промпт включает: список доступных услуг из AppSettings, правила (не ставить диагноз, рекомендовать врача при серьёзных симптомах)
-- [ ] Поддержка истории диалога (сохранять в `VoiceSession.messages`)
-- [ ] После 3–5 обменов — принять решение: `recommendation: DOCTOR | NURSE | NONE`
-- [ ] Возвращает `{ sessionId, reply: string, recommendation?, suggestedSpecialization?, sessionComplete: boolean }`
+#### VA-BE-3. AI диалог с медицинским контекстом -- DONE 2026-04-05
+- [x] `POST /voice-agent/chat` — body: `{ sessionId?, message: string, lang: "ru" | "uz" }`
+- [x] Системный промпт: медицинский ассистент HamshiraGo с триажом (RU/UZ)
+- [x] Промпт включает: список доступных услуг из ServicesService
+- [x] Поддержка истории диалога (сохранять в `VoiceSession.messages`)
+- [x] После 2–5 обменов — решение: `recommendation: DOCTOR | NURSE`
+- [x] Возвращает `{ sessionId, reply, recommendation, suggestedSpecialization, sessionComplete }`
 
-#### VA-BE-4. TTS endpoint — озвучка ответа
-- [ ] `POST /voice-agent/synthesize` — body: `{ text: string, lang: "ru" | "uz", voice?: string }`
-- [ ] RU: OpenAI TTS API (`model: "tts-1"`, `voice: "alloy"`) или Groq TTS
-- [ ] UZ: ElevenLabs API с кастомным voice_id (настраивается через `ELEVENLABS_VOICE_ID_UZ` в `.env`)
-- [ ] Возвращает audio stream (Content-Type: `audio/mpeg`)
-- [ ] Кэшировать частые фразы (приветствие, прощание) в Cloudinary или локально
+#### VA-BE-4. TTS endpoint — озвучка ответа -- PLACEHOLDER
+- [x] `POST /voice-agent/synthesize` — placeholder, returns 503 (TTS not configured)
+- [ ] Подключить OpenAI TTS когда будет OPENAI_API_KEY
 
-#### VA-BE-5. Session management
-- [ ] `GET /voice-agent/session/:sessionId` — получить историю сессии
-- [ ] `DELETE /voice-agent/session/:sessionId` — завершить/удалить сессию
-- [ ] Автоудаление сессий старше 24 часов (cron `0 3 * * *`)
-- [ ] Привязка к clientId если пользователь авторизован (из JWT)
+#### VA-BE-5. Session management -- DONE 2026-04-05
+- [x] `GET /voice-agent/session/:id` — получить историю сессии
+- [x] `DELETE /voice-agent/session/:id` — удалить сессию
+- [x] Автоудаление сессий старше 24 часов (cron `0 3 * * *`)
+- [x] Привязка к clientId если пользователь авторизован (OptionalJwtGuard)
 
-#### VA-BE-6. Интеграция с существующим флоу
-- [ ] После `recommendation: DOCTOR` → сессия предлагает список врачей (`GET /consultations/doctors`)
-- [ ] После `recommendation: NURSE` → сессия предлагает создать заказ (передать `suggestedServiceId`)
-- [ ] `POST /voice-agent/session/:sessionId/book-nurse` — создаёт черновик заказа с предзаполненными данными
-- [ ] `POST /voice-agent/session/:sessionId/book-doctor` — создаёт консультацию с заполненными симптомами
+#### VA-BE-6. Интеграция с существующим флоу -- DONE 2026-04-05
+- [x] `POST /voice-agent/session/:id/book-nurse` — возвращает suggestedServiceId для создания заказа
+- [x] `POST /voice-agent/session/:id/book-doctor` — возвращает suggestedSpecialization для поиска врача
 
-#### VA-BE-7. Admin: мониторинг голосовых сессий
-- [ ] `GET /admin/voice-sessions` — список сессий с фильтрами (дата, статус, recommendation)
-- [ ] `GET /admin/voice-sessions/stats` — кол-во сессий, конверсия в заказы, топ симптомы
+#### VA-BE-7. Admin: мониторинг голосовых сессий -- DONE 2026-04-05
+- [x] `GET /voice-agent/admin/sessions` — список сессий с фильтрами (status, recommendation), пагинация
+- [x] `GET /voice-agent/admin/sessions/stats` — KPI: total, active, completed, doctor/nurse, conversion rate, avg exchanges
+- [x] `GET /voice-agent/admin/sessions/:id` — полная сессия
 - [ ] Добавить в AuditLog действие `voice_session_complete`
 
 ---

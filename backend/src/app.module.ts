@@ -32,6 +32,7 @@ import { DoctorsModule } from './doctors/doctors.module';
 import { NpsModule } from './nps/nps.module';
 import { PromoModule } from './promo/promo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { VoiceAgentModule } from './voice-agent/voice-agent.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     NpsModule,
     PromoModule,
     AnalyticsModule,
+    VoiceAgentModule,
   ],
   controllers: [AppController],
   providers: [

@@ -85,5 +85,10 @@
   "NO_ADMIN_ROLE": "Токен не имеет роли администратора",
   "ADMIN_AUTH_REQUIRED": "Требуется авторизация администратора",
   "ADMIN_CREDENTIALS_NOT_CONFIGURED": "Учётные данные администратора не настроены на сервере",
-  "INVALID_PAYME_CREDENTIALS": "Неверные учётные данные Payme"
+  "INVALID_PAYME_CREDENTIALS": "Неверные учётные данные Payme",
+  "VOICE_SESSION_NOT_FOUND": "Голосовая сессия не найдена",
+  "VOICE_SESSION_COMPLETED": "Сессия уже завершена",
+  "VOICE_NO_RECOMMENDATION": "Рекомендация ещё не готова",
+  "VOICE_STT_NOT_CONFIGURED": "Распознавание речи не настроено",
+  "VOICE_TTS_NOT_CONFIGURED": "Озвучка не настроена"
 }
