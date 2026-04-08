@@ -43,6 +43,7 @@ export class ConsultationsService {
     private readonly chatMessageRepo: Repository<ChatMessage>,
     @InjectRepository(Prescription)
     private readonly prescriptionRepo: Repository<Prescription>,
+    @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
     private readonly servicesService: ServicesService,
     private readonly usersService: UsersService,
@@ -51,6 +52,7 @@ export class ConsultationsService {
     @Inject(forwardRef(() => OrderEventsGateway))
     private readonly gateway: OrderEventsGateway,
     private readonly telegramService: TelegramService,
+    @Inject(forwardRef(() => DoctorsService))
     private readonly doctorsSlotService: DoctorsService,
   ) {}
 
