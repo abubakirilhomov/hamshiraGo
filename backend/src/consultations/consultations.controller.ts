@@ -99,6 +99,7 @@ export class ConsultationsController {
       dto.doctorId,
       dto.symptoms,
       dto.suggestedSpecialization,
+      dto.slotId,
     );
   }
 

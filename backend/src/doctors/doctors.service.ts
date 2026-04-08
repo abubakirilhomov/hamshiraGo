@@ -7,20 +7,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Doctor } from '../consultations/entities/doctor.entity';
+import { DoctorSlot } from './entities/doctor-slot.entity';
 import { RegisterDoctorDto } from './dto/register-doctor.dto';
 import { LoginDoctorDto } from './dto/login-doctor.dto';
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto';
 import { VerifyDoctorDto } from './dto/verify-doctor.dto';
+import { CreateSlotsDto } from './dto/create-slots.dto';
 
 @Injectable()
 export class DoctorsService {
   constructor(
     @InjectRepository(Doctor)
     private doctorRepo: Repository<Doctor>,
+    @InjectRepository(DoctorSlot)
+    private slotRepo: Repository<DoctorSlot>,
     private jwtService: JwtService,
   ) {}
 
@@ -251,5 +255,110 @@ export class DoctorsService {
       page: Math.max(page, 1),
       totalPages: Math.ceil(total / take),
     };
+  }
+
+  // ── Doctor Slots ──────────────────────────────────────────────────────────
+
+  async createSlots(doctorId: string, dto: CreateSlotsDto): Promise<DoctorSlot[]> {
+    const [startH, startM] = dto.startTime.split(':').map(Number);
+    const [endH, endM] = dto.endTime.split(':').map(Number);
+
+    const baseDate = new Date(dto.date);
+    const start = new Date(baseDate);
+    start.setHours(startH, startM, 0, 0);
+
+    const end = new Date(baseDate);
+    end.setHours(endH, endM, 0, 0);
+
+    if (start >= end) {
+      throw new BadRequestException('START_TIME_MUST_BE_BEFORE_END_TIME');
+    }
+
+    const slots: DoctorSlot[] = [];
+    let cursor = new Date(start);
+
+    while (cursor.getTime() + dto.intervalMinutes * 60_000 <= end.getTime()) {
+      const slotStart = new Date(cursor);
+      const slotEnd = new Date(cursor.getTime() + dto.intervalMinutes * 60_000);
+
+      const slot = this.slotRepo.create({
+        doctorId,
+        startsAt: slotStart,
+        endsAt: slotEnd,
+      });
+      slots.push(slot);
+
+      cursor = slotEnd;
+    }
+
+    if (slots.length === 0) {
+      throw new BadRequestException('NO_SLOTS_GENERATED');
+    }
+
+    return this.slotRepo.save(slots);
+  }
+
+  async getAvailableSlots(doctorId: string, date: string): Promise<DoctorSlot[]> {
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return this.slotRepo.find({
+      where: {
+        doctorId,
+        isBooked: false,
+        startsAt: Between(dayStart, dayEnd),
+      },
+      order: { startsAt: 'ASC' },
+    });
+  }
+
+  async getDoctorSlots(doctorId: string, date?: string): Promise<DoctorSlot[]> {
+    if (date) {
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      return this.slotRepo.find({
+        where: {
+          doctorId,
+          startsAt: Between(dayStart, dayEnd),
+        },
+        order: { startsAt: 'ASC' },
+      });
+    }
+
+    return this.slotRepo.find({
+      where: { doctorId },
+      order: { startsAt: 'ASC' },
+    });
+  }
+
+  async bookSlot(slotId: string, consultationId: string): Promise<DoctorSlot> {
+    const slot = await this.slotRepo.findOne({ where: { id: slotId } });
+    if (!slot) throw new NotFoundException('SLOT_NOT_FOUND');
+    if (slot.isBooked) throw new BadRequestException('SLOT_ALREADY_BOOKED');
+
+    slot.isBooked = true;
+    slot.consultationId = consultationId;
+    return this.slotRepo.save(slot);
+  }
+
+  async releaseSlot(consultationId: string): Promise<void> {
+    const slot = await this.slotRepo.findOne({ where: { consultationId } });
+    if (!slot) return; // no slot linked — nothing to release
+    slot.isBooked = false;
+    slot.consultationId = null;
+    await this.slotRepo.save(slot);
+  }
+
+  async deleteSlot(doctorId: string, slotId: string): Promise<void> {
+    const slot = await this.slotRepo.findOne({ where: { id: slotId } });
+    if (!slot) throw new NotFoundException('SLOT_NOT_FOUND');
+    if (slot.doctorId !== doctorId) throw new ForbiddenException('NOT_YOUR_SLOT');
+    if (slot.isBooked) throw new BadRequestException('CANNOT_DELETE_BOOKED_SLOT');
+    await this.slotRepo.remove(slot);
   }
 }

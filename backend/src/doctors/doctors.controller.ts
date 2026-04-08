@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -30,6 +31,7 @@ import { DoctorId } from '../auth/decorators/doctor-id.decorator';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { CloudinaryService } from '../common/cloudinary.service';
 import { PushTokenDto } from '../common/dto/push-token.dto';
+import { CreateSlotsDto } from './dto/create-slots.dto';
 
 @ApiTags('doctors')
 @Controller('doctors')
@@ -94,6 +96,33 @@ export class DoctorsController {
     const chatId = body?.chatId === null ? null : body?.chatId ? String(body.chatId) : null;
     if (chatId === undefined) throw new BadRequestException('CHATID_REQUIRED');
     await this.doctorsService.saveTelegramChatId(doctorId, chatId);
+  }
+
+  // ── Slots (doctor's own) ──────────────────────────────────────────────────
+
+  @Post('me/slots')
+  @UseGuards(DoctorAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create time slots for the day' })
+  createSlots(@DoctorId() doctorId: string, @Body() dto: CreateSlotsDto) {
+    return this.doctorsService.createSlots(doctorId, dto);
+  }
+
+  @Get('me/slots')
+  @UseGuards(DoctorAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own slots (all, including booked)' })
+  getMySlots(@DoctorId() doctorId: string, @Query('date') date?: string) {
+    return this.doctorsService.getDoctorSlots(doctorId, date);
+  }
+
+  @Delete('me/slots/:slotId')
+  @UseGuards(DoctorAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an unbooked slot' })
+  deleteSlot(@DoctorId() doctorId: string, @Param('slotId') slotId: string) {
+    return this.doctorsService.deleteSlot(doctorId, slotId);
   }
 
   // ── Documents upload (Cloudinary) ─────────────────────────────────────────
@@ -238,5 +267,16 @@ export class DoctorsController {
   @ApiOperation({ summary: 'Block or unblock doctor (admin)' })
   blockDoctor(@Param('id') id: string, @Body() body: { isBlocked: boolean }) {
     return this.doctorsService.blockDoctor(id, body.isBlocked ?? true);
+  }
+
+  // ── Public: available slots for a doctor ─────────────────────────────────
+
+  @Get(':id/slots')
+  @ApiOperation({ summary: 'Get available slots for a doctor (public)' })
+  getAvailableSlots(
+    @Param('id') doctorId: string,
+    @Query('date') date: string,
+  ) {
+    return this.doctorsService.getAvailableSlots(doctorId, date);
   }
 }

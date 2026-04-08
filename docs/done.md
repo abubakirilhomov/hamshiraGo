@@ -1,5 +1,16 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Doctor Schedule / DoctorSlot system)
+
+- **[backend]** Create DoctorSlot entity (doctor_slots table) with doctorId, startsAt, endsAt, isBooked, consultationId -- `src/doctors/entities/doctor-slot.entity.ts`
+- **[backend]** Create CreateSlotsDto with date, startTime, endTime, intervalMinutes validation -- `src/doctors/dto/create-slots.dto.ts`
+- **[backend]** Add 6 slot methods to DoctorsService: createSlots, getAvailableSlots, getDoctorSlots, bookSlot, releaseSlot, deleteSlot -- `src/doctors/doctors.service.ts`
+- **[backend]** Add 4 slot endpoints to DoctorsController: POST me/slots, GET me/slots, DELETE me/slots/:slotId, GET :id/slots (public) -- `src/doctors/doctors.controller.ts`
+- **[backend]** Register DoctorSlot in DoctorsModule TypeOrmModule.forFeature -- `src/doctors/doctors.module.ts`
+- **[backend]** Add optional slotId to CreateConsultationDto -- `src/consultations/dto/create-consultation.dto.ts`
+- **[backend]** Integrate slot booking in createConsultation + slot release in cancelConsultation and doctorDeclineConsultation -- `src/consultations/consultations.service.ts`
+- **[backend]** Import DoctorsModule in ConsultationsModule for slot integration -- `src/consultations/consultations.module.ts`
+
 ## 2026-04-05 (V5 Voice Agent backend module)
 
 - **[backend]** Create VoiceSession entity with jsonb messages, recommendation, suggestedSpecialization, suggestedServiceId, exchangeCount -- `src/voice-agent/entities/voice-session.entity.ts`

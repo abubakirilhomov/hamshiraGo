@@ -15,6 +15,7 @@ import { ServicesModule } from '../services/services.module';
 import { UsersModule } from '../users/users.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { CommonModule } from '../common/common.module';
+import { DoctorsModule } from '../doctors/doctors.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CommonModule } from '../common/common.module';
     UsersModule,
     RealtimeModule,
     CommonModule,
+    DoctorsModule,
   ],
   controllers: [ConsultationsController],
   providers: [ConsultationsService, AiAgentService, VideoService],

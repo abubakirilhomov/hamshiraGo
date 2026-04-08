@@ -22,6 +22,7 @@ import { OrderEventsGateway } from '../realtime/order-events.gateway';
 import { TelegramService } from '../common/telegram.service';
 import { CreateOrderDto } from '../orders/dto/create-order.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
+import { DoctorsService } from '../doctors/doctors.service';
 
 /** Platform commission rate for consultations (15%) */
 const PLATFORM_FEE_RATE = 0.15;
@@ -50,6 +51,7 @@ export class ConsultationsService {
     @Inject(forwardRef(() => OrderEventsGateway))
     private readonly gateway: OrderEventsGateway,
     private readonly telegramService: TelegramService,
+    private readonly doctorsSlotService: DoctorsService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -101,6 +103,7 @@ export class ConsultationsService {
     doctorId: string,
     symptoms?: string,
     suggestedSpecialization?: string,
+    slotId?: string,
   ): Promise<Consultation> {
     const doctor = await this.doctorRepo.findOne({
       where: { id: doctorId, isActive: true },
@@ -123,6 +126,11 @@ export class ConsultationsService {
     });
 
     const saved = await this.consultationRepo.save(consultation);
+
+    // Book the slot if one was provided
+    if (slotId) {
+      await this.doctorsSlotService.bookSlot(slotId, saved.id);
+    }
 
     // Increment doctor's consultation count (fire-and-forget)
     this.doctorRepo
@@ -211,7 +219,12 @@ export class ConsultationsService {
     }
 
     consultation.status = 'CANCELED';
-    return this.consultationRepo.save(consultation);
+    const saved = await this.consultationRepo.save(consultation);
+
+    // Release any booked slot
+    await this.doctorsSlotService.releaseSlot(consultationId);
+
+    return saved;
   }
 
   /** Client: list own consultations (paginated) */
@@ -543,6 +556,9 @@ export class ConsultationsService {
 
     consultation.status = 'CANCELED';
     await this.consultationRepo.save(consultation);
+
+    // Release any booked slot
+    await this.doctorsSlotService.releaseSlot(id);
 
     // Notify client via push (fire-and-forget)
     const expoToken = await this.usersService
