@@ -4,6 +4,8 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,7 +18,10 @@ import { ServicesService } from '../services/services.service';
 import { UsersService } from '../users/users.service';
 import { PushNotificationsService } from '../realtime/push-notifications.service';
 import { WebPushService } from '../realtime/web-push.service';
+import { OrderEventsGateway } from '../realtime/order-events.gateway';
+import { TelegramService } from '../common/telegram.service';
 import { CreateOrderDto } from '../orders/dto/create-order.dto';
+import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 
 /** Platform commission rate for consultations (15%) */
 const PLATFORM_FEE_RATE = 0.15;
@@ -42,6 +47,9 @@ export class ConsultationsService {
     private readonly usersService: UsersService,
     private readonly pushService: PushNotificationsService,
     private readonly webPushService: WebPushService,
+    @Inject(forwardRef(() => OrderEventsGateway))
+    private readonly gateway: OrderEventsGateway,
+    private readonly telegramService: TelegramService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -126,6 +134,35 @@ export class ConsultationsService {
       .catch((err) =>
         this.logger.warn(`Failed to increment consultationCount: ${err}`),
       );
+
+    // Notify doctor via WebSocket
+    this.gateway.emitNewConsultation(doctorId, {
+      consultationId: saved.id,
+      clientId,
+      symptoms: saved.symptoms,
+      price: saved.price,
+    });
+
+    // Push notification to doctor (fire-and-forget)
+    if (doctor.pushToken) {
+      this.pushService.send([doctor.pushToken], {
+        title: 'Новая консультация',
+        body: saved.symptoms
+          ? `Симптомы: ${saved.symptoms.slice(0, 100)}`
+          : 'Новый пациент ожидает',
+        data: { consultationId: saved.id, type: 'new_consultation' },
+        channelId: 'order_updates',
+        priority: 'high',
+      }).catch(() => {});
+    }
+
+    // Telegram notification to doctor (fire-and-forget)
+    if (doctor.telegramChatId) {
+      this.telegramService.sendMessage(
+        doctor.telegramChatId,
+        `🩺 <b>Новая консультация!</b>\n\n${saved.symptoms ?? 'Пациент ожидает'}\n💰 ${saved.price.toLocaleString('ru-RU')} UZS`,
+      ).catch(() => {});
+    }
 
     return this.consultationRepo.findOne({
       where: { id: saved.id },
@@ -424,5 +461,156 @@ export class ConsultationsService {
       data: { prescriptionId, type: 'prescription' },
       url: `/prescriptions/${prescriptionId}`,
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Doctor endpoints                                                   */
+  /* ------------------------------------------------------------------ */
+
+  /** Doctor: list pending consultations assigned to this doctor */
+  async getDoctorPending(doctorId: string): Promise<Consultation[]> {
+    return this.consultationRepo.find({
+      where: { doctorId, status: 'PENDING' },
+      order: { createdAt: 'DESC' },
+      relations: { doctor: true },
+    });
+  }
+
+  /** Doctor: list own consultations (paginated) */
+  async getDoctorConsultations(doctorId: string, page = 1, limit = 20) {
+    const take = Math.min(Math.max(limit, 1), 100);
+    const skip = (Math.max(page, 1) - 1) * take;
+    const [data, total] = await this.consultationRepo.findAndCount({
+      where: { doctorId },
+      order: { createdAt: 'DESC' },
+      take,
+      skip,
+    });
+    return { data, total, page, totalPages: Math.ceil(total / take) };
+  }
+
+  /** Doctor: accept a pending consultation */
+  async doctorAcceptConsultation(
+    id: string,
+    doctorId: string,
+  ): Promise<Consultation> {
+    const consultation = await this.consultationRepo.findOne({
+      where: { id },
+    });
+    if (!consultation)
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
+    if (consultation.doctorId !== doctorId)
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
+    if (consultation.status !== 'PENDING')
+      throw new BadRequestException('CONSULTATION_ALREADY_PROCESSED');
+
+    consultation.status = 'ACTIVE';
+    const saved = await this.consultationRepo.save(consultation);
+
+    // Notify client via push (fire-and-forget)
+    const expoToken = await this.usersService
+      .getPushToken(consultation.clientId)
+      .catch(() => null);
+    if (expoToken) {
+      this.pushService
+        .send([expoToken], {
+          title: 'Консультация принята',
+          body: 'Врач принял вашу консультацию',
+          data: { consultationId: id, type: 'consultation_accepted' },
+          channelId: 'order_updates',
+          priority: 'high',
+        })
+        .catch(() => {});
+    }
+
+    return saved;
+  }
+
+  /** Doctor: decline a pending consultation */
+  async doctorDeclineConsultation(
+    id: string,
+    doctorId: string,
+  ): Promise<void> {
+    const consultation = await this.consultationRepo.findOne({
+      where: { id },
+    });
+    if (!consultation)
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
+    if (consultation.doctorId !== doctorId)
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
+    if (consultation.status !== 'PENDING')
+      throw new BadRequestException('CONSULTATION_ALREADY_PROCESSED');
+
+    consultation.status = 'CANCELED';
+    await this.consultationRepo.save(consultation);
+
+    // Notify client via push (fire-and-forget)
+    const expoToken = await this.usersService
+      .getPushToken(consultation.clientId)
+      .catch(() => null);
+    if (expoToken) {
+      this.pushService
+        .send([expoToken], {
+          title: 'Консультация отклонена',
+          body: 'Врач отклонил вашу консультацию. Попробуйте выбрать другого врача.',
+          data: { consultationId: id, type: 'consultation_declined' },
+          channelId: 'order_updates',
+          priority: 'high',
+        })
+        .catch(() => {});
+    }
+  }
+
+  /** Doctor: complete a consultation with notes + optional prescription */
+  async doctorCompleteConsultation(
+    id: string,
+    doctorId: string,
+    dto: CompleteConsultationDto,
+  ): Promise<Consultation> {
+    const consultation = await this.consultationRepo.findOne({
+      where: { id },
+    });
+    if (!consultation)
+      throw new NotFoundException('CONSULTATION_NOT_FOUND');
+    if (consultation.doctorId !== doctorId)
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
+    if (consultation.status === 'COMPLETED')
+      throw new BadRequestException('CONSULTATION_ALREADY_COMPLETED');
+    if (consultation.status === 'CANCELED')
+      throw new BadRequestException('CONSULTATION_ALREADY_CANCELED');
+
+    consultation.status = 'COMPLETED';
+    consultation.doctorNotes = dto.doctorNotes ?? null;
+    const saved = await this.consultationRepo.save(consultation);
+
+    // If a service was prescribed, create a prescription for the client
+    if (dto.createOrderServiceId) {
+      const prescription = await this.createPrescription(
+        consultation.id,
+        consultation.clientId,
+        dto.createOrderServiceId,
+        dto.doctorNotes,
+      );
+      return { ...saved, prescription } as any;
+    }
+
+    return saved;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Doctor helpers (used by TelegramBotService)                        */
+  /* ------------------------------------------------------------------ */
+
+  /** Find a doctor by ID (used by TelegramBotService for linking) */
+  async findDoctorById(id: string): Promise<Doctor | null> {
+    return this.doctorRepo.findOne({ where: { id } });
+  }
+
+  /** Save a Telegram chat ID for a doctor */
+  async saveDoctorTelegramChatId(
+    doctorId: string,
+    chatId: string,
+  ): Promise<void> {
+    await this.doctorRepo.update(doctorId, { telegramChatId: chatId });
   }
 }

@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -14,7 +16,9 @@ import { AiAgentService } from './ai-agent.service';
 import { VideoService } from './video.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { DoctorAuthGuard } from '../auth/guards/doctor-auth.guard';
 import { ClientId } from '../auth/decorators/client-id.decorator';
+import { DoctorId } from '../auth/decorators/doctor-id.decorator';
 import { AiChatDto } from './dto/ai-chat.dto';
 import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -282,5 +286,62 @@ export class ConsultationsController {
   @Get('admin/stats')
   getStats() {
     return this.consultationsService.getStats();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Doctor endpoints                                                   */
+  /* ------------------------------------------------------------------ */
+
+  /** Doctor: list pending consultations assigned to this doctor */
+  @UseGuards(DoctorAuthGuard)
+  @Get('doctor/pending')
+  getDoctorPending(@DoctorId() doctorId: string) {
+    return this.consultationsService.getDoctorPending(doctorId);
+  }
+
+  /** Doctor: list own consultations (paginated) */
+  @UseGuards(DoctorAuthGuard)
+  @Get('doctor/my')
+  getDoctorConsultations(
+    @DoctorId() doctorId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const l = Math.min(100, Math.max(1, parseInt(limit ?? '20', 10) || 20));
+    return this.consultationsService.getDoctorConsultations(doctorId, p, l);
+  }
+
+  /** Doctor: accept a pending consultation */
+  @UseGuards(DoctorAuthGuard)
+  @Post(':id/doctor-accept')
+  @HttpCode(HttpStatus.OK)
+  doctorAccept(
+    @Param('id', ParseUUIDPipe) id: string,
+    @DoctorId() doctorId: string,
+  ) {
+    return this.consultationsService.doctorAcceptConsultation(id, doctorId);
+  }
+
+  /** Doctor: decline a pending consultation */
+  @UseGuards(DoctorAuthGuard)
+  @Post(':id/doctor-decline')
+  @HttpCode(HttpStatus.OK)
+  doctorDecline(
+    @Param('id', ParseUUIDPipe) id: string,
+    @DoctorId() doctorId: string,
+  ) {
+    return this.consultationsService.doctorDeclineConsultation(id, doctorId);
+  }
+
+  /** Doctor: complete a consultation with notes */
+  @UseGuards(DoctorAuthGuard)
+  @Patch(':id/doctor-complete')
+  doctorComplete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @DoctorId() doctorId: string,
+    @Body() dto: CompleteConsultationDto,
+  ) {
+    return this.consultationsService.doctorCompleteConsultation(id, doctorId, dto);
   }
 }

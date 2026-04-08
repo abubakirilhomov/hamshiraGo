@@ -28,6 +28,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ConsultationsModule } from './consultations/consultations.module';
+import { DoctorsModule } from './doctors/doctors.module';
 import { NpsModule } from './nps/nps.module';
 import { PromoModule } from './promo/promo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -103,6 +104,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     LoyaltyModule,
     SubscriptionsModule,
     ConsultationsModule,
+    DoctorsModule,
     NpsModule,
     PromoModule,
     AnalyticsModule,

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MedicsService } from '../medics/medics.service';
 import { UsersService } from '../users/users.service';
 import { OrdersService } from '../orders/orders.service';
+import { ConsultationsService } from '../consultations/consultations.service';
 import { TelegramService } from '../common/telegram.service';
 
 /** Payload shape Telegram sends for each update */
@@ -45,6 +46,8 @@ export class TelegramBotService implements OnApplicationBootstrap {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
+    @Inject(forwardRef(() => ConsultationsService))
+    private readonly consultationsService: ConsultationsService,
     private readonly telegramService: TelegramService,
   ) {
     this.botToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
@@ -112,6 +115,14 @@ export class TelegramBotService implements OnApplicationBootstrap {
       return;
     }
 
+    // /start doctor_{doctorId} — link doctor's Telegram
+    if (text.startsWith('/start doctor_')) {
+      const doctorId = text.slice(14).trim();
+      if (!doctorId) return;
+      await this.handleDoctorLink(chatId, doctorId, msg.from?.first_name ?? 'Доктор');
+      return;
+    }
+
     // /start {medicId} — link medic's Telegram
     if (text.startsWith('/start ')) {
       const medicId = text.slice(7).trim();
@@ -168,6 +179,31 @@ export class TelegramBotService implements OnApplicationBootstrap {
       this.logger.log(`Telegram linked: client=${userId} chat=${chatId}`);
     } catch (err) {
       this.logger.error(`handleClientLink error: ${err}`);
+    }
+  }
+
+  private async handleDoctorLink(chatId: number, doctorId: string, firstName: string): Promise<void> {
+    try {
+      const doctor = await this.consultationsService.findDoctorById(doctorId);
+      if (!doctor) {
+        await this.telegramService.sendMessage(chatId, '❌ Врач не найден.');
+        return;
+      }
+      if (doctor.telegramChatId && doctor.telegramChatId !== String(chatId)) {
+        await this.telegramService.sendMessage(
+          chatId,
+          '❌ Этот аккаунт врача уже привязан к другому Telegram-чату.',
+        );
+        return;
+      }
+      await this.consultationsService.saveDoctorTelegramChatId(doctorId, String(chatId));
+      await this.telegramService.sendMessage(
+        chatId,
+        `👋 Привет, ${firstName}!\n\nВы успешно подключили Telegram-уведомления как врач HamshiraGo. 🩺`,
+      );
+      this.logger.log(`Telegram linked: doctor=${doctorId} chat=${chatId}`);
+    } catch (err) {
+      this.logger.error(`handleDoctorLink error: ${err}`);
     }
   }
 

@@ -4,8 +4,9 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 import { MedicsService } from '../../medics/medics.service';
+import { DoctorsService } from '../../doctors/doctors.service';
 
-export type JwtPayload = { sub: string; role: 'client' | 'medic' | 'admin' };
+export type JwtPayload = { sub: string; role: 'client' | 'medic' | 'admin' | 'doctor' };
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -13,6 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     configService: ConfigService,
     private usersService: UsersService,
     private medicsService: MedicsService,
+    private doctorsService: DoctorsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -30,6 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       if (!medic) throw new UnauthorizedException();
       if (medic.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED');
       return { id: medic.id, role: 'medic' as const };
+    }
+    if (payload.role === 'doctor') {
+      const doctor = await this.doctorsService.findById(payload.sub);
+      if (!doctor) throw new UnauthorizedException();
+      if (doctor.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED');
+      return { id: doctor.id, role: 'doctor' as const };
     }
     const user = await this.usersService.findById(payload.sub);
     if (!user) throw new UnauthorizedException();

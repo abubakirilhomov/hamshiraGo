@@ -1,5 +1,24 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Doctor Auth system)
+
+- **[backend]** Extend Doctor entity with auth columns (passwordHash, isOnline, isBlocked, verificationStatus, facePhotoUrl, licensePhotoUrl, balance, earnings, lastSeenAt, updatedAt) + unique phone index -- `src/consultations/entities/doctor.entity.ts`
+- **[backend]** Create DoctorsModule with full auth system (register, login, profile, push-token, telegram-chat-id, documents upload, profile-photo, admin verify/block endpoints) -- `src/doctors/`
+- **[backend]** Add doctor role to JWT strategy validate() and JwtPayload type -- `src/auth/strategies/jwt.strategy.ts`
+- **[backend]** Import DoctorsModule in AuthModule (forwardRef) and AppModule -- `src/auth/auth.module.ts`, `src/app.module.ts`
+- **[backend]** Add i18n keys for doctor errors (DOCTOR_ACCESS_ONLY, DOCTOR_NOT_AUTHENTICATED, DOCTOR_PHONE_EXISTS) -- `src/common/i18n/ru.json`, `src/common/i18n/uz.json`
+
+## 2026-04-05 (Doctor consultation endpoints + notifications)
+
+- **[backend]** Add DoctorAuthGuard and @DoctorId() decorator -- `src/auth/guards/doctor-auth.guard.ts`, `src/auth/decorators/doctor-id.decorator.ts`
+- **[backend]** Add telegramChatId and pushToken columns to Doctor entity -- `src/consultations/entities/doctor.entity.ts`
+- **[backend]** Add 5 doctor endpoints to consultations controller (pending, my, accept, decline, complete) -- `src/consultations/consultations.controller.ts`
+- **[backend]** Add doctor service methods (getDoctorPending, getDoctorConsultations, doctorAccept/Decline/Complete, findDoctorById, saveDoctorTelegramChatId) -- `src/consultations/consultations.service.ts`
+- **[backend]** Add /start doctor_{doctorId} Telegram linking -- `src/telegram/telegram-bot.service.ts`, `src/telegram/telegram-bot.module.ts`
+- **[backend]** Add doctor WebSocket room + emitNewConsultation method -- `src/realtime/order-events.gateway.ts`
+- **[backend]** Add WebSocket + Push + Telegram notifications on consultation creation -- `src/consultations/consultations.service.ts`
+- **[backend]** Update ConsultationsModule with CommonModule import, TelegramBotModule with ConsultationsModule import -- modules
+
 ## 2026-04-05 (7-screen Stitch redesign batch)
 
 - **[mobile]** Redesign Referral screen (Stitch design) -- useSafeAreaInsets, brand+bell header, centered 64px teal gift circle, "Taklif dasturi" title (Manrope_700Bold 24px), dashed border code card (2px dashed #006860, radius 16), copy icon button, "Ulashing" gradient pill CTA with share icon, stats cards (invited count + bonus amount), CAMPAIGN gradient banner with chevron, bottom padding 100 -- `mobile/app/referral.tsx`
