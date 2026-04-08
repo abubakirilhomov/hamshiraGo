@@ -44,5 +44,15 @@ medic/.env.*
 # generated native folders
 /ios
 /android
+mobile/ios/
+medic/ios/
 *.pyc
 __pycache__/
+
+# Maestro test screenshots
+mobile/*.png
+medic/*.png
+*.maestro/
+
+# Stitch design files
+stitch/
