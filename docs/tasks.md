@@ -56,6 +56,79 @@
 
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
 
+### 🔵 V5 Backend — DONE (Абубакир, 2026-04-09)
+
+- [x] **V5-BE-1** — Doctor Auth: register, login, JWT role:"doctor", profile, documents, admin verify/block — `backend/src/doctors/`
+- [x] **V5-BE-2** — DoctorAuthGuard + @DoctorId() — `backend/src/auth/guards/doctor-auth.guard.ts`
+- [x] **V5-BE-3** — Doctor consultation endpoints: pending, accept, decline, complete, prescribe — `backend/src/consultations/`
+- [x] **V5-BE-4** — Doctor WebSocket room + Push + Telegram уведомления
+- [x] **V5-BE-5** — Voice Agent module: STT (Groq Whisper), LLM (Claude Haiku), session management — `backend/src/voice-agent/`
+- [x] **V5-BE-6** — Voice Agent admin: sessions list, stats, KPI — `backend/src/voice-agent/`
+- [x] **V5-BE-7** — DoctorSlot entity + CRUD + auto-booking при консультации — `backend/src/doctors/`
+- [x] **V5-BE-8** — TTS placeholder (включить когда будет OPENAI_API_KEY)
+- [x] **V5-BE-FIX** — Circular dependency fix: ConsultationsModule ↔ OrdersModule
+
+### 🟡 V5 Frontend — Диёр (web-medic, web, admin)
+
+> Backend API готов. Endpoints задокументированы ниже. Полный план: `docs/V5_PLAN.md`
+
+#### V5-D-1. Doctor role в web-medic (приоритет!)
+- [ ] При login определять role из JWT (`medic` или `doctor`), показывать разный sidebar
+- [ ] **Doctor sidebar:** Консультации, Расписание, Рецепты, Пациенты, Профиль
+- [ ] `web-medic/app/doctor/consultations/page.tsx` — список (pending/active/completed), кнопки Принять/Отклонить
+  - API: `GET /consultations/doctor/pending`, `GET /consultations/doctor/my?page=1&limit=20`
+  - API: `POST /consultations/:id/doctor-accept`, `POST /consultations/:id/doctor-decline`
+- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — детали + видеозвонок LiveKit + завершение с notes
+  - API: `PATCH /consultations/:id/doctor-complete` body: `{ notes, createOrderServiceId? }`
+  - LiveKit: `POST /consultations/:id/call/join` body: `{ role: "doctor" }`
+- [ ] `web-medic/app/doctor/prescriptions/page.tsx` — выписанные рецепты
+- [ ] `web-medic/app/doctor/profile/page.tsx` — профиль + настройки
+  - API: `GET /doctors/me`, `PATCH /doctors/profile`
+
+#### V5-D-2. Расписание врача в web-medic
+- [ ] `web-medic/app/doctor/schedule/page.tsx` — календарь + создание слотов + просмотр занятых
+  - API: `POST /doctors/me/slots` body: `{ date, startTime, endTime, intervalMinutes }`
+  - API: `GET /doctors/me/slots?date=YYYY-MM-DD`
+  - API: `DELETE /doctors/me/slots/:slotId`
+
+#### V5-D-3. Выбор времени в web/ (клиент)
+- [ ] SlotPicker компонент на странице `/consultation`
+  - API: `GET /doctors/:id/slots?date=YYYY-MM-DD` (публичный)
+  - При бронировании: передать `slotId` в `POST /consultations`
+
+#### V5-D-4. Web Voice Agent (web/)
+- [ ] `web/app/voice-agent/page.tsx` — кнопка микрофона (MediaRecorder → blob webm)
+  - API: `POST /voice-agent/transcribe` — multipart audio file
+  - API: `POST /voice-agent/chat` body: `{ sessionId?, message, lang }`
+  - API: `POST /voice-agent/synthesize` body: `{ text, lang }` → audio/mpeg (пока 503)
+- [ ] `web/components/VoiceAssistant.tsx` — переиспользуемый компонент
+- [ ] CSS анимации: pulse при записи, wave при воспроизведении
+- [ ] Recommendation → кнопки: "Вызвать медсестру" → `/order/confirm`, "К врачу" → `/doctors`
+- [ ] Кнопка "Голосовой ассистент" на главной странице
+
+#### V5-D-5. Admin: Голосовой агент (admin/)
+- [ ] `admin/src/pages/VoiceAgent.tsx` — статистика + таблица сессий + модал с историей
+  - API: `GET /voice-agent/admin/sessions/stats` → `{ totalSessions, activeSessions, completedSessions, doctorRecommendations, nurseRecommendations, conversionRate, averageExchanges }`
+  - API: `GET /voice-agent/admin/sessions?page=1&limit=20&status=&recommendation=`
+  - API: `GET /voice-agent/admin/sessions/:id` → полная история
+- [ ] Добавить "Голосовой агент" (иконка Mic) в AdminSidebar + роут `/voice-agent`
+- [ ] Графики: сессии по дням, конверсия, топ симптомы
+
+#### V5-D-6. Doctor auth в admin/ (управление врачами)
+- [ ] Страница "Врачи" в admin — список, верификация, блокировка
+  - API: `GET /doctors/admin/all?page=1&limit=20&search=&verificationStatus=`
+  - API: `GET /doctors/admin/pending` — ожидающие верификации
+  - API: `PATCH /doctors/admin/:id/verify` body: `{ status: "APPROVED"|"REJECTED", reason? }`
+  - API: `PATCH /doctors/admin/:id/block` body: `{ isBlocked: true|false }`
+- [ ] Добавить "Врачи" в AdminSidebar
+
+### 🟡 V5 Frontend — Абубакир (mobile, medic)
+
+- [ ] **V5-A-1** — Mobile voice agent screen `mobile/app/voice-agent.tsx` — микрофон, запись, чат
+- [ ] **V5-A-2** — Doctor role в medic/ app: разные табы для medic/doctor
+- [ ] **V5-A-3** — Doctor consultation screen в medic/ app
+- [ ] **V5-A-4** — Slot picker в mobile/ при бронировании врача
+
 ### MVP V0.1 Gap Closures — DONE 2026-04-05
 
 - [x] **GAP-1** — X-Request-Id middleware — `backend/src/common/middleware/request-id.middleware.ts`, `app.module.ts`, `main.ts`
