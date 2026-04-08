@@ -1,5 +1,9 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Consultation slot picker)
+
+- **[mobile]** Add date + time slot picker to consultation booking screen: horizontal date chips (next 7 days, Uzbek day names), 3-column time slot grid with loading/empty states, fetch slots from `/doctors/:id/slots?date=`, pass `slotId` and `consultationType` in booking request -- `mobile/app/consultation.tsx`
+
 ## 2026-04-05 (Doctor role support in medic app)
 
 - **[medic]** Add `role` and `specialization` fields to MedicUser interface, add `loginDoctor` method to AuthContext, update `refreshProfile` to use correct endpoint by role -- `medic/context/AuthContext.tsx`

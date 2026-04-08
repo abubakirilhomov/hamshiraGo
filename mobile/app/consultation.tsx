@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Image } from 'expo-image';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -50,6 +50,15 @@ interface ConsultationResponse {
 
 type ConsultationType = 'video' | 'chat';
 
+interface Slot {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  isBooked: boolean;
+}
+
+const DAY_NAMES_UZ = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan'];
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function ConsultationScreen() {
@@ -69,6 +78,42 @@ export default function ConsultationScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [symptoms, setSymptoms] = useState(params.symptoms ?? '');
   const [consultationType, setConsultationType] = useState<ConsultationType>('video');
+
+  // ─── Slot picker state ──────────────────────────────────────────────
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  const dates = useMemo(() =>
+    Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return {
+        iso: d.toISOString().split('T')[0],
+        dayNum: d.getDate(),
+        dayOfWeek: d.getDay(),
+      };
+    }), []);
+
+  // Select first date on mount
+  useEffect(() => {
+    if (dates.length > 0 && !selectedDate) setSelectedDate(dates[0].iso);
+  }, []);
+
+  // Fetch slots when date changes
+  useEffect(() => {
+    if (!selectedDate || !params.doctorId || !token) return;
+    setSlotsLoading(true);
+    setSelectedSlot(null);
+    apiFetch<Slot[]>(`/doctors/${params.doctorId}/slots?date=${selectedDate}`, { token })
+      .then((data) => setSlots(Array.isArray(data) ? data : []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotsLoading(false));
+  }, [selectedDate, params.doctorId, token]);
+
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' });
 
   const fetchDoctor = useCallback(async () => {
     if (!token || !params.doctorId) return;
@@ -100,9 +145,13 @@ export default function ConsultationScreen() {
     if (!token || !params.doctorId || submitting) return;
     setSubmitting(true);
     try {
-      const body: Record<string, string> = { doctorId: params.doctorId };
+      const body: Record<string, string> = {
+        doctorId: params.doctorId,
+        consultationType,
+      };
       if (symptoms.trim()) body.symptoms = symptoms.trim();
       if (params.spec) body.suggestedSpecialization = params.spec;
+      if (selectedSlot) body.slotId = selectedSlot.id;
 
       const res = await apiFetch<ConsultationResponse>('/consultations', {
         method: 'POST',
@@ -118,7 +167,7 @@ export default function ConsultationScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [token, params.doctorId, symptoms, params.spec, submitting, t, showToast]);
+  }, [token, params.doctorId, symptoms, params.spec, consultationType, selectedSlot, submitting, t, showToast]);
 
   // ─── Loading ─────────────────────────────────────────────────────────
   if (loading) {
@@ -259,6 +308,85 @@ export default function ConsultationScreen() {
               <Text style={styles.typeSubtitle}>Cheksiz xabarlar</Text>
             </Pressable>
           </View>
+        </View>
+
+        {/* ─── Slot Picker ─────────────────────────────────────────── */}
+
+        {/* Date picker */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sana tanlang</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dateRow}
+          >
+            {dates.map((d) => {
+              const active = d.iso === selectedDate;
+              return (
+                <Pressable
+                  key={d.iso}
+                  style={[styles.dateChip, active && styles.dateChipActive]}
+                  onPress={() => setSelectedDate(d.iso)}
+                >
+                  <Text style={[styles.dateDayName, active && styles.dateTextActive]}>
+                    {DAY_NAMES_UZ[d.dayOfWeek]}
+                  </Text>
+                  <Text style={[styles.dateDayNum, active && styles.dateTextActive]}>
+                    {d.dayNum}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Time slot picker */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Vaqt tanlang</Text>
+          {slotsLoading ? (
+            <View style={styles.slotsGrid}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <View key={i} style={styles.slotSkeleton} />
+              ))}
+            </View>
+          ) : slots.length === 0 ? (
+            <View style={styles.emptySlots}>
+              <FontAwesome name="calendar-times-o" size={24} color={Theme.textTertiary} />
+              <Text style={styles.emptySlotsText}>
+                Bu kunga bo'sh vaqt yo'q
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.slotsGrid}>
+              {slots.map((slot) => {
+                const isSelected = selectedSlot?.id === slot.id;
+                const disabled = slot.isBooked;
+                return (
+                  <Pressable
+                    key={slot.id}
+                    style={[
+                      styles.slotChip,
+                      isSelected && styles.slotChipActive,
+                      disabled && styles.slotChipDisabled,
+                    ]}
+                    onPress={() => {
+                      if (disabled) return;
+                      setSelectedSlot(isSelected ? null : slot);
+                    }}
+                    disabled={disabled}
+                  >
+                    <Text style={[
+                      styles.slotText,
+                      isSelected && styles.slotTextActive,
+                      disabled && styles.slotTextDisabled,
+                    ]}>
+                      {formatTime(slot.startsAt)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Price section */}
@@ -477,6 +605,89 @@ const styles = StyleSheet.create({
   typeSubtitle: {
     fontFamily: Fonts.inter,
     fontSize: 12,
+    color: Theme.textTertiary,
+    textAlign: 'center',
+  },
+
+  /* Date chips */
+  dateRow: {
+    gap: Spacing.sm,
+    paddingHorizontal: 2,
+  },
+  dateChip: {
+    width: 60,
+    height: 72,
+    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  dateChipActive: {
+    backgroundColor: Theme.primary,
+  },
+  dateDayName: {
+    fontFamily: Fonts.interMd,
+    fontSize: 12,
+    color: Theme.textSecondary,
+  },
+  dateDayNum: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 18,
+    color: Theme.text,
+  },
+  dateTextActive: {
+    color: '#ffffff',
+  },
+
+  /* Slot grid */
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  slotChip: {
+    width: '31%' as any,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotChipActive: {
+    backgroundColor: Theme.primary,
+  },
+  slotChipDisabled: {
+    backgroundColor: Theme.surfaceContainerHigh,
+    opacity: 0.5,
+  },
+  slotText: {
+    fontFamily: Fonts.interMd,
+    fontSize: 14,
+    color: Theme.text,
+  },
+  slotTextActive: {
+    color: '#ffffff',
+  },
+  slotTextDisabled: {
+    color: Theme.textTertiary,
+  },
+  slotSkeleton: {
+    width: '31%' as any,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceContainerHigh,
+    opacity: 0.4,
+  },
+  emptySlots: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xxl,
+    gap: Spacing.sm,
+  },
+  emptySlotsText: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
     color: Theme.textTertiary,
     textAlign: 'center',
   },
