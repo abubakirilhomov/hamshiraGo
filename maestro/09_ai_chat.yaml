@@ -1,0 +1,24 @@
+appId: host.exp.Exponent
+---
+# TEST: AI Chat
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_home.yaml
+
+- tapOn:
+    text: ".*Savol berish.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: ai_chat_01
+
+# Type a message
+- runFlow:
+    when:
+      visible:
+        text: ".*tasvirla.*|.*yozing.*"
+    commands:
+      - tapOn:
+          text: ".*tasvirla.*|.*yozing.*"
+      - inputText: "Boshim og'riyapti"
+      - takeScreenshot: ai_chat_02_typed
+
+- runFlow: helpers/go_back.yaml

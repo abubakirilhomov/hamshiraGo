@@ -9,6 +9,8 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/manrope": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@livekit/react-native": "^2.10.0",
     "@livekit/react-native-expo-plugin": "^1.0.2",

@@ -1,0 +1,14 @@
+appId: host.exp.Exponent
+---
+# TEST: Courses
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+- scroll
+
+- tapOn:
+    text: ".*kurslari.*|.*Курс.*|.*Davolash.*"
+- waitForAnimationToEnd
+- takeScreenshot: courses_01
+- scroll
+- takeScreenshot: courses_02_scroll
+- runFlow: helpers/go_back.yaml

@@ -1,0 +1,17 @@
+appId: host.exp.Exponent
+---
+# TEST: Nearby Medics map
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_home.yaml
+
+# Tap nearby medics section
+- runFlow:
+    when:
+      visible:
+        text: ".*edik.*|.*mutaxassis.*"
+    commands:
+      - tapOn:
+          text: ".*edik.*|.*mutaxassis.*"
+      - waitForAnimationToEnd
+      - takeScreenshot: nearby_01_map
+      - runFlow: helpers/go_back.yaml

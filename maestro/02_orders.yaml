@@ -1,0 +1,35 @@
+appId: host.exp.Exponent
+---
+# TEST: Orders List + Order Detail
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_orders.yaml
+
+- takeScreenshot: orders_01_list
+
+# Test filter pills
+- runFlow:
+    when:
+      visible:
+        text: ".*[Bb]archasi.*|.*Все.*"
+    commands:
+      - tapOn:
+          text: ".*[Bb]archasi.*|.*Все.*"
+      - takeScreenshot: orders_02_filter_all
+
+- scroll
+- takeScreenshot: orders_03_scroll
+
+# Tap first order
+- runFlow:
+    when:
+      visible:
+        text: ".*000 UZS.*"
+    commands:
+      - tapOn:
+          text: ".*000 UZS.*"
+          index: 0
+      - waitForAnimationToEnd
+      - takeScreenshot: orders_04_detail
+      - scroll
+      - takeScreenshot: orders_05_detail_scroll
+      - runFlow: helpers/go_back.yaml

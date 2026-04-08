@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Shadow, Spacing } from '@/constants/Theme';
 
 export const styles = StyleSheet.create({
   scroll: {
@@ -20,27 +20,28 @@ export const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
   },
   backBtn: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     backgroundColor: Theme.primary,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
   },
   backBtnText: {
     color: '#fff',
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     fontSize: 15,
   },
 
-  // Header
+  /* Header card */
   headerCard: {
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    padding: Spacing.lg,
+    ...Shadow.sm,
   },
   headerTop: {
     flexDirection: 'row',
@@ -50,6 +51,7 @@ export const styles = StyleSheet.create({
   },
   serviceTitle: {
     fontSize: 18,
+    fontFamily: Fonts.manropeBd,
     fontWeight: '700',
     color: Theme.text,
     flex: 1,
@@ -58,67 +60,69 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: `${Theme.success}18`,
-    paddingHorizontal: 10,
+    backgroundColor: `${Theme.success}15`,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.full,
   },
   liveDot: {
     width: 7,
     height: 7,
-    borderRadius: Radius.xs,
+    borderRadius: 4,
     backgroundColor: Theme.success,
   },
   liveText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: Fonts.interSb,
+    fontWeight: '600',
     color: Theme.success,
   },
   priceText: {
     fontSize: 22,
+    fontFamily: Fonts.manropeXb,
     fontWeight: '800',
     color: Theme.primary,
   },
   urgentBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#fee2e2',
+    backgroundColor: Theme.errorContainer,
     borderRadius: Radius.sm,
     paddingHorizontal: 10,
     paddingVertical: Spacing.xs,
     marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#fca5a5',
   },
   urgentBadgeText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.interSb,
+    fontWeight: '600',
     color: Theme.error,
   },
   urgentFeeText: {
     fontSize: 13,
+    fontFamily: Fonts.interSb,
     fontWeight: '600',
     color: Theme.error,
     marginTop: Spacing.xs,
   },
 
-  // Section card
+  /* Section card */
   card: {
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: 14,
+    padding: Spacing.lg,
+    ...Shadow.sm,
+    gap: Spacing.md,
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.interMd,
+    fontWeight: '500',
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
-  // Stepper
+  /* Stepper */
   step: {
     flexDirection: 'row',
     gap: 14,
@@ -149,13 +153,15 @@ export const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 15,
+    fontFamily: Fonts.inter,
   },
   stepActiveHint: {
     fontSize: 13,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
   },
 
-  // Medic
+  /* Medic */
   medicRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -164,8 +170,8 @@ export const styles = StyleSheet.create({
   medicAvatar: {
     width: 48,
     height: 48,
-    borderRadius: Radius.xl,
-    backgroundColor: `${Theme.primary}18`,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -173,7 +179,7 @@ export const styles = StyleSheet.create({
   medicAvatarImg: {
     width: 48,
     height: 48,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.full,
   },
   medicInfo: {
     flex: 1,
@@ -181,11 +187,12 @@ export const styles = StyleSheet.create({
   },
   medicName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: Theme.text,
   },
 
-  // Address
+  /* Address */
   addressRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -193,12 +200,14 @@ export const styles = StyleSheet.create({
   },
   addressText: {
     fontSize: 14,
+    fontFamily: Fonts.inter,
     flex: 1,
     lineHeight: 20,
+    color: Theme.textSecondary,
   },
   mapWrap: {
     height: 220,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
   },
   map: {
@@ -223,16 +232,17 @@ export const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
+    fontFamily: Fonts.interMd,
     color: Theme.textSecondary,
-    fontWeight: '600',
   },
   mapMeta: {
     fontSize: 12,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
     marginLeft: 'auto',
   },
 
-  // Marker styles
+  /* Marker styles */
   clientMarkerWrap: {
     width: 52,
     height: 52,
@@ -280,20 +290,17 @@ export const styles = StyleSheet.create({
     borderRadius: Radius.lg,
   },
 
-  // Dispatch status banner
+  /* Dispatch status banner */
   dispatchBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: `${Theme.primary}10`,
-    borderRadius: Radius.md,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: `${Theme.primary}25`,
+    backgroundColor: Theme.primaryLight,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
   },
   dispatchBannerWaiting: {
-    backgroundColor: `${Theme.warning}10`,
-    borderColor: `${Theme.warning}25`,
+    backgroundColor: Theme.warningContainer,
   },
   dispatchBannerText: {
     flex: 1,
@@ -303,81 +310,89 @@ export const styles = StyleSheet.create({
   },
   dispatchBannerLabel: {
     fontSize: 14,
+    fontFamily: Fonts.interSb,
     fontWeight: '600',
     color: Theme.primary,
     flex: 1,
   },
   dispatchTimer: {
     fontSize: 13,
+    fontFamily: Fonts.manropeBd,
     fontWeight: '700',
     color: Theme.textSecondary,
     minWidth: 48,
     textAlign: 'right',
   },
 
-  // Canceled banner
+  /* Canceled banner */
   canceledBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: `${Theme.error}12`,
-    borderRadius: Radius.md,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: `${Theme.error}30`,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
   },
   canceledText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: Theme.error,
   },
   canceledReason: {
     fontSize: 13,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
     marginTop: 3,
   },
 
-  // Buttons
+  /* Buttons */
   cancelBtn: {
-    borderWidth: 1.5,
-    borderColor: Theme.error,
-    borderRadius: 14,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.lg,
     padding: Spacing.lg,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: Spacing.sm,
     marginTop: Spacing.xs,
   },
   cancelBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: Theme.error,
   },
   doneBtn: {
     backgroundColor: Theme.primary,
-    borderRadius: 14,
+    borderRadius: Radius.full,
     padding: Spacing.lg,
     alignItems: 'center',
     marginTop: Spacing.xs,
   },
   doneBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: '#fff',
   },
   payBtn: {
     backgroundColor: Theme.success,
-    borderRadius: 14,
+    borderRadius: Radius.full,
     padding: Spacing.lg,
     alignItems: 'center',
     marginTop: Spacing.xs,
   },
   payBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: '#fff',
   },
   payPaid: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: Theme.success,
     textAlign: 'center',
     paddingVertical: Spacing.lg,
@@ -388,50 +403,56 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    borderWidth: 1.5,
-    borderColor: Theme.primary,
-    borderRadius: 14,
-    padding: 14,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     marginTop: Spacing.xs,
-    backgroundColor: `${Theme.primary}08`,
   },
   favoriteBtnActive: {
-    borderColor: Theme.error,
-    backgroundColor: `${Theme.error}08`,
+    backgroundColor: Theme.errorContainer,
   },
   favoriteBtnText: {
     fontSize: 15,
+    fontFamily: Fonts.manropeSb,
     fontWeight: '600',
     color: Theme.primary,
   },
 
-  // Candidate medic banner (dispatch contacting)
+  /* Candidate medic banner (dispatch contacting) */
   candidateBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    padding: 14,
-    marginBottom: 10,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    ...Shadow.sm,
   },
   candidateAvatar: {
     width: 48,
     height: 48,
-    borderRadius: Radius.xl,
-    backgroundColor: `${Theme.primary}15`,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  candidateAvatarImg: { width: 48, height: 48, borderRadius: Radius.xl },
+  candidateAvatarImg: { width: 48, height: 48, borderRadius: Radius.full },
   candidateInfo: { flex: 1 },
-  candidateName: { fontSize: 15, fontWeight: '700', color: Theme.text },
-  candidateSubtitle: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
+  candidateName: {
+    fontSize: 15,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: Theme.text,
+  },
+  candidateSubtitle: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
 
-  // Rating (submitted display)
+  /* Rating (submitted display) */
   ratingDoneRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
@@ -439,13 +460,14 @@ export const styles = StyleSheet.create({
   },
   clientReviewText: {
     fontSize: 14,
+    fontFamily: Fonts.inter,
     fontStyle: 'italic',
     color: Theme.textSecondary,
     marginTop: 10,
     lineHeight: 20,
   },
 
-  // Medic rating row
+  /* Medic rating row */
   medicRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,11 +475,13 @@ export const styles = StyleSheet.create({
   },
   medicRatingText: {
     fontSize: 13,
+    fontFamily: Fonts.interSb,
     fontWeight: '600',
     color: Theme.primary,
   },
   medicReviewCount: {
     fontSize: 12,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
   },
 });

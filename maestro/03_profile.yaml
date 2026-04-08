@@ -1,0 +1,9 @@
+appId: host.exp.Exponent
+---
+# TEST: Profile + sub-screens
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+
+- takeScreenshot: profile_01_top
+- scroll
+- takeScreenshot: profile_02_menu

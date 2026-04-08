@@ -1,58 +1,83 @@
 /**
- * HamshiraGo Design System — Client App
+ * HamshiraGo Design System — "Clinical Sanctuary"
  *
- * Healthcare / medical nursing service in Uzbekistan.
- * Palette: professional teal-blue primary, warm accents, clean surfaces.
- * All existing keys are preserved for backward compatibility.
+ * Based on Google Stitch DESIGN.md specification.
+ * Fonts: Manrope (headlines) + Inter (body/labels)
+ * Colors: Medical trust teal with tonal surface layering.
  */
+
+/* ------------------------------------------------------------------ */
+/*  Fonts                                                              */
+/* ------------------------------------------------------------------ */
+
+export const Fonts = {
+  manrope:    'Manrope_400Regular',
+  manropeMd:  'Manrope_500Medium',
+  manropeSb:  'Manrope_600SemiBold',
+  manropeBd:  'Manrope_700Bold',
+  manropeXb:  'Manrope_800ExtraBold',
+  inter:      'Inter_400Regular',
+  interMd:    'Inter_500Medium',
+  interSb:    'Inter_600SemiBold',
+} as const;
 
 /* ------------------------------------------------------------------ */
 /*  Color palette                                                      */
 /* ------------------------------------------------------------------ */
 
 export const Theme = {
-  /* --- brand --- */
-  primary:      '#0C8C82',   // teal-600: trust, healthcare
-  primaryDark:  '#0A706A',   // teal-700: pressed / header
-  primaryLight: '#E6F5F3',   // teal-50:  tinted backgrounds
-  accent:       '#14B8A6',   // teal-500: highlights, links
+  /* --- brand (Stitch: primary gradient #006860 → #008379) --- */
+  primary:          '#006860',
+  primaryContainer: '#008379',
+  primaryDark:      '#004D47',
+  primaryLight:     '#E0F5F2',
+  accent:           '#008379',
 
   /* --- semantic --- */
-  success:  '#16A34A',   // green-600
-  warning:  '#F59E0B',   // amber-500
-  error:    '#DC2626',   // red-600
-  info:     '#0284C7',   // sky-600
+  success:  '#16A34A',
+  warning:  '#F59E0B',
+  error:    '#DC2626',
+  info:     '#0284C7',
 
-  /* --- surfaces --- */
-  background:      '#F6F8FA',  // cool grey canvas
-  surface:         '#FFFFFF',
-  surfaceSecondary:'#F1F5F9',  // slate-100: cards, inputs
-  overlay:         'rgba(15, 23, 42, 0.45)',
+  /* --- surfaces (tonal layering, "No-Line" rule) --- */
+  background:            '#f8f9fb',
+  surface:               '#ffffff',
+  surfaceContainerLow:   '#f2f4f6',
+  surfaceContainerHigh:  '#e8eaed',
+  surfaceSecondary:      '#f2f4f6',
+  surfaceBright:         'rgba(248,249,251,0.85)',
+  overlay:               'rgba(25, 28, 30, 0.45)',
 
-  /* --- text --- */
-  text:          '#0F172A',   // slate-900
-  textSecondary: '#64748B',   // slate-500
-  textTertiary:  '#94A3B8',   // slate-400
-  textInverse:   '#FFFFFF',
+  /* --- text (on-surface: #191c1e, never pure black) --- */
+  text:          '#191c1e',
+  textSecondary: '#5f6368',
+  textTertiary:  '#9aa0a6',
+  textInverse:   '#ffffff',
 
-  /* --- borders / dividers --- */
-  border:      '#E2E8F0',   // slate-200
-  borderLight: '#F1F5F9',   // slate-100
-  borderFocus: '#0C8C82',   // matches primary for focus rings
+  /* --- borders (ghost borders only, 20% opacity max) --- */
+  border:      'rgba(188, 201, 198, 0.20)',
+  borderLight: 'rgba(188, 201, 198, 0.12)',
+  borderFocus: '#006860',
 
-  /* --- gradient (LinearGradient `colors` prop) --- */
-  bannerGradient: ['#0C8C82', '#0A706A'] as const,
-  gradientWarm:   ['#0C8C82', '#14B8A6'] as const,
+  /* --- gradients --- */
+  primaryGradient: ['#006860', '#008379'] as const,
+  bannerGradient:  ['#006860', '#004D47'] as const,
+  gradientWarm:    ['#006860', '#008379'] as const,
 
-  /* --- status-specific (order flow) --- */
+  /* --- status (order flow) --- */
   statusCreated:  '#64748B',
   statusAssigned: '#F59E0B',
   statusAccepted: '#0284C7',
   statusOnTheWay: '#8B5CF6',
-  statusArrived:  '#14B8A6',
-  statusStarted:  '#0C8C82',
+  statusArrived:  '#008379',
+  statusStarted:  '#006860',
   statusDone:     '#16A34A',
   statusCanceled: '#DC2626',
+
+  /* --- status container backgrounds (AAA contrast) --- */
+  successContainer:   '#d4edda',
+  warningContainer:   '#fff3cd',
+  errorContainer:     '#f8d7da',
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -79,56 +104,65 @@ export const Spacing = {
   lg:  16,
   xl:  24,
   xxl: 32,
-  xxxl:48,
+  xxxl: 48,
 } as const;
 
 /* ------------------------------------------------------------------ */
-/*  Typography scale                                                   */
+/*  Typography scale (Manrope headings, Inter body)                    */
 /* ------------------------------------------------------------------ */
 
 export const Typography = {
+  /** Display — large welcome text */
+  display: { fontSize: 32, lineHeight: 40, fontWeight: '800' as const, fontFamily: Fonts.manropeXb },
   /** Large screen title */
-  h1: { fontSize: 28, lineHeight: 36, fontWeight: '700' as const },
+  h1: { fontSize: 28, lineHeight: 36, fontWeight: '700' as const, fontFamily: Fonts.manropeBd },
   /** Section title */
-  h2: { fontSize: 22, lineHeight: 30, fontWeight: '700' as const },
+  h2: { fontSize: 22, lineHeight: 30, fontWeight: '700' as const, fontFamily: Fonts.manropeBd },
   /** Card title */
-  h3: { fontSize: 18, lineHeight: 26, fontWeight: '600' as const },
+  h3: { fontSize: 18, lineHeight: 26, fontWeight: '600' as const, fontFamily: Fonts.manropeSb },
   /** Sub-heading */
-  h4: { fontSize: 16, lineHeight: 24, fontWeight: '600' as const },
+  h4: { fontSize: 16, lineHeight: 24, fontWeight: '600' as const, fontFamily: Fonts.manropeSb },
   /** Default body */
-  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' as const },
+  body: { fontSize: 15, lineHeight: 22, fontWeight: '400' as const, fontFamily: Fonts.inter },
   /** Secondary body */
-  bodySmall: { fontSize: 13, lineHeight: 20, fontWeight: '400' as const },
+  bodySmall: { fontSize: 13, lineHeight: 20, fontWeight: '400' as const, fontFamily: Fonts.inter },
   /** Labels, badges */
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const },
+  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const, fontFamily: Fonts.interMd },
   /** Buttons */
-  button: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const },
+  button: { fontSize: 16, lineHeight: 22, fontWeight: '600' as const, fontFamily: Fonts.manropeSb },
+  /** Numeric values — dashboard/price feel */
+  numeric: { fontSize: 20, lineHeight: 28, fontWeight: '700' as const, fontFamily: Fonts.manropeBd },
+  /** Input labels */
+  label: { fontSize: 14, lineHeight: 20, fontWeight: '500' as const, fontFamily: Fonts.interMd },
 } as const;
 
 /* ------------------------------------------------------------------ */
-/*  Shadow presets (iOS + Android elevation)                           */
+/*  Shadow presets — "Whisper" shadows (DESIGN.md)                     */
 /* ------------------------------------------------------------------ */
 
 export const Shadow = {
+  /** Subtle — card on surface */
   sm: {
-    shadowColor: '#0F172A',
+    shadowColor: '#191c1e',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
     elevation: 1,
   },
+  /** Medium — floating elements */
   md: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowColor: '#191c1e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
     elevation: 3,
   },
+  /** Large — bottom nav, FABs */
   lg: {
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 12,
+    shadowColor: '#191c1e',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 24,
     elevation: 6,
   },
 } as const;

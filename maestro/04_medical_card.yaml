@@ -1,0 +1,13 @@
+appId: host.exp.Exponent
+---
+# TEST: Medical Card
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+
+- tapOn:
+    text: ".*tibbiy karta.*|.*Медицинская.*"
+- waitForAnimationToEnd
+- takeScreenshot: medcard_01_top
+- scroll
+- takeScreenshot: medcard_02_scroll
+- runFlow: helpers/go_back.yaml

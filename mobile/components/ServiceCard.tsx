@@ -4,7 +4,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 
 export interface ServiceCardItem {
   id: string;
@@ -15,9 +15,13 @@ export interface ServiceCardItem {
 
 type ServiceCardProps = {
   service: ServiceCardItem;
+  gridMode?: boolean;
 };
 
-export const ServiceCard = React.memo(function ServiceCard({ service }: ServiceCardProps) {
+export const ServiceCard = React.memo(function ServiceCard({
+  service,
+  gridMode = false,
+}: ServiceCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -27,6 +31,30 @@ export const ServiceCard = React.memo(function ServiceCard({ service }: ServiceC
       params: { id: service.id },
     });
   }, [service.id, router]);
+
+  if (gridMode) {
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.gridCard, pressed && styles.cardPressed]}
+        onPress={handlePress}
+        accessibilityRole="button"
+        accessibilityLabel={`${service.title}, ${service.price.toLocaleString('ru-RU')} UZS`}
+      >
+        <View style={styles.gridIconWrap}>
+          <FontAwesome name="medkit" size={22} color="#fff" />
+        </View>
+        <Text style={styles.gridTitle} numberOfLines={2}>
+          {service.title}
+        </Text>
+        <Text style={styles.gridPrice}>
+          {service.price.toLocaleString('ru-RU')} UZS
+        </Text>
+        <View style={styles.gridAddBtn}>
+          <FontAwesome name="plus" size={12} color="#fff" />
+        </View>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -51,21 +79,19 @@ export const ServiceCard = React.memo(function ServiceCard({ service }: ServiceC
 });
 
 const styles = StyleSheet.create({
+  /* ---- List mode (backward compat) ---- */
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Theme.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: Radius.md,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+    ...Shadow.sm,
   },
   cardPressed: {
-    opacity: 0.9,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   iconWrap: {
     width: 48,
@@ -82,10 +108,56 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
     color: Theme.text,
   },
   price: {
     fontSize: 13,
+    fontFamily: Fonts.inter,
     marginTop: 2,
+  },
+
+  /* ---- Grid mode ---- */
+  gridCard: {
+    flex: 1,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    margin: 6,
+    minHeight: 160,
+    ...Shadow.sm,
+  },
+  gridIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  gridTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
+    color: Theme.text,
+    marginBottom: 4,
+  },
+  gridPrice: {
+    fontSize: 13,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
+    marginBottom: Spacing.sm,
+  },
+  gridAddBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

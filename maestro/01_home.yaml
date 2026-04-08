@@ -1,0 +1,12 @@
+appId: host.exp.Exponent
+---
+# TEST: Home Screen
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_home.yaml
+
+- takeScreenshot: home_01_top
+- assertVisible: "HamshiraGo"
+- scroll
+- takeScreenshot: home_02_catalog
+- scroll
+- takeScreenshot: home_03_bottom

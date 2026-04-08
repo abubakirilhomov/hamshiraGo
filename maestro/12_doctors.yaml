@@ -1,0 +1,15 @@
+appId: host.exp.Exponent
+---
+# TEST: Doctors list
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+- scroll
+
+- tapOn:
+    text: ".*Maslahat.*|.*Shifokor.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: doctors_01
+- scroll
+- takeScreenshot: doctors_02_scroll
+- runFlow: helpers/go_back.yaml

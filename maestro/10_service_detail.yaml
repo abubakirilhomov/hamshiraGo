@@ -1,0 +1,31 @@
+appId: host.exp.Exponent
+---
+# TEST: Service Detail + Order Location
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_home.yaml
+- scroll
+
+# Tap first service
+- tapOn:
+    text: ".*UZS.*"
+    index: 0
+- waitForAnimationToEnd
+- takeScreenshot: service_01_detail
+- scroll
+- takeScreenshot: service_02_scroll
+
+# Tap Order button
+- runFlow:
+    when:
+      visible:
+        text: ".*uyurtma berish.*"
+    commands:
+      - tapOn:
+          text: ".*uyurtma berish.*"
+      - waitForAnimationToEnd
+      - takeScreenshot: order_01_location
+      - scroll
+      - takeScreenshot: order_02_location_form
+      - runFlow: helpers/go_back.yaml
+
+- runFlow: helpers/go_back.yaml

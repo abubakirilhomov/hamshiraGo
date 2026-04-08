@@ -1,0 +1,13 @@
+appId: host.exp.Exponent
+---
+# TEST: Favorites
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+
+- tapOn:
+    text: ".*mediklarim.*|.*Избранн.*|.*Sevimli.*"
+- waitForAnimationToEnd
+- takeScreenshot: favorites_01
+- scroll
+- takeScreenshot: favorites_02_scroll
+- runFlow: helpers/go_back.yaml
