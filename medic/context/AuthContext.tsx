@@ -7,12 +7,15 @@ const TOKEN_KEY = 'medic_auth_token';
 const MEDIC_KEY = 'medic_auth_user';
 
 export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type UserRole = 'medic' | 'doctor';
 
 export interface MedicUser {
   id: string;
   phone: string;
   name: string;
+  role?: UserRole;
   experienceYears: number;
+  specialization?: string;
   rating: number | null;
   reviewCount: number;
   balance: number;
@@ -28,6 +31,7 @@ export interface MedicUser {
   workZoneLat?: number | null;
   workZoneLng?: number | null;
   workZoneRadius?: number | null;
+  consultationCount?: number;
 }
 
 interface AuthState {
@@ -38,10 +42,12 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<void>;
+  loginDoctor: (phone: string, password: string) => Promise<void>;
   register: (phone: string, password: string, name: string, experienceYears?: number) => Promise<void>;
   updateOnlineStatus: (isOnline: boolean) => void;
   refreshProfile: () => Promise<void>;
   logout: () => void;
+  role: UserRole;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -81,8 +87,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: JSON.stringify({ phone, password }),
     });
-    await persist(res.access_token, res.medic);
-    setState({ medic: res.medic, token: res.access_token, isLoading: false });
+    const medic = { ...res.medic, role: 'medic' as UserRole };
+    await persist(res.access_token, medic);
+    setState({ medic, token: res.access_token, isLoading: false });
+  };
+
+  const loginDoctor = async (phone: string, password: string) => {
+    const res = await apiFetch<{ access_token: string; doctor: MedicUser }>('/doctors/login', {
+      method: 'POST',
+      body: JSON.stringify({ phone, password }),
+    });
+    const doctor = { ...res.doctor, role: 'doctor' as UserRole };
+    await persist(res.access_token, doctor);
+    setState({ medic: doctor, token: res.access_token, isLoading: false });
   };
 
   const register = async (
@@ -95,8 +112,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       body: JSON.stringify({ phone, password, name, experienceYears }),
     });
-    await persist(res.access_token, res.medic);
-    setState({ medic: res.medic, token: res.access_token, isLoading: false });
+    const medic = { ...res.medic, role: 'medic' as UserRole };
+    await persist(res.access_token, medic);
+    setState({ medic, token: res.access_token, isLoading: false });
   };
 
   const updateOnlineStatus = (isOnline: boolean) => {
@@ -117,9 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentToken = state.token;
     if (!currentToken) return;
     try {
-      const profile = await apiFetch<MedicUser>('/medics/me', { token: currentToken });
-      setState((prev) => ({ ...prev, medic: profile }));
-      await SecureStore.setItemAsync(MEDIC_KEY, JSON.stringify(profile)).catch(() => {});
+      const currentRole = state.medic?.role ?? 'medic';
+      const endpoint = currentRole === 'doctor' ? '/doctors/me' : '/medics/me';
+      const profile = await apiFetch<MedicUser>(endpoint, { token: currentToken });
+      const profileWithRole = { ...profile, role: currentRole };
+      setState((prev) => ({ ...prev, medic: profileWithRole }));
+      await SecureStore.setItemAsync(MEDIC_KEY, JSON.stringify(profileWithRole)).catch(() => {});
     } catch {
       // ignore — keep stale data
     }
@@ -145,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, updateOnlineStatus, refreshProfile, logout }}>
+    <AuthContext.Provider value={{ ...state, login, loginDoctor, register, updateOnlineStatus, refreshProfile, logout, role: (state.medic?.role ?? 'medic') as UserRole }}>
       {children}
     </AuthContext.Provider>
   );

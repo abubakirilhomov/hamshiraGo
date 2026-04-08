@@ -19,10 +19,13 @@ import { trackEvent } from '@/utils/analytics';
 
 type Mode = 'login' | 'register';
 
+type LoginRole = 'medic' | 'doctor';
+
 export default function AuthScreen() {
-  const { login, register } = useAuth();
+  const { login, loginDoctor, register } = useAuth();
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('login');
+  const [loginRole, setLoginRole] = useState<LoginRole>('medic');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -47,8 +50,13 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (mode === 'login') {
-        await login(phone.trim(), password);
-        trackEvent('login').catch(() => {});
+        if (loginRole === 'doctor') {
+          await loginDoctor(phone.trim(), password);
+          trackEvent('login_doctor').catch(() => {});
+        } else {
+          await login(phone.trim(), password);
+          trackEvent('login').catch(() => {});
+        }
       } else {
         const years = parseInt(experienceYears) || 0;
         await register(phone.trim(), password, name.trim(), years);
@@ -118,6 +126,29 @@ export default function AuthScreen() {
               </Text>
             </Pressable>
           </View>
+
+          {mode === 'login' && (
+            <View style={styles.roleRow}>
+              <Pressable
+                style={[styles.roleBtn, loginRole === 'medic' && styles.roleBtnActive]}
+                onPress={() => { setLoginRole('medic'); setError(null); }}
+              >
+                <FontAwesome name="plus-square" size={14} color={loginRole === 'medic' ? Theme.primary : Theme.textSecondary} />
+                <Text style={[styles.roleBtnText, loginRole === 'medic' && styles.roleBtnTextActive]}>
+                  {t('auth.roleMedic', { defaultValue: 'Hamshira' })}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.roleBtn, loginRole === 'doctor' && styles.roleBtnActive]}
+                onPress={() => { setLoginRole('doctor'); setError(null); }}
+              >
+                <FontAwesome name="stethoscope" size={14} color={loginRole === 'doctor' ? Theme.primary : Theme.textSecondary} />
+                <Text style={[styles.roleBtnText, loginRole === 'doctor' && styles.roleBtnTextActive]}>
+                  {t('auth.roleDoctor', { defaultValue: 'Doktor' })}
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           {mode === 'register' && (
             <>
@@ -249,6 +280,36 @@ const styles = StyleSheet.create({
   },
   tabText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
   tabTextActive: { color: Theme.primary },
+  roleRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: 16,
+  },
+  roleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: Radius.sm,
+    borderWidth: 1.5,
+    borderColor: Theme.border,
+    backgroundColor: Theme.background,
+  },
+  roleBtnActive: {
+    borderColor: Theme.primary,
+    backgroundColor: `${Theme.primary}12`,
+  },
+  roleBtnText: {
+    fontSize: Typography.bodySmall.fontSize,
+    fontWeight: '500',
+    color: Theme.textSecondary,
+  },
+  roleBtnTextActive: {
+    color: Theme.primary,
+    fontWeight: '700',
+  },
   label: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginBottom: 6 },
   input: {
     backgroundColor: Theme.background,

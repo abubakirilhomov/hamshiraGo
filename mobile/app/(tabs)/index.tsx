@@ -239,6 +239,24 @@ export default function HomeScreen() {
         </View>
       </Pressable>
 
+      {/* ---- Voice Agent Banner ---- */}
+      <Pressable
+        style={({ pressed }) => [styles.voiceBanner, pressed && { opacity: 0.9 }]}
+        testID="voice_agent_banner"
+        onPress={() => router.push('/voice-agent')}
+      >
+        <View style={styles.voiceBannerLeft}>
+          <View style={styles.voiceBannerIconCircle}>
+            <FontAwesome name="microphone" size={18} color="#fff" />
+          </View>
+          <View style={styles.voiceBannerTexts}>
+            <Text style={styles.voiceBannerTitle}>Ovozli AI Hamshira</Text>
+            <Text style={styles.voiceBannerDesc}>Gapirib aytib bering</Text>
+          </View>
+        </View>
+        <FontAwesome name="chevron-right" size={14} color="rgba(255,255,255,0.7)" />
+      </Pressable>
+
       {/* ---- Nearby Medics ---- */}
       {nearbyMedics.length > 0 && (
         <View style={styles.section}>
@@ -447,6 +465,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: Fonts.manropeSb,
     color: Theme.primary,
+  },
+
+  /* ---- Voice Agent Banner ---- */
+  voiceBanner: {
+    backgroundColor: Theme.accent,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  voiceBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  voiceBannerIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  voiceBannerTexts: {
+    flex: 1,
+  },
+  voiceBannerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
+    color: '#fff',
+  },
+  voiceBannerDesc: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
 
   /* ---- Sections ---- */

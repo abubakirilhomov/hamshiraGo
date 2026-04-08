@@ -1,5 +1,23 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Doctor role support in medic app)
+
+- **[medic]** Add `role` and `specialization` fields to MedicUser interface, add `loginDoctor` method to AuthContext, update `refreshProfile` to use correct endpoint by role -- `medic/context/AuthContext.tsx`
+- **[medic]** Create `(doctor-tabs)/_layout.tsx` with 3 doctor-specific tabs: Konsultatsiyalar (stethoscope), Bemorlar (users), Profil (user) -- `medic/app/(doctor-tabs)/_layout.tsx`
+- **[medic]** Create `(doctor-tabs)/index.tsx` -- pending consultations screen: fetch GET /consultations/doctor/pending, accept/decline with gradient pill buttons, verification banner -- `medic/app/(doctor-tabs)/index.tsx`
+- **[medic]** Create `(doctor-tabs)/my-patients.tsx` -- consultation history with active/history sections, status badges, pagination, tap to detail -- `medic/app/(doctor-tabs)/my-patients.tsx`
+- **[medic]** Create `(doctor-tabs)/profile.tsx` -- doctor profile: specialization, consultation count, rating, balance, earnings, Telegram, schedule link, language picker, logout -- `medic/app/(doctor-tabs)/profile.tsx`
+- **[medic]** Create `doctor-consultation/[id].tsx` -- consultation detail: symptoms card, client info, slot time, video call button (LiveKit), doctor notes textarea, gradient pill "Yakunlash" CTA -- `medic/app/doctor-consultation/[id].tsx`
+- **[medic]** Update root _layout.tsx: role-based routing (doctor -> (doctor-tabs), medic -> (tabs)), register (doctor-tabs) and doctor-consultation/[id] Stack.Screen entries, handle consultation push notifications -- `medic/app/_layout.tsx`
+- **[medic]** Add Hamshira/Doktor role selector to auth screen login mode with loginDoctor flow -- `medic/app/auth.tsx`
+
+## 2026-04-05 (V5-A-1: Mobile Voice Agent screen)
+
+- **[mobile]** Create voice-agent.tsx screen with mic recording (expo-av), transcribe via /voice-agent/transcribe, chat via /voice-agent/chat, chat history FlatList, recommendation card (DOCTOR/NURSE), quick suggestion chips -- `mobile/app/voice-agent.tsx`
+- **[mobile]** Add voice-agent Stack.Screen to root layout -- `mobile/app/_layout.tsx`
+- **[mobile]** Add Voice Agent banner ("Ovozli AI Hamshira") to home screen below AI Chat banner -- `mobile/app/(tabs)/index.tsx`
+- **[mobile]** Install expo-av dependency for audio recording -- `mobile/package.json`
+
 ## 2026-04-05 (Doctor Schedule / DoctorSlot system)
 
 - **[backend]** Create DoctorSlot entity (doctor_slots table) with doctorId, startsAt, endsAt, isBooked, consultationId -- `src/doctors/entities/doctor-slot.entity.ts`

@@ -124,9 +124,9 @@
 
 ### 🟡 V5 Frontend — Абубакир (mobile, medic)
 
-- [ ] **V5-A-1** — Mobile voice agent screen `mobile/app/voice-agent.tsx` — микрофон, запись, чат
-- [ ] **V5-A-2** — Doctor role в medic/ app: разные табы для medic/doctor
-- [ ] **V5-A-3** — Doctor consultation screen в medic/ app
+- [x] **V5-A-1** — Mobile voice agent screen `mobile/app/voice-agent.tsx` — микрофон, запись, чат
+- [x] **V5-A-2** — Doctor role в medic/ app: разные табы для medic/doctor — `medic/app/(doctor-tabs)/`, `medic/context/AuthContext.tsx`, `medic/app/auth.tsx`, `medic/app/_layout.tsx`
+- [x] **V5-A-3** — Doctor consultation screen в medic/ app — `medic/app/doctor-consultation/[id].tsx`
 - [ ] **V5-A-4** — Slot picker в mobile/ при бронировании врача
 
 ### MVP V0.1 Gap Closures — DONE 2026-04-05

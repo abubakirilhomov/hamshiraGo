@@ -285,6 +285,7 @@ function RootLayoutNav() {
         <Stack.Screen name="courses" options={{ headerShown: false }} />
         <Stack.Screen name="nearby-medics" options={{ headerShown: false }} />
         <Stack.Screen name="nps" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="voice-agent" options={{ headerShown: false }} />
         <Stack.Screen name="video-call" options={{ title: 'Video Call', headerShown: false, orientation: 'portrait' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
