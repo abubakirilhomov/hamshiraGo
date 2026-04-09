@@ -90,5 +90,8 @@
   "VOICE_SESSION_COMPLETED": "Sessiya allaqachon yakunlangan",
   "VOICE_NO_RECOMMENDATION": "Tavsiya hali tayyor emas",
   "VOICE_STT_NOT_CONFIGURED": "Nutqni aniqlash sozlanmagan",
-  "VOICE_TTS_NOT_CONFIGURED": "Ovozli javob sozlanmagan"
+  "VOICE_TTS_NOT_CONFIGURED": "Ovozli javob sozlanmagan",
+  "SALOMAT_RATE_LIMIT": "Bugungi xabarlar limiti tugadi. Ertaga urinib ko'ring yoki shifokorga yoziling.",
+  "SALOMAT_RATE_LIMIT_WARNING": "Bugun kam xabarlar qoldi",
+  "SALOMAT_CONSENT_REQUIRED": "Salomat dan foydalanish uchun rozilik talab qilinadi"
 }

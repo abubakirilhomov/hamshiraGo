@@ -1,5 +1,23 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Mobile UI: Salomat rebrand, notifications, service detail fix)
+
+- **[mobile]** Rename "AI Hamshira" to "Salomat" in ai-chat header, home banner, voice-agent header; change greeting to Uzbek; add empty-state suggestion chips with 4 medical scenarios -- `mobile/app/ai-chat.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/voice-agent.tsx`
+- **[mobile]** Fix service detail back button overlapping iOS status bar -- set absolute `top: insets.top + 16` -- `mobile/app/service/[id].tsx`
+- **[mobile]** Create notifications screen with date-grouped list, empty/skeleton states, unread dot, AsyncStorage persistence -- `mobile/app/notifications.tsx`
+- **[mobile]** Add unread notification badge (red circle) on home screen bell icon, refresh on tab focus -- `mobile/app/(tabs)/index.tsx`
+- **[mobile]** Register notifications route in root layout -- `mobile/app/_layout.tsx`
+- **[mobile]** Create Salomat disclaimer modal (first-time consent, heartbeat icon, gradient accept button, AsyncStorage flag) -- `mobile/components/SalomatDisclaimer.tsx`
+- **[mobile]** Integrate Salomat disclaimer into ai-chat screen -- checks consent before first use, navigates back on decline -- `mobile/app/ai-chat.tsx`
+
+## 2026-04-05 (Salomat AI assistant)
+
+- **[backend]** Create Salomat knowledge base: 6 files (triage.md, specialties.md, safety.md, tone.md, conversation-flow.md, disclaimer.md) -- `backend/salomat-knowledge/`
+- **[docs]** Create 38 test scenarios for Salomat covering all medical categories, red flags, and prompt injection -- `docs/salomat-scenarios.md`
+- **[backend]** Rename AI assistant to Salomat in ai-agent.service.ts: load knowledge base from files, Uzbek greeting on first message then Russian only, per-patient daily rate limiter (50 msg/day) -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Rename AI assistant to Salomat in voice-agent.service.ts: load knowledge base from files, update buildSystemPrompt with Salomat identity and language rules -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** Add Salomat i18n keys (SALOMAT_RATE_LIMIT, SALOMAT_RATE_LIMIT_WARNING, SALOMAT_CONSENT_REQUIRED) -- `backend/src/common/i18n/ru.json`, `backend/src/common/i18n/uz.json`
+
 ## 2026-04-05 (Consultation slot picker)
 
 - **[mobile]** Add date + time slot picker to consultation booking screen: horizontal date chips (next 7 days, Uzbek day names), 3-column time slot grid with loading/empty states, fetch slots from `/doctors/:id/slots?date=`, pass `slotId` and `consultationType` in booking request -- `mobile/app/consultation.tsx`

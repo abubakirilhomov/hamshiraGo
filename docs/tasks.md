@@ -128,6 +128,11 @@
 - [x] **V5-A-2** — Doctor role в medic/ app: разные табы для medic/doctor — `medic/app/(doctor-tabs)/`, `medic/context/AuthContext.tsx`, `medic/app/auth.tsx`, `medic/app/_layout.tsx`
 - [x] **V5-A-3** — Doctor consultation screen в medic/ app — `medic/app/doctor-consultation/[id].tsx`
 - [ ] **V5-A-4** — Slot picker в mobile/ при бронировании врача
+- [x] **V5-A-5** — Rename AI Hamshira -> Salomat (ai-chat, voice-agent, home banner) + Uzbek greeting + empty-state suggestion chips
+- [x] **V5-A-6** — Fix service/[id].tsx back button overlapping iOS status bar (absolute top: insets.top)
+- [x] **V5-A-7** — Create notifications screen (mobile/app/notifications.tsx) — grouped by date, empty/skeleton states, AsyncStorage persistence
+- [x] **V5-A-8** — Add unread badge on home bell icon + navigate to /notifications
+- [x] **V5-A-9** — Salomat disclaimer modal (mobile/components/SalomatDisclaimer.tsx) — first-time consent, AsyncStorage flag
 
 ### MVP V0.1 Gap Closures — DONE 2026-04-05
 

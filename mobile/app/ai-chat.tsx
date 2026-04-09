@@ -8,13 +8,15 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
+import { SalomatDisclaimer } from '@/components/SalomatDisclaimer';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
@@ -55,6 +57,13 @@ const QUICK_SUGGESTIONS = [
   'Uyqusizlik',
 ];
 
+const EMPTY_SUGGESTIONS = [
+  'У меня болит горло третий день',
+  'У ребёнка температура 38, что делать?',
+  'Болит голова с утра',
+  'Изжога после еды',
+];
+
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function AiChatScreen() {
@@ -64,11 +73,33 @@ export default function AiChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('salomat_consent_accepted')
+      .then((val) => {
+        if (val !== 'true') setShowDisclaimer(true);
+        setConsentChecked(true);
+      })
+      .catch(() => setConsentChecked(true));
+  }, []);
+
+  const handleConsentAccept = useCallback(async () => {
+    await AsyncStorage.setItem('salomat_consent_accepted', 'true');
+    setShowDisclaimer(false);
+  }, []);
+
+  const handleConsentDecline = useCallback(() => {
+    setShowDisclaimer(false);
+    router.back();
+  }, []);
+
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       id: 'greeting',
       role: 'assistant',
-      content: t('aiChat.greeting'),
+      content: 'Ассалому алайкум! Мен Salomat — сизнинг соғлиғингиз бўйича ёрдамчингизман.',
       timestamp: new Date(),
     },
   ]);
@@ -166,7 +197,7 @@ export default function AiChatScreen() {
             <FontAwesome name="commenting" size={20} color={Theme.primary} />
           </View>
           <View>
-            <Text style={styles.headerTitle}>AI Hamshira</Text>
+            <Text style={styles.headerTitle}>Salomat</Text>
             <View style={styles.onlineRow}>
               <View style={styles.onlineDot} />
               <Text style={styles.onlineText}>ONLINE</Text>
@@ -196,6 +227,21 @@ export default function AiChatScreen() {
             t={t}
           />
         ))}
+
+        {/* Empty-state suggestion chips — shown when only the greeting exists */}
+        {messages.length === 1 && messages[0].id === 'greeting' && (
+          <View style={styles.emptySuggestions}>
+            {EMPTY_SUGGESTIONS.map((chip) => (
+              <Pressable
+                key={chip}
+                style={({ pressed }) => [styles.emptySuggestionChip, pressed && { opacity: 0.7 }]}
+                onPress={() => handleSend(chip)}
+              >
+                <Text style={styles.emptySuggestionText}>{chip}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {loading && (
           <View style={styles.typingRow}>
@@ -258,6 +304,13 @@ export default function AiChatScreen() {
           />
         </Pressable>
       </View>
+
+      {/* Salomat disclaimer modal — first-time only */}
+      <SalomatDisclaimer
+        visible={showDisclaimer}
+        onAccept={handleConsentAccept}
+        onDecline={handleConsentDecline}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -570,6 +623,26 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.interMd,
     fontSize: 13,
     color: Theme.text,
+  },
+
+  /* ── Empty-state suggestion chips ── */
+  emptySuggestions: {
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  emptySuggestionChip: {
+    backgroundColor: Theme.surface,
+    borderWidth: 1,
+    borderColor: Theme.border,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.lg,
+  },
+  emptySuggestionText: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.text,
+    lineHeight: 20,
   },
 
   /* ── Input bar ── */
