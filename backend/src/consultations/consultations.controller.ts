@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -9,11 +10,14 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ConsultationsService } from './consultations.service';
 import { AiAgentService } from './ai-agent.service';
 import { VideoService } from './video.service';
+import { SalomatAuditService } from './salomat-audit.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { DoctorAuthGuard } from '../auth/guards/doctor-auth.guard';
@@ -25,6 +29,7 @@ import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 import { ConfirmPrescriptionDto } from './dto/confirm-prescription.dto';
+import { UsersService } from '../users/users.service';
 
 @Controller('consultations')
 export class ConsultationsController {
@@ -32,6 +37,8 @@ export class ConsultationsController {
     private readonly consultationsService: ConsultationsService,
     private readonly aiAgentService: AiAgentService,
     private readonly videoService: VideoService,
+    private readonly salomatAuditService: SalomatAuditService,
+    private readonly usersService: UsersService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -45,7 +52,14 @@ export class ConsultationsController {
     @ClientId() userId: string,
     @Body() dto: AiChatDto,
   ) {
-    const reply = await this.aiAgentService.chat(dto.messages, userId);
+    // Load patient context from user profile
+    const patientContext = await this.loadPatientContext(userId);
+
+    const reply = await this.aiAgentService.chat(
+      dto.messages,
+      userId,
+      patientContext,
+    );
     const recommendation = this.aiAgentService.parseRecommendation(reply);
 
     // Save user's last message and AI reply (fire-and-forget)
@@ -65,6 +79,69 @@ export class ConsultationsController {
         ? recommendation
         : undefined,
     };
+  }
+
+  /** AI-powered symptom triage chat — streaming via SSE */
+  @UseGuards(JwtAuthGuard)
+  @Post('ai-chat/stream')
+  @Header('Content-Type', 'text/event-stream')
+  @Header('Cache-Control', 'no-cache')
+  @Header('Connection', 'keep-alive')
+  async aiChatStream(
+    @ClientId() userId: string,
+    @Body() body: { messages: { role: string; content: string }[] },
+    @Res() res: Response,
+  ) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      const patientContext = await this.loadPatientContext(userId);
+      let fullReply = '';
+
+      for await (const chunk of this.aiAgentService.chatStream(
+        body.messages,
+        userId,
+        patientContext,
+      )) {
+        fullReply += chunk;
+        res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+      }
+
+      // Parse recommendation from full reply
+      const recommendation =
+        this.aiAgentService.parseRecommendation(fullReply);
+      res.write(
+        `data: ${JSON.stringify({ done: true, recommendation })}\n\n`,
+      );
+
+      // Save to DB (fire-and-forget)
+      const lastUserMsg = body.messages[body.messages.length - 1];
+      if (lastUserMsg?.role === 'user') {
+        this.consultationsService
+          .saveChatMessage(null, userId, 'user', lastUserMsg.content)
+          .catch(() => {});
+      }
+      this.consultationsService
+        .saveChatMessage(null, userId, 'assistant', fullReply)
+        .catch(() => {});
+
+      // Audit if red flag detected
+      if (
+        fullReply.includes('103') ||
+        fullReply.includes('скорую') ||
+        fullReply.includes('tez yordam')
+      ) {
+        this.salomatAuditService
+          .logRedFlag(userId, fullReply)
+          .catch(() => {});
+      }
+    } catch (err) {
+      res.write(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`);
+    }
+
+    res.end();
   }
 
   /* ------------------------------------------------------------------ */
@@ -212,6 +289,15 @@ export class ConsultationsController {
   /*  Admin endpoints                                                    */
   /* ------------------------------------------------------------------ */
 
+  /** Admin: Salomat audit stats */
+  @UseGuards(AdminGuard)
+  @Get('admin/salomat-audit/stats')
+  getSalomatAuditStats(@Query('days') days?: string) {
+    return this.salomatAuditService.getStats(
+      parseInt(days ?? '30', 10) || 30,
+    );
+  }
+
   /** Admin: create a doctor */
   @UseGuards(AdminGuard)
   @Post('admin/doctors')
@@ -343,6 +429,29 @@ export class ConsultationsController {
     @DoctorId() doctorId: string,
     @Body() dto: CompleteConsultationDto,
   ) {
-    return this.consultationsService.doctorCompleteConsultation(id, doctorId, dto);
+    return this.consultationsService.doctorCompleteConsultation(
+      id,
+      doctorId,
+      dto,
+    );
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Private helpers                                                    */
+  /* ------------------------------------------------------------------ */
+
+  /** Load patient context from user profile for Salomat */
+  private async loadPatientContext(
+    userId: string,
+  ): Promise<{ name?: string } | undefined> {
+    try {
+      const user = await this.usersService.findById(userId);
+      if (user?.name) {
+        return { name: user.name };
+      }
+    } catch {
+      // ignore — patient context is optional
+    }
+    return undefined;
   }
 }

@@ -1,5 +1,26 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Backend: Salomat SSE streaming + audit logging)
+
+- **[backend]** Add SSE streaming endpoint `POST /consultations/ai-chat/stream` with chunked text events and final recommendation -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Add `chatStream()` AsyncGenerator method to AiAgentService with prompt caching (`cache_control: ephemeral`) -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Create SalomatAuditLog entity (`salomat_audit_logs` table) with clientId, action, specialization, details, triageLevel -- `backend/src/consultations/entities/salomat-audit-log.entity.ts`
+- **[backend]** Create SalomatAuditService with log, logRedFlag, logDoctorReferral, logNurseReferral, logSafeguard, logRateLimit, getStats -- `backend/src/consultations/salomat-audit.service.ts`
+- **[backend]** Add admin audit stats endpoint `GET /consultations/admin/salomat-audit/stats?days=30` -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Integrate audit logging into `chat()` method: auto-detect RED_FLAG (103/skoraya), DOCTOR_REFERRAL, NURSE_REFERRAL from AI replies -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Log RATE_LIMIT_HIT on rate limit exceeded -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Add optional `patientContext` (name, age, gender, allergies, chronicDiseases) parameter to chat/chatStream, append to system prompt -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Load patient name from UsersService in controller and pass as patientContext to AI -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Extract `buildSystemPrompt()` helper to reduce duplication between chat/chatStream -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Register SalomatAuditLog entity and SalomatAuditService in ConsultationsModule -- `backend/src/consultations/consultations.module.ts`
+
+## 2026-04-05 (Mobile: Salomat AI streaming + action buttons)
+
+- **[mobile]** Add SSE streaming for Salomat AI chat with fallback to non-streaming on web/error -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Add action buttons inside AI message bubbles: "Shifokor tanlash" (doctor), "Hamshira chaqirish" (nurse), "103 ga qo'ng'iroq qilish" (emergency call) -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Clean recommendation markers (РЕКОМЕНДАЦИЯ/СПЕЦИАЛИЗАЦИЯ) from displayed AI text -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Replace ActivityIndicator typing indicator with animated dots, show only while assistant message is empty -- `mobile/app/ai-chat.tsx`
+
 ## 2026-04-05 (Mobile UI: Salomat rebrand, notifications, service detail fix)
 
 - **[mobile]** Rename "AI Hamshira" to "Salomat" in ai-chat header, home banner, voice-agent header; change greeting to Uzbek; add empty-state suggestion chips with 4 medical scenarios -- `mobile/app/ai-chat.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/voice-agent.tsx`

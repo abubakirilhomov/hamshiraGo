@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
 import { SalomatDisclaimer } from '@/components/SalomatDisclaimer';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
-import { apiFetch } from '@/constants/api';
+import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
@@ -114,6 +115,92 @@ export default function AiChatScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   }, []);
 
+  // ── Streaming send (SSE) ──
+  const sendStreaming = useCallback(async (text: string, assistantMsgId: string): Promise<boolean> => {
+    try {
+      const currentLanguage = 'ru'; // will be overridden by Accept-Language header in apiFetch
+      const response = await fetch(`${API_BASE}/consultations/ai-chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept-Language': currentLanguage,
+        },
+        body: JSON.stringify({ messages: apiMessages.current }),
+      });
+
+      if (!response.ok) {
+        return false; // fallback to non-streaming
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) return false;
+
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let recommendation: DisplayMessage['recommendation'] | undefined;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.text) {
+                fullText += data.text;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId ? { ...m, content: fullText } : m,
+                  ),
+                );
+                scrollToBottom();
+              }
+              if (data.done && data.recommendation) {
+                recommendation = data.recommendation;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsgId ? { ...m, recommendation } : m,
+                  ),
+                );
+              }
+            } catch {
+              // ignore malformed SSE lines
+            }
+          }
+        }
+      }
+
+      apiMessages.current.push({ role: 'assistant', content: fullText });
+      return true;
+    } catch {
+      return false; // fallback to non-streaming
+    }
+  }, [token, scrollToBottom]);
+
+  // ── Non-streaming fallback ──
+  const sendNonStreaming = useCallback(async (assistantMsgId: string) => {
+    const res = await apiFetch<AiChatResponse>('/consultations/ai-chat', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ messages: apiMessages.current }),
+    });
+
+    apiMessages.current.push({ role: 'assistant', content: res.reply });
+
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === assistantMsgId
+          ? { ...m, content: res.reply, recommendation: res.recommendation }
+          : m,
+      ),
+    );
+  }, [token]);
+
   const handleSend = useCallback(async (overrideText?: string) => {
     const text = (overrideText ?? inputText).trim();
     if (!text || loading || !token) return;
@@ -132,30 +219,36 @@ export default function AiChatScreen() {
     scrollToBottom();
 
     setLoading(true);
+
+    // Add empty assistant message placeholder for streaming
+    const assistantMsgId = String(++idCounter.current);
+    setMessages((prev) => [
+      ...prev,
+      { id: assistantMsgId, role: 'assistant', content: '', timestamp: new Date() },
+    ]);
+
     try {
-      const res = await apiFetch<AiChatResponse>('/consultations/ai-chat', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({ messages: apiMessages.current }),
-      });
+      // Try streaming first (not supported on web)
+      const supportsStreaming = Platform.OS !== 'web';
+      let streamed = false;
 
-      apiMessages.current.push({ role: 'assistant', content: res.reply });
+      if (supportsStreaming) {
+        streamed = await sendStreaming(text, assistantMsgId);
+      }
 
-      const aiMsg: DisplayMessage = {
-        id: String(++idCounter.current),
-        role: 'assistant',
-        content: res.reply,
-        timestamp: new Date(),
-        recommendation: res.recommendation,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
+      // Fallback to non-streaming
+      if (!streamed) {
+        await sendNonStreaming(assistantMsgId);
+      }
     } catch {
+      // Remove the empty assistant placeholder on error
+      setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId));
       showToast(t('aiChat.unavailable'), 'error');
     } finally {
       setLoading(false);
       scrollToBottom();
     }
-  }, [inputText, loading, token, t, showToast, scrollToBottom]);
+  }, [inputText, loading, token, t, showToast, scrollToBottom, sendStreaming, sendNonStreaming]);
 
   const handleFindDoctor = useCallback(
     (specialization: string) => {
@@ -243,13 +336,17 @@ export default function AiChatScreen() {
           </View>
         )}
 
-        {loading && (
+        {loading && messages[messages.length - 1]?.content === '' && (
           <View style={styles.typingRow}>
             <View style={styles.aiAvatarSmall}>
               <FontAwesome name="commenting" size={12} color={Theme.primary} />
             </View>
             <View style={styles.typingBubble}>
-              <ActivityIndicator size="small" color={Theme.primary} />
+              <View style={styles.typingDotsRow}>
+                <View style={styles.typingDot} />
+                <View style={[styles.typingDot, { opacity: 0.6 }]} />
+                <View style={[styles.typingDot, { opacity: 0.3 }]} />
+              </View>
               <Text style={styles.typingText}>{t('aiChat.typing')}</Text>
             </View>
           </View>
@@ -329,6 +426,26 @@ function MessageBubble({
   t: (key: string) => string;
 }) {
   const isUser = message.role === 'user';
+  const content = message.content;
+
+  // Detect action-worthy patterns in assistant messages
+  const isAI = !isUser;
+  const hasDoctor =
+    isAI &&
+    (content.includes('РЕКОМЕНДАЦИЯ: DOCTOR') || content.includes('обратиться к'));
+  const hasNurse =
+    isAI &&
+    (content.includes('РЕКОМЕНДАЦИЯ: NURSE') || content.includes('вызвать медсестру'));
+  const has103 =
+    isAI && content.includes('103') && content.includes('скорую');
+
+  // Clean recommendation markers from display text
+  const displayText = isAI
+    ? content
+        .replace(/РЕКОМЕНДАЦИЯ:\s*(DOCTOR|NURSE)/gi, '')
+        .replace(/СПЕЦИАЛИЗАЦИЯ:\s*\S+/gi, '')
+        .trim()
+    : content;
 
   return (
     <View style={[styles.messageRow, isUser && styles.messageRowUser]}>
@@ -340,8 +457,39 @@ function MessageBubble({
       <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAi]}>
           <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>
-            {message.content}
+            {displayText}
           </Text>
+
+          {/* ── Action buttons inside the bubble ── */}
+          {isAI && hasDoctor && (
+            <Pressable
+              style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.7 }]}
+              onPress={() => router.push('/doctors')}
+            >
+              <FontAwesome name="stethoscope" size={14} color="#fff" />
+              <Text style={styles.actionButtonText}>Shifokor tanlash</Text>
+            </Pressable>
+          )}
+
+          {isAI && hasNurse && (
+            <Pressable
+              style={({ pressed }) => [styles.actionButton, pressed && { opacity: 0.7 }]}
+              onPress={() => router.push('/(tabs)')}
+            >
+              <FontAwesome name="medkit" size={14} color="#fff" />
+              <Text style={styles.actionButtonText}>Hamshira chaqirish</Text>
+            </Pressable>
+          )}
+
+          {isAI && has103 && (
+            <Pressable
+              style={({ pressed }) => [styles.emergencyButton, pressed && { opacity: 0.7 }]}
+              onPress={() => Linking.openURL('tel:103')}
+            >
+              <FontAwesome name="phone" size={14} color="#fff" />
+              <Text style={styles.emergencyButtonText}>103 ga qo'ng'iroq qilish</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Timestamp */}
@@ -520,6 +668,40 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
 
+  /* ── Action buttons (inside AI bubble) ── */
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: Theme.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: Radius.full,
+    alignSelf: 'flex-start',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontFamily: Fonts.manropeSb,
+    fontSize: 13,
+  },
+  emergencyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: Theme.error,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: Radius.full,
+    alignSelf: 'flex-start',
+  },
+  emergencyButtonText: {
+    color: '#fff',
+    fontFamily: Fonts.manropeSb,
+    fontSize: 13,
+  },
+
   /* ── Typing ── */
   typingRow: {
     flexDirection: 'row',
@@ -535,6 +717,17 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+  },
+  typingDotsRow: {
+    flexDirection: 'row',
+    gap: 4,
+    alignItems: 'center',
+  },
+  typingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Theme.primary,
   },
   typingText: {
     fontFamily: Fonts.inter,
