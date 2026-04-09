@@ -1,5 +1,10 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Backend: Medic Schedule + Multi-service orders)
+
+- **[backend]** Medic Schedule (working hours) -- new `medic_schedules` table, `MedicSchedule` entity, `GET/PUT /medics/me/schedule` endpoints, `isMedicAvailableNow()` method with Tashkent timezone, dispatch filters out medics outside working hours -- `backend/src/medics/entities/medic-schedule.entity.ts`, `backend/src/medics/dto/update-schedule.dto.ts`, `backend/src/medics/medics.service.ts`, `backend/src/medics/medics.controller.ts`, `backend/src/medics/medics.module.ts`, `backend/src/orders/dispatch.service.ts`
+- **[backend]** Multi-service orders -- `serviceIds`/`serviceTitles` JSONB columns on Order entity, `serviceIds` optional field in CreateOrderDto, order creation sums prices of all services, backward compatible (single-service orders keep null) -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/dto/create-order.dto.ts`, `backend/src/orders/orders.service.ts`
+
 ## 2026-04-05 (Backend: 3 medium features -- ETA, Telegram verify, order photos)
 
 - **[backend]** ETA calculation for medic location updates -- OSRM integration with haversine fallback, `etaMinutes` field added to `MedicLocationPayload`, ETA included in `order_status` event on ON_THE_WAY transition -- `backend/src/realtime/order-events.gateway.ts`, `backend/src/realtime/realtime.module.ts`, `backend/src/orders/orders.service.ts`

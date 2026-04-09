@@ -11,12 +11,14 @@ import { In, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Medic } from './entities/medic.entity';
+import { MedicSchedule } from './entities/medic-schedule.entity';
 import { VerificationStatus } from './entities/verification-status.enum';
 import { RegisterMedicDto } from './dto/register-medic.dto';
 import { LoginMedicDto } from './dto/login-medic.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { VerifyMedicDto } from './dto/verify-medic.dto';
 import { SetWorkZoneDto } from './dto/set-work-zone.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
@@ -29,6 +31,8 @@ export class MedicsService {
   constructor(
     @InjectRepository(Medic)
     private medicRepo: Repository<Medic>,
+    @InjectRepository(MedicSchedule)
+    private readonly scheduleRepo: Repository<MedicSchedule>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
     private jwtService: JwtService,
@@ -598,5 +602,55 @@ export class MedicsService {
       .filter(({ distanceKm }) => distanceKm <= MAX_KM)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, limit) as (Medic & { distanceKm: number })[];
+  }
+
+  // ── Schedule (working hours) ──────────────────────────────────────────────
+
+  async getSchedule(medicId: string): Promise<MedicSchedule[]> {
+    return this.scheduleRepo.find({
+      where: { medicId },
+      order: { dayOfWeek: 'ASC', startHour: 'ASC' },
+    });
+  }
+
+  async updateSchedule(medicId: string, dto: UpdateScheduleDto): Promise<MedicSchedule[]> {
+    // Delete existing schedule
+    await this.scheduleRepo.delete({ medicId });
+    // Create new
+    const slots = dto.slots.map((s) =>
+      this.scheduleRepo.create({
+        medicId,
+        dayOfWeek: s.dayOfWeek,
+        startHour: s.startHour,
+        endHour: s.endHour,
+        isActive: s.isActive ?? true,
+      }),
+    );
+    return this.scheduleRepo.save(slots);
+  }
+
+  async isMedicAvailableNow(medicId: string): Promise<boolean> {
+    const now = new Date();
+    // Tashkent UTC+5
+    const tashkentOffsetHours = 5;
+    const utcHour = now.getUTCHours();
+    const tashkentHour = (utcHour + tashkentOffsetHours) % 24;
+    // Adjust day if hour overflow changes the day
+    let tashkentDay = now.getUTCDay();
+    if (utcHour + tashkentOffsetHours >= 24) {
+      tashkentDay = (tashkentDay + 1) % 7;
+    }
+
+    const schedules = await this.scheduleRepo.find({
+      where: { medicId, dayOfWeek: tashkentDay, isActive: true },
+    });
+
+    // No schedule entries for today = always available (backward compat)
+    if (!schedules.length) return true;
+
+    // Available if current hour falls within any active slot
+    return schedules.some(
+      (s) => tashkentHour >= s.startHour && tashkentHour < s.endHour,
+    );
   }
 }

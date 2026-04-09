@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   ServiceUnavailableException,
   UploadedFile,
@@ -39,6 +40,7 @@ import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 import { SetWorkZoneDto } from './dto/set-work-zone.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
 
 @ApiTags('medics')
 @Controller('medics')
@@ -316,6 +318,24 @@ export class MedicsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteWebPushSubscription(@Body() body: { endpoint: string }) {
     if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
+  }
+
+  // ── Schedule (working hours) ──────────────────────────────────────────────
+
+  @Get('me/schedule')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получить расписание медика' })
+  getSchedule(@MedicId() medicId: string) {
+    return this.medicsService.getSchedule(medicId);
+  }
+
+  @Put('me/schedule')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить расписание медика' })
+  updateSchedule(@MedicId() medicId: string, @Body() dto: UpdateScheduleDto) {
+    return this.medicsService.updateSchedule(medicId, dto);
   }
 
   // ── Work zone (geofence) ─────────────────────────────────────────────────

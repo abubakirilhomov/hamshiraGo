@@ -355,7 +355,7 @@ export class DispatchService implements OnApplicationBootstrap {
       order.location?.longitude != null ? Number(order.location.longitude) : null;
 
     // Geofence filter: exclude medics whose work zone does not contain the order location
-    const candidates = rawCandidates.filter((m) => {
+    const geofenced = rawCandidates.filter((m) => {
       const radius = m.workZoneRadius != null ? Number(m.workZoneRadius) : null;
       if (radius === null) return true; // no restriction
       if (orderLat === null || orderLng === null) return true; // no order location — include
@@ -364,6 +364,17 @@ export class DispatchService implements OnApplicationBootstrap {
       const dist = haversineKm(zoneLat, zoneLng, orderLat, orderLng);
       return dist <= radius;
     });
+
+    if (!geofenced.length) return null;
+
+    // Schedule filter: exclude medics outside working hours
+    const scheduleChecked = await Promise.all(
+      geofenced.map(async (m) => ({
+        medic: m,
+        available: await this.medicsService.isMedicAvailableNow(m.id),
+      })),
+    );
+    const candidates = scheduleChecked.filter((s) => s.available).map((s) => s.medic);
 
     if (!candidates.length) return null;
 
