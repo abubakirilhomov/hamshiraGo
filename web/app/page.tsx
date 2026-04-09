@@ -227,6 +227,39 @@ export default function HomePage() {
           </svg>
         </button>
 
+        {/* Salomat AI chat banner */}
+        <button
+          onClick={() => router.push("/salomat")}
+          style={{
+            width: "100%", background: "#fff",
+            border: "1.5px solid #99f6e4", borderRadius: 16, padding: "14px 16px", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 14, marginBottom: 16,
+            boxShadow: "0 2px 8px rgba(13,148,136,0.08)",
+            textAlign: "left",
+          }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+            background: "linear-gradient(135deg, #0d9488, #0f766e)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 800, color: "#0f172a", margin: 0, marginBottom: 2 }}>
+              Salomat AI
+            </p>
+            <p style={{ fontSize: 12, color: "#64748b", margin: 0 }}>
+              Опишите симптомы — AI подскажет к кому обратиться
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
         {/* Search */}
         <div style={{ position: "relative", marginBottom: 16 }}>
           <svg

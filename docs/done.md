@@ -1,5 +1,24 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-09 (Планирование: Clinic System + Salomat AI Leads)
+
+- **[docs]** Спроектирована архитектура клиники: company, company_user, company_room, clinic_appointment, salomat_lead
+- **[docs]** Определены роли: CEO (полный доступ), Reception (навбат + лиды), Врач (1 клиника, только своё)
+- **[docs]** Спроектирован Salomat AI Lead flow: AI → имя+телефон → лид → Reception → Check In → 15% комиссия (после 6 мес)
+- **[docs]** Добавлены задачи CLIN-BE-1..9 (Абубакир), CLIN-SA-1..3 (Диёр), CLIN-FE-1..12 (Жафар) в tasks.md
+- **[docs]** Обновлены роли разработки: добавлен Жафар (Жонсон-беби) — frontend клиники
+
+## 2026-04-09 (SAL-D-2: Web Salomat чат)
+
+- **[web]** Create `web/app/salomat/page.tsx` — SSE streaming chat (fallback non-stream), disclaimer modal (localStorage), suggestion chips, recommendation card (doctor/nurse), inline 103 call button
+- **[web]** Add "Salomat AI" banner button on home page → `/salomat` — `web/app/page.tsx`
+
+## 2026-04-09 (SAL-D-1: Admin Salomat Audit Dashboard)
+
+- **[admin]** Add `SalomatAuditStats` type + `getSalomatAuditStats(days)` — `admin/src/lib/api.ts`
+- **[admin]** Create `SalomatAudit.tsx` — period toggle (7/14/30/90д), 6 KPI cards, conversion rate banner, PieChart topSpecializations, event breakdown bars, ranked specializations table — `admin/src/pages/SalomatAudit.tsx`
+- **[admin]** Add `Shield` import + "Salomat Аудит" в `AdminSidebar.tsx`, роут `/salomat-audit` в `App.tsx`
+
 ## 2026-04-09 (V5-D-6: Admin Doctor Accounts)
 
 - **[admin]** Add API: `getDoctorAccounts`, `getDoctorAccountsPending`, `verifyDoctorAccount`, `blockDoctorAccount` + `DoctorAccount` type — `admin/src/lib/api.ts`

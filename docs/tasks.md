@@ -140,27 +140,235 @@
 
 > Backend API для Salomat готов. Новые endpoints:
 
-#### SAL-D-1. Admin: Salomat Audit Dashboard (admin/)
-- [ ] Новая страница `admin/src/pages/SalomatAudit.tsx`
-  - API: `GET /consultations/admin/salomat-audit/stats?days=30` → `{ totalEvents, redFlags, doctorReferrals, nurseReferrals, safeguards, rateLimits, topSpecializations }`
-  - KPI карточки: красные флаги, направления к врачам, направления к медсёстрам, сработавшие safeguards
-  - Pie chart: топ специализаций (по направлениям)
-  - Линейный график: события по дням
-- [ ] Добавить "Salomat Аудит" в AdminSidebar (иконка Shield)
 
-#### SAL-D-2. Web: Salomat чат (web/)
-- [ ] `web/app/salomat/page.tsx` — чат интерфейс с Salomat
-  - API: `POST /consultations/ai-chat/stream` (SSE) — streaming ответы
-  - Fallback: `POST /consultations/ai-chat` (если SSE не работает)
-  - Те же action buttons: "К врачу", "Вызвать медсестру", "103"
-  - Suggestion chips на пустом экране
-  - Disclaimer модал при первом использовании
-- [ ] Кнопка "Salomat" на главной странице web/
 
-#### SAL-D-3. Web: обновить страницу консультации
-- [ ] Добавить summary от Salomat при создании консультации через чат
-  - Поле `salomatSummary` уже есть в контексте — отображать врачу перед приёмом
-  - В web-medic doctor consultation detail — показать блок "Предварительная информация от Salomat"
+#### SAL-D-3. Web-medic: страница деталей консультации врача
+- [ ] Показать блок "Предварительная информация от Salomat" — поле `salomatSummary` уже есть в `consultation.entity.ts`
+- [ ] Если `salomatSummary` пустой — блок скрывается
+
+---
+
+## 🏥 CLINIC SYSTEM — Новый модуль
+
+> Контекст: HamshiraGo расширяется для работы с частными клиниками.
+> Первые 6 месяцев — бесплатный пилот (SaaS и комиссия = 0).
+> С 7-го месяца: Salomat AI лид → пациент пришёл → 15% комиссия.
+> Hamshira заказ → 10% комиссия (уже работает).
+
+---
+
+### 🔵 CLIN-BE — Backend (Абубакир)
+
+#### CLIN-BE-1. Company (Clinic) модуль
+- [ ] Entity `company`: id, name, legalName, phone, address, city, lat/lng, logoUrl, licenseNumber, licenseExpiry, isActive, isVerified, parentId (для филиалов), settings (JSON), createdAt
+- [ ] Entity `company_branch`: id, companyId, name, address, phone, lat/lng, isActive
+- [ ] CRUD endpoints: POST /companies, GET /companies, GET /companies/:id, PATCH /companies/:id
+- [ ] Admin endpoint: PATCH /companies/:id/verify, PATCH /companies/:id/block
+- [ ] `CompanyGuard` — проверка isActive + isVerified
+
+#### CLIN-BE-2. Company Staff (Xodimlar) — Auth
+- [ ] Entity `company_user`: id, companyId, branchId, role (CEO | RECEPTION | DOCTOR), name, phone, passwordHash, isActive
+- [ ] POST /clinic-auth/register — создание staff (только Admin или CEO)
+- [ ] POST /clinic-auth/login → JWT с полями: userId, companyId, role
+- [ ] GET /clinic-auth/me — профиль текущего пользователя
+- [ ] `ClinicAuthGuard` + `@ClinicUser()` decorator
+- [ ] `ClinicRoleGuard` — проверка role (CEO, RECEPTION, DOCTOR)
+- [ ] Связать Doctor (существующий) с company_user при создании аккаунта
+
+#### CLIN-BE-3. Rooms (Xonalar)
+- [ ] Entity `company_room`: id, companyId, name, floor, isActive
+- [ ] Entity `company_room_doctor`: id, roomId, doctorId, dayOfWeek (1–7), startTime, endTime
+- [ ] CRUD /clinic/rooms — только CEO
+- [ ] POST /clinic/rooms/:roomId/doctors — назначить врача в комнату (CEO)
+- [ ] GET /clinic/rooms/today — расписание на сегодня (Reception + CEO)
+
+#### CLIN-BE-4. Clinic Services (Xizmatlar)
+- [ ] Entity `company_service`: id, companyId, name, category (CONSULTATION | LAB | DIAGNOSTIC | PROCEDURE), price, duration, isActive
+- [ ] CRUD /clinic/services — только CEO
+- [ ] GET /clinic/services — публичный (для пациентов при бронировании)
+
+#### CLIN-BE-5. Clinic Appointment (Navbat tizimi)
+- [ ] Entity `clinic_appointment`: id, companyId, roomId, doctorId, patientName, patientPhone, patientId (nullable — если зарегистрирован), serviceId, date, time, status (SCHEDULED | CHECKED_IN | IN_PROGRESS | DONE | CANCELLED), source (MANUAL | SALOMAT_LEAD | ONLINE), paymentType (CASH | TERMINAL | ONLINE), createdBy (staff userId), notes, createdAt
+- [ ] POST /clinic/appointments — создать навбат (CEO + Reception)
+- [ ] GET /clinic/appointments?date=&doctorId= — список навбатов
+- [ ] PATCH /clinic/appointments/:id/checkin — Check In (CEO + Reception)
+- [ ] PATCH /clinic/appointments/:id/cancel — отмена с причиной
+- [ ] PATCH /clinic/appointments/:id/status — смена статуса
+
+#### CLIN-BE-6. CEO Stats (12 oylik statistika)
+- [ ] GET /clinic/stats/overview?period=today|week|month|year — bemorlar soni, daromad, комиссия
+- [ ] GET /clinic/stats/monthly — 12 oy oyma-oy grafik (bemorlar soni)
+- [ ] GET /clinic/stats/doctors — har shifokor uchun: bemorlar, reyting, daromad
+- [ ] GET /clinic/stats/rooms — har xona bandligi
+- [ ] GET /clinic/stats/services — eng ko'p so'ralgan xizmatlar
+
+#### CLIN-BE-7. Salomat AI → Lead tizimi
+- [ ] Entity `salomat_lead`: id, clinicId, patientName, patientPhone, aiSummary, specialization, status (NEW | CONTACTED | BOOKED | VISITED | MISSED), appointmentId (nullable), commissionAmount (nullable), commissionPaid (boolean), createdAt
+- [ ] В AI chat flow: после рекомендации кliniki — запросить имя и телефон пациента
+- [ ] POST /clinic/leads — сохранить лид (внутренний вызов из AI сервиса)
+- [ ] GET /clinic/leads — список лидов (CEO + Reception, только своя клиника)
+- [ ] PATCH /clinic/leads/:id/status — сменить статус (CEO + Reception)
+- [ ] DELETE /clinic/leads/:id — удалить (только CEO)
+- [ ] WebSocket event `clinic:new_lead` → уведомление Reception в реальном времени
+- [ ] Push уведомление Reception при новом лиде
+- [ ] Логика комиссии: при status → VISITED и companyId.pilotEnded=true → создать запись в `lead_commission`
+
+#### CLIN-BE-8. Admin: управление компаниями
+- [ ] GET /admin/companies — список всех компаний с фильтрами (isVerified, isActive, city)
+- [ ] POST /admin/companies — создать компанию + CEO аккаунт одним запросом
+- [ ] PATCH /admin/companies/:id/verify
+- [ ] PATCH /admin/companies/:id/block
+- [ ] GET /admin/companies/:id/stats — статистика конкретной клиники
+- [ ] GET /admin/leads/overview — все лиды по всем клиникам (сводка)
+
+#### CLIN-BE-9. Страница пациента + Рецепты
+- [ ] GET /clinic/patients/:phone — поиск пациента по телефону (Reception при бронировании)
+- [ ] GET /clinic/patients/:id/history — история визитов пациента в эту клинику
+- [ ] POST /clinic/appointments/:id/prescription — врач отправляет рецепт пациенту
+  - Сохранить в БД + отправить SMS с ссылкой или push уведомление
+- [ ] GET /patient/prescriptions — пациент видит свои рецепты (JWT auth)
+- [ ] GET /patient/prescriptions/:id — детали рецепта (PDF)
+
+---
+
+### 🟡 CLIN-SA — Super Admin (Диёр)
+
+#### CLIN-SA-1. Admin Panel: Компании (Klinikalar)
+- [ ] `admin/src/pages/Companies.tsx` — таблица клиник с фильтрами (город, статус верификации, активность)
+- [ ] Колонки: название, город, лицензия, статус, кол-во врачей, кол-во лидов, кнопки действий
+- [ ] Кнопка "Создать клинику" → модал: название, адрес, лицензия + CEO аккаунт (имя, телефон, пароль)
+- [ ] Кнопки: ✅ Подтвердить, 🚫 Заблокировать, 👁 Детали
+- [ ] Добавить "Клиники" (Building2) в AdminSidebar, роут `/companies` в App.tsx
+- [ ] `admin/src/lib/api.ts` — getCompanies, createCompany, verifyCompany, blockCompany
+
+#### CLIN-SA-2. Admin Panel: Детали клиники
+- [ ] `admin/src/pages/CompanyDetail.tsx` — детальная страница клиники
+- [ ] Вкладки: Обзор | Врачи | Лиды | Статистика
+- [ ] Обзор: основная информация, лицензия, контакты
+- [ ] Врачи: список врачей клиники
+- [ ] Лиды: все лиды клиники (статусы, конверсия)
+- [ ] Статистика: 12-месячный график пациентов
+- [ ] Роут `/companies/:id` в App.tsx
+
+#### CLIN-SA-3. Admin Panel: Salomat AI Лиды (все клиники)
+- [ ] `admin/src/pages/SalomatLeads.tsx` — сводка лидов по всем клиникам
+- [ ] Фильтры: клиника, статус, дата, специализация
+- [ ] KPI: всего лидов, конверсия %, комиссия за месяц
+- [ ] Таблица: клиника, пациент, специализация, статус, дата, комиссия
+- [ ] Добавить в AdminSidebar + App.tsx
+
+---
+
+### 🟢 CLIN-FE — Frontend (Жафар/Жонсон-беби)
+
+> Все компоненты в `web-medic/` (CEO и Reception) или `web/` (пациент).
+> Auth: `clinic_token` в localStorage + role из JWT (CEO | RECEPTION | DOCTOR).
+> Base API: `https://hamshirago-production-0a65.up.railway.app`
+
+#### CLIN-FE-1. Clinic Auth (вход для CEO и Reception)
+- [ ] `web-medic/app/clinic/auth/page.tsx` — страница входа для клиники
+  - Поля: телефон + пароль
+  - POST /clinic-auth/login → сохранить `clinic_token` + role в localStorage
+  - Редирект: CEO → `/clinic/dashboard`, RECEPTION → `/clinic/reception`
+- [ ] Обновить `DashboardLayout.tsx` — добавить проверку role=CEO и role=RECEPTION
+
+#### CLIN-FE-2. CEO Portal — Dashboard
+- [ ] `web-medic/app/clinic/dashboard/page.tsx`
+  - KPI карточки: сегодня/неделя/месяц/год — кол-во пациентов
+  - 12-месячный график (recharts BarChart)
+  - Врачи сегодня: кто работает, сколько пациентов (прогресс-бары)
+  - Реал-тайм: ожидают / на приёме / завершены
+  - Кнопка "+ Записать пациента" (как у Reception)
+  - Блок лидов: новые лиды от Salomat AI (последние 5)
+
+#### CLIN-FE-3. CEO Portal — Кабинеты (Xonalar)
+- [ ] `web-medic/app/clinic/rooms/page.tsx`
+  - Список кабинетов карточками
+  - Создать кабинет: название, этаж
+  - Назначить врача в кабинет: выбрать врача + дни + время
+  - Удалить / деактивировать кабинет
+  - Таблица: кабинет → врач → расписание
+
+#### CLIN-FE-4. CEO Portal — Сотрудники
+- [ ] `web-medic/app/clinic/staff/page.tsx`
+  - Список: CEO, Reception, врачи
+  - Создать сотрудника: имя, телефон, роль, пароль
+  - Блокировать / удалить
+  - Для врача — дополнительно: специализация, фото
+
+#### CLIN-FE-5. CEO Portal — Настройки клиники
+- [ ] `web-medic/app/clinic/settings/page.tsx`
+  - Загрузка логотипа
+  - Название, адрес, описание
+  - Рабочие часы по дням (пн–вс, открыт/закрыт, время)
+  - Список услуг: название, цена, длительность (CRUD)
+  - Включить/выключить: онлайн-консультация, house call, онлайн-оплата
+  - Длительность слота (15/20/30 мин)
+
+#### CLIN-FE-6. CEO Portal — Лиды от Salomat AI
+- [ ] `web-medic/app/clinic/leads/page.tsx`
+  - Колонки статусов: НОВЫЙ | СВЯЗАЛИСЬ | ЗАПИСАН | ПРИШЁЛ | НЕ ПРИШЁЛ
+  - Карточка лида: имя, телефон, AI summary, специализация, дата
+  - Кнопки: 📞 Позвонить, 📅 Записать, ✅ Пришёл, ❌ Не пришёл
+  - Смена статуса — drag или кнопки
+  - Уведомление в реальном времени (WebSocket `clinic:new_lead`)
+  - KPI сверху: всего / конверсия % / комиссия
+
+#### CLIN-FE-7. CEO Portal — Финансы
+- [ ] `web-medic/app/clinic/finance/page.tsx`
+  - Доход: сегодня / месяц / год
+  - Комиссия HamshiraGo (после 6 месяцев)
+  - Разбивка по методам оплаты (нал / терминал / онлайн)
+  - Топ-5 врачей по доходу
+  - Экспорт (CSV)
+
+#### CLIN-FE-8. Reception Portal — Основной экран
+- [ ] `web-medic/app/clinic/reception/page.tsx`
+  - Недельный/дневной календарь — колонки = кабинеты
+  - Каждая ячейка: пациент + статус (цветом)
+  - Drag-and-drop перенос записи (ixtiyoriy)
+  - Кнопка "+ Записать пациента"
+  - Кнопка "Check In" на карточке навбата
+  - Боковая панель: лиды от Salomat AI (новые — с бейджом)
+
+#### CLIN-FE-9. Reception Portal — Запись пациента (modal)
+- [ ] Общий компонент `web-medic/components/clinic/BookingModal.tsx`
+  - Поиск пациента по телефону → автозаполнение имени
+  - Если не найден → создать нового (имя + телефон)
+  - Выбор врача → кабинет подставляется автоматически
+  - Выбор даты → только доступные слоты
+  - Тип оплаты: нал / терминал / онлайн
+  - Использовать и у CEO, и у Reception
+
+#### CLIN-FE-10. Страница пациента — web/
+- [ ] `web/app/patient/page.tsx` — профиль пациента (авторизованный)
+  - История визитов: дата, клиника, врач, диагноз
+  - Рецепты: список + просмотр PDF
+  - Медкарта: аллергии, хронические болезни
+- [ ] `web/app/patient/prescriptions/page.tsx` — все рецепты пациента
+- [ ] `web/app/patient/prescriptions/[id]/page.tsx` — детали рецепта + кнопка скачать PDF
+
+#### CLIN-FE-11. Врач — расширить существующий портал
+- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — добавить:
+  - Блок "Salomat AI Summary" (если есть salomatSummary)
+  - Блок "История визитов" пациента
+  - Форма рецепта: добавить препарат (название, доза, кратность, дней)
+  - Кнопка "Отправить рецепт пациенту" (SMS/push)
+  - Кнопка "Назначить следующий визит"
+
+#### CLIN-FE-12. Кlinikalar sahifasi — web/ (для пациентов)
+- [ ] `web/app/clinics/page.tsx` — список клиник
+  - Фильтр по специализации, городу, рейтингу
+  - Карточка: лого, название, адрес, рейтинг, врачи
+- [ ] `web/app/clinics/[id]/page.tsx` — профиль клиники
+  - Список врачей с рейтингом
+  - Список услуг + цены
+  - Кнопка "Записаться" → BookingModal или переход к врачу
+
+#### SAL-D-3. Web-medic: Salomat summary у врача (Жафар)
+- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — блок "Предварительная информация от Salomat"
+  - Показать если `salomatSummary` не пустой
+  - Стиль: teal блок с иконкой AI
 
 ### MVP V0.1 Gap Closures — DONE 2026-04-05
 
@@ -178,7 +386,8 @@
 | Роль | Зона ответственности |
 |------|---------------------|
 | **Абубакир** | `backend/`, `mobile/`, `medic/` |
-| **Диёр** | `admin/`, `web/`, `web-medic/`, `landing/`, SEO, логотип |
+| **Диёр** | `admin/`, `web/`, `web-medic/`, `landing/`, SEO, логотип, Super Admin |
+| **Жафар (Жонсон-беби)** | CEO portal, Reception portal, Patient page, Doctor portal (расширение) |
 
 > Документация (`docs/`) обновляется тем, кто выполняет задачу.
 

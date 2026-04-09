@@ -3,669 +3,1100 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HamshiraGo — Business Model Canvas</title>
+  <title>HamshiraGo — Business Model</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #f0faf9;
       color: #1a1a2e;
-      padding: 40px 20px;
+      padding: 40px 20px 80px;
     }
 
+    /* ── Header ── */
     .header {
       text-align: center;
-      margin-bottom: 48px;
-    }
-    .header h1 {
-      font-size: 36px;
-      font-weight: 800;
-      color: #0d9488;
-    }
-    .header p {
-      margin-top: 10px;
-      font-size: 18px;
-      color: #555;
-    }
-    .header .tagline {
-      display: inline-block;
-      margin-top: 14px;
-      background: #0d9488;
-      color: white;
-      padding: 8px 20px;
-      border-radius: 999px;
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    /* ЭТАПЫ */
-    .stage {
       margin-bottom: 56px;
     }
-    .stage-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-    .stage-number {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      font-weight: 800;
-      color: white;
-      flex-shrink: 0;
-    }
-    .stage-title {
-      font-size: 22px;
-      font-weight: 700;
-    }
-    .stage-sub {
-      font-size: 14px;
-      color: #888;
-      margin-top: 2px;
+    .header h1 { font-size: 38px; font-weight: 900; color: #0d9488; }
+    .header p  { margin-top: 8px; font-size: 17px; color: #64748b; }
+    .tagline {
+      display: inline-block; margin-top: 14px;
+      background: #0d9488; color: #fff;
+      padding: 8px 24px; border-radius: 999px;
+      font-size: 14px; font-weight: 700;
     }
 
+    /* ── Section ── */
+    .section { margin-bottom: 64px; }
+    .section-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+    }
+    .section-num {
+      width: 46px; height: 46px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 900; color: #fff; flex-shrink: 0;
+    }
+    .section-title { font-size: 22px; font-weight: 800; }
+    .section-sub   { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+
+    /* ── Cards grid ── */
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
     }
-
     .card {
-      background: white;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      background: #fff; border-radius: 16px;
+      padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       border-top: 4px solid #0d9488;
     }
+    .card.red    { border-top-color: #dc2626; }
+    .card.blue   { border-top-color: #2563eb; }
+    .card.purple { border-top-color: #7c3aed; }
+    .card.amber  { border-top-color: #d97706; }
+    .card.pink   { border-top-color: #db2777; }
     .card h3 {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 15px; font-weight: 800;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
     }
-    .card ul {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
     .card ul li {
-      font-size: 14px;
-      color: #444;
-      padding-left: 20px;
-      position: relative;
-      line-height: 1.5;
+      font-size: 13.5px; color: #475569;
+      padding-left: 20px; position: relative; line-height: 1.55;
     }
     .card ul li::before {
-      content: "\2713";
-      position: absolute;
-      left: 0;
-      color: #0d9488;
-      font-weight: 700;
+      content: "✓"; position: absolute; left: 0;
+      color: #0d9488; font-weight: 800;
+    }
+    .card.red ul li::before   { color: #dc2626; }
+    .card.blue ul li::before  { color: #2563eb; }
+    .card.purple ul li::before{ color: #7c3aed; }
+    .card.amber ul li::before { color: #d97706; }
+
+    /* ── Flow diagram ── */
+    .flow {
+      display: flex; flex-direction: column; gap: 0;
+      max-width: 680px;
+    }
+    .flow-step {
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .flow-line {
+      display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+    }
+    .flow-dot {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .flow-connector {
+      width: 2px; background: #d1fae5; flex: 1; min-height: 24px;
+    }
+    .flow-body {
+      background: #fff; border-radius: 14px;
+      padding: 16px 20px; margin-bottom: 8px; flex: 1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .flow-body h4 { font-size: 14px; font-weight: 800; margin-bottom: 6px; }
+    .flow-body p  { font-size: 13px; color: #64748b; line-height: 1.55; }
+
+    /* ── Triage grid ── */
+    .triage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .triage-card {
+      border-radius: 16px; padding: 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .triage-level {
+      font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .triage-title { font-size: 16px; font-weight: 800; }
+    .triage-desc  { font-size: 13px; line-height: 1.5; }
+    .triage-biz   {
+      margin-top: auto; padding: 8px 12px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
     }
 
-    /* Таблица доходов */
-    .income-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      margin-top: 4px;
+    /* ── Phase timeline ── */
+    .phases {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
     }
-    .income-table th {
-      background: #f0faf9;
-      padding: 10px 14px;
-      text-align: left;
+    .phase {
+      background: #fff; border-radius: 16px;
+      padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      position: relative; overflow: hidden;
+    }
+    .phase::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0;
+      height: 5px;
+    }
+    .phase-1::before { background: #0d9488; }
+    .phase-2::before { background: #2563eb; }
+    .phase-3::before { background: #7c3aed; }
+    .phase-label {
+      font-size: 11px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 8px;
+    }
+    .phase-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; }
+    .phase ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .phase ul li {
+      font-size: 13px; color: #475569;
+      padding-left: 18px; position: relative;
+    }
+    .phase ul li::before {
+      content: "→"; position: absolute; left: 0;
       font-weight: 700;
-      color: #0d9488;
-      border-bottom: 2px solid #e0f2f1;
     }
-    .income-table td {
-      padding: 10px 14px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #444;
+    .phase-1 .phase-label { color: #0d9488; }
+    .phase-1 ul li::before { color: #0d9488; }
+    .phase-2 .phase-label { color: #2563eb; }
+    .phase-2 ul li::before { color: #2563eb; }
+    .phase-3 .phase-label { color: #7c3aed; }
+    .phase-3 ul li::before { color: #7c3aed; }
+
+    /* ── Revenue table ── */
+    .rev-table {
+      width: 100%; border-collapse: collapse; font-size: 14px;
     }
-    .income-table tr:last-child td { border-bottom: none; }
+    .rev-table th {
+      background: #f0fdf4; padding: 11px 16px; text-align: left;
+      font-weight: 800; color: #0d9488;
+      border-bottom: 2px solid #d1fae5;
+    }
+    .rev-table td {
+      padding: 11px 16px; border-bottom: 1px solid #f1f5f9; color: #475569;
+    }
+    .rev-table tr:last-child td { border-bottom: none; }
+    .rev-table tr.highlight td { background: #f0fdf4; font-weight: 700; color: #065f46; }
     .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
+      display: inline-block; padding: 3px 10px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
     }
-    .badge-green { background: #d1fae5; color: #065f46; }
-    .badge-blue  { background: #dbeafe; color: #1e40af; }
-    .badge-orange{ background: #fef3c7; color: #92400e; }
-    .badge-purple{ background: #ede9fe; color: #4c1d95; }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-purple { background: #ede9fe; color: #4c1d95; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
 
-    /* Метрики */
-    .metrics {
+    /* ── Give/Get table ── */
+    .gg-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
     }
-    .metric-card {
-      background: white;
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    @media (max-width: 600px) { .gg-grid { grid-template-columns: 1fr; } }
+    .gg-card {
+      background: #fff; border-radius: 14px;
+      padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    .metric-value {
-      font-size: 28px;
-      font-weight: 800;
-      color: #0d9488;
-    }
-    .metric-label {
-      font-size: 13px;
-      color: #888;
-      margin-top: 6px;
-    }
+    .gg-card h4 { font-size: 14px; font-weight: 800; margin-bottom: 12px; }
+    .gg-card ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .gg-card ul li { font-size: 13px; color: #475569; padding-left: 20px; position: relative; }
+    .give li::before { content: "↗"; position: absolute; left: 0; color: #0d9488; font-weight: 800; }
+    .get  li::before { content: "↙"; position: absolute; left: 0; color: #2563eb; font-weight: 800; }
 
-    /* Costs */
-    .costs {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 14px;
-    }
-    .cost-item {
-      background: white;
-      border-radius: 14px;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    }
-    .cost-icon { font-size: 28px; }
-    .cost-name { font-size: 14px; color: #666; }
-    .cost-amount { font-size: 18px; font-weight: 700; color: #0d9488; }
+    /* ── Divider ── */
+    hr { border: none; border-top: 2px dashed #d1fae5; margin: 0 0 64px; }
 
-    /* Цвета этапов */
-    .s1 { background: #0d9488; }
-    .s2 { background: #7c3aed; }
-    .s3 { background: #dc2626; }
-    .s4 { background: #d97706; }
-    .s5 { background: #059669; }
-    .s6 { background: #2563eb; }
-
-    /* Разделитель */
-    .divider {
-      border: none;
-      border-top: 2px dashed #d1fae5;
-      margin: 0 0 56px 0;
-    }
+    /* ── Colors ── */
+    .c1 { background: #0d9488; }
+    .c2 { background: #2563eb; }
+    .c3 { background: #7c3aed; }
+    .c4 { background: #d97706; }
+    .c5 { background: #dc2626; }
+    .c6 { background: #db2777; }
+    .c7 { background: #059669; }
 
     .footer {
-      text-align: center;
-      color: #aaa;
-      font-size: 13px;
-      margin-top: 40px;
+      text-align: center; color: #94a3b8; font-size: 13px; margin-top: 48px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ШАПКА -->
-  <div class="header">
-    <h1>HamshiraGo</h1>
-    <p>Business Model Canvas</p>
-    <span class="tagline">«Яндекс.Такси для медсестёр» — Ташкент, 24/7</span>
-  </div>
+<!-- HEADER -->
+<div class="header">
+  <h1>HamshiraGo</h1>
+  <p>Business Model — Yo'l xaritasi va daromad tizimi</p>
+  <span class="tagline">Salomat AI → Hamshira → Shifokor → Klinika</span>
+</div>
 
-  <!-- ЭТАП 1: ЦЕЛЬ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s1">1</div>
-      <div>
-        <div class="stage-title">Цель проекта</div>
-        <div class="stage-sub">Что мы строим и для кого</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>🎯 Миссия</h3>
-        <ul>
-          <li>Маркетплейс медсестёр на дому в Ташкенте</li>
-          <li>Мгновенный заказ через приложение</li>
-          <li>Старт: уколы и капельницы по районам</li>
-          <li>Работаем 24/7 без выходных</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>👥 Клиенты</h3>
-        <ul>
-          <li>Семьи с больным родственником (приоритет)</li>
-          <li>Активные люди 25–45 лет (некогда в поликлинику)</li>
-          <li>Пожилые 60+ (сложно выходить из дома)</li>
-          <li>Мамы с новорождёнными (патронаж, прививки)</li>
-          <li>Хронические больные (диабет, давление — регулярные визиты)</li>
-          <li>Клиники и больницы (аутсорс медсестёр)</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 2: ЦЕННОСТЬ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s2">2</div>
-      <div>
-        <div class="stage-title">Ценностное предложение</div>
-        <div class="stage-sub">Почему клиент выбирает нас, а не конкурентов</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>❌ Проблема (без нас)</h3>
-        <ul>
-          <li>Знакомая медсестра не всегда доступна</li>
-          <li>Нет гарантии качества</li>
-          <li>Нет ответственности при ошибке</li>
-          <li>Нужно договариваться вручную</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>✅ Решение (с нами)</h3>
-        <ul>
-          <li>Мгновенный заказ через приложение</li>
-          <li>Только верифицированные специалисты</li>
-          <li>Рейтинг и отзывы — гарантия качества</li>
-          <li>Доступ в нерабочее время</li>
-          <li>24/7 без выходных</li>
-          <li>Весь Ташкент</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 3: КАНАЛЫ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s3">3</div>
-      <div>
-        <div class="stage-title">Каналы привлечения</div>
-        <div class="stage-sub">Как клиенты узнают о HamshiraGo</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>🏪 Аптеки (старт)</h3>
-        <ul>
-          <li>Флаеры и QR-коды в аптеках</li>
-          <li>Фармацевт рекомендует при покупке антибиотиков</li>
-          <li>Мотивация: % за каждого клиента</li>
-          <li>Горячий трафик — клиент уже "в проблеме"</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>📱 Микро-блогеры (старт)</h3>
-        <ul>
-          <li>Блогеры районов: 2 000–10 000 подписчиков</li>
-          <li>Бесплатная услуга — видео-отзыв + stories</li>
-          <li>UGC контент для таргета в Instagram/TikTok</li>
-          <li>Низкий CAC + высокое доверие</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>🔍 SEO / Google (долгосрочно)</h3>
-        <ul>
-          <li>Страницы услуг: укол на дому, капельница</li>
-          <li>Ключевые слова по районам Ташкента</li>
-          <li>Бесплатный трафик через 3–6 месяцев</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>📢 Telegram каналы</h3>
-        <ul>
-          <li>Посты в районных и медицинских каналах</li>
-          <li>Таргетированная реклама в Telegram Ads</li>
-          <li>Свой канал с полезным контентом</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>🤝 Партнёрства с врачами</h3>
-        <ul>
-          <li>Врачи рекомендуют HamshiraGo после назначений</li>
-          <li>Самый доверительный канал — рекомендация врача</li>
-          <li>QR-код в рецепте или визитке врача</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>🔄 Реферальная программа</h3>
-        <ul>
-          <li>«Пригласи друга — оба получат скидку»</li>
-          <li>Самый дешёвый CAC — сарафанное радио</li>
-          <li>Бонусы за каждого приведённого клиента</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>📘 Facebook (для 50+)</h3>
-        <ul>
-          <li>15.9 млн пользователей в Узбекистане — 45% населения</li>
-          <li>Аудитория 50+ активнее в Facebook, чем в Telegram/Instagram</li>
-          <li>Таргетированная реклама по возрасту и району</li>
-          <li>Группы «Здоровье», «Медицина Ташкент» — органический охват</li>
-          <li>Facebook Messenger — привычный канал связи для старшего поколения</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 4: ДОХОДЫ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s4">4</div>
-      <div>
-        <div class="stage-title">Потоки доходов</div>
-        <div class="stage-sub">Как зарабатываем — по этапам роста</div>
-      </div>
-    </div>
-    <div class="card" style="max-width: 700px;">
-      <h3>💰 Эволюция монетизации</h3>
-      <table class="income-table">
-        <thead>
-          <tr>
-            <th>Этап</th>
-            <th>Источник дохода</th>
-            <th>Статус</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>🚀 Старт</td>
-            <td>Комиссия 10% с заказа (~7 500 сум)</td>
-            <td><span class="badge badge-green">Сейчас</span></td>
-          </tr>
-          <tr>
-            <td>📈 Рост</td>
-            <td>+ Срочный вызов (extra fee) + комиссия до 20%</td>
-            <td><span class="badge badge-blue">Месяц 3–6</span></td>
-          </tr>
-          <tr>
-            <td>💼 Масштаб</td>
-            <td>+ Подписка медиков (50–100к/мес) + B2B пакеты</td>
-            <td><span class="badge badge-orange">Месяц 6–12</span></td>
-          </tr>
-          <tr>
-            <td>🧠 Зрелость</td>
-            <td>+ Продажа расходников + Обучение медиков</td>
-            <td><span class="badge badge-purple">Год 2+</span></td>
-          </tr>
-          <tr>
-            <td>🏦 Партнёрства</td>
-            <td>+ Страховые компании (оплата через страховку)</td>
-            <td><span class="badge badge-purple">Год 2+</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 4.5: ОТНОШЕНИЯ С КЛИЕНТАМИ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number" style="background:#e11d48;">4½</div>
-      <div>
-        <div class="stage-title">Отношения с клиентами</div>
-        <div class="stage-sub">Как удерживаем и возвращаем клиентов</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>🔔 Удержание</h3>
-        <ul>
-          <li>Push-напоминания: «Пора на укол» (курс лечения)</li>
-          <li>Программа лояльности: 5-й заказ со скидкой</li>
-          <li>Персональный медик — возможность «закрепить» медсестру</li>
-          <li>История заказов и медкарта в приложении</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>👨‍👩‍👧 Подписка для семей</h3>
-        <ul>
-          <li>Семейный пакет: N визитов/мес по фиксированной цене</li>
-          <li>Приоритетный вызов без ожидания</li>
-          <li>Скидка 15–20% vs разовые заказы</li>
-          <li>Идеально для хронических больных и пожилых</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>📊 Обратная связь</h3>
-        <ul>
-          <li>Обязательная оценка после каждого визита</li>
-          <li>NPS-опрос раз в месяц</li>
-          <li>Быстрая реакция на жалобы — компенсация</li>
-          <li>Telegram-поддержка 24/7</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 5: ПАРТНЁРЫ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s5">5</div>
-      <div>
-        <div class="stage-title">Ключевые партнёры</div>
-        <div class="stage-sub">Кто помогает расти — по приоритету</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>🔥 Высокий приоритет (сейчас)</h3>
-        <ul>
-          <li>Payme / Click — приём оплат</li>
-          <li>Аптеки — горячий трафик клиентов</li>
-          <li>Блогеры по районам — доверие и UGC</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>🚀 Средний приоритет (3–6 мес)</h3>
-        <ul>
-          <li>Частные клиники — отправляют клиентов к нам</li>
-          <li>Медицинские колледжи — поток новых медиков</li>
-          <li>Скорая помощь — горячие "простые" кейсы</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>⚡ Рост (6–12 мес)</h3>
-        <ul>
-          <li>Компании / офисы — B2B корпоративные пакеты</li>
-          <li>Поставщики расходников — шприцы, системы</li>
-          <li>Центры ухода / пансионаты — постоянные заказы</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 5.5: РЕСУРСЫ И АКТИВНОСТИ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number" style="background:#7c3aed;">5½</div>
-      <div>
-        <div class="stage-title">Ключевые ресурсы и активности</div>
-        <div class="stage-sub">Что есть и что делаем каждый день</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>🧱 Ресурсы</h3>
-        <ul>
-          <li>База верифицированных медиков</li>
-          <li>Приложение iOS + Android + Web</li>
-          <li>Алгоритм матчинга (медик ↔ клиент по району)</li>
-          <li>Бренд HamshiraGo и доверие пользователей</li>
-          <li>CRM и система аналитики</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>⚙️ Ежедневные активности</h3>
-        <ul>
-          <li>Верификация и онбординг новых медиков</li>
-          <li>Матчинг клиент ↔ медик + диспетчеризация</li>
-          <li>Маркетинг по районам Ташкента</li>
-          <li>Поддержка 24/7 (Telegram + звонки)</li>
-          <li>Контроль качества и обработка жалоб</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 5.7: РИСКИ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number" style="background:#dc2626;">⚠</div>
-      <div>
-        <div class="stage-title">Риски и митигация</div>
-        <div class="stage-sub">Что может пойти не так и как защищаемся</div>
-      </div>
-    </div>
-    <div class="cards">
-      <div class="card">
-        <h3>👩‍⚕️ Текучка медсестёр</h3>
-        <ul>
-          <li>Риск: медсёстры уходят к конкурентам или на прямые заказы</li>
-          <li>Защита: бонусная система, гибкий график, стабильный поток заказов</li>
-          <li>Защита: эксклюзивный доступ к премиум-клиентам</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>⚖️ Юридические риски</h3>
-        <ul>
-          <li>Риск: инцидент при оказании услуги</li>
-          <li>Защита: строгая верификация дипломов и сертификатов</li>
-          <li>Защита: договор с медиком + страхование ответственности</li>
-          <li>Защита: запись визита в системе (чек-лист)</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>📉 Низкий спрос на старте</h3>
-        <ul>
-          <li>Риск: мало заказов — медики уходят</li>
-          <li>Защита: фокус на 2–3 района, не весь Ташкент</li>
-          <li>Защита: гарантированный минимум заказов для первых медиков</li>
-          <li>Защита: аптечный канал = горячий трафик</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <hr class="divider" />
-
-  <!-- ЭТАП 6: ЗАТРАТЫ И МЕТРИКИ -->
-  <div class="stage">
-    <div class="stage-header">
-      <div class="stage-number s6">6</div>
-      <div>
-        <div class="stage-title">Затраты и метрики успеха</div>
-        <div class="stage-sub">Сколько тратим и как измеряем рост</div>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 24px;">
-      <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; color:#555;">💸 Затраты (месяц 1)</h3>
-      <div class="costs">
-        <div class="cost-item">
-          <div class="cost-icon">🖥️</div>
-          <div>
-            <div class="cost-name">Сервер (Railway)</div>
-            <div class="cost-amount">~200 000 сум</div>
-          </div>
-        </div>
-        <div class="cost-item">
-          <div class="cost-icon">📱</div>
-          <div>
-            <div class="cost-name">Маркетинг</div>
-            <div class="cost-amount">~300 000 сум</div>
-          </div>
-        </div>
-        <div class="cost-item">
-          <div class="cost-icon">✅</div>
-          <div>
-            <div class="cost-name">Верификация медиков</div>
-            <div class="cost-amount">~100 000 сум</div>
-          </div>
-        </div>
-        <div class="cost-item">
-          <div class="cost-icon">👤</div>
-          <div>
-            <div class="cost-name">Поддержка / оператор</div>
-            <div class="cost-amount">~500 000 сум</div>
-          </div>
-        </div>
-        <div class="cost-item">
-          <div class="cost-icon">⚖️</div>
-          <div>
-            <div class="cost-name">Юр. расходы / договоры</div>
-            <div class="cost-amount">~200 000 сум</div>
-          </div>
-        </div>
-        <div class="cost-item" style="border: 2px solid #0d9488;">
-          <div class="cost-icon">📊</div>
-          <div>
-            <div class="cost-name">Итого burn rate</div>
-            <div class="cost-amount">~1 300 000 сум</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: BEMOR PLATFORMAGA KIRADI -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c1">1</div>
     <div>
-      <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; color:#555;">📊 Метрики успеха (месяц 1)</h3>
-      <div class="metrics">
-        <div class="metric-card">
-          <div class="metric-value">5</div>
-          <div class="metric-label">заказов в день</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">10</div>
-          <div class="metric-label">активных медиков</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">&lt;50к</div>
-          <div class="metric-label">CAC (сум)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">&gt;40%</div>
-          <div class="metric-label">повторных заказов</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">4.5+</div>
-          <div class="metric-label">рейтинг медиков</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">&lt;15м</div>
-          <div class="metric-label">время до матча</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">&lt;10%</div>
-          <div class="metric-label">churn rate / мес</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">&gt;50</div>
-          <div class="metric-label">NPS (готовность рекомендовать)</div>
-        </div>
+      <div class="section-title">Bemor platformaga kiradi</div>
+      <div class="section-sub">Qayerdan keladi va nima ko'radi</div>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <h3>📱 Kirish kanallari</h3>
+      <ul>
+        <li>Mobil ilova (iOS / Android)</li>
+        <li>Web sayt — hamshirago.uz</li>
+        <li>Google: "uyga hamshira", "online shifokor"</li>
+        <li>Telegram bot</li>
+        <li>Do'st tavsiyasi (referral)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🏠 Birinchi ekran</h3>
+      <ul>
+        <li>Salomat AI — "Nima qiynayapti?" tugmasi</li>
+        <li>Hamshira uyga chaqirish</li>
+        <li>Shifokorga yozilish (online / offline)</li>
+        <li>Yaqin klinikalar xaritada</li>
+        <li>Ovozli agent — gaplab aytish</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <h3>👥 Maqsadli auditoriya</h3>
+      <ul>
+        <li>Oilalar — kasal qarindosh bor</li>
+        <li>25–45 yosh — poliklinikaga vaqt yo'q</li>
+        <li>60+ yosh — uydan chiqish qiyin</li>
+        <li>Bolali onalar — tez yordam kerak</li>
+        <li>Surunkali kasallar — doimiy xizmat</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: SALOMAT AI — TRIAGE -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c2">2</div>
+    <div>
+      <div class="section-title">Salomat AI — Triage tizimi</div>
+      <div class="section-sub">Bemor simptomlarini tahlil qilib, to'g'ri yo'nalishga yuboradi</div>
+    </div>
+  </div>
+
+  <div class="flow" style="margin-bottom: 32px;">
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot" style="background:#0d9488;">1</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Bemor simptomlarini yozadi yoki gapiradi</h4>
+        <p>"Boshim og'riyapti, haroratim 38.5, ikki kundan beri yotibman"</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot" style="background:#0d9488;">2</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Salomat AI tahlil qiladi (Claude AI)</h4>
+        <p>Og'irlik darajasini baholaydi, tibbiy tarixni hisobga oladi, ixtisoslikni aniqlaydi</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot" style="background:#0d9488;">3</div>
+      </div>
+      <div class="flow-body">
+        <h4>To'g'ri yo'nalishga yuboradi</h4>
+        <p>Quyidagi 4 ta yo'ldan birini tavsiya qiladi</p>
       </div>
     </div>
   </div>
 
-  <div class="footer">
-    HamshiraGo &copy; 2026 &middot; Business Model Canvas &middot; by tezcode.ai
+  <div class="triage-grid">
+    <!-- DARAJA 1-2 -->
+    <div class="triage-card" style="background:#f0fdf4; border: 1.5px solid #86efac;">
+      <div class="triage-level" style="color:#16a34a;">Daraja 1–2 · Yengil</div>
+      <div class="triage-title">🩺 Hamshira uyga</div>
+      <div class="triage-desc" style="color:#166534;">
+        Ukol, kapelnitsa, bosim o'lchash, bog'lam — fizik shifokor kerak emas
+      </div>
+      <div class="triage-biz" style="background:#dcfce7; color:#166534;">
+        💰 Biznes: 10% komissiya
+      </div>
+    </div>
+
+    <!-- DARAJA 3-4 ONLINE -->
+    <div class="triage-card" style="background:#eff6ff; border: 1.5px solid #93c5fd;">
+      <div class="triage-level" style="color:#1d4ed8;">Daraja 3–4 · O'rta · Online</div>
+      <div class="triage-title">💻 Online shifokor</div>
+      <div class="triage-desc" style="color:#1e3a8a;">
+        Maslahat, retsept, yo'llanma — uydan chiqmasdan video konsultatsiya
+      </div>
+      <div class="triage-biz" style="background:#dbeafe; color:#1e40af;">
+        💰 Biznes: 15% komissiya (6 oydan keyin)
+      </div>
+    </div>
+
+    <!-- DARAJA 3-4 OFFLINE -->
+    <div class="triage-card" style="background:#fefce8; border: 1.5px solid #fde047;">
+      <div class="triage-level" style="color:#a16207;">Daraja 3–4 · O'rta · Offline</div>
+      <div class="triage-title">🏥 Klinikaga borish</div>
+      <div class="triage-desc" style="color:#713f12;">
+        Fizik tekshiruv, USI, tahlil — hamkor klinikada navbat olish
+      </div>
+      <div class="triage-biz" style="background:#fef9c3; color:#713f12;">
+        💰 Biznes: SaaS + 10% (6 oydan keyin)
+      </div>
+    </div>
+
+    <!-- DARAJA 5 -->
+    <div class="triage-card" style="background:#fdf4ff; border: 1.5px solid #d8b4fe;">
+      <div class="triage-level" style="color:#7c3aed;">Daraja 5 · Og'ir</div>
+      <div class="triage-title">🚗 House Call shifokor</div>
+      <div class="triage-desc" style="color:#4c1d95;">
+        Uyga shifokor keladi — klinikaga borish imkoni yo'q, lekin xavf yo'q
+      </div>
+      <div class="triage-biz" style="background:#ede9fe; color:#4c1d95;">
+        💰 Biznes: 12% komissiya (6 oydan keyin)
+      </div>
+    </div>
+
+    <!-- 103 -->
+    <div class="triage-card" style="background:#fff1f2; border: 1.5px solid #fca5a5; grid-column: span 1;">
+      <div class="triage-level" style="color:#dc2626;">Xavf · Hayot tahdidi</div>
+      <div class="triage-title">🚨 103 — Davlat tez yordami</div>
+      <div class="triage-desc" style="color:#991b1b;">
+        Yurak, insult, nafas to'xtashi — biz faqat yo'naltiramiz. Raqobat emas, sheriklik ham emas.
+      </div>
+      <div class="triage-biz" style="background:#fee2e2; color:#991b1b;">
+        ❌ Daromad: 0 so'm — Maqsad: ishonch
+      </div>
+    </div>
   </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: HAMSHIRA YO'LI (asosiy biznes) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c1">3</div>
+    <div>
+      <div class="section-title">Hamshira yo'li — Asosiy biznes</div>
+      <div class="section-sub">Daraja 1–2 · Hozirgi yagona daromad manbai</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">1</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Salomat AI → Hamshira tavsiya etadi</h4>
+          <p>Yoki bemor o'zi "Hamshira chaqirish" ni bosadi</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">2</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Xizmat turini tanlaydi</h4>
+          <p>Ukol / Kapelnitsa / Bosim o'lchash / Bog'lam / Parvarish</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">3</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Manzil + Vaqt</h4>
+          <p>GPS yoki qo'lda manzil — hozir yoki keyinroq</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">4</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Yaqin hamshiralar ko'rinadi</h4>
+          <p>Reyting, narx, qancha vaqtda yetib keladi (3–5 km radius)</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">5</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>To'lov — FAQAT oldindan</h4>
+          <p>Click.uz / Payme / Karta — hamshira yo'lga chiqishidan oldin</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c1" style="font-size:13px;">6</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Hamshira keladi → Xizmat</h4>
+          <p>Real-time kuzatish → Xizmat tugaydi → Baho va sharh</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card">
+        <h3>💰 Pul modeli (hozir)</h3>
+        <ul>
+          <li>Xizmat narxi: 30,000 – 120,000 so'm</li>
+          <li><strong>HamshiraGo ulushi: 10%</strong></li>
+          <li>Hamshiraga: 90%</li>
+          <li>To'lov: xizmatdan keyin 24 soat ichida hamshira hisobiga</li>
+        </ul>
+      </div>
+      <div class="card" style="border-top-color: #059669;">
+        <h3>📊 Misol: 10 ta buyurtma/kun</h3>
+        <ul>
+          <li>O'rtacha xizmat: 60,000 so'm</li>
+          <li>Kunlik aylanma: 600,000 so'm</li>
+          <li>Bizning 10%: 60,000 so'm / kun</li>
+          <li>Oylik: ~1,800,000 so'm (~$140)</li>
+          <li>50 ta buyurtma/kun → ~$700/oy</li>
+        </ul>
+      </div>
+      <div class="card amber">
+        <h3>🔮 6 oydan keyin qo'shiladi</h3>
+        <ul>
+          <li>Urgentlik to'lovi (+20–30%) — kechasi, bayramda</li>
+          <li>Komissiya 10% → 12–15%</li>
+          <li>Hamshira abonement: 50,000–100,000/oy</li>
+          <li>B2B — ofislar, pensionatlar</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: ONLINE SHIFOKOR YO'LI -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c2">4</div>
+    <div>
+      <div class="section-title">Online Shifokor yo'li</div>
+      <div class="section-sub">Daraja 3–4 · Video konsultatsiya · 6 oydan keyin monetizatsiya</div>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c2" style="font-size:13px;">1</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Salomat AI → Online shifokor tavsiya</h4>
+          <p>"Terapeвт / Pediatr / Nevroloq" — ixtisoslik aniqlanadi</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c2" style="font-size:13px;">2</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Shifokor tanlaydi</h4>
+          <p>Reyting, narx, bo'sh slot — bugun yoki ertaga</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c2" style="font-size:13px;">3</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>To'lov → Slot band</h4>
+          <p>Click / Payme — SMS tasdiqlash keladi</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c2" style="font-size:13px;">4</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Video qo'ng'iroq (LiveKit)</h4>
+          <p>Shifokor Salomat AI summary ni ko'radi — vaqt tejaydi</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c2" style="font-size:13px;">5</div>
+        </div>
+        <div class="flow-body">
+          <h4>Retsept + Xulosa — PDF</h4>
+          <p>Ilovada saqlanadi. Kerak bo'lsa → klinikaga yo'llanma</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card blue">
+        <h3>💰 Pul modeli (6 oydan keyin)</h3>
+        <ul>
+          <li>Konsultatsiya: 50,000 – 150,000 so'm</li>
+          <li>HamshiraGo ulushi: 15%</li>
+          <li>Shifokorga: 85%</li>
+          <li>Klinikaga ulush: 0% (mustaqil shifokor bo'lsa)</li>
+        </ul>
+      </div>
+      <div class="card blue">
+        <h3>🎁 Klinikaga nima beramiz</h3>
+        <ul>
+          <li>Shifokorlarni platformada ko'rsatish — bepul</li>
+          <li>Bemor oqimi — bizning traffic</li>
+          <li>Doctor panel — jadval, konsultatsiya</li>
+          <li>6 oy: komissiya 0%, SaaS 0%</li>
+          <li>6 oydan keyin: kelishuv bo'yicha</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: OFFLINE (KLINIKAGA BORISH) YO'LI -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c4">5</div>
+    <div>
+      <div class="section-title">Offline — Klinikaga borish yo'li</div>
+      <div class="section-sub">Daraja 3–4 · Hamkorlik · 6 oy bepul pilot</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">1</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Salomat AI → Klinikaga borish tavsiya</h4>
+          <p>Fizik tekshiruv kerak — USI, qon tahlili, ko'rik</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">2</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Yaqin klinikalar xaritada</h4>
+          <p>Masofa, reyting, narx, bugungi bo'sh slotlar</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">3</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Shifokor va slot tanlaydi</h4>
+          <p>Klinika → Ixtisoslik → Shifokor → Kun va soat</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">4</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>To'lov — 2 variant</h4>
+          <p>
+            <strong>A) Online (Click/Payme)</strong> — oldindan to'laydi<br/>
+            <strong>B) Klinikada</strong> — naqd / terminal (faqat slot band)
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">5</div>
+          <div class="flow-connector"></div>
+        </div>
+        <div class="flow-body">
+          <h4>Klinikaga keladi — Resepshon</h4>
+          <p>Reception panel: bemor keldi → ro'yxat → shifokor xonasi</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line">
+          <div class="flow-dot c4" style="font-size:13px;">6</div>
+        </div>
+        <div class="flow-body">
+          <h4>Natija ilovada saqlanadi</h4>
+          <p>Retsept, tahlil yo'nalma, xulosa — PDF</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card amber">
+        <h3>🤝 Klinika bilan hamkorlik — 6 oy</h3>
+        <ul>
+          <li>SaaS to'lovi: <strong>0 so'm</strong></li>
+          <li>Komissiya: <strong>0%</strong></li>
+          <li>Biz beramiz: tizim + bemor oqimi</li>
+          <li>Ular beradi: profil + shifokorlar + feedback</li>
+        </ul>
+      </div>
+      <div class="card amber">
+        <h3>💰 6 oydan keyin — pul modeli</h3>
+        <ul>
+          <li>Online to'lov bo'lsa: 10% komissiya</li>
+          <li>Klinikada to'lov: faqat SaaS $100–200/oy</li>
+          <li>Premium listing: $50/oy</li>
+          <li>Lab integratsiya: $50/oy</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🏥 Klinikaga pitch: nima uchun biz bilan?</h3>
+        <ul>
+          <li>Yangi bemor oqimi — platformadan</li>
+          <li>Online navbat tizimi — bepul</li>
+          <li>Reception + Doctor + Director panel</li>
+          <li>Salomat AI — to'g'ri shifokorga yo'naltiradi</li>
+          <li>Analitika dashboard</li>
+          <li>6 oy hech narsa to'lamaydi</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: HOUSE CALL SHIFOKOR -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c3">6</div>
+    <div>
+      <div class="section-title">House Call — Uyga shifokor</div>
+      <div class="section-sub">Daraja 5 · Premium xizmat · 6 oydan keyin</div>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card purple">
+      <h3>👨‍⚕️ Qachon kerak?</h3>
+      <ul>
+        <li>Klinikaga borish imkoni yo'q</li>
+        <li>Keksalar, bolalar, og'ir bemorlar</li>
+        <li>Kechasi kasallik — tong kutib bo'lmaydi</li>
+        <li>Hayot xavfi yo'q — lekin jiddiy holat</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>⚙️ Qanday ishlaydi?</h3>
+      <ul>
+        <li>"Shifokor uyga kelsin" → manzil + vaqt</li>
+        <li>Hamkor klinika shifokorlaridan biri keladi</li>
+        <li>To'lov FAQAT oldindan (kafolat sifatida)</li>
+        <li>Real-time kuzatish — shifokor qayerda</li>
+        <li>Ko'rikdan so'ng retsept yoki klinikaga yo'llanma</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>💰 Pul modeli (6 oydan keyin)</h3>
+      <ul>
+        <li>Xizmat narxi: 150,000 – 500,000 so'm</li>
+        <li>HamshiraGo ulushi: 12%</li>
+        <li>Klinika / shifokorga: 88%</li>
+        <li>Klinikaga foydali: qo'shimcha daromad</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: GIVE / GET — HAR BIR TOMONDAN -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c7">7</div>
+    <div>
+      <div class="section-title">Almashuv modeli — Kim nima beradi / oladi</div>
+      <div class="section-sub">Har bir tomonning manfaati aniq</div>
+    </div>
+  </div>
+
+  <!-- KLINIKA -->
+  <p style="font-size:15px; font-weight:800; margin-bottom:12px; color:#0d9488;">🏥 KLINIKA</p>
+  <div class="gg-grid" style="margin-bottom: 28px;">
+    <div class="gg-card give">
+      <h4 style="color:#0d9488;">↗ Biz beramiz</h4>
+      <ul>
+        <li>Bemor oqimi platformadan</li>
+        <li>Reception + Doctor + Director panel</li>
+        <li>Online navbat tizimi</li>
+        <li>Salomat AI yo'naltirish</li>
+        <li>Analitika va hisobotlar</li>
+        <li>6 oy bepul — SaaS ham, komissiya ham yo'q</li>
+      </ul>
+    </div>
+    <div class="gg-card get">
+      <h4 style="color:#2563eb;">↙ Biz olamiz</h4>
+      <ul>
+        <li>Klinika profili platformada ko'rinadi</li>
+        <li>Shifokorlar bazasi — bemorlar yo'naltiriladi</li>
+        <li>Feedback — tizimni yaxshilash uchun</li>
+        <li>Ishonch va referral (boshqa klinikalarga)</li>
+        <li>6 oydan keyin: SaaS $100–200/oy + 10% (kelishuv)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DOCTOR -->
+  <p style="font-size:15px; font-weight:800; margin-bottom:12px; color:#2563eb;">🩺 SHIFOKOR</p>
+  <div class="gg-grid" style="margin-bottom: 28px;">
+    <div class="gg-card give">
+      <h4 style="color:#0d9488;">↗ Biz beramiz</h4>
+      <ul>
+        <li>Tayyor bemor oqimi — qidirishga hojat yo'q</li>
+        <li>Online va offline slot tizimi</li>
+        <li>Shaxsiy profil + reyting</li>
+        <li>Video konsultatsiya infratuzilmasi</li>
+        <li>Daromad hisobi va kafolatlangan to'lov</li>
+      </ul>
+    </div>
+    <div class="gg-card get">
+      <h4 style="color:#2563eb;">↙ Biz olamiz</h4>
+      <ul>
+        <li>Har bir konsultatsiyadan 15% (6 oydan keyin)</li>
+        <li>Vaqti va kapasitesi platformaga bog'lanadi</li>
+        <li>Sifatli xizmat → platformaga obro'</li>
+        <li>Sharhlar va reyting — boshqalarga signal</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- HAMSHIRA -->
+  <p style="font-size:15px; font-weight:800; margin-bottom:12px; color:#059669;">👩‍⚕️ HAMSHIRA</p>
+  <div class="gg-grid" style="margin-bottom: 28px;">
+    <div class="gg-card give">
+      <h4 style="color:#0d9488;">↗ Biz beramiz</h4>
+      <ul>
+        <li>Yaqin atrofdagi buyurtmalar oqimi</li>
+        <li>Moslashuvchan jadval — o'zi qabul qiladi</li>
+        <li>Verification badge — mijoz ishonadi</li>
+        <li>To'lovni kafolatlash (oldindan to'langan)</li>
+        <li>Karyera o'sishi — reyting, sharhlar</li>
+      </ul>
+    </div>
+    <div class="gg-card get">
+      <h4 style="color:#2563eb;">↙ Biz olamiz</h4>
+      <ul>
+        <li>Har bir buyurtmadan <strong>10%</strong></li>
+        <li>Vaqti va joylashuvi platformada</li>
+        <li>Ma'lumot — qaysi xizmat, qaysi hudud ko'p</li>
+        <li>Uzoq muddatda retention</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CLIENT -->
+  <p style="font-size:15px; font-weight:800; margin-bottom:12px; color:#db2777;">🧑‍🤕 BEMOR (CLIENT)</p>
+  <div class="gg-grid">
+    <div class="gg-card give">
+      <h4 style="color:#0d9488;">↗ Biz beramiz</h4>
+      <ul>
+        <li>Uyga hamshira / shifokor chaqirish</li>
+        <li>Salomat AI — qaysi mutaxassisga borish</li>
+        <li>Verified mutaxassislar — ishonch</li>
+        <li>Tez va qulay booking</li>
+        <li>Tibbiy tarix saqlash</li>
+        <li>Narx solishtirish va tanlov</li>
+      </ul>
+    </div>
+    <div class="gg-card get">
+      <h4 style="color:#2563eb;">↙ Biz olamiz</h4>
+      <ul>
+        <li>Xizmat to'lovi (bizning ulush orqali)</li>
+        <li>Sog'liq ma'lumotlari — trend tahlili</li>
+        <li>Abonement to'lovi (keyinroq)</li>
+        <li>Sharhlar va reyting — sifat nazorati</li>
+        <li>Word-of-mouth — do'stlariga tavsiya</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: DAROMAD MODELI — BOSQICHLAR -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c4">8</div>
+    <div>
+      <div class="section-title">Daromad modeli — Bosqichlar bo'yicha</div>
+      <div class="section-sub">Qachon nima yonadi</div>
+    </div>
+  </div>
+
+  <div class="phases" style="margin-bottom: 28px;">
+    <div class="phase phase-1">
+      <div class="phase-label">Bosqich 1 · 0–6 oy</div>
+      <div class="phase-title">Faqat hamshira 10%</div>
+      <ul>
+        <li>Hamshira buyurtmadan 10% komissiya</li>
+        <li>Klinika: bepul (SaaS ham, komissiya ham 0)</li>
+        <li>Shifokor: bepul (komissiya 0)</li>
+        <li>Maqsad: bozorni egallash, ishonch</li>
+      </ul>
+    </div>
+    <div class="phase phase-2">
+      <div class="phase-label">Bosqich 2 · 6–12 oy</div>
+      <div class="phase-title">To'liq model yonadi</div>
+      <ul>
+        <li>Hamshira: 10% → 12–15%</li>
+        <li>Online konsultatsiya: 15%</li>
+        <li>Offline (online to'lov): 10%</li>
+        <li>Klinika SaaS: $100–200/oy</li>
+        <li>House Call: 12%</li>
+      </ul>
+    </div>
+    <div class="phase phase-3">
+      <div class="phase-label">Bosqich 3 · 12+ oy</div>
+      <div class="phase-title">Kengayish</div>
+      <ul>
+        <li>Bemor abonement: $5–15/oy</li>
+        <li>B2B — ofislar, pensionatlar</li>
+        <li>Lab integratsiya: $50/oy</li>
+        <li>Sug'urta integratsiya</li>
+        <li>Boshqa shaharlar</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="max-width: 700px;">
+    <h3>📊 Daromad jadvali (to'liq model)</h3>
+    <table class="rev-table">
+      <thead>
+        <tr>
+          <th>Xizmat</th>
+          <th>Narx</th>
+          <th>Ulush</th>
+          <th>Bosqich</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight">
+          <td>Hamshira uyga</td>
+          <td>30K – 120K so'm</td>
+          <td>10%</td>
+          <td><span class="badge badge-green">Hozir</span></td>
+        </tr>
+        <tr>
+          <td>Online konsultatsiya</td>
+          <td>50K – 150K so'm</td>
+          <td>15%</td>
+          <td><span class="badge badge-blue">6 oydan keyin</span></td>
+        </tr>
+        <tr>
+          <td>Offline (online to'lov)</td>
+          <td>80K – 300K so'm</td>
+          <td>10%</td>
+          <td><span class="badge badge-blue">6 oydan keyin</span></td>
+        </tr>
+        <tr>
+          <td>House Call shifokor</td>
+          <td>150K – 500K so'm</td>
+          <td>12%</td>
+          <td><span class="badge badge-blue">6 oydan keyin</span></td>
+        </tr>
+        <tr>
+          <td>Klinika SaaS</td>
+          <td>$100–200/oy</td>
+          <td>100%</td>
+          <td><span class="badge badge-amber">6 oydan keyin</span></td>
+        </tr>
+        <tr>
+          <td>Bemor abonement</td>
+          <td>$5–15/oy</td>
+          <td>100%</td>
+          <td><span class="badge badge-purple">12 oydan keyin</span></td>
+        </tr>
+        <tr>
+          <td>103 yo'naltirish</td>
+          <td>—</td>
+          <td>0%</td>
+          <td><span class="badge badge-red">Hech qachon</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: KLINIKA ONBOARDING QADAMLARI -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c7">9</div>
+    <div>
+      <div class="section-title">Klinika bilan hamkorlik — Qadam-qadam</div>
+      <div class="section-sub">Birinchi uchrashuвdan to ishlashgacha</div>
+    </div>
+  </div>
+
+  <div class="flow" style="max-width: 100%;">
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">1</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Muzokarа — "Nima uchun biz bilan?"</h4>
+        <p>Muammo: klinikada online navbat yo'q, bemor oqimi kamligi, reklama xarajati katta. Biz yechim ko'rsatamiz + demo.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">2</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Pilot taklif — 6 oy bepul</h4>
+        <p>"6 oy bepul ishlang, yangi bemorlar oling, tizimni sinab ko'ring — to'lov yo'q. Faqat bizga feedback bering."</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">3</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Shartnoma — Hamkorlik MOU</h4>
+        <p>Ma'lumot maxfiyligi (NDA) + pilot shartlari + 6 oydan keyingi narxlar kelishuvi (hozirdan ma'lum)</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">4</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Onboarding — 1–2 hafta</h4>
+        <p>Klinika profili yaratiladi → Shifokorlar qo'shiladi → Resepshon o'qitiladi → Test navbatlar o'tkaziladi</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">5</div>
+        <div class="flow-connector"></div>
+      </div>
+      <div class="flow-body">
+        <h4>Ishga tushirish</h4>
+        <p>Platformada ko'rinadi → Bemor oqimi boshlanadi → Har hafta analitika hisobot</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-line">
+        <div class="flow-dot c7" style="font-size:12px;">6</div>
+      </div>
+      <div class="flow-body">
+        <h4>6 oy tugagach — To'liq model</h4>
+        <p>SaaS narxi joriy etiladi → Komissiya yonadi → Klinika allaqachon tizimga o'rganib qolgan → Chiqib ketish qiyin</p>
+      </div>
+    </div>
+  </div>
+</div>
+<hr />
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: TIZIMLAR (Panellar) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num c6">10</div>
+    <div>
+      <div class="section-title">Dasturiy tizimlar — Kim nimani ko'radi</div>
+      <div class="section-sub">4 panel: Doctor · Reception · Director · Bemor</div>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="card blue">
+      <h3>🩺 Doctor Panel</h3>
+      <ul>
+        <li>Bugungi konsultatsiyalar ro'yxati</li>
+        <li>Slot jadval yaratish (online/offline)</li>
+        <li>Bemor simptomlar + Salomat AI summary</li>
+        <li>Video qo'ng'iroq (LiveKit)</li>
+        <li>Retsept yozish (PDF)</li>
+        <li>Daromad hisobi</li>
+      </ul>
+    </div>
+    <div class="card amber">
+      <h3>🏥 Reception Panel</h3>
+      <ul>
+        <li>Bugungi navbatlar — real-time</li>
+        <li>Bemor keldi → belgilash</li>
+        <li>Yangi bemor ro'yxatga olish</li>
+        <li>To'lovni tasdiqlash (naqd/terminal)</li>
+        <li>Shifokor bandligini ko'rish</li>
+        <li>SMS / push yuborish bemorga</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>📊 Director Panel</h3>
+      <ul>
+        <li>Klinika dashboard — daromad, trafik</li>
+        <li>Shifokorlar boshqaruvi</li>
+        <li>Moliya va komissiya hisobi</li>
+        <li>NPS va bemorlar qoniqishi</li>
+        <li>Export (Excel/PDF)</li>
+        <li>Eng band shifokor / xizmat analitikasi</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📱 Bemor ilovasi</h3>
+      <ul>
+        <li>Salomat AI chat + ovozli agent</li>
+        <li>Hamshira chaqirish</li>
+        <li>Klinikaga navbat olish</li>
+        <li>Online konsultatsiya</li>
+        <li>Tibbiy tarix va retseptlar</li>
+        <li>Real-time kuzatish</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  HamshiraGo &copy; 2026 &middot; Business Model &middot; Versiya 2.0
+</div>
 
 </body>
 </html>
