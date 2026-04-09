@@ -130,13 +130,12 @@ export default function AiChatScreen() {
   // ── Streaming send (SSE) ──
   const sendStreaming = useCallback(async (text: string, assistantMsgId: string): Promise<boolean> => {
     try {
-      const currentLanguage = 'ru'; // will be overridden by Accept-Language header in apiFetch
       const response = await fetch(`${API_BASE}/consultations/ai-chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Accept-Language': currentLanguage,
+          'Accept-Language': language,
         },
         body: JSON.stringify({ messages: apiMessages.current }),
       });

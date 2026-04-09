@@ -91,12 +91,14 @@ export class AiAgentService {
     patientContext?: PatientContext,
     lang: string = 'ru',
   ): string {
+    const langInstruction = lang === 'uz'
+      ? `ЯЗЫК ОТВЕТА: O'ZBEK TILIDA JAVOB BER. Har doim o'zbek tilida (lotin alifbosida) javob ber. Hech qachon rus tilida javob berma. Bemorning tili: O'ZBEKCHA.`
+      : `ЯЗЫК ОТВЕТА: РУССКИЙ. Всегда отвечай на русском языке. Даже если знаешь узбекский — отвечай на русском. Язык пациента: РУССКИЙ.`;
+
     let prompt = `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
 
-ПРАВИЛА ЯЗЫКА:
-${isFirstMessage ? '- Это первое сообщение сессии. Определи язык системы пациента из параметра lang. Если lang=uz — поприветствуй на узбекском: "Assalomu alaykum! Men Salomat — sizning sogligingiz boyicha yordamchingizman. Qanday yordam bera olaman?" Если lang=ru — поприветствуй на русском: "Здравствуйте! Я Salomat — ваш помощник по вопросам здоровья. Чем могу помочь?"' : '- Определяй язык по последнему сообщению пациента. Если пациент пишет на узбекском (латиница) — отвечай на узбекском (латиница). Если на русском — отвечай на русском. Если на кириллическом узбекском — отвечай на узбекском латиницей.'}
-- Всегда отвечай на том языке, на котором пишет пациент.
-- Не смешивай языки в одном ответе.
+${langInstruction}
+Не смешивай языки в одном ответе. Не используй эмодзи.
 
 БАЗА ЗНАНИЙ:
 ${this.salomatPrompt}
