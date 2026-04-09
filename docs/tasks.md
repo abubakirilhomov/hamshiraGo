@@ -741,13 +741,13 @@
 ## 💡 V4 — идеи для будущего развития
 
 ### Рост и удержание
-- [ ] **Расписание медика** — медик указывает рабочие часы (Пн 09–18, Сб 10–14). Dispatch отправляет только в рабочее время. Уменьшает отклонения заказов. **Реализация:** Entity `MedicSchedule` с массивом `{ dayOfWeek, startHour, endHour }`. В `selectBestMedic` — фильтр по текущему дню/часу. UI в medic app: выбор дней + range slider для часов. Оценка: ~4 часа backend + ~3 часа mobile
+- [x] **Расписание медика** — DONE (backend) — `MedicSchedule` entity, `GET/PUT /medics/me/schedule`, dispatch фильтрует по рабочим часам. Mobile UI remains.
 - [ ] **Push-сегментация** — admin отправляет push по сегментам (новые клиенты, неактивные 30+ дней, тир GOLD). **Реализация:** Endpoint `POST /admin/push-campaign` с body `{ segment, title, body }`. Segments: `new_7d` (регистрация <7 дней), `inactive_30d` (нет заказов 30+ дней), `tier_gold`, `all`. SQL query фильтрует users, шлёт push батчами по 100. Admin UI: форма с dropdown сегмента + textarea. Оценка: ~3 часа backend + ~2 часа admin
 - [x] **Фото до/после процедуры** — DONE (backend) — `beforePhotoUrl`/`afterPhotoUrl` columns, `POST /orders/:id/photo` endpoint, Cloudinary upload. Mobile part remains.
 - [x] **Уведомления в Telegram для клиентов** — DONE (backend) — full chain verified: User entity `telegramChatId`, `/start client_{userId}`, `notifyClientStatus()`, `notifyClient()`. Mobile deep link part remains.
 
 ### UX и удобство
-- [ ] **Мульти-услуга в одном заказе** — клиент выбирает несколько услуг (укол + капельница). **Реализация:** Поле `serviceIds` (jsonb массив) в Order вместо/наряду с `serviceId`. UI: checkbox на каталоге, корзина внизу, суммарная цена. Backend: validate все serviceIds, суммировать цены. Сложность средняя — нужно менять flow создания заказа. Оценка: ~6 часов backend + ~4 часа mobile
+- [x] **Мульти-услуга в одном заказе** — DONE (backend) — `serviceIds`/`serviceTitles` JSONB на Order, prices суммируются. Mobile UI remains.
 - [x] **ETA (оценка времени прибытия)** — DONE (backend) — OSRM + haversine fallback, `etaMinutes` in `medic_location` and `order_status` events. Mobile display part remains.
 - [x] **`/orders/stats` endpoint** — DONE — `GET /orders/stats` → `{ total, active, completed, canceled }`
 
