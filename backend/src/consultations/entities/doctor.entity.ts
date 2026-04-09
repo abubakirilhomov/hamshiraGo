@@ -84,6 +84,9 @@ export class Doctor {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, nullable: true })
   earnings!: number;
 
+  @Column({ type: 'uuid', nullable: true, default: null })
+  companyId!: string | null;
+
   @Column({ type: 'timestamp', nullable: true, default: null })
   lastSeenAt!: Date | null;
 

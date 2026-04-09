@@ -93,5 +93,22 @@
   "VOICE_TTS_NOT_CONFIGURED": "Озвучка не настроена",
   "SALOMAT_RATE_LIMIT": "Лимит сообщений на сегодня исчерпан. Попробуйте завтра или запишитесь к врачу.",
   "SALOMAT_RATE_LIMIT_WARNING": "У вас осталось мало сообщений на сегодня",
-  "SALOMAT_CONSENT_REQUIRED": "Для использования Salomat необходимо согласие"
+  "SALOMAT_CONSENT_REQUIRED": "Для использования Salomat необходимо согласие",
+  "COMPANY_NOT_FOUND": "Клиника не найдена",
+  "COMPANY_PHONE_EXISTS": "Клиника с таким телефоном уже зарегистрирована",
+  "COMPANY_NOT_VERIFIED": "Клиника не верифицирована",
+  "COMPANY_BLOCKED": "Клиника заблокирована",
+  "CLINIC_ACCESS_ONLY": "Доступ только для сотрудников клиники",
+  "CLINIC_NOT_AUTHENTICATED": "Сотрудник клиники не авторизован",
+  "CLINIC_INSUFFICIENT_ROLE": "Недостаточно прав для этого действия",
+  "STAFF_NOT_FOUND": "Сотрудник не найден",
+  "STAFF_PHONE_EXISTS": "Сотрудник с таким телефоном уже существует",
+  "ROOM_NOT_FOUND": "Кабинет не найден",
+  "SERVICE_NOT_FOUND": "Услуга не найдена",
+  "SERVICE_ALREADY_EXISTS": "Услуга уже существует",
+  "APPOINTMENT_NOT_FOUND": "Запись не найдена",
+  "APPOINTMENT_ALREADY_CANCELLED": "Запись уже отменена",
+  "APPOINTMENT_ALREADY_DONE": "Приём уже завершён",
+  "LEAD_NOT_FOUND": "Лид не найден",
+  "LEAD_ALREADY_PROCESSED": "Лид уже обработан"
 }
