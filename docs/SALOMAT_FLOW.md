@@ -300,9 +300,9 @@ flowchart TD
     DONE_CHECK -->|Нет, нужно больше инфо| NEXT_Q[Следующий вопрос]
     NEXT_Q --> START
     
-    DONE_CHECK -->|DOCTOR| DOC_CARD[Карточка<br/>"Записаться к врачу"]
-    DONE_CHECK -->|NURSE| NURSE_CARD[Карточка<br/>"Вызвать медсестру"]
-    DONE_CHECK -->|EMERGENCY| EMRG_CARD[Карточка<br/>"Позвонить 103"]
+    DONE_CHECK -->|DOCTOR| DOC_CARD[Записаться к врачу]
+    DONE_CHECK -->|NURSE| NURSE_CARD[Вызвать медсестру]
+    DONE_CHECK -->|EMERGENCY| EMRG_CARD[Позвонить 103]
     DONE_CHECK -->|SELF_CARE| TIPS[Рекомендации<br/>самопомощи]
 ```
 
