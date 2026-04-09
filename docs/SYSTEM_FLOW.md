@@ -5,14 +5,14 @@
 ```mermaid
 graph TB
     subgraph Клиенты
-        MOB[📱 Mobile App<br/>Expo React Native]
-        WEB[🌐 Web Client<br/>Next.js]
-        MED[👩‍⚕️ Medic App<br/>Expo React Native]
-        DOC[🩺 Doctor App<br/>в Medic App]
-        ADM[⚙️ Admin Panel<br/>React Vite]
+        MOB[Mobile App<br/>Expo React Native]
+        WEB[Web Client<br/>Next.js]
+        MED[Medic App<br/>Expo React Native]
+        DOC[Doctor App<br/>в Medic App]
+        ADM[Admin Panel<br/>React Vite]
     end
 
-    subgraph Backend["☁️ Backend (NestJS + Railway)"]
+    subgraph Backend["Backend (NestJS + Railway)"]
         API[REST API]
         WS[WebSocket<br/>Socket.IO]
         CRON[Cron Jobs]
@@ -20,13 +20,13 @@ graph TB
 
     subgraph Внешние сервисы
         PG[(PostgreSQL)]
-        CLD[☁️ Cloudinary<br/>Фото/документы]
-        ANTH[🤖 Anthropic<br/>Claude Haiku]
-        GROQ[🎙️ Groq<br/>Whisper STT]
-        LK[📹 LiveKit<br/>Видеозвонки]
-        TG[📨 Telegram Bot]
-        PUSH[📲 Expo Push]
-        OSRM[🗺️ OSRM<br/>Маршруты]
+        CLD[Cloudinary<br/>Фото/документы]
+        ANTH[Anthropic<br/>Claude Haiku]
+        GROQ[Groq<br/>Whisper STT]
+        LK[LiveKit<br/>Видеозвонки]
+        TG[Telegram Bot]
+        PUSH[Expo Push]
+        OSRM[OSRM<br/>Маршруты]
     end
 
     MOB <--> API
@@ -54,11 +54,11 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant C as 📱 Клиент
-    participant API as ☁️ Backend
-    participant D as 🔄 Dispatch
-    participant M as 👩‍⚕️ Медсестра
-    participant TG as 📨 Telegram
+    participant C as Клиент
+    participant API as Backend
+    participant D as Dispatch
+    participant M as Медсестра
+    participant TG as Telegram
 
     C->>API: POST /orders (serviceId, location)
     API->>API: Рассчитать цену + комиссия 10%
@@ -92,7 +92,7 @@ sequenceDiagram
     M->>API: POST /orders/:id/photo (after)
     API->>API: Начислить earnings медику
     API->>C: Push: "Заказ завершён!"
-    C->>API: POST /orders/:id/rate (1-5 ⭐)
+    C->>API: POST /orders/:id/rate (1-5 )
 ```
 
 ---
@@ -101,10 +101,10 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant P as 📱 Пациент
-    participant API as ☁️ Backend
-    participant AI as 🤖 Claude Haiku
-    participant AUD as 📊 Audit Log
+    participant P as Пациент
+    participant API as Backend
+    participant AI as Claude Haiku
+    participant AUD as Audit Log
 
     P->>P: Открыть чат Salomat
     P->>P: Принять disclaimer (первый раз)
@@ -125,16 +125,16 @@ sequenceDiagram
     alt Уровень 1 — СКОРАЯ
         API->>AUD: log RED_FLAG
         API-->>P: "Вызовите 103 немедленно!"
-        P->>P: Кнопка "📞 Позвонить 103"
+        P->>P: Кнопка "Позвонить 103"
     else Уровень 3 — К врачу
         API->>AUD: log DOCTOR_REFERRAL
         API-->>P: "Обратитесь к кардиологу"
-        P->>P: Кнопка "🩺 Shifokor tanlash"
+        P->>P: Кнопка "Shifokor tanlash"
         P->>API: POST /consultations (с Salomat summary)
     else Уровень 3 — Медсестра
         API->>AUD: log NURSE_REFERRAL
         API-->>P: "Вам нужна капельница"
-        P->>P: Кнопка "💉 Hamshira chaqirish"
+        P->>P: Кнопка "Hamshira chaqirish"
         P->>API: POST /orders
     else Уровень 4 — Самопомощь
         API-->>P: "Отдых, обильное питьё..."
@@ -147,11 +147,11 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant P as 📱 Пациент
-    participant APP as 📱 Expo-AV
-    participant API as ☁️ Backend
-    participant GRQ as 🎙️ Groq Whisper
-    participant AI as 🤖 Claude Haiku
+    participant P as Пациент
+    participant APP as Expo-AV
+    participant API as Backend
+    participant GRQ as Groq Whisper
+    participant AI as Claude Haiku
 
     P->>APP: Нажать + держать микрофон
     APP->>APP: Запись аудио (m4a)
@@ -178,10 +178,10 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant C as 📱 Клиент
-    participant API as ☁️ Backend
-    participant D as 🩺 Врач
-    participant LK as 📹 LiveKit
+    participant C as Клиент
+    participant API as Backend
+    participant D as Врач
+    participant LK as LiveKit
 
     C->>API: POST /consultations (doctorId, symptoms, slotId)
     API->>API: Забронировать слот
@@ -200,7 +200,7 @@ sequenceDiagram
     D->>API: POST /consultations/:id/call/join
     API-->>D: { token, serverUrl, roomName }
     
-    Note over C,D: 📹 Видеозвонок через LiveKit
+    Note over C,D: Видеозвонок через LiveKit
     
     D->>API: POST /consultations/:id/call/end
     D->>API: PATCH /consultations/:id/doctor-complete
@@ -243,16 +243,16 @@ flowchart TD
     R2 --> INVITE
     
     INVITE --> WAIT{60 сек ожидание}
-    WAIT -->|Принял| ASSIGN[✅ Назначен]
+    WAIT -->|Принял| ASSIGN[Назначен]
     WAIT -->|Отклонил| NEXT{Ещё попытки?}
     WAIT -->|Таймаут| NEXT
     
     NEXT -->|Да, < 10| SEARCH
     NEXT -->|Нет, 10 попыток| RETRY{Были попытки?}
     
-    RETRY -->|Да| WAIT5[⏳ Повтор через 5 мин]
+    RETRY -->|Да| WAIT5[Повтор через 5 мин]
     WAIT5 --> SEARCH
-    RETRY -->|Нет кандидатов| CANCEL[❌ Отмена заказа]
+    RETRY -->|Нет кандидатов| CANCEL[Отмена заказа]
 ```
 
 ---
@@ -262,10 +262,10 @@ flowchart TD
 ```mermaid
 graph LR
     subgraph JWT Роли
-        CL[👤 Client<br/>role: client]
-        MC[👩‍⚕️ Medic<br/>role: medic]
-        DC[🩺 Doctor<br/>role: doctor]
-        AD[⚙️ Admin<br/>role: admin]
+        CL[Client<br/>role: client]
+        MC[Medic<br/>role: medic]
+        DC[Doctor<br/>role: doctor]
+        AD[Admin<br/>role: admin]
     end
 
     subgraph Доступ
@@ -321,12 +321,12 @@ stateDiagram-v2
 ```mermaid
 graph TB
     subgraph Frontend
-        M1[📱 Mobile Client<br/>Expo SDK 52 + React Native]
-        M2[📱 Medic/Doctor App<br/>Expo SDK 52 + React Native]
-        W1[🌐 Web Client<br/>Next.js 16]
-        W2[🌐 Web Medic<br/>Next.js 16]
-        A1[⚙️ Admin<br/>React + Vite + shadcn/ui]
-        L1[🏠 Landing<br/>Next.js + SEO]
+        M1[Mobile Client<br/>Expo SDK 52 + React Native]
+        M2[Medic/Doctor App<br/>Expo SDK 52 + React Native]
+        W1[Web Client<br/>Next.js 16]
+        W2[Web Medic<br/>Next.js 16]
+        A1[Admin<br/>React + Vite + shadcn/ui]
+        L1[Landing<br/>Next.js + SEO]
     end
 
     subgraph Backend
@@ -336,16 +336,16 @@ graph TB
     end
 
     subgraph AI
-        AI1[🤖 Claude Haiku<br/>Salomat чат + триаж]
-        AI2[🎙️ Groq Whisper<br/>Голос → текст]
-        AI3[🔊 OpenAI TTS<br/>Текст → голос]
+        AI1[Claude Haiku<br/>Salomat чат + триаж]
+        AI2[Groq Whisper<br/>Голос → текст]
+        AI3[OpenAI TTS<br/>Текст → голос]
     end
 
     subgraph Infra
-        RW[☁️ Railway<br/>Backend hosting]
-        VR[▲ Vercel<br/>Web hosting]
+        RW[Railway<br/>Backend hosting]
+        VR[Vercel<br/>Web hosting]
         PG[(PostgreSQL<br/>Railway)]
-        CD[☁️ Cloudinary<br/>Media]
+        CD[Cloudinary<br/>Media]
     end
 ```
 
@@ -355,13 +355,13 @@ graph TB
 
 ```mermaid
 flowchart LR
-    C[👤 Клиент] -->|Оплата| P[💳 Payme / Click]
-    P -->|100%| SYS[🏥 HamshiraGo]
-    SYS -->|90%| M[👩‍⚕️ Медсестра]
-    SYS -->|10%| FEE[💰 Комиссия платформы]
+    C[Клиент] -->|Оплата| P[Payme / Click]
+    P -->|100%| SYS[HamshiraGo]
+    SYS -->|90%| M[Медсестра]
+    SYS -->|10%| FEE[Комиссия платформы]
     
-    C2[👤 Клиент] -->|Оплата консультации| SYS
-    SYS -->|85%| D[🩺 Врач]
-    SYS -->|15%| FEE2[💰 Комиссия]
+    C2[Клиент] -->|Оплата консультации| SYS
+    SYS -->|85%| D[Врач]
+    SYS -->|15%| FEE2[Комиссия]
 ```
 
