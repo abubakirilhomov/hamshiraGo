@@ -11,6 +11,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   ServiceUnavailableException,
   UploadedFile,
@@ -35,9 +36,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { WebPushService } from '../realtime/web-push.service';
 import { CloudinaryService } from '../common/cloudinary.service';
+import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 import { SetWorkZoneDto } from './dto/set-work-zone.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
 
 @ApiTags('medics')
 @Controller('medics')
@@ -51,6 +54,7 @@ export class MedicsController {
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   @Post('register')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Регистрация медика' })
   @ApiResponse({ status: 201, description: 'Медик зарегистрирован' })
@@ -59,6 +63,7 @@ export class MedicsController {
   }
 
   @Post('login')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин медика' })
@@ -313,6 +318,24 @@ export class MedicsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteWebPushSubscription(@Body() body: { endpoint: string }) {
     if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
+  }
+
+  // ── Schedule (working hours) ──────────────────────────────────────────────
+
+  @Get('me/schedule')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Получить расписание медика' })
+  getSchedule(@MedicId() medicId: string) {
+    return this.medicsService.getSchedule(medicId);
+  }
+
+  @Put('me/schedule')
+  @UseGuards(MedicAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Обновить расписание медика' })
+  updateSchedule(@MedicId() medicId: string, @Body() dto: UpdateScheduleDto) {
+    return this.medicsService.updateSchedule(medicId, dto);
   }
 
   // ── Work zone (geofence) ─────────────────────────────────────────────────

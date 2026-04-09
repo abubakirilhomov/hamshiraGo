@@ -16,26 +16,38 @@ export interface ServiceCardItem {
 type ServiceCardProps = {
   service: ServiceCardItem;
   gridMode?: boolean;
+  isSelected?: boolean;
+  onToggle?: (id: string) => void;
 };
 
 export const ServiceCard = React.memo(function ServiceCard({
   service,
   gridMode = false,
+  isSelected = false,
+  onToggle,
 }: ServiceCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
 
   const handlePress = useCallback(() => {
-    router.push({
-      pathname: '/service/[id]',
-      params: { id: service.id },
-    });
-  }, [service.id, router]);
+    if (onToggle) {
+      onToggle(service.id);
+    } else {
+      router.push({
+        pathname: '/service/[id]',
+        params: { id: service.id },
+      });
+    }
+  }, [service.id, router, onToggle]);
 
   if (gridMode) {
     return (
       <Pressable
-        style={({ pressed }) => [styles.gridCard, pressed && styles.cardPressed]}
+        style={({ pressed }) => [
+          styles.gridCard,
+          pressed && styles.cardPressed,
+          isSelected && styles.gridCardSelected,
+        ]}
         onPress={handlePress}
         accessibilityRole="button"
         accessibilityLabel={`${service.title}, ${service.price.toLocaleString('ru-RU')} UZS`}
@@ -49,8 +61,8 @@ export const ServiceCard = React.memo(function ServiceCard({
         <Text style={styles.gridPrice}>
           {service.price.toLocaleString('ru-RU')} UZS
         </Text>
-        <View style={styles.gridAddBtn}>
-          <FontAwesome name="plus" size={12} color="#fff" />
+        <View style={[styles.gridAddBtn, isSelected && styles.gridAddBtnSelected]}>
+          <FontAwesome name={isSelected ? 'check' : 'plus'} size={12} color="#fff" />
         </View>
       </Pressable>
     );
@@ -149,6 +161,10 @@ const styles = StyleSheet.create({
     color: Theme.textSecondary,
     marginBottom: Spacing.sm,
   },
+  gridCardSelected: {
+    borderWidth: 2,
+    borderColor: Theme.primary,
+  },
   gridAddBtn: {
     position: 'absolute',
     bottom: 12,
@@ -159,5 +175,8 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  gridAddBtnSelected: {
+    backgroundColor: Theme.success,
   },
 });

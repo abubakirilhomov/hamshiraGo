@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -9,10 +11,16 @@ import {
   Post,
   Query,
   Req,
+  ServiceUnavailableException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { extname } from 'path';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -25,12 +33,16 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 import { ClientId } from '../auth/decorators/client-id.decorator';
 import { MedicId } from '../auth/decorators/medic-id.decorator';
 import { OrderStatus } from './entities/order-status.enum';
+import { CloudinaryService } from '../common/cloudinary.service';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   // ── Client endpoints ──────────────────────────────────────────────────────
 
@@ -55,6 +67,13 @@ export class OrdersController {
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 20,
     );
+  }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Статистика заказов клиента' })
+  getStats(@ClientId() clientId: string) {
+    return this.ordersService.getClientStats(clientId);
   }
 
   @Get(':id([0-9a-fA-F-]{36})')
@@ -199,6 +218,41 @@ export class OrdersController {
     return this.ordersService.updateStatusByMedic(id, medicId, dto.status as OrderStatus);
   }
 
+  /** Upload before/after photo for an order (medic only) */
+  @Post(':id/photo')
+  @UseGuards(MedicAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Загрузить фото до/после процедуры (медик)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: memoryStorage(),
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        if (!allowed.includes(extname(file.originalname).toLowerCase())) {
+          return cb(new BadRequestException('Only jpg/jpeg/png/webp files are allowed'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadOrderPhoto(
+    @Param('id') id: string,
+    @MedicId() medicId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('type') type: string,
+  ) {
+    if (!file) throw new BadRequestException('NO_FILE_PROVIDED');
+    if (!this.cloudinaryService.isConfigured()) {
+      throw new ServiceUnavailableException('FILE_STORAGE_NOT_CONFIGURED');
+    }
+    if (type !== 'before' && type !== 'after') {
+      throw new BadRequestException('TYPE_MUST_BE_BEFORE_OR_AFTER');
+    }
+    return this.ordersService.uploadOrderPhoto(id, medicId, file, type as 'before' | 'after');
+  }
+
   // ── Admin endpoints ───────────────────────────────────────────────────────
 
   /**
@@ -231,5 +285,12 @@ export class OrdersController {
   @HttpCode(HttpStatus.OK)
   adminCancelOrder(@Param('id') id: string, @Body() dto: CancelOrderDto) {
     return this.ordersService.adminCancelOrder(id, dto.reason);
+  }
+
+  @Delete('admin/:id')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async adminSoftDelete(@Param('id') id: string) {
+    await this.ordersService.softDelete(id);
   }
 }

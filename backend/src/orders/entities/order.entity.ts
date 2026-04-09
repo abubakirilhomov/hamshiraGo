@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
   OneToOne,
@@ -34,6 +35,14 @@ export class Order {
   /** Snapshot of service title at the time of order */
   @Column({ type: 'varchar', length: 255, nullable: true })
   serviceTitle!: string | null;
+
+  /** UUIDs of all services when multi-service order (null for single-service) */
+  @Column({ type: 'jsonb', nullable: true, default: null })
+  serviceIds!: string[] | null;
+
+  /** Snapshot of all service titles when multi-service order (null for single-service) */
+  @Column({ type: 'jsonb', nullable: true, default: null })
+  serviceTitles!: string[] | null;
 
   /** Price taken from service catalog at order time */
   @Column({ type: 'int', nullable: true })
@@ -76,12 +85,23 @@ export class Order {
   @Column({ type: 'varchar', length: 1000, nullable: true, default: null })
   clientReview!: string | null;
 
+  /** Photo taken by medic before the procedure */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  beforePhotoUrl!: string | null;
+
+  /** Photo taken by medic after the procedure */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  afterPhotoUrl!: string | null;
+
   @Index()
   @CreateDateColumn()
   created_at!: Date;
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt!: Date | null;
 
   @ManyToOne(() => User, (u) => u.orders, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'clientId' })

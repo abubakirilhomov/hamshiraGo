@@ -55,6 +55,10 @@
 ## 📋 Задачи
 
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
+- [x] **MOB-FEAT-1** — ETA display на экране трекинга заказа — `mobile/app/order/track.tsx`, `mobile/hooks/useOrderTracking.ts`
+- [x] **MED-FEAT-1** — Photo before/after в деталях заказа медика — `medic/app/order/[id].tsx`
+- [x] **MED-FEAT-2** — Экран расписания медика (ish jadvali) — `medic/app/schedule.tsx`, `medic/app/(tabs)/profile.tsx`
+- [x] **MOB-FEAT-2** — Multi-service selection на главном экране — `mobile/app/(tabs)/index.tsx`, `mobile/components/ServiceCard.tsx`, `mobile/app/order/confirm.tsx`
 
 ### 🔵 V5 Backend — DONE (Абубакир, 2026-04-09)
 
@@ -932,19 +936,19 @@
 ## 💡 V4 — идеи для будущего развития
 
 ### Рост и удержание
-- [ ] **Расписание медика** — медик указывает рабочие часы (Пн 09–18, Сб 10–14). Dispatch отправляет только в рабочее время. Уменьшает отклонения заказов. **Реализация:** Entity `MedicSchedule` с массивом `{ dayOfWeek, startHour, endHour }`. В `selectBestMedic` — фильтр по текущему дню/часу. UI в medic app: выбор дней + range slider для часов. Оценка: ~4 часа backend + ~3 часа mobile
+- [x] **Расписание медика** — DONE (backend) — `MedicSchedule` entity, `GET/PUT /medics/me/schedule`, dispatch фильтрует по рабочим часам. Mobile UI remains.
 - [ ] **Push-сегментация** — admin отправляет push по сегментам (новые клиенты, неактивные 30+ дней, тир GOLD). **Реализация:** Endpoint `POST /admin/push-campaign` с body `{ segment, title, body }`. Segments: `new_7d` (регистрация <7 дней), `inactive_30d` (нет заказов 30+ дней), `tier_gold`, `all`. SQL query фильтрует users, шлёт push батчами по 100. Admin UI: форма с dropdown сегмента + textarea. Оценка: ~3 часа backend + ~2 часа admin
-- [ ] **Фото до/после процедуры** — медик загружает фото в заказе (Cloudinary). **Реализация:** Поля `beforePhotoUrl`, `afterPhotoUrl` в Order entity. Endpoint `POST /orders/:id/photo` (multipart, field: before/after). Медик загружает с камеры в деталях заказа. Клиент видит в истории заказа. Повышает доверие и прозрачность. Оценка: ~2 часа backend + ~3 часа mobile
-- [ ] **Уведомления в Telegram для клиентов** — аналогично медикам. **Реализация:** Добавить `telegramChatId` в User entity. Telegram bot обрабатывает `/start` от клиентов (по аналогии с медиками). В `notifyClient()` — отправка в Telegram если chatId есть. Клиент привязывает через deep link в профиле. Оценка: ~2 часа backend + ~1 час mobile
+- [x] **Фото до/после процедуры** — DONE (backend) — `beforePhotoUrl`/`afterPhotoUrl` columns, `POST /orders/:id/photo` endpoint, Cloudinary upload. Mobile part remains.
+- [x] **Уведомления в Telegram для клиентов** — DONE (backend) — full chain verified: User entity `telegramChatId`, `/start client_{userId}`, `notifyClientStatus()`, `notifyClient()`. Mobile deep link part remains.
 
 ### UX и удобство
-- [ ] **Мульти-услуга в одном заказе** — клиент выбирает несколько услуг (укол + капельница). **Реализация:** Поле `serviceIds` (jsonb массив) в Order вместо/наряду с `serviceId`. UI: checkbox на каталоге, корзина внизу, суммарная цена. Backend: validate все serviceIds, суммировать цены. Сложность средняя — нужно менять flow создания заказа. Оценка: ~6 часов backend + ~4 часа mobile
-- [ ] **ETA (оценка времени прибытия)** — при ACCEPTED/ON_THE_WAY показывать "~15 мин". **Реализация:** Уже есть OSRM интеграция для route. Добавить `duration` парсинг из OSRM response (поле `routes[0].duration` в секундах). Показать на track screen: "Медик будет через ~{min} мин". Обновлять при каждом `medic_location` event. Оценка: ~2 часа
-- [ ] **`/orders/stats` endpoint** — подсчёт заказов без загрузки данных. **Реализация:** `GET /orders/stats` → `{ total, active, completed, canceled }`. Один SQL `SELECT status, COUNT(*) GROUP BY status WHERE clientId = :id`. Используется на profile screen вместо `GET /orders?limit=1` hack. Оценка: ~30 мин
+- [x] **Мульти-услуга в одном заказе** — DONE (backend) — `serviceIds`/`serviceTitles` JSONB на Order, prices суммируются. Mobile UI remains.
+- [x] **ETA (оценка времени прибытия)** — DONE (backend) — OSRM + haversine fallback, `etaMinutes` in `medic_location` and `order_status` events. Mobile display part remains.
+- [x] **`/orders/stats` endpoint** — DONE — `GET /orders/stats` → `{ total, active, completed, canceled }`
 
 ### Безопасность
-- [ ] **Rate limiting по IP** — текущий throttle привязан к route, не к IP. **Реализация:** Добавить кастомный ThrottlerGuard с `getTracker()` → `req.ip`. Или использовать `@nestjs/throttler` с `generateKey: (req) => req.ip`. Применить к `/auth/login`, `/auth/register`, `/medics/login`. Защита от distributed brute-force. Оценка: ~1 час
-- [ ] **Soft-delete для заказов** — `deletedAt` timestamp вместо физического удаления. **Реализация:** Добавить `@DeleteDateColumn()` в Order entity. TypeORM автоматически фильтрует `deletedAt IS NULL`. Admin может "удалить" заказ, но данные остаются для compliance. Оценка: ~30 мин
+- [x] **Rate limiting по IP** — DONE — `IpThrottlerGuard` applied to login/register endpoints
+- [x] **Soft-delete для заказов** — DONE — `@DeleteDateColumn()` + `DELETE /orders/admin/:id`
 - [ ] **Certificate pinning** — защита от MITM на mobile. **Реализация:** `expo-certificate-pinning` или кастомный fetch adapter с проверкой SSL fingerprint. Pinning к Railway SSL certificate. Обновлять при ротации сертификата. Оценка: ~2 часа
 - [ ] **httpOnly cookies** — заменить JWT в localStorage (web) на httpOnly cookies. **Реализация:** Backend: `res.cookie('token', jwt, { httpOnly: true, secure: true, sameSite: 'strict' })`. Frontend: убрать `localStorage.setItem('token')`, использовать `credentials: 'include'` в fetch. CORS: `credentials: true`. Это защитит от XSS-кражи токенов в web-приложениях. Оценка: ~3 часа backend + ~2 часа web
 

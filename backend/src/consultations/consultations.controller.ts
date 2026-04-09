@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Header,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -51,14 +52,16 @@ export class ConsultationsController {
   async aiChat(
     @ClientId() userId: string,
     @Body() dto: AiChatDto,
+    @Headers('accept-language') acceptLang?: string,
   ) {
-    // Load patient context from user profile
+    const lang = acceptLang?.startsWith('uz') ? 'uz' : 'ru';
     const patientContext = await this.loadPatientContext(userId);
 
     const reply = await this.aiAgentService.chat(
       dto.messages,
       userId,
       patientContext,
+      lang,
     );
     const recommendation = this.aiAgentService.parseRecommendation(reply);
 
@@ -90,8 +93,10 @@ export class ConsultationsController {
   async aiChatStream(
     @ClientId() userId: string,
     @Body() body: { messages: { role: string; content: string }[] },
+    @Headers('accept-language') acceptLang: string | undefined,
     @Res() res: Response,
   ) {
+    const lang = acceptLang?.startsWith('uz') ? 'uz' : 'ru';
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -104,6 +109,7 @@ export class ConsultationsController {
         body.messages,
         userId,
         patientContext,
+        lang,
       )) {
         fullReply += chunk;
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);

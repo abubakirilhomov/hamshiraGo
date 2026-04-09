@@ -68,6 +68,7 @@ export default function TrackOrderScreen() {
     wsConnected,
     dispatchState,
     medicLocation,
+    etaMinutes,
     ratingSubmitting,
     cancelOrder,
     submitRating,
@@ -367,6 +368,16 @@ export default function TrackOrderScreen() {
         <MedicInfoCard medic={order.medic} />
       )}
 
+      {/* ETA display */}
+      {etaMinutes != null && (order.status === 'ON_THE_WAY' || order.status === 'ACCEPTED') && (
+        <View style={trackLocalStyles.etaBanner}>
+          <FontAwesome name="clock-o" size={16} color={Theme.primary} />
+          <Text style={trackLocalStyles.etaText}>
+            ~{etaMinutes} daqiqa
+          </Text>
+        </View>
+      )}
+
       {/* Live map */}
       {order.location && (
         <TrackMap
@@ -664,6 +675,21 @@ const trackLocalStyles = StyleSheet.create({
     fontFamily: Fonts.manropeSb,
     fontWeight: '600',
     color: Theme.error,
+  },
+  etaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: `${Theme.primary}12`,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  etaText: {
+    fontSize: 14,
+    fontFamily: Fonts.interMd,
+    fontWeight: '500',
+    color: Theme.primary,
   },
   cancelReasonInput: {
     fontSize: 14,

@@ -59,6 +59,31 @@
 - **[web-medic]** Create `app/doctor/consultation/[id]/page.tsx` — детали: симптомы, клиент, LiveKit видеозвонок, завершение с notes
 - **[web-medic]** Create `app/doctor/prescriptions/page.tsx` — выписанные рецепты (завершённые консультации с notes)
 - **[web-medic]** Create `app/doctor/profile/page.tsx` — профиль врача + inline edit name/specialization
+## 2026-04-05 (Mobile/Medic: 4 UI features for existing backend APIs)
+
+- **[mobile]** ETA display on order tracking -- `etaMinutes` from `medic_location` socket event shown as "~N daqiqa" with clock icon when status is ON_THE_WAY or ACCEPTED -- `mobile/hooks/useOrderTracking.ts`, `mobile/app/order/track.tsx`
+- **[medic]** Photo before/after procedure -- camera buttons to capture before/after photos, upload via FormData to `POST /orders/:id/photo`, show thumbnails when uploaded, visible on ARRIVED/SERVICE_STARTED/DONE -- `medic/app/order/[id].tsx`
+- **[medic]** Schedule screen (Ish jadvali) -- 7-day schedule with toggle + hour pickers, loads from `GET /medics/me/schedule`, saves via `PUT /medics/me/schedule`, linked from profile -- `medic/app/schedule.tsx`, `medic/app/(tabs)/profile.tsx`
+- **[mobile]** Multi-service selection -- ServiceCard "+" becomes checkmark when selected, teal border on selected cards, floating bottom bar with count/total/CTA, serviceIds passed to confirm screen, confirm.tsx displays all services and sums prices, order body includes `serviceIds` array -- `mobile/components/ServiceCard.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/order/confirm.tsx`
+
+## 2026-04-05 (Backend: Medic Schedule + Multi-service orders)
+
+- **[backend]** Medic Schedule (working hours) -- new `medic_schedules` table, `MedicSchedule` entity, `GET/PUT /medics/me/schedule` endpoints, `isMedicAvailableNow()` method with Tashkent timezone, dispatch filters out medics outside working hours -- `backend/src/medics/entities/medic-schedule.entity.ts`, `backend/src/medics/dto/update-schedule.dto.ts`, `backend/src/medics/medics.service.ts`, `backend/src/medics/medics.controller.ts`, `backend/src/medics/medics.module.ts`, `backend/src/orders/dispatch.service.ts`
+- **[backend]** Multi-service orders -- `serviceIds`/`serviceTitles` JSONB columns on Order entity, `serviceIds` optional field in CreateOrderDto, order creation sums prices of all services, backward compatible (single-service orders keep null) -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/dto/create-order.dto.ts`, `backend/src/orders/orders.service.ts`
+
+## 2026-04-05 (Backend: 3 medium features -- ETA, Telegram verify, order photos)
+
+- **[backend]** ETA calculation for medic location updates -- OSRM integration with haversine fallback, `etaMinutes` field added to `MedicLocationPayload`, ETA included in `order_status` event on ON_THE_WAY transition -- `backend/src/realtime/order-events.gateway.ts`, `backend/src/realtime/realtime.module.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Telegram client notifications -- verified full chain: User entity `telegramChatId`, `/start client_{userId}` handler, `notifyClientStatus()`, `notifyClient()` in OrdersService -- all pieces already implemented and working
+- **[backend]** Photo before/after procedure -- `beforePhotoUrl`/`afterPhotoUrl` columns on Order entity, `POST /orders/:id/photo` endpoint (medic-only, multipart upload), Cloudinary upload with status validation (ARRIVED/SERVICE_STARTED/DONE) -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Added `OSRM_URL` to `.env.example` -- `backend/.env.example`
+
+## 2026-04-05 (Backend: 3 quick improvements)
+
+- **[backend]** Add `GET /orders/stats` endpoint -- returns total/active/completed/canceled counts for client -- `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Add soft-delete for orders -- `DeleteDateColumn` on Order entity, `DELETE /orders/admin/:id` endpoint for admin -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Add IP-based rate limiting -- `IpThrottlerGuard` applied to login/register on auth, medics, doctors controllers -- `backend/src/common/guards/ip-throttler.guard.ts`, `backend/src/auth/auth.controller.ts`, `backend/src/medics/medics.controller.ts`, `backend/src/doctors/doctors.controller.ts`
+
 ## 2026-04-05 (Backend: Salomat Sprint 3 -- summary + encryption + changelog)
 
 - **[backend]** Add `salomatSummary` nullable text column to Consultation entity -- `backend/src/consultations/entities/consultation.entity.ts`

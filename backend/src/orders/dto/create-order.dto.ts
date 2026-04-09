@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsNumber, IsOptional, IsBoolean, Min, ValidateNested } from 'class-validator';
+import { IsString, IsUUID, IsNumber, IsOptional, IsBoolean, IsArray, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -40,6 +40,12 @@ export class CreateOrderDto {
   @IsNumber()
   @Min(0)
   discountAmount?: number;
+
+  @ApiProperty({ example: ['uuid-1', 'uuid-2'], required: false, description: 'Дополнительные услуги (multi-service)' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  serviceIds?: string[];
 
   @ApiProperty({ example: true, required: false, description: 'Срочный вызов (доплата за срочность)' })
   @IsOptional()

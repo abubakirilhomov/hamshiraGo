@@ -8,10 +8,11 @@ import {
   View,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
@@ -56,6 +57,24 @@ export default function HomeScreen() {
 
   const [fromCache, setFromCache] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
+
+  const toggleService = useCallback((id: string) => {
+    setSelectedServices((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectedTotal = useMemo(() => {
+    let total = 0;
+    for (const id of selectedServices) {
+      const svc = services.find((s) => s.id === id);
+      if (svc) total += svc.price;
+    }
+    return total;
+  }, [selectedServices, services]);
 
   // Refresh unread badge every time tab is focused
   useFocusEffect(
@@ -193,7 +212,12 @@ export default function HomeScreen() {
   );
 
   const renderServiceItem = ({ item }: { item: ServiceCardItem }) => (
-    <ServiceCard service={item} gridMode />
+    <ServiceCard
+      service={item}
+      gridMode
+      isSelected={selectedServices.has(item.id)}
+      onToggle={toggleService}
+    />
   );
 
   const renderHeader = () => (
@@ -370,7 +394,40 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         columnWrapperStyle={styles.columnWrapper}
+        extraData={selectedServices.size}
       />
+
+      {/* Floating selection bar */}
+      {selectedServices.size > 0 && (
+        <View style={[styles.selectionBar, { paddingBottom: insets.bottom + 12 }]}>
+          <Text style={styles.selectionText}>
+            {selectedServices.size} ta xizmat tanlandi{' '}
+            <Text style={styles.selectionPrice}>
+              {selectedTotal.toLocaleString('ru-RU')} UZS
+            </Text>
+          </Text>
+          <Pressable
+            onPress={() => {
+              const ids = Array.from(selectedServices).join(',');
+              router.push({
+                pathname: '/order/confirm',
+                params: { serviceIds: ids },
+              } as any);
+            }}
+          >
+            <LinearGradient
+              colors={Theme.primaryGradient as unknown as [string, string]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.selectionBtn}
+            >
+              <Text style={styles.selectionBtnText}>
+                {t('home.order', { defaultValue: 'Buyurtma berish' })} →
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -667,6 +724,43 @@ const styles = StyleSheet.create({
     color: '#854d0e',
     textAlign: 'center',
     fontWeight: '500',
+  },
+
+  /* ---- Selection bar ---- */
+  selectionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Theme.surface,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    ...Shadow.lg,
+    gap: Spacing.md,
+  },
+  selectionText: {
+    fontSize: 14,
+    fontFamily: Fonts.interMd,
+    fontWeight: '500',
+    color: Theme.text,
+    textAlign: 'center',
+  },
+  selectionPrice: {
+    fontWeight: '700',
+    fontFamily: Fonts.manropeBd,
+    color: Theme.primary,
+  },
+  selectionBtn: {
+    borderRadius: Radius.full,
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectionBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
+    color: '#fff',
   },
 
   /* ---- Skeleton grid ---- */

@@ -23,6 +23,7 @@ import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
+import { CloudinaryService } from '../common/cloudinary.service';
 import { haversineKm } from '../utils/geo';
 
 /** Safely convert a DB value (possibly string from decimal columns) to a number.
@@ -75,6 +76,7 @@ export class OrdersService {
     @Inject(forwardRef(() => TelegramBotService))
     private telegramBotService: TelegramBotService,
     private dataSource: DataSource,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   private isMissingColumnError(err: unknown): boolean {
@@ -235,12 +237,27 @@ export class OrdersService {
     // ── Fetch & validate service from catalog ────────────────────────────────
     const service = await this.servicesService.getActiveServiceOrThrow(dto.serviceId);
 
+    // ── Multi-service support ───────────────────────────────────────────────
+    let totalServicePrice = service.price;
+    const allTitles = [service.title];
+    const allIds = [service.id];
+
+    if (dto.serviceIds?.length) {
+      for (const sid of dto.serviceIds) {
+        if (sid === dto.serviceId) continue; // skip primary (already included)
+        const extra = await this.servicesService.getActiveServiceOrThrow(sid);
+        totalServicePrice += extra.price;
+        allTitles.push(extra.title);
+        allIds.push(extra.id);
+      }
+    }
+
     // Apply pending referral discount (auto-added, bypasses 20% cap)
     const clientUser = await this.usersService.findById(clientId);
     const referralBonus = clientUser?.pendingReferralDiscount ?? 0;
 
     const discountAmount = (dto.discountAmount ?? 0) + referralBonus;
-    if (discountAmount > service.price) {
+    if (discountAmount > totalServicePrice) {
       throw new BadRequestException('DISCOUNT_EXCEEDS_PRICE');
     }
     // TODO: replace this first-order check with a real promo-code/coupon system
@@ -256,7 +273,7 @@ export class OrdersService {
         );
       }
       const FIRST_ORDER_DISCOUNT_PERCENT = 15;
-      const maxDiscount = Math.round(service.price * FIRST_ORDER_DISCOUNT_PERCENT / 100);
+      const maxDiscount = Math.round(totalServicePrice * FIRST_ORDER_DISCOUNT_PERCENT / 100);
       if (clientDiscount > maxDiscount) {
         throw new BadRequestException(
           'FIRST_ORDER_DISCOUNT_LIMIT',
@@ -283,7 +300,7 @@ export class OrdersService {
         ? normalizedHour >= urgentStartHour || normalizedHour < urgentEndHour // wraps midnight
         : normalizedHour >= urgentStartHour && normalizedHour < urgentEndHour;
     const isUrgent = dto.isUrgent === true || isNightHour;
-    const urgentFee = isUrgent ? Math.round(service.price * urgentFeePercent / 100) : 0;
+    const urgentFee = isUrgent ? Math.round(totalServicePrice * urgentFeePercent / 100) : 0;
 
     // Apply subscription discount (if user has an active subscription with remaining orders)
     let subDiscount = { discountPercent: 0, subscriptionId: null as string | null };
@@ -294,15 +311,15 @@ export class OrdersService {
     }
     let totalDiscount = discountAmount;
     if (subDiscount.discountPercent > 0) {
-      const subDiscountAmount = Math.round(service.price * subDiscount.discountPercent / 100);
+      const subDiscountAmount = Math.round(totalServicePrice * subDiscount.discountPercent / 100);
       totalDiscount += subDiscountAmount;
     }
-    // Cap total discount at service price + urgentFee
-    if (totalDiscount > service.price + urgentFee) {
-      totalDiscount = service.price + urgentFee;
+    // Cap total discount at total service price + urgentFee
+    if (totalDiscount > totalServicePrice + urgentFee) {
+      totalDiscount = totalServicePrice + urgentFee;
     }
 
-    const netPrice = service.price + urgentFee - totalDiscount;
+    const netPrice = totalServicePrice + urgentFee - totalDiscount;
     const platformFee = Math.round(netPrice * commissionRate / 100);
 
     const saved = await this.dataSource.transaction(async (manager) => {
@@ -310,7 +327,9 @@ export class OrdersService {
         clientId,
         serviceId: service.id,
         serviceTitle: service.title,
-        priceAmount: service.price,
+        serviceIds: allIds.length > 1 ? allIds : null,
+        serviceTitles: allTitles.length > 1 ? allTitles : null,
+        priceAmount: totalServicePrice,
         discountAmount: totalDiscount,
         isUrgent,
         urgentFee,
@@ -837,10 +856,45 @@ export class OrdersService {
       }
     }
 
-    this.orderEventsGateway.emitOrderStatus(orderId, status);
+    this.orderEventsGateway.emitOrderStatus(orderId, status, medicId);
     const updated = await this.findOne(orderId);
     this.notifyWithRetry(() => this.notifyClient(updated, status)).catch((err) => console.error('Notify error:', err));
     return updated;
+  }
+
+  /** Upload a before/after photo for an order (medic only) */
+  async uploadOrderPhoto(
+    orderId: string,
+    medicId: string,
+    file: Express.Multer.File,
+    type: 'before' | 'after',
+  ): Promise<{ url: string }> {
+    const order = await this.findOneBasic(orderId);
+    if (order.medicId !== medicId) throw new ForbiddenException('NOT_YOUR_ORDER');
+
+    // Validate order is in a status where photos make sense
+    const allowedStatuses = [
+      OrderStatus.ARRIVED,
+      OrderStatus.SERVICE_STARTED,
+      OrderStatus.DONE,
+    ];
+    if (!allowedStatuses.includes(order.status)) {
+      throw new BadRequestException('ORDER_STATUS_DOES_NOT_ALLOW_PHOTO');
+    }
+
+    const url = await this.cloudinaryService.uploadBuffer(
+      file.buffer,
+      'hamshirago/order-photos',
+      `${type}-${orderId}`,
+    );
+
+    if (type === 'before') {
+      await this.orderRepo.update(orderId, { beforePhotoUrl: url });
+    } else {
+      await this.orderRepo.update(orderId, { afterPhotoUrl: url });
+    }
+
+    return { url };
   }
 
   /** All orders assigned to a medic */
@@ -1021,5 +1075,32 @@ export class OrdersService {
       where: { orderId },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  async getClientStats(clientId: string): Promise<{ total: number; active: number; completed: number; canceled: number }> {
+    const rows = await this.orderRepo
+      .createQueryBuilder('o')
+      .select('o.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('o.clientId = :clientId', { clientId })
+      .groupBy('o.status')
+      .getRawMany();
+
+    const counts: Record<string, number> = {};
+    for (const r of rows) counts[r.status] = parseInt(r.count, 10);
+
+    const active = (counts['CREATED'] || 0) + (counts['ASSIGNED'] || 0) + (counts['ACCEPTED'] || 0) +
+      (counts['ON_THE_WAY'] || 0) + (counts['ARRIVED'] || 0) + (counts['SERVICE_STARTED'] || 0);
+
+    return {
+      total: Object.values(counts).reduce((a, b) => a + b, 0),
+      active,
+      completed: counts['DONE'] || 0,
+      canceled: counts['CANCELED'] || 0,
+    };
+  }
+
+  async softDelete(orderId: string): Promise<void> {
+    await this.orderRepo.softDelete(orderId);
   }
 }

@@ -12,10 +12,12 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Order } from '../orders/entities/order.entity';
+import { OrderLocation } from '../orders/entities/order-location.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
 import { ALLOWED_ORIGINS } from '../common/cors.config';
 import { UsersService } from '../users/users.service';
 import { MedicsService } from '../medics/medics.service';
+import { haversineKm } from '../utils/geo';
 
 export type OrderStatusPayload = { orderId: string; status: string };
 export type MedicLocationPayload = {
@@ -26,6 +28,7 @@ export type MedicLocationPayload = {
   heading?: number | null;
   updatedAt: string;
   source?: 'socket' | 'rest';
+  etaMinutes?: number | null;
 };
 
 @WebSocketGateway({
@@ -54,12 +57,52 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   constructor(
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
+    @InjectRepository(OrderLocation)
+    private readonly orderLocationRepo: Repository<OrderLocation>,
     private jwtService: JwtService,
     private configService: ConfigService,
     private usersService: UsersService,
     @Inject(forwardRef(() => MedicsService))
     private medicsService: MedicsService,
   ) {}
+
+  /**
+   * Calculate ETA in minutes from medic position to order location.
+   * Tries OSRM first (3s timeout), falls back to haversine / 30 km/h.
+   */
+  private async calculateEta(
+    medicLat: number,
+    medicLng: number,
+    orderLat: number,
+    orderLng: number,
+  ): Promise<number | null> {
+    const osrmUrl = this.configService.get<string>('OSRM_URL');
+    if (osrmUrl) {
+      try {
+        const url = `${osrmUrl}/route/v1/driving/${medicLng},${medicLat};${orderLng},${orderLat}?overview=false`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+        const data = (await res.json()) as { routes?: { duration: number }[] };
+        if (data.routes?.[0]?.duration) {
+          return Math.ceil(data.routes[0].duration / 60);
+        }
+      } catch {
+        // OSRM unavailable — fall through to haversine
+      }
+    }
+    // Fallback: haversine distance / average city speed (30 km/h)
+    const dist = haversineKm(medicLat, medicLng, orderLat, orderLng);
+    return Math.max(1, Math.ceil((dist / 30) * 60));
+  }
+
+  /** Fetch the order location for ETA calculation (cached per request, not long-term) */
+  private async getOrderLocation(orderId: string): Promise<{ latitude: number; longitude: number } | null> {
+    const loc = await this.orderLocationRepo.findOne({
+      where: { orderId },
+      select: ['latitude', 'longitude'],
+    });
+    if (!loc) return null;
+    return { latitude: Number(loc.latitude), longitude: Number(loc.longitude) };
+  }
 
   onModuleInit() {
     this.cleanupInterval = setInterval(() => {
@@ -201,8 +244,27 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   }
 
   /** Call this from OrdersService when status changes to notify clients */
-  emitOrderStatus(orderId: string, status: string) {
-    this.server.to(`order:${orderId}`).emit('order_status', { orderId, status });
+  async emitOrderStatus(orderId: string, status: string, medicId?: string | null) {
+    const payload: Record<string, unknown> = { orderId, status };
+
+    // When medic starts travelling, calculate initial ETA and include it
+    if (status === OrderStatus.ON_THE_WAY && medicId) {
+      try {
+        const medic = await this.medicsService.findById(medicId);
+        const orderLoc = await this.getOrderLocation(orderId);
+        if (medic?.latitude != null && medic?.longitude != null && orderLoc) {
+          const eta = await this.calculateEta(
+            Number(medic.latitude), Number(medic.longitude),
+            orderLoc.latitude, orderLoc.longitude,
+          );
+          payload.etaMinutes = eta;
+        }
+      } catch {
+        // ETA calculation failed — emit without it
+      }
+    }
+
+    this.server.to(`order:${orderId}`).emit('order_status', payload);
     this.logger.log(`Emitted order_status orderId=${orderId} status=${status}`);
 
     // Invalidate medic-order cache entries for this order on status change
@@ -278,7 +340,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     this.logger.log(`Emitted dispatch_update orderId=${orderId} status=${payload.status}`);
   }
 
-  emitMedicLocation(
+  async emitMedicLocation(
     orderId: string,
     medicId: string,
     latitude: number,
@@ -286,6 +348,20 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
     source: 'socket' | 'rest' = 'socket',
     heading: number | null = null,
   ) {
+    // Calculate ETA asynchronously — do not block if it fails
+    let etaMinutes: number | null = null;
+    try {
+      const orderLoc = await this.getOrderLocation(orderId);
+      if (orderLoc) {
+        etaMinutes = await this.calculateEta(
+          latitude, longitude,
+          orderLoc.latitude, orderLoc.longitude,
+        );
+      }
+    } catch {
+      // ETA calculation failed — emit without it
+    }
+
     const payload: MedicLocationPayload = {
       orderId,
       medicId,
@@ -294,6 +370,7 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       heading,
       updatedAt: new Date().toISOString(),
       source,
+      etaMinutes,
     };
     this.server.to(`order:${orderId}`).emit('medic_location', payload);
   }

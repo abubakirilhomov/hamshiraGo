@@ -21,6 +21,7 @@ import { SalomatDisclaimer } from '@/components/SalomatDisclaimer';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/context/ToastContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -51,19 +52,25 @@ interface DisplayMessage {
 
 // ─── Quick suggestion chips ─────────────────────────────────────────────────
 
-const QUICK_SUGGESTIONS = [
-  'Bosh og\'rig\'i',
-  'Harorat',
-  'Qon bosimi',
-  'Uyqusizlik',
-];
+const QUICK_SUGGESTIONS: Record<string, string[]> = {
+  uz: ["Bosh og'rig'i", 'Harorat', 'Qon bosimi', 'Uyqusizlik', "Yo'tal"],
+  ru: ['Головная боль', 'Температура', 'Давление', 'Бессонница', 'Кашель'],
+};
 
-const EMPTY_SUGGESTIONS = [
-  'У меня болит горло третий день',
-  'У ребёнка температура 38, что делать?',
-  'Болит голова с утра',
-  'Изжога после еды',
-];
+const EMPTY_SUGGESTIONS: Record<string, string[]> = {
+  uz: [
+    "Uch kundan beri tomog'im og'riyapti",
+    "Bolamning harorati 38, nima qilish kerak?",
+    "Ertalabdan boshim og'riyapti",
+    "Ovqatdan keyin ko'ngil ayniydi",
+  ],
+  ru: [
+    'У меня болит горло третий день',
+    'У ребёнка температура 38, что делать?',
+    'Болит голова с утра',
+    'Изжога после еды',
+  ],
+};
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -71,6 +78,7 @@ export default function AiChatScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { language } = useLanguage();
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
@@ -96,11 +104,15 @@ export default function AiChatScreen() {
     router.back();
   }, []);
 
+  const greetingText = language === 'uz'
+    ? 'Assalomu alaykum! Men Salomat — sizning sogligingiz boyicha yordamchingizman. Qanday yordam bera olaman?'
+    : 'Здравствуйте! Я Salomat — ваш помощник по вопросам здоровья. Чем могу помочь?';
+
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       id: 'greeting',
       role: 'assistant',
-      content: 'Ассалому алайкум! Мен Salomat — сизнинг соғлиғингиз бўйича ёрдамчингизман.',
+      content: greetingText,
       timestamp: new Date(),
     },
   ]);
@@ -118,13 +130,12 @@ export default function AiChatScreen() {
   // ── Streaming send (SSE) ──
   const sendStreaming = useCallback(async (text: string, assistantMsgId: string): Promise<boolean> => {
     try {
-      const currentLanguage = 'ru'; // will be overridden by Accept-Language header in apiFetch
       const response = await fetch(`${API_BASE}/consultations/ai-chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'Accept-Language': currentLanguage,
+          'Accept-Language': language,
         },
         body: JSON.stringify({ messages: apiMessages.current }),
       });
@@ -311,7 +322,7 @@ export default function AiChatScreen() {
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
       >
-        {messages.map((msg) => (
+        {messages.filter((msg) => msg.content.trim().length > 0).map((msg) => (
           <MessageBubble
             key={msg.id}
             message={msg}
@@ -324,7 +335,7 @@ export default function AiChatScreen() {
         {/* Empty-state suggestion chips — shown when only the greeting exists */}
         {messages.length === 1 && messages[0].id === 'greeting' && (
           <View style={styles.emptySuggestions}>
-            {EMPTY_SUGGESTIONS.map((chip) => (
+            {(EMPTY_SUGGESTIONS[language] || EMPTY_SUGGESTIONS.ru).map((chip) => (
               <Pressable
                 key={chip}
                 style={({ pressed }) => [styles.emptySuggestionChip, pressed && { opacity: 0.7 }]}
@@ -360,7 +371,7 @@ export default function AiChatScreen() {
         contentContainerStyle={styles.chipsContainer}
         style={styles.chipsScroll}
       >
-        {QUICK_SUGGESTIONS.map((chip) => (
+        {(QUICK_SUGGESTIONS[language] || QUICK_SUGGESTIONS.ru).map((chip) => (
           <Pressable
             key={chip}
             style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}

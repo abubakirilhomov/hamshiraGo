@@ -30,6 +30,7 @@ import { DoctorAuthGuard } from '../auth/guards/doctor-auth.guard';
 import { DoctorId } from '../auth/decorators/doctor-id.decorator';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { CloudinaryService } from '../common/cloudinary.service';
+import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { CreateSlotsDto } from './dto/create-slots.dto';
 
@@ -44,6 +45,7 @@ export class DoctorsController {
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   @Post('register')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Register a doctor' })
   register(@Body() dto: RegisterDoctorDto) {
@@ -51,6 +53,7 @@ export class DoctorsController {
   }
 
   @Post('login')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Doctor login' })
