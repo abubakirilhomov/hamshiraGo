@@ -35,6 +35,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { WebPushService } from '../realtime/web-push.service';
 import { CloudinaryService } from '../common/cloudinary.service';
+import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 import { SetWorkZoneDto } from './dto/set-work-zone.dto';
@@ -51,6 +52,7 @@ export class MedicsController {
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   @Post('register')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Регистрация медика' })
   @ApiResponse({ status: 201, description: 'Медик зарегистрирован' })
@@ -59,6 +61,7 @@ export class MedicsController {
   }
 
   @Post('login')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин медика' })

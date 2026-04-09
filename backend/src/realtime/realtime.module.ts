@@ -7,13 +7,14 @@ import { PushNotificationsService } from './push-notifications.service';
 import { WebPushService } from './web-push.service';
 import { WebPushSubscription } from './entities/web-push-subscription.entity';
 import { Order } from '../orders/entities/order.entity';
+import { OrderLocation } from '../orders/entities/order-location.entity';
 import { UsersModule } from '../users/users.module';
 import { MedicsModule } from '../medics/medics.module';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([WebPushSubscription, Order]),
+    TypeOrmModule.forFeature([WebPushSubscription, Order, OrderLocation]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   JoinColumn,
   OneToOne,
@@ -76,12 +77,23 @@ export class Order {
   @Column({ type: 'varchar', length: 1000, nullable: true, default: null })
   clientReview!: string | null;
 
+  /** Photo taken by medic before the procedure */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  beforePhotoUrl!: string | null;
+
+  /** Photo taken by medic after the procedure */
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  afterPhotoUrl!: string | null;
+
   @Index()
   @CreateDateColumn()
   created_at!: Date;
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt!: Date | null;
 
   @ManyToOne(() => User, (u) => u.orders, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'clientId' })

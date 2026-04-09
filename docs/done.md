@@ -1,5 +1,18 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Backend: 3 medium features -- ETA, Telegram verify, order photos)
+
+- **[backend]** ETA calculation for medic location updates -- OSRM integration with haversine fallback, `etaMinutes` field added to `MedicLocationPayload`, ETA included in `order_status` event on ON_THE_WAY transition -- `backend/src/realtime/order-events.gateway.ts`, `backend/src/realtime/realtime.module.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Telegram client notifications -- verified full chain: User entity `telegramChatId`, `/start client_{userId}` handler, `notifyClientStatus()`, `notifyClient()` in OrdersService -- all pieces already implemented and working
+- **[backend]** Photo before/after procedure -- `beforePhotoUrl`/`afterPhotoUrl` columns on Order entity, `POST /orders/:id/photo` endpoint (medic-only, multipart upload), Cloudinary upload with status validation (ARRIVED/SERVICE_STARTED/DONE) -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Added `OSRM_URL` to `.env.example` -- `backend/.env.example`
+
+## 2026-04-05 (Backend: 3 quick improvements)
+
+- **[backend]** Add `GET /orders/stats` endpoint -- returns total/active/completed/canceled counts for client -- `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Add soft-delete for orders -- `DeleteDateColumn` on Order entity, `DELETE /orders/admin/:id` endpoint for admin -- `backend/src/orders/entities/order.entity.ts`, `backend/src/orders/orders.controller.ts`, `backend/src/orders/orders.service.ts`
+- **[backend]** Add IP-based rate limiting -- `IpThrottlerGuard` applied to login/register on auth, medics, doctors controllers -- `backend/src/common/guards/ip-throttler.guard.ts`, `backend/src/auth/auth.controller.ts`, `backend/src/medics/medics.controller.ts`, `backend/src/doctors/doctors.controller.ts`
+
 ## 2026-04-05 (Backend: Salomat Sprint 3 -- summary + encryption + changelog)
 
 - **[backend]** Add `salomatSummary` nullable text column to Consultation entity -- `backend/src/consultations/entities/consultation.entity.ts`

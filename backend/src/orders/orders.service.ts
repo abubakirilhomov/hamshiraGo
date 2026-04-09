@@ -23,6 +23,7 @@ import { Medic } from '../medics/entities/medic.entity';
 import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
+import { CloudinaryService } from '../common/cloudinary.service';
 import { haversineKm } from '../utils/geo';
 
 /** Safely convert a DB value (possibly string from decimal columns) to a number.
@@ -75,6 +76,7 @@ export class OrdersService {
     @Inject(forwardRef(() => TelegramBotService))
     private telegramBotService: TelegramBotService,
     private dataSource: DataSource,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   private isMissingColumnError(err: unknown): boolean {
@@ -837,10 +839,45 @@ export class OrdersService {
       }
     }
 
-    this.orderEventsGateway.emitOrderStatus(orderId, status);
+    this.orderEventsGateway.emitOrderStatus(orderId, status, medicId);
     const updated = await this.findOne(orderId);
     this.notifyWithRetry(() => this.notifyClient(updated, status)).catch((err) => console.error('Notify error:', err));
     return updated;
+  }
+
+  /** Upload a before/after photo for an order (medic only) */
+  async uploadOrderPhoto(
+    orderId: string,
+    medicId: string,
+    file: Express.Multer.File,
+    type: 'before' | 'after',
+  ): Promise<{ url: string }> {
+    const order = await this.findOneBasic(orderId);
+    if (order.medicId !== medicId) throw new ForbiddenException('NOT_YOUR_ORDER');
+
+    // Validate order is in a status where photos make sense
+    const allowedStatuses = [
+      OrderStatus.ARRIVED,
+      OrderStatus.SERVICE_STARTED,
+      OrderStatus.DONE,
+    ];
+    if (!allowedStatuses.includes(order.status)) {
+      throw new BadRequestException('ORDER_STATUS_DOES_NOT_ALLOW_PHOTO');
+    }
+
+    const url = await this.cloudinaryService.uploadBuffer(
+      file.buffer,
+      'hamshirago/order-photos',
+      `${type}-${orderId}`,
+    );
+
+    if (type === 'before') {
+      await this.orderRepo.update(orderId, { beforePhotoUrl: url });
+    } else {
+      await this.orderRepo.update(orderId, { afterPhotoUrl: url });
+    }
+
+    return { url };
   }
 
   /** All orders assigned to a medic */
@@ -1021,5 +1058,32 @@ export class OrdersService {
       where: { orderId },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  async getClientStats(clientId: string): Promise<{ total: number; active: number; completed: number; canceled: number }> {
+    const rows = await this.orderRepo
+      .createQueryBuilder('o')
+      .select('o.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('o.clientId = :clientId', { clientId })
+      .groupBy('o.status')
+      .getRawMany();
+
+    const counts: Record<string, number> = {};
+    for (const r of rows) counts[r.status] = parseInt(r.count, 10);
+
+    const active = (counts['CREATED'] || 0) + (counts['ASSIGNED'] || 0) + (counts['ACCEPTED'] || 0) +
+      (counts['ON_THE_WAY'] || 0) + (counts['ARRIVED'] || 0) + (counts['SERVICE_STARTED'] || 0);
+
+    return {
+      total: Object.values(counts).reduce((a, b) => a + b, 0),
+      active,
+      completed: counts['DONE'] || 0,
+      canceled: counts['CANCELED'] || 0,
+    };
+  }
+
+  async softDelete(orderId: string): Promise<void> {
+    await this.orderRepo.softDelete(orderId);
   }
 }

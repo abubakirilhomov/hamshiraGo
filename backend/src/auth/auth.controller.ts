@@ -24,6 +24,7 @@ import { AdminGuard } from './guards/admin.guard';
 import { ClientId } from './decorators/client-id.decorator';
 import { UsersService } from '../users/users.service';
 import { WebPushService } from '../realtime/web-push.service';
+import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
 import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
 import { BlockUserDto } from './dto/block-user.dto';
@@ -39,6 +40,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({ summary: 'Регистрация клиента' })
   @ApiResponse({ status: 201, description: 'Клиент зарегистрирован, возвращает access_token' })
@@ -48,6 +50,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(IpThrottlerGuard)
   @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Логин клиента' })
