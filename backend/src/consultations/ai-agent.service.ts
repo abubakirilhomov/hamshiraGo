@@ -89,12 +89,14 @@ export class AiAgentService {
   private buildSystemPrompt(
     isFirstMessage: boolean,
     patientContext?: PatientContext,
+    lang: string = 'ru',
   ): string {
     let prompt = `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
 
 ПРАВИЛА ЯЗЫКА:
-${isFirstMessage ? '- Это первое сообщение сессии. Поприветствуй на узбекском: "Ассалому алайкум! Мен Salomat — сизнинг соғлиғингиз бўйича ёрдамчингизман. Қандай ёрдам бера оламан?" Затем сразу переходи на русский.' : '- Отвечай ТОЛЬКО на русском языке. Даже если пациент пишет на узбекском — отвечай на русском.'}
-- НИКОГДА не переключайся на узбекский язык после приветствия.
+${isFirstMessage ? '- Это первое сообщение сессии. Определи язык системы пациента из параметра lang. Если lang=uz — поприветствуй на узбекском: "Assalomu alaykum! Men Salomat — sizning sogligingiz boyicha yordamchingizman. Qanday yordam bera olaman?" Если lang=ru — поприветствуй на русском: "Здравствуйте! Я Salomat — ваш помощник по вопросам здоровья. Чем могу помочь?"' : '- Определяй язык по последнему сообщению пациента. Если пациент пишет на узбекском (латиница) — отвечай на узбекском (латиница). Если на русском — отвечай на русском. Если на кириллическом узбекском — отвечай на узбекском латиницей.'}
+- Всегда отвечай на том языке, на котором пишет пациент.
+- Не смешивай языки в одном ответе.
 
 БАЗА ЗНАНИЙ:
 ${this.salomatPrompt}
@@ -136,16 +138,19 @@ ${this.salomatPrompt}
     messages: { role: string; content: string }[],
     userId: string,
     patientContext?: PatientContext,
+    lang: string = 'ru',
   ): Promise<string> {
     if (!this.configService.get('ANTHROPIC_API_KEY')) {
-      return 'ИИ-ассистент временно недоступен. Пожалуйста, обратитесь напрямую к врачу.';
+      return lang === 'uz'
+        ? 'Salomat vaqtincha mavjud emas. Iltimos, shifokorga murojaat qiling.'
+        : 'Salomat временно недоступна. Пожалуйста, обратитесь к врачу.';
     }
 
     // Enforce per-patient daily rate limit
     this.checkRateLimit(userId);
 
     const isFirstMessage = messages.length <= 1;
-    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext);
+    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext, lang);
 
     try {
       const response = await this.client.messages.create({
@@ -179,16 +184,19 @@ ${this.salomatPrompt}
     messages: { role: string; content: string }[],
     userId: string,
     patientContext?: PatientContext,
+    lang: string = 'ru',
   ): AsyncGenerator<string> {
     this.checkRateLimit(userId);
 
     if (!this.configService.get('ANTHROPIC_API_KEY')) {
-      yield 'Salomat vaqtincha mavjud emas. Iltimos, shifokorga murojaat qiling.';
+      yield lang === 'uz'
+        ? 'Salomat vaqtincha mavjud emas. Iltimos, shifokorga murojaat qiling.'
+        : 'Salomat временно недоступна. Пожалуйста, обратитесь к врачу.';
       return;
     }
 
     const isFirstMessage = messages.length <= 1;
-    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext);
+    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext, lang);
 
     const stream = await this.client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
