@@ -127,12 +127,58 @@
 - [x] **V5-A-1** — Mobile voice agent screen `mobile/app/voice-agent.tsx` — микрофон, запись, чат
 - [x] **V5-A-2** — Doctor role в medic/ app: разные табы для medic/doctor — `medic/app/(doctor-tabs)/`, `medic/context/AuthContext.tsx`, `medic/app/auth.tsx`, `medic/app/_layout.tsx`
 - [x] **V5-A-3** — Doctor consultation screen в medic/ app — `medic/app/doctor-consultation/[id].tsx`
-- [ ] **V5-A-4** — Slot picker в mobile/ при бронировании врача
+- [x] **V5-A-4** — Slot picker в mobile/ при бронировании врача — `mobile/app/consultation.tsx`
 - [x] **V5-A-5** — Rename AI Hamshira -> Salomat (ai-chat, voice-agent, home banner) + Uzbek greeting + empty-state suggestion chips
 - [x] **V5-A-6** — Fix service/[id].tsx back button overlapping iOS status bar (absolute top: insets.top)
 - [x] **V5-A-7** — Create notifications screen (mobile/app/notifications.tsx) — grouped by date, empty/skeleton states, AsyncStorage persistence
 - [x] **V5-A-8** — Add unread badge on home bell icon + navigate to /notifications
 - [x] **V5-A-9** — Salomat disclaimer modal (mobile/components/SalomatDisclaimer.tsx) — first-time consent, AsyncStorage flag
+
+### 🔵 Salomat Sprint 3 — DONE (Абубакир, 2026-04-05)
+
+- [x] **SAL3-1** — Generate salomatSummary for doctor when consultation created (Claude Haiku call) -- `consultations.service.ts`, `ai-agent.service.ts`, `consultation.entity.ts`
+- [x] **SAL3-2** — EncryptionService (AES-256-GCM) in CommonModule (global) -- `common/encryption.service.ts`, `common.module.ts`
+- [x] **SAL3-3** — Prompt versioning CHANGELOG.md -- `salomat-knowledge/CHANGELOG.md`
+- [x] **SAL3-4** — Add ENCRYPTION_KEY to .env.example
+
+### 🔵 Salomat Sprint 2 — DONE (Абубакир, 2026-04-09)
+
+- [x] **SAL-1** — SSE streaming endpoint `POST /consultations/ai-chat/stream` + prompt caching
+- [x] **SAL-2** — SalomatAuditLog entity + service (RED_FLAG, DOCTOR/NURSE_REFERRAL, SAFEGUARD, RATE_LIMIT)
+- [x] **SAL-3** — Admin audit stats `GET /consultations/admin/salomat-audit/stats`
+- [x] **SAL-4** — Patient context (name, medical profile) → AI prompt
+- [x] **SAL-5** — Mobile: streaming AI ответы через SSE + fallback
+- [x] **SAL-6** — Mobile: action buttons в чате (Shifokor tanlash, Hamshira chaqirish, 103 call)
+- [x] **SAL-7** — Mobile: typing dots indicator
+- [x] **SAL-8** — Knowledge base: triage.md, specialties.md, safety.md, tone.md, conversation-flow.md
+- [x] **SAL-9** — Per-patient rate limiting (50 msg/day)
+- [x] **SAL-10** — 38 test scenarios `docs/salomat-scenarios.md`
+
+### 🟡 Salomat — задачи для Диёра
+
+> Backend API для Salomat готов. Новые endpoints:
+
+#### SAL-D-1. Admin: Salomat Audit Dashboard (admin/)
+- [ ] Новая страница `admin/src/pages/SalomatAudit.tsx`
+  - API: `GET /consultations/admin/salomat-audit/stats?days=30` → `{ totalEvents, redFlags, doctorReferrals, nurseReferrals, safeguards, rateLimits, topSpecializations }`
+  - KPI карточки: красные флаги, направления к врачам, направления к медсёстрам, сработавшие safeguards
+  - Pie chart: топ специализаций (по направлениям)
+  - Линейный график: события по дням
+- [ ] Добавить "Salomat Аудит" в AdminSidebar (иконка Shield)
+
+#### SAL-D-2. Web: Salomat чат (web/)
+- [ ] `web/app/salomat/page.tsx` — чат интерфейс с Salomat
+  - API: `POST /consultations/ai-chat/stream` (SSE) — streaming ответы
+  - Fallback: `POST /consultations/ai-chat` (если SSE не работает)
+  - Те же action buttons: "К врачу", "Вызвать медсестру", "103"
+  - Suggestion chips на пустом экране
+  - Disclaimer модал при первом использовании
+- [ ] Кнопка "Salomat" на главной странице web/
+
+#### SAL-D-3. Web: обновить страницу консультации
+- [ ] Добавить summary от Salomat при создании консультации через чат
+  - Поле `salomatSummary` уже есть в контексте — отображать врачу перед приёмом
+  - В web-medic doctor consultation detail — показать блок "Предварительная информация от Salomat"
 
 ### MVP V0.1 Gap Closures — DONE 2026-04-05
 

@@ -217,6 +217,31 @@ ${this.salomatPrompt}
   }
 
   /**
+   * Summarize a Salomat conversation for the doctor.
+   * Returns a structured summary or the raw text as fallback.
+   */
+  async summarizeForDoctor(conversationText: string): Promise<string> {
+    if (!this.configService.get('ANTHROPIC_API_KEY')) return conversationText;
+
+    try {
+      const response = await this.client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system:
+          'Ты — медицинский ассистент. Сделай краткое саммари диалога с пациентом для врача. Формат:\n- Основная жалоба:\n- Длительность:\n- Сопутствующие симптомы:\n- Что уже пробовал:\n- Анамнез (если известен):\nМаксимум 5-7 строк. На русском языке.',
+        messages: [{ role: 'user', content: conversationText }],
+      });
+
+      return response.content[0].type === 'text'
+        ? response.content[0].text
+        : conversationText;
+    } catch (err) {
+      this.logger.warn(`summarizeForDoctor failed: ${err}`);
+      return conversationText;
+    }
+  }
+
+  /**
    * Parse a recommendation block from the Salomat response.
    * Returns specialization and symptom summary if present.
    */

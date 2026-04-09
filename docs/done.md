@@ -1,5 +1,15 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Backend: Salomat Sprint 3 -- summary + encryption + changelog)
+
+- **[backend]** Add `salomatSummary` nullable text column to Consultation entity -- `backend/src/consultations/entities/consultation.entity.ts`
+- **[backend]** Add `summarizeForDoctor()` method to AiAgentService -- Claude Haiku call with structured medical summary format -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Wire `generateSalomatSummary()` into `createConsultation()` -- saves AI summary alongside consultation -- `backend/src/consultations/consultations.service.ts`
+- **[backend]** Create EncryptionService (AES-256-GCM) -- encrypt/decrypt with `enc:iv:tag:data` format, auto-disabled without ENCRYPTION_KEY -- `backend/src/common/encryption.service.ts`
+- **[backend]** Register EncryptionService in CommonModule (global) -- `backend/src/common/common.module.ts`
+- **[backend]** Create Salomat prompt versioning CHANGELOG.md (v1.0.0, v1.1.0) -- `backend/salomat-knowledge/CHANGELOG.md`
+- **[backend]** Add ENCRYPTION_KEY to .env.example -- `backend/.env.example`
+
 ## 2026-04-05 (Backend: Salomat SSE streaming + audit logging)
 
 - **[backend]** Add SSE streaming endpoint `POST /consultations/ai-chat/stream` with chunked text events and final recommendation -- `backend/src/consultations/consultations.controller.ts`
