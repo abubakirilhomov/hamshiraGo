@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -12,10 +13,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
-import { apiFetch } from '@/constants/api';
+import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { MAP_ACTIVE_STATUSES } from '@/types/order';
@@ -52,6 +54,9 @@ export default function OrderDetailScreen() {
   const [medCardVisible, setMedCardVisible] = useState(false);
   const [medCardData, setMedCardData] = useState<MedCardData | null>(null);
   const [medCardLoading, setMedCardLoading] = useState(false);
+  const [beforePhotoUrl, setBeforePhotoUrl] = useState<string | null>(null);
+  const [afterPhotoUrl, setAfterPhotoUrl] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState<'before' | 'after' | null>(null);
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
   const { order, loading, wsConnected, updateOrderStatus, doneEarnings } =
@@ -103,6 +108,56 @@ export default function OrderDetailScreen() {
       resetRoute();
     }
   }, [order?.status, resetRoute]);
+
+  // ── Load existing photos from order ─────────────────────────────────────────
+  useEffect(() => {
+    if (!order) return;
+    if ((order as any).beforePhotoUrl) setBeforePhotoUrl((order as any).beforePhotoUrl);
+    if ((order as any).afterPhotoUrl) setAfterPhotoUrl((order as any).afterPhotoUrl);
+  }, [order?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTakePhoto = useCallback(async (type: 'before' | 'after') => {
+    if (!id || !token) return;
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      showToast(t('common.cameraPermission', { defaultValue: 'Kameraga ruxsat kerak' }), 'warning');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setPhotoUploading(type);
+    try {
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: result.assets[0].uri,
+        name: `${type}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+      formData.append('type', type);
+
+      const res = await fetch(`${API_BASE}/orders/${id}/photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      if (type === 'before') {
+        setBeforePhotoUrl(data.beforePhotoUrl ?? result.assets[0].uri);
+      } else {
+        setAfterPhotoUrl(data.afterPhotoUrl ?? result.assets[0].uri);
+      }
+      showToast(t('common.photoUploaded', { defaultValue: 'Rasm yuklandi' }), 'success');
+    } catch {
+      showToast(t('common.photoUploadError', { defaultValue: 'Rasm yuklashda xatolik' }), 'error');
+    } finally {
+      setPhotoUploading(null);
+    }
+  }, [id, token, t, showToast]);
 
   const handleNextStatus = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -308,6 +363,54 @@ export default function OrderDetailScreen() {
         />
       )}
 
+      {/* Before/After photos */}
+      {['ARRIVED', 'SERVICE_STARTED', 'DONE'].includes(order.status) && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t('orders.photos', { defaultValue: 'Rasmlar' })}</Text>
+          <View style={styles.photosRow}>
+            {/* Before photo */}
+            <Pressable
+              style={({ pressed }) => [styles.photoCard, pressed && { opacity: 0.85 }]}
+              onPress={() => !beforePhotoUrl && handleTakePhoto('before')}
+              disabled={!!beforePhotoUrl || photoUploading === 'before'}
+            >
+              {photoUploading === 'before' ? (
+                <ActivityIndicator size="small" color={Theme.primary} />
+              ) : beforePhotoUrl ? (
+                <Image source={{ uri: beforePhotoUrl }} style={styles.photoImage} />
+              ) : (
+                <>
+                  <FontAwesome name="camera" size={24} color={Theme.textTertiary} />
+                  <Text style={styles.photoLabel}>
+                    {t('orders.photoBefore', { defaultValue: 'Rasm olish (oldin)' })}
+                  </Text>
+                </>
+              )}
+            </Pressable>
+
+            {/* After photo */}
+            <Pressable
+              style={({ pressed }) => [styles.photoCard, pressed && { opacity: 0.85 }]}
+              onPress={() => !afterPhotoUrl && handleTakePhoto('after')}
+              disabled={!!afterPhotoUrl || photoUploading === 'after'}
+            >
+              {photoUploading === 'after' ? (
+                <ActivityIndicator size="small" color={Theme.primary} />
+              ) : afterPhotoUrl ? (
+                <Image source={{ uri: afterPhotoUrl }} style={styles.photoImage} />
+              ) : (
+                <>
+                  <FontAwesome name="camera" size={24} color={Theme.textTertiary} />
+                  <Text style={styles.photoLabel}>
+                    {t('orders.photoAfter', { defaultValue: 'Rasm olish (keyin)' })}
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       {/* Client rating display (after DONE) */}
       {order.status === 'DONE' && order.clientRating != null && (
         <View style={styles.card}>
@@ -440,6 +543,32 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
   rowValue: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.text },
+  photosRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  photoCard: {
+    width: 120,
+    height: 120,
+    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    overflow: 'hidden',
+  },
+  photoImage: {
+    width: 120,
+    height: 120,
+    borderRadius: Radius.md,
+  },
+  photoLabel: {
+    fontSize: Typography.caption.fontSize,
+    fontWeight: '500',
+    color: Theme.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.xs,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: Theme.overlay,

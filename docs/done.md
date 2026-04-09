@@ -1,5 +1,12 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Mobile/Medic: 4 UI features for existing backend APIs)
+
+- **[mobile]** ETA display on order tracking -- `etaMinutes` from `medic_location` socket event shown as "~N daqiqa" with clock icon when status is ON_THE_WAY or ACCEPTED -- `mobile/hooks/useOrderTracking.ts`, `mobile/app/order/track.tsx`
+- **[medic]** Photo before/after procedure -- camera buttons to capture before/after photos, upload via FormData to `POST /orders/:id/photo`, show thumbnails when uploaded, visible on ARRIVED/SERVICE_STARTED/DONE -- `medic/app/order/[id].tsx`
+- **[medic]** Schedule screen (Ish jadvali) -- 7-day schedule with toggle + hour pickers, loads from `GET /medics/me/schedule`, saves via `PUT /medics/me/schedule`, linked from profile -- `medic/app/schedule.tsx`, `medic/app/(tabs)/profile.tsx`
+- **[mobile]** Multi-service selection -- ServiceCard "+" becomes checkmark when selected, teal border on selected cards, floating bottom bar with count/total/CTA, serviceIds passed to confirm screen, confirm.tsx displays all services and sums prices, order body includes `serviceIds` array -- `mobile/components/ServiceCard.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/order/confirm.tsx`
+
 ## 2026-04-05 (Backend: Medic Schedule + Multi-service orders)
 
 - **[backend]** Medic Schedule (working hours) -- new `medic_schedules` table, `MedicSchedule` entity, `GET/PUT /medics/me/schedule` endpoints, `isMedicAvailableNow()` method with Tashkent timezone, dispatch filters out medics outside working hours -- `backend/src/medics/entities/medic-schedule.entity.ts`, `backend/src/medics/dto/update-schedule.dto.ts`, `backend/src/medics/medics.service.ts`, `backend/src/medics/medics.controller.ts`, `backend/src/medics/medics.module.ts`, `backend/src/orders/dispatch.service.ts`

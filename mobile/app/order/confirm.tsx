@@ -73,8 +73,11 @@ export default function OrderConfirmScreen() {
   const [promoId, setPromoId] = useState<string | null>(null);
   const [promoStatus, setPromoStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
 
+  const [multiServices, setMultiServices] = useState<CatalogService[]>([]);
+
   const params = useLocalSearchParams<{
     serviceId: string;
+    serviceIds?: string;
     lat: string;
     lng: string;
     house: string;
@@ -83,7 +86,22 @@ export default function OrderConfirmScreen() {
     phone: string;
   }>();
 
+  // Multi-service support: if serviceIds is passed (comma-separated), load all
+  const isMulti = !!params.serviceIds;
+
   useEffect(() => {
+    if (params.serviceIds) {
+      const ids = params.serviceIds.split(',').filter(Boolean);
+      if (ids.length === 0) { setLoadingService(false); return; }
+      Promise.all(ids.map((sid) => apiFetch<CatalogService>(`/services/${sid}`)))
+        .then((results) => {
+          setMultiServices(results);
+          setService(results[0]); // set first as primary for backward compat
+        })
+        .catch(() => showToast(t('confirm.serviceLoadError', { defaultValue: 'Не удалось загрузить услугу' }), 'error'))
+        .finally(() => setLoadingService(false));
+      return;
+    }
     if (!params.serviceId) {
       setLoadingService(false);
       return;
@@ -115,7 +133,9 @@ export default function OrderConfirmScreen() {
       .catch((e) => console.warn('Settings fetch failed:', e));
   }, [params.serviceId, token]);
 
-  const basePrice = service?.price ?? 0;
+  const basePrice = isMulti && multiServices.length > 0
+    ? multiServices.reduce((sum, s) => sum + s.price, 0)
+    : (service?.price ?? 0);
   const firstOrderDiscount = isFirstOrder ? Math.round(basePrice * FIRST_ORDER_DISCOUNT_RATE) : 0;
   const subDiscount = activeSub ? Math.round(basePrice * (activeSub.discountPercent ?? 0) / 100) : 0;
   const discountAmount = firstOrderDiscount + promoDiscount + subDiscount;
@@ -162,23 +182,27 @@ export default function OrderConfirmScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
+      const orderBody: Record<string, any> = {
+        serviceId: service.id,
+        ...(isMulti && multiServices.length > 1
+          ? { serviceIds: multiServices.map((s) => s.id) }
+          : {}),
+        ...(discountAmount > 0 ? { discountAmount } : {}),
+        ...(promoId ? { promoId } : {}),
+        ...(isUrgent ? { isUrgent: true } : {}),
+        location: {
+          latitude: lat,
+          longitude: lng,
+          house: params.house,
+          floor: params.floor ?? null,
+          apartment: params.apartment ?? null,
+          phone,
+        },
+      };
       const order = await apiFetch<{ id: string }>('/orders', {
         method: 'POST',
         token: token ?? undefined,
-        body: JSON.stringify({
-          serviceId: service.id,
-          ...(discountAmount > 0 ? { discountAmount } : {}),
-          ...(promoId ? { promoId } : {}),
-          ...(isUrgent ? { isUrgent: true } : {}),
-          location: {
-            latitude: lat,
-            longitude: lng,
-            house: params.house,
-            floor: params.floor ?? null,
-            apartment: params.apartment ?? null,
-            phone,
-          },
-        }),
+        body: JSON.stringify(orderBody),
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       trackEvent('order_created', {
@@ -245,16 +269,38 @@ export default function OrderConfirmScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: 100 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Service card */}
-        <View style={styles.serviceCard}>
-          <View style={styles.serviceIconWrap}>
-            <FontAwesome name="medkit" size={24} color={Theme.primary} />
+        {/* Service card(s) */}
+        {isMulti && multiServices.length > 1 ? (
+          <View style={styles.serviceCard}>
+            {multiServices.map((svc, idx) => {
+              const svcTitle = language === 'uz' && svc.titleUz ? svc.titleUz : svc.title;
+              return (
+                <View key={svc.id} style={[
+                  { flexDirection: 'row', alignItems: 'center', gap: 12 },
+                  idx > 0 && { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Theme.border },
+                ]}>
+                  <View style={styles.serviceIconWrap}>
+                    <FontAwesome name="medkit" size={20} color={Theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.serviceName}>{svcTitle}</Text>
+                    <Text style={styles.servicePrice}>{svc.price.toLocaleString('ru-RU')} UZS</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
-          <View style={styles.serviceInfo}>
-            <Text style={styles.serviceName}>{displayTitle}</Text>
-            <Text style={styles.servicePrice}>{basePrice.toLocaleString('ru-RU')} UZS</Text>
+        ) : (
+          <View style={styles.serviceCard}>
+            <View style={styles.serviceIconWrap}>
+              <FontAwesome name="medkit" size={24} color={Theme.primary} />
+            </View>
+            <View style={styles.serviceInfo}>
+              <Text style={styles.serviceName}>{displayTitle}</Text>
+              <Text style={styles.servicePrice}>{basePrice.toLocaleString('ru-RU')} UZS</Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Address card */}
         <View style={styles.card}>

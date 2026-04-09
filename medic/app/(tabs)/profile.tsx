@@ -407,6 +407,23 @@ export default function ProfileScreen() {
         <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
       </Pressable>
 
+      {/* Schedule */}
+      <Pressable
+        style={({ pressed }) => [styles.workZoneCard, pressed && { opacity: 0.88 }]}
+        onPress={() => router.push('/schedule')}
+      >
+        <View style={styles.workZoneIconWrap}>
+          <FontAwesome name="calendar" size={18} color={Theme.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.workZoneTitle}>{t('profile.schedule', { defaultValue: 'Ish jadvali' })}</Text>
+          <Text style={styles.workZoneSubtitle}>
+            {t('profile.scheduleDesc', { defaultValue: 'Ish kunlari va soatlarini sozlash' })}
+          </Text>
+        </View>
+        <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
+      </Pressable>
+
       {/* Language picker */}
       <View style={styles.card}>
         <Text style={styles.cardSectionTitle}>{t('language.title')}</Text>

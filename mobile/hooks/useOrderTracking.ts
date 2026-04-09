@@ -69,6 +69,7 @@ type MedicLocationPayload = {
   longitude: number;
   updatedAt: string;
   source?: 'socket' | 'rest';
+  etaMinutes?: number | null;
 };
 
 type DispatchUpdatePayload = {
@@ -111,6 +112,7 @@ interface UseOrderTrackingResult {
   wsConnected: boolean;
   dispatchState: DispatchState;
   medicLocation: MedicLocation | null;
+  etaMinutes: number | null;
   ratingSubmitting: boolean;
   cancelOrder: (reason?: string) => Promise<void>;
   submitRating: (stars: number, review?: string) => Promise<void>;
@@ -128,6 +130,7 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
   const [dispatchState, setDispatchState] = useState<DispatchState>(null);
   const [medicLocation, setMedicLocation] = useState<MedicLocation | null>(null);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const orderRef = useRef<Order | null>(null);
@@ -227,6 +230,9 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
         updatedAt: payload.updatedAt,
         source: payload.source,
       });
+      if (payload.etaMinutes !== undefined) {
+        setEtaMinutes(payload.etaMinutes ?? null);
+      }
     };
 
     const onDispatchInvite = (payload: { orderId: string; medicName?: string }) => {
@@ -334,6 +340,7 @@ export function useOrderTracking(orderId: string | undefined): UseOrderTrackingR
     wsConnected,
     dispatchState,
     medicLocation,
+    etaMinutes,
     ratingSubmitting,
     cancelOrder,
     submitRating,

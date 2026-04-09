@@ -55,6 +55,10 @@
 ## 📋 Задачи
 
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
+- [x] **MOB-FEAT-1** — ETA display на экране трекинга заказа — `mobile/app/order/track.tsx`, `mobile/hooks/useOrderTracking.ts`
+- [x] **MED-FEAT-1** — Photo before/after в деталях заказа медика — `medic/app/order/[id].tsx`
+- [x] **MED-FEAT-2** — Экран расписания медика (ish jadvali) — `medic/app/schedule.tsx`, `medic/app/(tabs)/profile.tsx`
+- [x] **MOB-FEAT-2** — Multi-service selection на главном экране — `mobile/app/(tabs)/index.tsx`, `mobile/components/ServiceCard.tsx`, `mobile/app/order/confirm.tsx`
 
 ### 🔵 V5 Backend — DONE (Абубакир, 2026-04-09)
 
