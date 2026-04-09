@@ -433,10 +433,22 @@ export const getDoctors = (specialization?: string) => {
 export const getDoctorById = (id: string) =>
   request<Doctor>(`/consultations/doctors/${id}`);
 
-export const createConsultation = (doctorId: string, symptoms?: string) =>
+export interface DoctorSlot {
+  id: string;
+  doctorId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isBooked: boolean;
+}
+
+export const getDoctorSlots = (doctorId: string, date: string) =>
+  request<DoctorSlot[]>(`/doctors/${doctorId}/slots?date=${date}`);
+
+export const createConsultation = (doctorId: string, symptoms?: string, slotId?: string) =>
   request<Consultation>("/consultations", {
     method: "POST",
-    body: JSON.stringify({ doctorId, ...(symptoms ? { symptoms } : {}) }),
+    body: JSON.stringify({ doctorId, ...(symptoms ? { symptoms } : {}), ...(slotId ? { slotId } : {}) }),
   });
 
 export const getMyConsultations = (page = 1, limit = 10) =>
@@ -637,3 +649,52 @@ export interface PaymentStatusResponse {
   status: "PENDING" | "PAID" | "FAILED";
   paymentUrl?: string;
 }
+
+// ─── Voice Agent ──────────────────────────────────────────────────────────────
+
+export interface VoiceChatResponse {
+  sessionId: string;
+  reply: string;
+  recommendation?: "DOCTOR" | "NURSE" | "NONE";
+  suggestedSpecialization?: string;
+  sessionComplete?: boolean;
+}
+
+export const voiceAgentApi = {
+  transcribe: async (audioBlob: Blob, lang: "ru" | "uz" = "ru"): Promise<{ text: string }> => {
+    const token = getToken();
+    const form = new FormData();
+    form.append("audio", audioBlob, "recording.webm");
+    const res = await fetch(`${BASE_URL}/voice-agent/transcribe?lang=${lang}`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: "Ошибка распознавания" }));
+      throw new Error(err.message || "Ошибка распознавания");
+    }
+    return res.json();
+  },
+
+  chat: (sessionId: string | null, message: string, lang: "ru" | "uz" = "ru") =>
+    request<VoiceChatResponse>("/voice-agent/chat", {
+      method: "POST",
+      body: JSON.stringify({ sessionId, message, lang }),
+    }),
+
+  synthesize: async (text: string, lang: "ru" | "uz" = "ru"): Promise<Blob | null> => {
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/voice-agent/synthesize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ text, lang }),
+    });
+    if (!res.ok) return null; // TTS may be unavailable (503)
+    return res.blob();
+  },
+};
+

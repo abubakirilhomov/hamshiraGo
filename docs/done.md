@@ -1,5 +1,46 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-09 (V5-D-6: Admin Doctor Accounts)
+
+- **[admin]** Add API: `getDoctorAccounts`, `getDoctorAccountsPending`, `verifyDoctorAccount`, `blockDoctorAccount` + `DoctorAccount` type — `admin/src/lib/api.ts`
+- **[admin]** Create `DoctorAccounts.tsx` — таблица с фильтрами (поиск/статус/блокировка), табы "Все/На проверке", кнопки Принять/Отклонить (модал с причиной) и Заблокировать/Разблокировать — `admin/src/pages/DoctorAccounts.tsx`
+- **[admin]** Add "Аккаунты врачей" (UserCheck) в `AdminSidebar.tsx`, роут `/doctor-accounts` в `App.tsx`
+
+## 2026-04-09 (V5-D-5: Admin Voice Agent)
+
+- **[admin]** Add voice agent API: `getVoiceAgentStats`, `getVoiceSessions`, `getVoiceSession` + types — `admin/src/lib/api.ts`
+- **[admin]** Create `VoiceAgent.tsx` — KPI карточки (6 метрик), таблица сессий с фильтрами (статус/рекомендация), пагинация, модал с bubble-историей чата — `admin/src/pages/VoiceAgent.tsx`
+- **[admin]** Add "Голосовой агент" (Mic) в `AdminSidebar.tsx`, роут `/voice-agent` в `App.tsx`
+
+## 2026-04-09 (V5-D-4: Web Voice Agent)
+
+- **[web]** Add `voiceAgentApi` (transcribe, chat, synthesize) + `VoiceChatResponse` type — `web/lib/api.ts`
+- **[web]** Create `VoiceAssistant.tsx` — idle/recording/processing/speaking/result states, pulse+wave CSS анимации, bubble chat history, recommendation card с кнопками — `web/components/VoiceAssistant.tsx`
+- **[web]** Create `app/voice-agent/page.tsx` — полная страница с хедером и info-баннером
+- **[web]** Add voice assistant banner на главной странице → `/voice-agent` — `web/app/page.tsx`
+
+## 2026-04-09 (V5-D-3: SlotPicker в web/)
+
+- **[web]** Add `getDoctorSlots()` + `DoctorSlot` type — `web/lib/api.ts`
+- **[web]** Create `SlotPicker.tsx` — 7-дневный date-strip + сетка слотов, onSelect callback — `web/components/SlotPicker.tsx`
+- **[web]** Integrate SlotPicker в `/consultation`, pass `slotId` to `createConsultation()` — `web/app/consultation/page.tsx`
+
+## 2026-04-09 (V5-D-2: Расписание врача в web-medic)
+
+- **[web-medic]** Create `app/doctor/schedule/page.tsx` — 14-дневный date-picker, создание слотов (startTime/endTime/intervalMinutes), таблица свободных/занятых слотов с удалением — `web-medic/app/doctor/schedule/page.tsx`
+
+## 2026-04-09 (V5-D-1: Doctor role в web-medic)
+
+- **[web-medic]** Add `doctorApi` (auth, consultations, slots) + `getUserRole()` + doctor types (DoctorProfile, Consultation, DoctorSlot) — `web-medic/lib/api.ts`
+- **[web-medic]** Add role toggle (Медик / Врач) on auth page, doctor login via `POST /doctors/login`, save `user_role` in localStorage, redirect doctor to `/doctor/consultations` — `web-medic/app/auth/page.tsx`
+- **[web-medic]** Create `DoctorSidebar.tsx` — врачебный sidebar: Консультации, Расписание, Рецепты, Профиль — `web-medic/components/DoctorSidebar.tsx`
+- **[web-medic]** Create `DoctorMobileNav.tsx` — bottom nav для врача — `web-medic/components/DoctorMobileNav.tsx`
+- **[web-medic]** Update `DashboardLayout.tsx` — role-based sidebar/nav (медик vs врач) — `web-medic/components/DashboardLayout.tsx`
+- **[web-medic]** Create `app/doctor/consultations/page.tsx` — список pending/all консультаций, Принять/Отклонить кнопки
+- **[web-medic]** Create `app/doctor/consultation/[id]/page.tsx` — детали: симптомы, клиент, LiveKit видеозвонок, завершение с notes
+- **[web-medic]** Create `app/doctor/prescriptions/page.tsx` — выписанные рецепты (завершённые консультации с notes)
+- **[web-medic]** Create `app/doctor/profile/page.tsx` — профиль врача + inline edit name/specialization
+
 ## 2026-04-05 (Consultation slot picker)
 
 - **[mobile]** Add date + time slot picker to consultation booking screen: horizontal date chips (next 7 days, Uzbek day names), 3-column time slot grid with loading/empty states, fetch slots from `/doctors/:id/slots?date=`, pass `slotId` and `consultationType` in booking request -- `mobile/app/consultation.tsx`

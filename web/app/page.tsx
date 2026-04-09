@@ -192,6 +192,41 @@ export default function HomePage() {
       {/* Content */}
       <div className="page-wrap" style={{ padding: "20px 20px 60px" }}>
 
+        {/* Voice Assistant banner */}
+        <button
+          onClick={() => router.push("/voice-agent")}
+          style={{
+            width: "100%", background: "linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)",
+            border: "none", borderRadius: 16, padding: "16px 20px", cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 14, marginBottom: 16,
+            boxShadow: "0 4px 16px rgba(13,148,136,0.25)",
+            textAlign: "left",
+          }}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 2 }}>
+              Голосовой ассистент
+            </p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", margin: 0 }}>
+              Опишите симптомы — AI подберёт врача или медсестру
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+
         {/* Search */}
         <div style={{ position: "relative", marginBottom: 16 }}>
           <svg

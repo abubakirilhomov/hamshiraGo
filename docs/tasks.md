@@ -72,55 +72,37 @@
 
 > Backend API готов. Endpoints задокументированы ниже. Полный план: `docs/V5_PLAN.md`
 
-#### V5-D-1. Doctor role в web-medic (приоритет!)
-- [ ] При login определять role из JWT (`medic` или `doctor`), показывать разный sidebar
-- [ ] **Doctor sidebar:** Консультации, Расписание, Рецепты, Пациенты, Профиль
-- [ ] `web-medic/app/doctor/consultations/page.tsx` — список (pending/active/completed), кнопки Принять/Отклонить
-  - API: `GET /consultations/doctor/pending`, `GET /consultations/doctor/my?page=1&limit=20`
-  - API: `POST /consultations/:id/doctor-accept`, `POST /consultations/:id/doctor-decline`
-- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — детали + видеозвонок LiveKit + завершение с notes
-  - API: `PATCH /consultations/:id/doctor-complete` body: `{ notes, createOrderServiceId? }`
-  - LiveKit: `POST /consultations/:id/call/join` body: `{ role: "doctor" }`
-- [ ] `web-medic/app/doctor/prescriptions/page.tsx` — выписанные рецепты
-- [ ] `web-medic/app/doctor/profile/page.tsx` — профиль + настройки
-  - API: `GET /doctors/me`, `PATCH /doctors/profile`
+#### V5-D-1. Doctor role в web-medic (приоритет!) ✅ DONE 2026-04-09
+- [x] При login определять role из JWT (`medic` или `doctor`), показывать разный sidebar
+- [x] **Doctor sidebar:** Консультации, Расписание, Рецепты, Профиль
+- [x] `web-medic/app/doctor/consultations/page.tsx` — список (pending/all), кнопки Принять/Отклонить
+- [x] `web-medic/app/doctor/consultation/[id]/page.tsx` — детали + видеозвонок LiveKit + завершение с notes
+- [x] `web-medic/app/doctor/prescriptions/page.tsx` — выписанные рецепты
+- [x] `web-medic/app/doctor/profile/page.tsx` — профиль + inline edit name/specialization
 
-#### V5-D-2. Расписание врача в web-medic
-- [ ] `web-medic/app/doctor/schedule/page.tsx` — календарь + создание слотов + просмотр занятых
-  - API: `POST /doctors/me/slots` body: `{ date, startTime, endTime, intervalMinutes }`
-  - API: `GET /doctors/me/slots?date=YYYY-MM-DD`
-  - API: `DELETE /doctors/me/slots/:slotId`
+#### V5-D-2. Расписание врача в web-medic ✅ DONE 2026-04-09
+- [x] `web-medic/app/doctor/schedule/page.tsx` — календарь + создание слотов + просмотр занятых
 
-#### V5-D-3. Выбор времени в web/ (клиент)
-- [ ] SlotPicker компонент на странице `/consultation`
-  - API: `GET /doctors/:id/slots?date=YYYY-MM-DD` (публичный)
-  - При бронировании: передать `slotId` в `POST /consultations`
+#### V5-D-3. Выбор времени в web/ (клиент) ✅ DONE 2026-04-09
+- [x] `web/components/SlotPicker.tsx` — 7-дневный picker + сетка слотов
+- [x] `web/app/consultation/page.tsx` — интегрирован SlotPicker, slotId передаётся при бронировании
 
-#### V5-D-4. Web Voice Agent (web/)
-- [ ] `web/app/voice-agent/page.tsx` — кнопка микрофона (MediaRecorder → blob webm)
-  - API: `POST /voice-agent/transcribe` — multipart audio file
-  - API: `POST /voice-agent/chat` body: `{ sessionId?, message, lang }`
-  - API: `POST /voice-agent/synthesize` body: `{ text, lang }` → audio/mpeg (пока 503)
-- [ ] `web/components/VoiceAssistant.tsx` — переиспользуемый компонент
-- [ ] CSS анимации: pulse при записи, wave при воспроизведении
-- [ ] Recommendation → кнопки: "Вызвать медсестру" → `/order/confirm`, "К врачу" → `/doctors`
-- [ ] Кнопка "Голосовой ассистент" на главной странице
+#### V5-D-4. Web Voice Agent (web/) ✅ DONE 2026-04-09
+- [x] `web/app/voice-agent/page.tsx` — страница с микрофоном, MediaRecorder → webm
+- [x] `web/components/VoiceAssistant.tsx` — компонент: запись, transcribe, chat, TTS, история
+- [x] CSS анимации: pulse (красный) при записи, wave (teal) при воспроизведении
+- [x] Recommendation → кнопки: "К врачу" → `/doctors`, "Медсестра" → `/order/location`
+- [x] Кнопка "Голосовой ассистент" на главной странице (баннер)
 
-#### V5-D-5. Admin: Голосовой агент (admin/)
-- [ ] `admin/src/pages/VoiceAgent.tsx` — статистика + таблица сессий + модал с историей
-  - API: `GET /voice-agent/admin/sessions/stats` → `{ totalSessions, activeSessions, completedSessions, doctorRecommendations, nurseRecommendations, conversionRate, averageExchanges }`
-  - API: `GET /voice-agent/admin/sessions?page=1&limit=20&status=&recommendation=`
-  - API: `GET /voice-agent/admin/sessions/:id` → полная история
-- [ ] Добавить "Голосовой агент" (иконка Mic) в AdminSidebar + роут `/voice-agent`
-- [ ] Графики: сессии по дням, конверсия, топ симптомы
+#### V5-D-5. Admin: Голосовой агент (admin/) ✅ DONE 2026-04-09
+- [x] `admin/src/pages/VoiceAgent.tsx` — KPI карточки + таблица сессий с фильтрами + модал с историей
+- [x] `admin/src/lib/api.ts` — getVoiceAgentStats, getVoiceSessions, getVoiceSession
+- [x] AdminSidebar — добавлен "Голосовой агент" (Mic), роут `/voice-agent` в App.tsx
 
-#### V5-D-6. Doctor auth в admin/ (управление врачами)
-- [ ] Страница "Врачи" в admin — список, верификация, блокировка
-  - API: `GET /doctors/admin/all?page=1&limit=20&search=&verificationStatus=`
-  - API: `GET /doctors/admin/pending` — ожидающие верификации
-  - API: `PATCH /doctors/admin/:id/verify` body: `{ status: "APPROVED"|"REJECTED", reason? }`
-  - API: `PATCH /doctors/admin/:id/block` body: `{ isBlocked: true|false }`
-- [ ] Добавить "Врачи" в AdminSidebar
+#### V5-D-6. Doctor auth в admin/ (управление врачами) ✅ DONE 2026-04-09
+- [x] `admin/src/pages/DoctorAccounts.tsx` — список + фильтры + верификация (Принять/Отклонить с причиной) + блокировка
+- [x] `admin/src/lib/api.ts` — getDoctorAccounts, getDoctorAccountsPending, verifyDoctorAccount, blockDoctorAccount
+- [x] AdminSidebar — добавлен "Аккаунты врачей" (UserCheck), роут `/doctor-accounts` в App.tsx
 
 ### 🟡 V5 Frontend — Абубакир (mobile, medic)
 

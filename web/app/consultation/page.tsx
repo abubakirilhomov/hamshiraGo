@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaArrowLeft, FaStar, FaUserMd, FaCheckCircle, FaMoneyBillWave, FaInfoCircle } from "react-icons/fa";
 import { getDoctorById, createConsultation, Doctor } from "@/lib/api";
+import SlotPicker from "@/components/SlotPicker";
 
 function ConsultationContent() {
   const router = useRouter();
@@ -16,6 +17,7 @@ function ConsultationContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
   const fetchDoctor = useCallback(async () => {
     if (!doctorId) return;
@@ -40,7 +42,7 @@ function ConsultationContent() {
     setSubmitting(true);
     setError("");
     try {
-      await createConsultation(doctorId, symptoms || undefined);
+      await createConsultation(doctorId, symptoms || undefined, selectedSlotId || undefined);
       router.push("/consultations");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка");
@@ -129,6 +131,20 @@ function ConsultationContent() {
             <FaInfoCircle size={14} color="#94a3b8" />
             <span style={{ fontSize: 13, color: "#94a3b8" }}>Комиссия платформы: {platformFee.toLocaleString("ru-RU")} сум (15%)</span>
           </div>
+        </div>
+
+        {/* Slot picker */}
+        <div style={{ background: "#fff", borderRadius: 14, padding: "16px 18px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9" }}>
+          <SlotPicker
+            doctorId={doctorId}
+            selectedSlotId={selectedSlotId}
+            onSelect={setSelectedSlotId}
+          />
+          {selectedSlotId && (
+            <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdfa", borderRadius: 8, fontSize: 13, color: "#0d9488", fontWeight: 600 }}>
+              ✓ Слот выбран
+            </div>
+          )}
         </div>
 
         {error && (
