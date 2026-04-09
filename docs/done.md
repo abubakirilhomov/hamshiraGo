@@ -40,6 +40,54 @@
 - **[web-medic]** Create `app/doctor/consultation/[id]/page.tsx` — детали: симптомы, клиент, LiveKit видеозвонок, завершение с notes
 - **[web-medic]** Create `app/doctor/prescriptions/page.tsx` — выписанные рецепты (завершённые консультации с notes)
 - **[web-medic]** Create `app/doctor/profile/page.tsx` — профиль врача + inline edit name/specialization
+## 2026-04-05 (Backend: Salomat Sprint 3 -- summary + encryption + changelog)
+
+- **[backend]** Add `salomatSummary` nullable text column to Consultation entity -- `backend/src/consultations/entities/consultation.entity.ts`
+- **[backend]** Add `summarizeForDoctor()` method to AiAgentService -- Claude Haiku call with structured medical summary format -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Wire `generateSalomatSummary()` into `createConsultation()` -- saves AI summary alongside consultation -- `backend/src/consultations/consultations.service.ts`
+- **[backend]** Create EncryptionService (AES-256-GCM) -- encrypt/decrypt with `enc:iv:tag:data` format, auto-disabled without ENCRYPTION_KEY -- `backend/src/common/encryption.service.ts`
+- **[backend]** Register EncryptionService in CommonModule (global) -- `backend/src/common/common.module.ts`
+- **[backend]** Create Salomat prompt versioning CHANGELOG.md (v1.0.0, v1.1.0) -- `backend/salomat-knowledge/CHANGELOG.md`
+- **[backend]** Add ENCRYPTION_KEY to .env.example -- `backend/.env.example`
+
+## 2026-04-05 (Backend: Salomat SSE streaming + audit logging)
+
+- **[backend]** Add SSE streaming endpoint `POST /consultations/ai-chat/stream` with chunked text events and final recommendation -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Add `chatStream()` AsyncGenerator method to AiAgentService with prompt caching (`cache_control: ephemeral`) -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Create SalomatAuditLog entity (`salomat_audit_logs` table) with clientId, action, specialization, details, triageLevel -- `backend/src/consultations/entities/salomat-audit-log.entity.ts`
+- **[backend]** Create SalomatAuditService with log, logRedFlag, logDoctorReferral, logNurseReferral, logSafeguard, logRateLimit, getStats -- `backend/src/consultations/salomat-audit.service.ts`
+- **[backend]** Add admin audit stats endpoint `GET /consultations/admin/salomat-audit/stats?days=30` -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Integrate audit logging into `chat()` method: auto-detect RED_FLAG (103/skoraya), DOCTOR_REFERRAL, NURSE_REFERRAL from AI replies -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Log RATE_LIMIT_HIT on rate limit exceeded -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Add optional `patientContext` (name, age, gender, allergies, chronicDiseases) parameter to chat/chatStream, append to system prompt -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Load patient name from UsersService in controller and pass as patientContext to AI -- `backend/src/consultations/consultations.controller.ts`
+- **[backend]** Extract `buildSystemPrompt()` helper to reduce duplication between chat/chatStream -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Register SalomatAuditLog entity and SalomatAuditService in ConsultationsModule -- `backend/src/consultations/consultations.module.ts`
+
+## 2026-04-05 (Mobile: Salomat AI streaming + action buttons)
+
+- **[mobile]** Add SSE streaming for Salomat AI chat with fallback to non-streaming on web/error -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Add action buttons inside AI message bubbles: "Shifokor tanlash" (doctor), "Hamshira chaqirish" (nurse), "103 ga qo'ng'iroq qilish" (emergency call) -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Clean recommendation markers (РЕКОМЕНДАЦИЯ/СПЕЦИАЛИЗАЦИЯ) from displayed AI text -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Replace ActivityIndicator typing indicator with animated dots, show only while assistant message is empty -- `mobile/app/ai-chat.tsx`
+
+## 2026-04-05 (Mobile UI: Salomat rebrand, notifications, service detail fix)
+
+- **[mobile]** Rename "AI Hamshira" to "Salomat" in ai-chat header, home banner, voice-agent header; change greeting to Uzbek; add empty-state suggestion chips with 4 medical scenarios -- `mobile/app/ai-chat.tsx`, `mobile/app/(tabs)/index.tsx`, `mobile/app/voice-agent.tsx`
+- **[mobile]** Fix service detail back button overlapping iOS status bar -- set absolute `top: insets.top + 16` -- `mobile/app/service/[id].tsx`
+- **[mobile]** Create notifications screen with date-grouped list, empty/skeleton states, unread dot, AsyncStorage persistence -- `mobile/app/notifications.tsx`
+- **[mobile]** Add unread notification badge (red circle) on home screen bell icon, refresh on tab focus -- `mobile/app/(tabs)/index.tsx`
+- **[mobile]** Register notifications route in root layout -- `mobile/app/_layout.tsx`
+- **[mobile]** Create Salomat disclaimer modal (first-time consent, heartbeat icon, gradient accept button, AsyncStorage flag) -- `mobile/components/SalomatDisclaimer.tsx`
+- **[mobile]** Integrate Salomat disclaimer into ai-chat screen -- checks consent before first use, navigates back on decline -- `mobile/app/ai-chat.tsx`
+
+## 2026-04-05 (Salomat AI assistant)
+
+- **[backend]** Create Salomat knowledge base: 6 files (triage.md, specialties.md, safety.md, tone.md, conversation-flow.md, disclaimer.md) -- `backend/salomat-knowledge/`
+- **[docs]** Create 38 test scenarios for Salomat covering all medical categories, red flags, and prompt injection -- `docs/salomat-scenarios.md`
+- **[backend]** Rename AI assistant to Salomat in ai-agent.service.ts: load knowledge base from files, Uzbek greeting on first message then Russian only, per-patient daily rate limiter (50 msg/day) -- `backend/src/consultations/ai-agent.service.ts`
+- **[backend]** Rename AI assistant to Salomat in voice-agent.service.ts: load knowledge base from files, update buildSystemPrompt with Salomat identity and language rules -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** Add Salomat i18n keys (SALOMAT_RATE_LIMIT, SALOMAT_RATE_LIMIT_WARNING, SALOMAT_CONSENT_REQUIRED) -- `backend/src/common/i18n/ru.json`, `backend/src/common/i18n/uz.json`
 
 ## 2026-04-05 (Consultation slot picker)
 

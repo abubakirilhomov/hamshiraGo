@@ -41,6 +41,10 @@ export class Consultation {
   @Column({ type: 'text', nullable: true })
   doctorNotes!: string | null;
 
+  /** Salomat AI summary of patient conversation for the doctor */
+  @Column({ type: 'text', nullable: true, default: null })
+  salomatSummary!: string | null;
+
   /** Auto-created nursing order (if any) */
   @Column('uuid', { nullable: true })
   createdOrderId!: string | null;

@@ -422,7 +422,7 @@ export default function VoiceAgentScreen() {
         >
           <FontAwesome name="arrow-left" size={18} color={Theme.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>AI Hamshira</Text>
+        <Text style={styles.headerTitle}>Salomat</Text>
         <View style={styles.headerMicIcon}>
           <FontAwesome name="microphone" size={18} color={Theme.primary} />
         </View>

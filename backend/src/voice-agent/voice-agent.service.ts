@@ -9,6 +9,8 @@ import { Repository, LessThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import Anthropic from '@anthropic-ai/sdk';
+import * as fs from 'fs';
+import * as path from 'path';
 import { VoiceSession } from './entities/voice-session.entity';
 import { ServicesService } from '../services/services.service';
 
@@ -16,6 +18,9 @@ import { ServicesService } from '../services/services.service';
 export class VoiceAgentService {
   private readonly logger = new Logger(VoiceAgentService.name);
   private readonly anthropic: Anthropic;
+
+  /** Salomat knowledge base loaded once at startup */
+  private readonly salomatPrompt: string;
 
   constructor(
     @InjectRepository(VoiceSession)
@@ -25,6 +30,32 @@ export class VoiceAgentService {
   ) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
     this.anthropic = new Anthropic({ apiKey: apiKey || 'dummy-key' });
+
+    // Load Salomat knowledge base files
+    const knowledgePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      'salomat-knowledge',
+    );
+    const files = [
+      'triage.md',
+      'specialties.md',
+      'safety.md',
+      'tone.md',
+      'conversation-flow.md',
+    ];
+    this.salomatPrompt = files
+      .map((f) => {
+        try {
+          return fs.readFileSync(path.join(knowledgePath, f), 'utf-8');
+        } catch {
+          this.logger.warn(`Salomat knowledge file not found: ${f}`);
+          return '';
+        }
+      })
+      .filter(Boolean)
+      .join('\n\n---\n\n');
   }
 
   // ── STT: Groq Whisper ────────────────────────────────────────────────────
@@ -357,41 +388,33 @@ export class VoiceAgentService {
       servicesText = 'Services list unavailable';
     }
 
-    if (lang === 'uz') {
-      return `Sen HamshiraGo tibbiy yordamchisissan. Sening vazifang:
-1. Bemorning shikoyatlarini tinglash
-2. 2-3 ta aniqlashtiruvchi savol berish
-3. Keyin tavsiya berish: DOCTOR (video konsultatsiya) yoki NURSE (uyga chaqiruv: ukol, kapelnitsa, qon tahlili va h.k.)
-4. HECH QACHON diagnoz qo'yma — faqat yo'naltir.
+    // Determine if this is first message (greeting in Uzbek)
+    // The caller can pass lang='uz' for first message greeting context
 
-Mavjud hamshiralik xizmatlari:
-${servicesText}
+    return `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
 
-Mavjud shifokor mutaxassisliklari: Terapevt, Kardiolog, Nevrolog, Gastroenterolog, LOR, Dermatolog, Xirurg, Pediatr, Ginekolog, Urolog
+ПРАВИЛА ЯЗЫКА:
+- Первое сообщение сессии: поприветствуй на узбекском: "Ассалому алайкум! Мен Salomat — сизнинг соғлиғингиз бўйича ёрдамчингизман. Қандай ёрдам бера оламан?"
+- ВСЕ последующие сообщения: ТОЛЬКО на русском языке.
+- НИКОГДА не переключайся на узбекский после приветствия, даже если пациент пишет на узбекском.
 
-Yetarli ma'lumot to'plagandan keyin (2-5 savol-javob), javobni quyidagi formatda yakunla:
-TAVSIYA: DOCTOR yoki NURSE
-MUTAXASSISLIK: [agar DOCTOR bo'lsa]
-
-Qisqa va professional javob ber. O'zbek tilida gaplash.`;
-    }
-
-    return `Ты — медицинский ассистент HamshiraGo. Твоя задача:
-1. Выслушать симптомы пациента
-2. Задать 2-3 уточняющих вопроса
-3. Рекомендовать: DOCTOR (видеоконсультация) или NURSE (вызов на дом: уколы, капельницы, анализы крови и т.д.)
-4. НИКОГДА не ставь диагноз — только триаж.
+БАЗА ЗНАНИЙ:
+${this.salomatPrompt}
 
 Доступные услуги медсестёр:
 ${servicesText}
 
-Доступные специализации врачей: Терапевт, Кардиолог, Невролог, Гастроэнтеролог, ЛОР, Дерматолог, Хирург, Педиатр, Гинеколог, Уролог
+ФОРМАТ РЕКОМЕНДАЦИИ (после 2-5 обменов):
+Если нужен врач:
+РЕКОМЕНДАЦИЯ: DOCTOR
+СПЕЦИАЛИЗАЦИЯ: [тип специалиста]
 
-После сбора достаточной информации (2-5 обменов), завершай ответ в формате:
-РЕКОМЕНДАЦИЯ: DOCTOR или NURSE
-СПЕЦИАЛИЗАЦИЯ: [если DOCTOR]
+Если нужна медсестра на дом:
+РЕКОМЕНДАЦИЯ: NURSE
 
-Отвечай кратко и профессионально. На русском языке.`;
+Поддерживай оба формата для парсинга:
+TAVSIYA: DOCTOR/NURSE
+MUTAXASSISLIK: [тип]`;
   }
 
   private parseRecommendation(text: string): {

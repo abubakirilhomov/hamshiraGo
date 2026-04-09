@@ -84,7 +84,7 @@ export default function ServiceDetailScreen() {
         >
           {/* Back button */}
           <Pressable
-            style={styles.backButton}
+            style={[styles.backButton, { top: insets.top + 16 }]}
             onPress={() => router.back()}
             hitSlop={12}
           >

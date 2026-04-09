@@ -23,6 +23,7 @@ import { TelegramService } from '../common/telegram.service';
 import { CreateOrderDto } from '../orders/dto/create-order.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 import { DoctorsService } from '../doctors/doctors.service';
+import { AiAgentService } from './ai-agent.service';
 
 /** Platform commission rate for consultations (15%) */
 const PLATFORM_FEE_RATE = 0.15;
@@ -54,7 +55,29 @@ export class ConsultationsService {
     private readonly telegramService: TelegramService,
     @Inject(forwardRef(() => DoctorsService))
     private readonly doctorsSlotService: DoctorsService,
+    private readonly aiAgentService: AiAgentService,
   ) {}
+
+  /* ------------------------------------------------------------------ */
+  /*  Salomat summary helper                                             */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Generate a structured summary of the Salomat conversation for the doctor.
+   * Falls back to raw symptoms if the AI call fails.
+   */
+  private async generateSalomatSummary(
+    clientId: string,
+    symptoms: string | null,
+  ): Promise<string | null> {
+    if (!symptoms) return null;
+    try {
+      return await this.aiAgentService.summarizeForDoctor(symptoms);
+    } catch (err) {
+      this.logger.warn(`generateSalomatSummary failed for ${clientId}: ${err}`);
+      return symptoms; // fallback to raw symptoms
+    }
+  }
 
   /* ------------------------------------------------------------------ */
   /*  Doctors                                                            */
@@ -126,6 +149,12 @@ export class ConsultationsService {
       platformFee,
       status: 'PENDING',
     });
+
+    // Generate Salomat summary for the doctor (before save to include in record)
+    consultation.salomatSummary = await this.generateSalomatSummary(
+      clientId,
+      symptoms ?? null,
+    );
 
     const saved = await this.consultationRepo.save(consultation);
 

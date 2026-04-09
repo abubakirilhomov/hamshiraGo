@@ -1,41 +1,151 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+import { SalomatAuditService } from './salomat-audit.service';
+
+export interface PatientContext {
+  name?: string;
+  age?: number;
+  gender?: string;
+  allergies?: string;
+  chronicDiseases?: string;
+}
 
 @Injectable()
 export class AiAgentService {
   private readonly logger = new Logger(AiAgentService.name);
   private client: Anthropic;
 
-  constructor(private readonly configService: ConfigService) {
+  /** Salomat knowledge base loaded once at startup */
+  private readonly salomatPrompt: string;
+
+  /** Per-patient daily rate limiter (in-memory, swap to Redis later) */
+  private readonly messageCounts = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
+  private readonly DAILY_LIMIT = 50;
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly salomatAuditService: SalomatAuditService,
+  ) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
     this.client = new Anthropic({ apiKey: apiKey || 'dummy-key' });
+
+    // Load Salomat knowledge base files
+    const knowledgePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      'salomat-knowledge',
+    );
+    const files = [
+      'triage.md',
+      'specialties.md',
+      'safety.md',
+      'tone.md',
+      'conversation-flow.md',
+    ];
+    this.salomatPrompt = files
+      .map((f) => {
+        try {
+          return fs.readFileSync(path.join(knowledgePath, f), 'utf-8');
+        } catch {
+          this.logger.warn(`Salomat knowledge file not found: ${f}`);
+          return '';
+        }
+      })
+      .filter(Boolean)
+      .join('\n\n---\n\n');
   }
 
   /**
-   * Send triage chat messages to Claude and return the assistant reply.
+   * Check per-patient daily rate limit.
+   * Throws BadRequestException when limit exceeded.
+   */
+  private checkRateLimit(userId: string): void {
+    const now = Date.now();
+    const entry = this.messageCounts.get(userId);
+    if (!entry || now > entry.resetAt) {
+      this.messageCounts.set(userId, {
+        count: 1,
+        resetAt: now + 24 * 60 * 60 * 1000,
+      });
+      return;
+    }
+    if (entry.count >= this.DAILY_LIMIT) {
+      this.salomatAuditService.logRateLimit(userId).catch(() => {});
+      throw new BadRequestException('SALOMAT_RATE_LIMIT');
+    }
+    entry.count++;
+  }
+
+  /**
+   * Build the full system prompt, optionally including patient context.
+   */
+  private buildSystemPrompt(
+    isFirstMessage: boolean,
+    patientContext?: PatientContext,
+  ): string {
+    let prompt = `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
+
+ПРАВИЛА ЯЗЫКА:
+${isFirstMessage ? '- Это первое сообщение сессии. Поприветствуй на узбекском: "Ассалому алайкум! Мен Salomat — сизнинг соғлиғингиз бўйича ёрдамчингизман. Қандай ёрдам бера оламан?" Затем сразу переходи на русский.' : '- Отвечай ТОЛЬКО на русском языке. Даже если пациент пишет на узбекском — отвечай на русском.'}
+- НИКОГДА не переключайся на узбекский язык после приветствия.
+
+БАЗА ЗНАНИЙ:
+${this.salomatPrompt}
+
+ФОРМАТ РЕКОМЕНДАЦИИ (когда собрано достаточно информации):
+Если нужен врач:
+РЕКОМЕНДАЦИЯ: DOCTOR
+СПЕЦИАЛИЗАЦИЯ: [тип специалиста]
+КРАТКОЕ ОПИСАНИЕ: [2-3 предложения о симптомах]
+
+Если нужна медсестра на дом:
+РЕКОМЕНДАЦИЯ: NURSE
+КРАТКОЕ ОПИСАНИЕ: [что нужно сделать]`;
+
+    if (patientContext) {
+      const parts: string[] = [];
+      if (patientContext.name) parts.push(`- Имя: ${patientContext.name}`);
+      if (patientContext.age) parts.push(`- Возраст: ${patientContext.age}`);
+      if (patientContext.gender) parts.push(`- Пол: ${patientContext.gender}`);
+      if (patientContext.allergies)
+        parts.push(`- Аллергии: ${patientContext.allergies}`);
+      if (patientContext.chronicDiseases)
+        parts.push(
+          `- Хронические заболевания: ${patientContext.chronicDiseases}`,
+        );
+      if (parts.length > 0) {
+        prompt += `\n\nПрофиль пациента:\n${parts.join('\n')}`;
+      }
+    }
+
+    return prompt;
+  }
+
+  /**
+   * Send triage chat messages to Claude (Salomat) and return the assistant reply.
    * Gracefully falls back if ANTHROPIC_API_KEY is not configured.
    */
   async chat(
     messages: { role: string; content: string }[],
-    _userId: string,
+    userId: string,
+    patientContext?: PatientContext,
   ): Promise<string> {
     if (!this.configService.get('ANTHROPIC_API_KEY')) {
       return 'ИИ-ассистент временно недоступен. Пожалуйста, обратитесь напрямую к врачу.';
     }
 
-    const systemPrompt = `Ты — медицинский ассистент HamshiraGo. Твоя задача:
-1. Выслушать симптомы пациента
-2. Задать уточняющие вопросы (не более 3-4)
-3. Предложить специализацию врача для консультации
-4. НЕ ставить диагноз — только направить к нужному специалисту
+    // Enforce per-patient daily rate limit
+    this.checkRateLimit(userId);
 
-Отвечай кратко, на русском языке. Будь вежлив и профессионален.
-После сбора информации, ответь в формате:
-РЕКОМЕНДАЦИЯ: [специализация врача]
-КРАТКОЕ ОПИСАНИЕ: [2-3 предложения о симптомах]
-
-Доступные специализации: Терапевт, Кардиолог, Невролог, Гастроэнтеролог, ЛОР, Дерматолог, Хирург, Педиатр, Гинеколог, Уролог`;
+    const isFirstMessage = messages.length <= 1;
+    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext);
 
     try {
       const response = await this.client.messages.create({
@@ -48,17 +158,91 @@ export class AiAgentService {
         })),
       });
 
-      return response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
+      const reply =
+        response.content[0].type === 'text' ? response.content[0].text : '';
+
+      // Audit: check for recommendations and red flags
+      this.auditReply(userId, reply);
+
+      return reply;
     } catch (err) {
       this.logger.error('Anthropic API error', err);
-      return 'Произошла ошибка при обращении к ИИ-ассистенту. Попробуйте позже или обратитесь к врачу напрямую.';
+      return 'Произошла ошибка при обращении к Salomat. Попробуйте позже или обратитесь к врачу напрямую.';
     }
   }
 
   /**
-   * Parse a recommendation block from the AI response.
+   * Streaming version of chat — yields text chunks as they arrive.
+   * Used by the SSE endpoint.
+   */
+  async *chatStream(
+    messages: { role: string; content: string }[],
+    userId: string,
+    patientContext?: PatientContext,
+  ): AsyncGenerator<string> {
+    this.checkRateLimit(userId);
+
+    if (!this.configService.get('ANTHROPIC_API_KEY')) {
+      yield 'Salomat vaqtincha mavjud emas. Iltimos, shifokorga murojaat qiling.';
+      return;
+    }
+
+    const isFirstMessage = messages.length <= 1;
+    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext);
+
+    const stream = await this.client.messages.stream({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: [
+        {
+          type: 'text',
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+    });
+
+    for await (const event of stream) {
+      if (
+        event.type === 'content_block_delta' &&
+        event.delta.type === 'text_delta'
+      ) {
+        yield event.delta.text;
+      }
+    }
+  }
+
+  /**
+   * Summarize a Salomat conversation for the doctor.
+   * Returns a structured summary or the raw text as fallback.
+   */
+  async summarizeForDoctor(conversationText: string): Promise<string> {
+    if (!this.configService.get('ANTHROPIC_API_KEY')) return conversationText;
+
+    try {
+      const response = await this.client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system:
+          'Ты — медицинский ассистент. Сделай краткое саммари диалога с пациентом для врача. Формат:\n- Основная жалоба:\n- Длительность:\n- Сопутствующие симптомы:\n- Что уже пробовал:\n- Анамнез (если известен):\nМаксимум 5-7 строк. На русском языке.',
+        messages: [{ role: 'user', content: conversationText }],
+      });
+
+      return response.content[0].type === 'text'
+        ? response.content[0].text
+        : conversationText;
+    } catch (err) {
+      this.logger.warn(`summarizeForDoctor failed: ${err}`);
+      return conversationText;
+    }
+  }
+
+  /**
+   * Parse a recommendation block from the Salomat response.
    * Returns specialization and symptom summary if present.
    */
   parseRecommendation(text: string): {
@@ -71,5 +255,33 @@ export class AiAgentService {
       specialization: specMatch?.[1]?.trim() ?? null,
       summary: summaryMatch?.[1]?.trim() ?? null,
     };
+  }
+
+  /**
+   * Check reply for audit-worthy events and log them (fire-and-forget).
+   */
+  private auditReply(userId: string, reply: string): void {
+    // Red flag detection
+    if (
+      reply.includes('103') ||
+      reply.includes('скорую') ||
+      reply.includes('tez yordam')
+    ) {
+      this.salomatAuditService.logRedFlag(userId, reply).catch(() => {});
+    }
+
+    // Doctor referral
+    if (/РЕКОМЕНДАЦИЯ:\s*DOCTOR/i.test(reply)) {
+      const specMatch = reply.match(/СПЕЦИАЛИЗАЦИЯ:\s*(.+)/i);
+      const specialization = specMatch?.[1]?.trim() ?? 'unknown';
+      this.salomatAuditService
+        .logDoctorReferral(userId, specialization)
+        .catch(() => {});
+    }
+
+    // Nurse referral
+    if (/РЕКОМЕНДАЦИЯ:\s*NURSE/i.test(reply)) {
+      this.salomatAuditService.logNurseReferral(userId).catch(() => {});
+    }
   }
 }

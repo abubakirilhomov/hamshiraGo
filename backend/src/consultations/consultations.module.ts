@@ -6,9 +6,11 @@ import { Doctor } from './entities/doctor.entity';
 import { Consultation } from './entities/consultation.entity';
 import { ChatMessage } from './entities/chat-message.entity';
 import { Prescription } from './entities/prescription.entity';
+import { SalomatAuditLog } from './entities/salomat-audit-log.entity';
 import { ConsultationsService } from './consultations.service';
 import { AiAgentService } from './ai-agent.service';
 import { VideoService } from './video.service';
+import { SalomatAuditService } from './salomat-audit.service';
 import { ConsultationsController } from './consultations.controller';
 import { OrdersModule } from '../orders/orders.module';
 import { ServicesModule } from '../services/services.module';
@@ -19,7 +21,7 @@ import { DoctorsModule } from '../doctors/doctors.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Doctor, Consultation, ChatMessage, Prescription]),
+    TypeOrmModule.forFeature([Doctor, Consultation, ChatMessage, Prescription, SalomatAuditLog]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -37,7 +39,7 @@ import { DoctorsModule } from '../doctors/doctors.module';
     forwardRef(() => DoctorsModule),
   ],
   controllers: [ConsultationsController],
-  providers: [ConsultationsService, AiAgentService, VideoService],
-  exports: [ConsultationsService, AiAgentService, VideoService],
+  providers: [ConsultationsService, AiAgentService, VideoService, SalomatAuditService],
+  exports: [ConsultationsService, AiAgentService, VideoService, SalomatAuditService],
 })
 export class ConsultationsModule {}

@@ -9,9 +9,10 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useCallback, useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text } from '@/components/Themed';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
@@ -54,6 +55,22 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const [fromCache, setFromCache] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Refresh unread badge every time tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('hamshirago_notifications')
+        .then((raw) => {
+          if (!raw) { setUnreadCount(0); return; }
+          try {
+            const parsed = JSON.parse(raw) as { isRead: boolean }[];
+            setUnreadCount(parsed.filter((n) => !n.isRead).length);
+          } catch { setUnreadCount(0); }
+        })
+        .catch(() => setUnreadCount(0));
+    }, []),
+  );
 
   const SERVICES_CACHE_KEY = 'services';
   const SERVICES_TTL = 3_600_000; // 1 hour
@@ -192,6 +209,13 @@ export default function HomeScreen() {
           onPress={() => router.push('/notifications' as any)}
         >
           <FontAwesome name="bell-o" size={20} color={Theme.text} />
+          {unreadCount > 0 && (
+            <View style={styles.bellBadge}>
+              <Text style={styles.bellBadgeText}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </Pressable>
       </View>
 
@@ -225,7 +249,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.aiBannerTexts}>
             <Text style={styles.aiBannerTitle}>
-              {t('aiChat.banner', 'AI Hamshira bilan gaplashing')}
+              {t('aiChat.banner', 'Salomat bilan gaplashing')}
             </Text>
             <Text style={styles.aiBannerDesc}>
               {t('aiChat.bannerDesc', "Sog'ligingiz haqida savol berish...")}
@@ -250,7 +274,7 @@ export default function HomeScreen() {
             <FontAwesome name="microphone" size={18} color="#fff" />
           </View>
           <View style={styles.voiceBannerTexts}>
-            <Text style={styles.voiceBannerTitle}>Ovozli AI Hamshira</Text>
+            <Text style={styles.voiceBannerTitle}>Ovozli Salomat</Text>
             <Text style={styles.voiceBannerDesc}>Gapirib aytib bering</Text>
           </View>
         </View>
@@ -391,6 +415,24 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Theme.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  bellBadgeText: {
+    fontSize: 10,
+    fontFamily: Fonts.interSb,
+    fontWeight: '600',
+    color: '#fff',
   },
 
   /* ---- Search ---- */
