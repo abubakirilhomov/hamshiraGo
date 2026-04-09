@@ -1,0 +1,13 @@
+appId: host.exp.Exponent
+---
+# TEST: Consultations list
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+
+- tapOn:
+    text: ".*konsultatsiya.*|.*Консультац.*"
+- waitForAnimationToEnd
+- takeScreenshot: consultations_01
+- scroll
+- takeScreenshot: consultations_02_scroll
+- runFlow: helpers/go_back.yaml

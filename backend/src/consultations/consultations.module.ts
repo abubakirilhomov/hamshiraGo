@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -14,6 +14,8 @@ import { OrdersModule } from '../orders/orders.module';
 import { ServicesModule } from '../services/services.module';
 import { UsersModule } from '../users/users.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { CommonModule } from '../common/common.module';
+import { DoctorsModule } from '../doctors/doctors.module';
 
 @Module({
   imports: [
@@ -27,10 +29,12 @@ import { RealtimeModule } from '../realtime/realtime.module';
       inject: [ConfigService],
     }),
     ConfigModule,
-    OrdersModule,
+    forwardRef(() => OrdersModule),
     ServicesModule,
     UsersModule,
     RealtimeModule,
+    CommonModule,
+    forwardRef(() => DoctorsModule),
   ],
   controllers: [ConsultationsController],
   providers: [ConsultationsService, AiAgentService, VideoService],

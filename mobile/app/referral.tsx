@@ -8,10 +8,12 @@ import {
   View,
 } from 'react-native';
 import { useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow, Typography } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -24,6 +26,7 @@ interface ReferralData {
 export default function ReferralScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -59,162 +62,228 @@ export default function ReferralScreen() {
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.lg }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.brand}>HamshiraGo</Text>
+        <Pressable hitSlop={12}>
+          <FontAwesome name="bell-o" size={22} color={Theme.text} />
+        </Pressable>
+      </View>
 
+      {/* Gift icon */}
+      <View style={styles.giftCircle}>
+        <FontAwesome name="gift" size={30} color={Theme.textInverse} />
+      </View>
+
+      {/* Title */}
+      <Text style={styles.title}>Taklif dasturi</Text>
+      <Text style={styles.subtitle}>
+        {t('referral.bonus', "Do'stlaringizni taklif qiling va bonus oling")}
+      </Text>
+
+      {/* Referral code card */}
       <View style={styles.codeCard}>
-        <Text style={styles.codeLabel}>{t('referral.yourCode')}</Text>
-        <Text style={styles.codeText}>{data?.referralCode ?? '—'}</Text>
+        <Text style={styles.codeText}>{data?.referralCode ?? 'HAMSHIRA-0000'}</Text>
+        <Pressable
+          style={({ pressed }) => [styles.copyBtn, pressed && { opacity: 0.7 }]}
+          onPress={handleCopy}
+          hitSlop={8}
+        >
+          <FontAwesome
+            name={copied ? 'check' : 'copy'}
+            size={18}
+            color={copied ? Theme.success : Theme.primary}
+          />
+        </Pressable>
+      </View>
 
-        <View style={styles.btnRow}>
-          <Pressable
-            style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.75 }]}
-            onPress={handleCopy}
-          >
-            <FontAwesome name="copy" size={16} color={Theme.primary} />
-            <Text style={styles.actionBtnText}>
-              {copied ? t('referral.copied') : t('referral.copy')}
+      {/* Share button */}
+      <Pressable
+        style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+        onPress={handleShare}
+      >
+        <LinearGradient
+          colors={Theme.primaryGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.shareBtn}
+        >
+          <FontAwesome name="share-alt" size={16} color={Theme.textInverse} />
+          <Text style={styles.shareBtnText}>Ulashing</Text>
+        </LinearGradient>
+      </Pressable>
+
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, Shadow.sm]}>
+          <Text style={styles.statValue}>{data?.referredCount ?? 0}</Text>
+          <Text style={styles.statLabel}>{t('referral.stats', 'Taklif qilingan')}</Text>
+        </View>
+        <View style={[styles.statCard, Shadow.sm]}>
+          <Text style={styles.statValue}>{data?.bonusPaidCount ?? 0}</Text>
+          <Text style={styles.statLabel}>{t('referral.bonusPaid', 'Bonus berilgan')}</Text>
+        </View>
+      </View>
+
+      {/* Campaign banner */}
+      <Pressable style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
+        <LinearGradient
+          colors={Theme.bannerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.campaignBanner}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.campaignLabel}>CAMPAIGN</Text>
+            <Text style={styles.campaignTitle}>
+              {t('referral.bonus', "Do'stlaringizni taklif qiling va bonus oling")}
             </Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionBtn, styles.actionBtnShare, pressed && { opacity: 0.75 }]}
-            onPress={handleShare}
-          >
-            <FontAwesome name="share-alt" size={16} color="#fff" />
-            <Text style={[styles.actionBtnText, { color: '#fff' }]}>{t('referral.share')}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.bonusCard}>
-        <FontAwesome name="gift" size={22} color={Theme.primary} style={{ marginBottom: 8 }} />
-        <Text style={styles.bonusText}>{t('referral.bonus')}</Text>
-      </View>
-
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>{t('referral.stats')}</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{data?.referredCount ?? 0}</Text>
-            <Text style={styles.statLabel}>{t('referral.stats')}</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{data?.bonusPaidCount ?? 0}</Text>
-            <Text style={styles.statLabel}>{t('referral.bonusPaid')}</Text>
-          </View>
-        </View>
-      </View>
+          <FontAwesome name="chevron-right" size={16} color={Theme.textInverse} />
+        </LinearGradient>
+      </Pressable>
 
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
-  content: { padding: Spacing.lg, gap: 14 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: Spacing.lg },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.background },
 
-  codeCard: {
-    backgroundColor: Theme.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.xl,
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: Spacing.sm,
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xl,
   },
-  codeLabel: {
-    fontSize: 13,
-    color: Theme.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  codeText: {
-    fontSize: 34,
-    fontWeight: '800',
+  brand: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 20,
     color: Theme.primary,
-    letterSpacing: 4,
-    marginVertical: Spacing.sm,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: Spacing.sm,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}10`,
-  },
-  actionBtnShare: {
+
+  giftCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: Theme.primary,
-    borderColor: Theme.primary,
-  },
-  actionBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
   },
 
-  bonusCard: {
-    backgroundColor: `${Theme.primary}10`,
-    borderRadius: 14,
-    padding: 18,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: `${Theme.primary}30`,
-  },
-  bonusText: {
-    fontSize: 14,
+  title: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 24,
     color: Theme.text,
     textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  subtitle: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
     lineHeight: 20,
   },
 
-  statsCard: {
-    backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: Spacing.md,
-  },
-  statsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Theme.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statsRow: {
+  codeCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: Theme.primary,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
-  statItem: {
+  codeText: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 22,
+    color: Theme.text,
+    letterSpacing: 2,
     flex: 1,
+    textAlign: 'center',
+  },
+  copyBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 14,
+    borderRadius: Radius.full,
+    marginBottom: Spacing.xl,
+  },
+  shareBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 16,
+    color: Theme.textInverse,
+  },
+
+  statsRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     alignItems: 'center',
     gap: Spacing.xs,
   },
   statValue: {
+    fontFamily: Fonts.manropeBd,
     fontSize: 28,
-    fontWeight: '700',
     color: Theme.primary,
   },
   statLabel: {
+    fontFamily: Fonts.inter,
     fontSize: 12,
     color: Theme.textSecondary,
     textAlign: 'center',
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: Theme.border,
+
+  campaignBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  campaignLabel: {
+    fontFamily: Fonts.interMd,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 1,
+    marginBottom: Spacing.xs,
+  },
+  campaignTitle: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 14,
+    color: Theme.textInverse,
+    lineHeight: 20,
   },
 });

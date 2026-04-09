@@ -1,6 +1,121 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (Consultation slot picker)
+
+- **[mobile]** Add date + time slot picker to consultation booking screen: horizontal date chips (next 7 days, Uzbek day names), 3-column time slot grid with loading/empty states, fetch slots from `/doctors/:id/slots?date=`, pass `slotId` and `consultationType` in booking request -- `mobile/app/consultation.tsx`
+
+## 2026-04-05 (Doctor role support in medic app)
+
+- **[medic]** Add `role` and `specialization` fields to MedicUser interface, add `loginDoctor` method to AuthContext, update `refreshProfile` to use correct endpoint by role -- `medic/context/AuthContext.tsx`
+- **[medic]** Create `(doctor-tabs)/_layout.tsx` with 3 doctor-specific tabs: Konsultatsiyalar (stethoscope), Bemorlar (users), Profil (user) -- `medic/app/(doctor-tabs)/_layout.tsx`
+- **[medic]** Create `(doctor-tabs)/index.tsx` -- pending consultations screen: fetch GET /consultations/doctor/pending, accept/decline with gradient pill buttons, verification banner -- `medic/app/(doctor-tabs)/index.tsx`
+- **[medic]** Create `(doctor-tabs)/my-patients.tsx` -- consultation history with active/history sections, status badges, pagination, tap to detail -- `medic/app/(doctor-tabs)/my-patients.tsx`
+- **[medic]** Create `(doctor-tabs)/profile.tsx` -- doctor profile: specialization, consultation count, rating, balance, earnings, Telegram, schedule link, language picker, logout -- `medic/app/(doctor-tabs)/profile.tsx`
+- **[medic]** Create `doctor-consultation/[id].tsx` -- consultation detail: symptoms card, client info, slot time, video call button (LiveKit), doctor notes textarea, gradient pill "Yakunlash" CTA -- `medic/app/doctor-consultation/[id].tsx`
+- **[medic]** Update root _layout.tsx: role-based routing (doctor -> (doctor-tabs), medic -> (tabs)), register (doctor-tabs) and doctor-consultation/[id] Stack.Screen entries, handle consultation push notifications -- `medic/app/_layout.tsx`
+- **[medic]** Add Hamshira/Doktor role selector to auth screen login mode with loginDoctor flow -- `medic/app/auth.tsx`
+
+## 2026-04-05 (V5-A-1: Mobile Voice Agent screen)
+
+- **[mobile]** Create voice-agent.tsx screen with mic recording (expo-av), transcribe via /voice-agent/transcribe, chat via /voice-agent/chat, chat history FlatList, recommendation card (DOCTOR/NURSE), quick suggestion chips -- `mobile/app/voice-agent.tsx`
+- **[mobile]** Add voice-agent Stack.Screen to root layout -- `mobile/app/_layout.tsx`
+- **[mobile]** Add Voice Agent banner ("Ovozli AI Hamshira") to home screen below AI Chat banner -- `mobile/app/(tabs)/index.tsx`
+- **[mobile]** Install expo-av dependency for audio recording -- `mobile/package.json`
+
+## 2026-04-05 (Doctor Schedule / DoctorSlot system)
+
+- **[backend]** Create DoctorSlot entity (doctor_slots table) with doctorId, startsAt, endsAt, isBooked, consultationId -- `src/doctors/entities/doctor-slot.entity.ts`
+- **[backend]** Create CreateSlotsDto with date, startTime, endTime, intervalMinutes validation -- `src/doctors/dto/create-slots.dto.ts`
+- **[backend]** Add 6 slot methods to DoctorsService: createSlots, getAvailableSlots, getDoctorSlots, bookSlot, releaseSlot, deleteSlot -- `src/doctors/doctors.service.ts`
+- **[backend]** Add 4 slot endpoints to DoctorsController: POST me/slots, GET me/slots, DELETE me/slots/:slotId, GET :id/slots (public) -- `src/doctors/doctors.controller.ts`
+- **[backend]** Register DoctorSlot in DoctorsModule TypeOrmModule.forFeature -- `src/doctors/doctors.module.ts`
+- **[backend]** Add optional slotId to CreateConsultationDto -- `src/consultations/dto/create-consultation.dto.ts`
+- **[backend]** Integrate slot booking in createConsultation + slot release in cancelConsultation and doctorDeclineConsultation -- `src/consultations/consultations.service.ts`
+- **[backend]** Import DoctorsModule in ConsultationsModule for slot integration -- `src/consultations/consultations.module.ts`
+
+## 2026-04-05 (V5 Voice Agent backend module)
+
+- **[backend]** Create VoiceSession entity with jsonb messages, recommendation, suggestedSpecialization, suggestedServiceId, exchangeCount -- `src/voice-agent/entities/voice-session.entity.ts`
+- **[backend]** Create VoiceAgentService: STT via Groq Whisper, chat via Claude Haiku with RU/UZ system prompts, TTS placeholder, session CRUD, book-nurse/book-doctor helpers, admin stats/list, stale session cron cleanup -- `src/voice-agent/voice-agent.service.ts`
+- **[backend]** Create VoiceAgentController: POST transcribe (multipart), POST chat, POST synthesize, GET/DELETE session, POST book-nurse/book-doctor, admin sessions/stats endpoints with AdminGuard -- `src/voice-agent/voice-agent.controller.ts`
+- **[backend]** Create VoiceAgentModule importing TypeOrm, Config, Services, JWT -- `src/voice-agent/voice-agent.module.ts`
+- **[backend]** Create VoiceChatDto and VoiceSynthesizeDto with class-validator -- `src/voice-agent/dto/voice-chat.dto.ts`
+- **[backend]** Register VoiceAgentModule in AppModule -- `src/app.module.ts`
+- **[backend]** Add i18n keys for voice agent errors (5 keys) -- `src/common/i18n/ru.json`, `src/common/i18n/uz.json`
+- **[backend]** Add GROQ_API_KEY and OPENAI_API_KEY to .env.example -- `.env.example`
+- **[backend]** Install form-data dependency for Groq API multipart upload -- `package.json`
+
+## 2026-04-05 (Doctor Auth system)
+
+- **[backend]** Extend Doctor entity with auth columns (passwordHash, isOnline, isBlocked, verificationStatus, facePhotoUrl, licensePhotoUrl, balance, earnings, lastSeenAt, updatedAt) + unique phone index -- `src/consultations/entities/doctor.entity.ts`
+- **[backend]** Create DoctorsModule with full auth system (register, login, profile, push-token, telegram-chat-id, documents upload, profile-photo, admin verify/block endpoints) -- `src/doctors/`
+- **[backend]** Add doctor role to JWT strategy validate() and JwtPayload type -- `src/auth/strategies/jwt.strategy.ts`
+- **[backend]** Import DoctorsModule in AuthModule (forwardRef) and AppModule -- `src/auth/auth.module.ts`, `src/app.module.ts`
+- **[backend]** Add i18n keys for doctor errors (DOCTOR_ACCESS_ONLY, DOCTOR_NOT_AUTHENTICATED, DOCTOR_PHONE_EXISTS) -- `src/common/i18n/ru.json`, `src/common/i18n/uz.json`
+
+## 2026-04-05 (Doctor consultation endpoints + notifications)
+
+- **[backend]** Add DoctorAuthGuard and @DoctorId() decorator -- `src/auth/guards/doctor-auth.guard.ts`, `src/auth/decorators/doctor-id.decorator.ts`
+- **[backend]** Add telegramChatId and pushToken columns to Doctor entity -- `src/consultations/entities/doctor.entity.ts`
+- **[backend]** Add 5 doctor endpoints to consultations controller (pending, my, accept, decline, complete) -- `src/consultations/consultations.controller.ts`
+- **[backend]** Add doctor service methods (getDoctorPending, getDoctorConsultations, doctorAccept/Decline/Complete, findDoctorById, saveDoctorTelegramChatId) -- `src/consultations/consultations.service.ts`
+- **[backend]** Add /start doctor_{doctorId} Telegram linking -- `src/telegram/telegram-bot.service.ts`, `src/telegram/telegram-bot.module.ts`
+- **[backend]** Add doctor WebSocket room + emitNewConsultation method -- `src/realtime/order-events.gateway.ts`
+- **[backend]** Add WebSocket + Push + Telegram notifications on consultation creation -- `src/consultations/consultations.service.ts`
+- **[backend]** Update ConsultationsModule with CommonModule import, TelegramBotModule with ConsultationsModule import -- modules
+
+## 2026-04-05 (7-screen Stitch redesign batch)
+
+- **[mobile]** Redesign Referral screen (Stitch design) -- useSafeAreaInsets, brand+bell header, centered 64px teal gift circle, "Taklif dasturi" title (Manrope_700Bold 24px), dashed border code card (2px dashed #006860, radius 16), copy icon button, "Ulashing" gradient pill CTA with share icon, stats cards (invited count + bonus amount), CAMPAIGN gradient banner with chevron, bottom padding 100 -- `mobile/app/referral.tsx`
+- **[mobile]** Redesign Medical Card screen (Stitch design) -- useSafeAreaInsets, back+brand header, "HAMSHIRAGO PROFILE" label + "Tibbiy karta" title (Manrope_700Bold 24px), ID text + edit icon, white cards (radius 16, Shadow.sm): blood type chip selector (8 options in 2 rows, selected=#006860+white text), allergies/chronic/notes sections with inline edit toggle (pencil/check), sticky bottom gradient pill "Saqlash" CTA -- `mobile/app/medical-card.tsx`
+- **[mobile]** Redesign Nearby Medics screen (Stitch design) -- search pill bar + filter icon button, teal count badge pill "12 ta hamshira", map fills space, teal pin markers, selected medic bottom card (white, radius 24px top, Shadow.lg): 56px avatar + name + rating stars + distance/experience info row + "Xizmat tanlash" gradient pill CTA, white circle refresh button (44px) -- `mobile/app/nearby-medics.tsx`
+- **[mobile]** Redesign Prescriptions List screen (Stitch design) -- useSafeAreaInsets, brand+bell header, "Retseptlar" title + subtitle, stats row (JAMI + BU OYDA cards with teal numbers), prescription cards (pill icon circle + medication name + doctor date + status pills: KUTILMOQDA amber, TASDIQLANGAN green, MUDDATI O'TGAN grey), bottom banner "Yangi retsept kerakmi?" with gradient CTA, bottom padding 100 -- `mobile/app/prescriptions.tsx`
+- **[mobile]** Redesign Prescription Detail screen (Stitch design) -- back arrow + "Retsept" + dots menu header, medication name (Manrope_700Bold 24px), status pill below name, doctor card (avatar + name + specialization), DOZASI section (caption label + value + hint), DAVOMIYLIGI section (large 20px days + expiry date), Ko'rsatmalar section (paragraph text), tonal inputs for address form, bottom: gradient pill "Tasdiqlash" CTA + error ghost pill "Bekor qilish" -- `mobile/app/prescription.tsx`
+- **[mobile]** Redesign Courses screen (Stitch design) -- useSafeAreaInsets, brand+bell header, "Davolash kurslari" title + subtitle, course cards (white, radius 16, Shadow.sm): title + start date + status pill (JARAYONDA amber, YAKUNLANGAN green), progress bar (surfaceContainerLow track + #006860 fill) + "4/10 muolaja" count + "XX% tugallandi", NAVBATDAGI SEANS row, gradient circle FAB (56px, Shadow.md) with "+" icon, modal sheet with gradient submit -- `mobile/app/courses.tsx`
+- **[mobile]** Redesign NPS Survey screen (Stitch design) -- semi-transparent overlay (rgba(25,28,30,0.45)), centered white card (radius 24, padding 24, maxWidth 340), close "x" top-right, trophy icon in teal circle (48px), "Bizni baholang" title (Manrope_700Bold 20px), subtitle, score circles in 2 rows (1-6 top, 7-10 bottom, 40px each, selected=#006860+white, unselected=surfaceContainerLow+grey), comment textarea (surfaceContainerLow, no border, radius 12, 80px), "Yuborish" gradient pill CTA, "Keyinroq" grey text link -- `mobile/app/nps.tsx`
+
+## 2026-04-05 (Loyalty + Favorites + Subscriptions redesign)
+
+- **[mobile]** Redesign Loyalty screen (Stitch design) -- useSafeAreaInsets, gradient hero card (#006860->#008379, radius 24) with SILVER tier badge pill (white bg, teal text), large 48px Manrope_800ExtraBold points + "ball" label + next-tier hint, "Mening darajam" tier progress (3 circles BRONZE/SILVER/GOLD connected by line, current highlighted teal), "Ballarni sarflash" section with redemption cards (medkit icon + title + subtitle + green points pill + gradient "Sarflash" button), "Tarix" section with history list (icon circles + desc + date + colored +/- points), redeem modal with preset pills + gradient submit -- `mobile/app/loyalty.tsx`
+- **[mobile]** Redesign Favorites screen (Stitch design) -- useSafeAreaInsets, stethoscope icon header + "Sevimlilar" 24px, subtitle block "Sizning mutaxassislaringiz" 22px + grey desc, medic cards (white, radius 16, Shadow.sm) with 56px avatar + name (Manrope_600SemiBold 16px) + experience + star rating + reviewCount, skill pills row (surfaceContainerLow bg, Inter 12px), price row with /soat, full-width gradient "Band qilish" pill, filled teal heart top-right, bottom banner "HAMMASINI KO'RISH" link, empty state with grey heart icon circle -- `mobile/app/favorites.tsx`
+- **[mobile]** Redesign Subscriptions screen (Stitch design) -- useSafeAreaInsets, "Clinical Sanctuary" brand header + bell icon, "Mening obunalarim" title 22px, active subscription card (white, radius 20, Shadow.md) with "HOZIRGI TARIF" label + green "FAOL" pill + tier name 20px + stats row (BUYURTMALAR qoldi + AMAL QILISH kun) + "Bekor qilish" error link, horizontal ScrollView tier cards (260px wide, radius 20) with teal icon circle + tier name + desc + benefits checklist (check/unfilled circle) + price 24px Manrope_800ExtraBold + gradient "Sotib olish" pill, comparison table with alternating surfaceContainerLow rows + check/X marks per tier -- `mobile/app/subscriptions.tsx`
+
+## 2026-04-05 (Consultations + Video Call redesign)
+
+- **[mobile]** Redesign Consultations List screen (Stitch design) -- useSafeAreaInsets, back arrow + "Konsultatsiyalar" header (Manrope_700Bold), "Mening Tarixim" title 24px + grey subtitle, consultation cards (white, radius 16, Shadow.sm) with 48px avatar circle + initials + doctor name/specialization (Manrope_600SemiBold 15px / Inter 13px), status pills top-right (FAOL green bg, YAKUNLANGAN successContainer, BEKOR QILINGAN errorContainer), date+time row with calendar/clock icons (Inter 12px), "Xulosani ko'rish" link for completed, 12px card gap, empty state with stethoscope icon circle -- `mobile/app/consultations.tsx`
+- **[mobile]** Redesign Consultation Booking screen (Stitch design) -- useSafeAreaInsets, back arrow + "Konsultatsiya" header, doctor card (white, radius 16, Shadow.sm) with 64px circle avatar + name 18px + specialization + experience + ONLINE green dot badge, "Shikoyatlaringiz" textarea (tonal #f2f4f6, no border, radius 12, 120px minHeight, Inter 15px), "Konsultatsiya turi" two option cards (video/chat) side-by-side with icon circles + labels + subtitles + selected state (#006860 border + primaryLight bg), "XIZMAT NARXI" price section (Manrope_800ExtraBold 32px + UZS), gradient pill CTA with safe area bottom -- `mobile/app/consultation.tsx`
+- **[mobile]** Redesign Video Call screen (Stitch design) -- full-screen dark #1a1a1a bg, remote video area with avatar placeholder, header overlay (doctor name Manrope_600SemiBold white + MM:SS timer Inter white 70%), local video preview top-right 120x160 radius 16 + 2px white border, glassmorphism control bar (rgba(0,0,0,0.5)), 3 circle buttons (mic 48px white, end call 56px red #DC2626, camera 48px white) with gap 24, safe area bottom padding, call timer hook -- `mobile/app/video-call.tsx`
+
+## 2026-04-05 (AI Chat + Doctors redesign)
+
+- **[mobile]** Redesign AI Chat screen (Stitch design) -- teal gradient header (#006860->#008379) with robot avatar circle + "AI Hamshira" title + ONLINE dot + menu, chat area on #f8f9fb, AI bubbles surfaceContainerLow left-aligned radius 16/4, user bubbles #006860 right-aligned radius 16/4, timestamps Inter 11px, doctor recommendation white card with avatar+name+gradient pill CTA, quick suggestion chips horizontal scroll, tonal input (no border, radius 24) + 40px teal send circle, safe area insets -- `mobile/app/ai-chat.tsx`
+- **[mobile]** Redesign Doctors List screen (Stitch design) -- safe area insets, "Shifokorlar" header Manrope_700Bold 24px + subtitle, tonal pill search input (surfaceContainerLow, no border), filter pills horizontal ScrollView (Barchasi/Terapevt/Kardiolog etc, selected=#006860+white, unselected=surfaceContainerLow), doctor cards (white, radius 16, Shadow.sm, 56px circle avatar, name+spec+rating star amber+score+reviews, NARXI label+price Manrope_700Bold, "Yozilish" pill button), bottom padding 100 -- `mobile/app/doctors.tsx`
+
+## 2026-04-05 (Order Flow redesign)
+
+- **[mobile]** Redesign Service Detail screen (Stitch design) -- dark teal hero gradient (#006860->#004D47), centered 60px medkit icon, white title, price pill, white card overlapping hero by -24px, info row (clock+category), "Xizmat haqida" section, sticky bottom gradient pill CTA -- `mobile/app/service/[id].tsx`, `mobile/app/service/_layout.tsx`
+- **[mobile]** Redesign Order Location screen (Stitch design) -- custom header with back+title+GPS icon, map area ~50%, address preview card, bottom sheet form (tonal #f2f4f6 inputs, building icon, 2-col floor/apt, +998 prefix), gradient pill CTA -- `mobile/app/order/location.tsx`
+- **[mobile]** Redesign Order Confirm screen (Stitch design) -- custom header, service card (icon circle + title + price), address card with pin icon, urgent toggle, promo code input, price breakdown (base/discount green/urgent/divider/total 24px bold), sticky gradient pill CTA -- `mobile/app/order/confirm.tsx`
+- **[mobile]** Redesign Order Chat screen (Stitch design) -- dark teal header gradient with medic avatar circle + name + green online dot, date separators, medic bubbles (#f2f4f6 left, radius 16/4), user bubbles (#006860 right, white text, radius 16/4), tonal input bar + attachment icon + send circle -- `mobile/app/order/chat.tsx`
+- **[mobile]** Redesign Order Tracking screen (Stitch design) -- safe-area top bar with back button + floating status pill badge + Live pill, Stitch-styled cards (shadow.sm, no borders), action buttons row (Aloqa secondary + Bekor qilish error ghost), updated trackStyles.ts with Fonts/Shadow tokens -- `mobile/app/order/track.tsx`, `mobile/app/order/trackStyles.ts`
+- **[mobile]** Update order + service layouts -- headerShown:false for custom headers, added chat screen to Stack -- `mobile/app/order/_layout.tsx`, `mobile/app/service/_layout.tsx`
+
+## 2026-04-05 (Profile + Orders redesign)
+
+- **[mobile]** Redesign Profile screen (Stitch design) -- useSafeAreaInsets, HamshiraGo brand header with gear/bell icons, centered avatar (grey circle + user icon), name/phone centered, green gradient loyalty card with tier badge + points + "Ko'proq bilish" CTA, menu list with 40px icon circles + chevron, language badge pill, red logout row -- `mobile/app/(tabs)/profile.tsx`
+- **[mobile]** Redesign Orders List screen (Stitch design) -- useSafeAreaInsets, "Buyurtmalar" header with subtitle, filter pills (Barchasi/Faol/Tugatilgan), order cards with service icon circle + title/date + price/status badge, status pill colors (success/warning/error/neutral), ItemSeparator 12px gap, pull-to-refresh, empty state -- `mobile/app/(tabs)/two.tsx`
+
+## 2026-04-05 (Home + Tab bar + ServiceCard redesign)
+
+- **[mobile]** Redesign Home screen (Stitch design) -- custom header with bell icon, search pill, dark teal AI chat banner with pill CTA, nearby medics horizontal ScrollView, 2-column services grid via FlatList numColumns=2, skeleton grid loader -- `mobile/app/(tabs)/index.tsx`
+- **[mobile]** Redesign Tab bar (Stitch design) -- white bg, no top border, whisper shadow, active dot indicator under icon, 60px height, #006860 active tint -- `mobile/app/(tabs)/_layout.tsx`
+- **[mobile]** Redesign ServiceCard with gridMode prop -- vertical card layout (icon top, title, price, plus button) for grid, horizontal list layout preserved for backward compat -- `mobile/components/ServiceCard.tsx`
+
 ## 2026-04-05
+
+- **[mobile]** Redesign Auth screen (Stitch design) -- light bg, top bar with help icon, green medkit circle, welcome title/subtitle, white form card (no-border tonal inputs), +998 prefix, eye toggle, referral with IXTIYORIY badge, gradient pill CTA, YOKI divider, ghost secondary button, legal footer -- `mobile/app/auth.tsx`
+- **[mobile]** Redesign Onboarding screen (Stitch design) -- logo+skip header, illustration card with icon+badge, slide counter, pill dots (Reanimated), gradient CTA button, trust footer -- `mobile/app/onboarding.tsx`
+- **[mobile]** Redesign Language Picker (Stitch design) -- light bg, language cards with radio, green gradient CTA, hint row, footer -- `mobile/app/language-picker.tsx`
 
 - **[backend]** i18n error keys — replaced all hardcoded English error messages with translation keys in DTOs (register-client, login, register-medic, login-medic, create-doctor) and services/guards/decorators (auth.service, admin.guard, medic-auth.guard, jwt.strategy, client-id.decorator, medic-id.decorator, users.service)
 - **[backend]** i18n error keys (phase 2) — replaced all hardcoded English error messages with translation keys in orders/orders.service.ts (34 throws), orders/dispatch.service.ts (2 throws), payments/payments.service.ts (3 throws), payments/payme.service.ts (2 throws), payments/payments.controller.ts (2 throws), reviews/reviews.controller.ts (1 throw)

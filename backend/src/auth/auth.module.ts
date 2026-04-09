@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { MedicsModule } from '../medics/medics.module';
+import { DoctorsModule } from '../doctors/doctors.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { Referral } from '../referrals/entities/referral.entity';
@@ -16,6 +17,7 @@ import { Referral } from '../referrals/entities/referral.entity';
     TypeOrmModule.forFeature([Referral]),
     UsersModule,
     MedicsModule,
+    forwardRef(() => DoctorsModule),
     RealtimeModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

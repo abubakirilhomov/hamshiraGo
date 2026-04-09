@@ -72,6 +72,16 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
+    /* Manrope — headlines & display */
+    Manrope_400Regular: require('@expo-google-fonts/manrope/400Regular/Manrope_400Regular.ttf'),
+    Manrope_500Medium: require('@expo-google-fonts/manrope/500Medium/Manrope_500Medium.ttf'),
+    Manrope_600SemiBold: require('@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.ttf'),
+    Manrope_700Bold: require('@expo-google-fonts/manrope/700Bold/Manrope_700Bold.ttf'),
+    Manrope_800ExtraBold: require('@expo-google-fonts/manrope/800ExtraBold/Manrope_800ExtraBold.ttf'),
+    /* Inter — body & labels */
+    Inter_400Regular: require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
+    Inter_500Medium: require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
+    Inter_600SemiBold: require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
   });
   const [showSplash, setShowSplash] = useState(true);
 
@@ -261,15 +271,21 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="service" options={{ headerShown: false }} />
         <Stack.Screen name="order" options={{ headerShown: false }} />
-        <Stack.Screen name="loyalty" options={{ title: 'Loyalty' }} />
-        <Stack.Screen name="subscriptions" options={{ title: 'Subscriptions' }} />
-        <Stack.Screen name="ai-chat" options={{ title: 'AI Chat' }} />
-        <Stack.Screen name="doctors" options={{ title: 'Doctors' }} />
-        <Stack.Screen name="consultation" options={{ title: 'Consultation' }} />
-        <Stack.Screen name="consultations" options={{ title: 'Consultations' }} />
-        <Stack.Screen name="prescription" options={{ title: 'Prescription' }} />
-        <Stack.Screen name="prescriptions" options={{ title: 'Prescriptions' }} />
-        <Stack.Screen name="nps" options={{ title: 'NPS', presentation: 'modal' }} />
+        <Stack.Screen name="loyalty" options={{ headerShown: false }} />
+        <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
+        <Stack.Screen name="ai-chat" options={{ headerShown: false }} />
+        <Stack.Screen name="doctors" options={{ headerShown: false }} />
+        <Stack.Screen name="consultation" options={{ headerShown: false }} />
+        <Stack.Screen name="consultations" options={{ headerShown: false }} />
+        <Stack.Screen name="prescription" options={{ headerShown: false }} />
+        <Stack.Screen name="prescriptions" options={{ headerShown: false }} />
+        <Stack.Screen name="medical-card" options={{ headerShown: false }} />
+        <Stack.Screen name="favorites" options={{ headerShown: false }} />
+        <Stack.Screen name="referral" options={{ headerShown: false }} />
+        <Stack.Screen name="courses" options={{ headerShown: false }} />
+        <Stack.Screen name="nearby-medics" options={{ headerShown: false }} />
+        <Stack.Screen name="nps" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="voice-agent" options={{ headerShown: false }} />
         <Stack.Screen name="video-call" options={{ title: 'Video Call', headerShown: false, orientation: 'portrait' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>

@@ -3,28 +3,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
 import { useCallback, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 
-const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-function getScoreColor(score: number): string {
-  if (score <= 6) return '#EF4444';
-  if (score <= 8) return '#F59E0B';
-  return '#10B981';
-}
+const SCORES_ROW1 = [1, 2, 3, 4, 5, 6];
+const SCORES_ROW2 = [7, 8, 9, 10];
 
 export default function NpsScreen() {
   const { token } = useAuth();
@@ -52,195 +47,289 @@ export default function NpsScreen() {
 
       setSubmitted(true);
     } catch (err: any) {
-      toast.show(err.message ?? 'Error', 'error');
+      toast.showToast(err.message ?? 'Error', 'error');
     } finally {
       setSubmitting(false);
     }
   }, [selectedScore, comment, token]);
 
+  // Thank-you state
   if (submitted) {
     return (
-      <View style={s.center}>
-        <FontAwesome name="heart" size={64} color={Theme.primary} />
-        <Text style={s.thankTitle}>{t('nps.thankYou')}</Text>
-        <Text style={s.thankSub}>{t('nps.thankYouSub')}</Text>
-        <Pressable
-          style={({ pressed }) => [s.doneBtn, pressed && { opacity: 0.9 }]}
-          onPress={() => router.back()}
-        >
-          <Text style={s.doneBtnText}>{t('nps.done')}</Text>
-        </Pressable>
+      <View style={styles.overlay}>
+        <View style={styles.thankCard}>
+          <View style={styles.trophyCircle}>
+            <FontAwesome name="trophy" size={24} color={Theme.textInverse} />
+          </View>
+          <Text style={styles.thankTitle}>{t('nps.thankYou')}</Text>
+          <Text style={styles.thankSub}>{t('nps.thankYouSub')}</Text>
+          <Pressable
+            style={({ pressed }) => [pressed && { opacity: 0.9 }]}
+            onPress={() => router.back()}
+          >
+            <LinearGradient
+              colors={Theme.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitBtn}
+            >
+              <Text style={styles.submitBtnText}>{t('nps.done')}</Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
-  return (
-    <KeyboardAvoidingView
-      style={s.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={s.flex} contentContainerStyle={s.content}>
-        <Text style={s.question}>{t('nps.question')}</Text>
-        <Text style={s.subText}>{t('nps.subText')}</Text>
-
-        {/* Score buttons */}
-        <View style={s.scoresRow}>
-          {SCORES.map((score) => {
-            const isSelected = selectedScore === score;
-            const color = getScoreColor(score);
-            return (
-              <Pressable
-                key={score}
-                style={[
-                  s.scoreBtn,
-                  isSelected && { backgroundColor: color, borderColor: color },
-                ]}
-                onPress={() => setSelectedScore(score)}
-              >
-                <Text
-                  style={[s.scoreBtnText, isSelected && { color: '#fff' }]}
-                >
-                  {score}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={s.scaleLabels}>
-          <Text style={s.scaleLabel}>{t('nps.notLikely')}</Text>
-          <Text style={s.scaleLabel}>{t('nps.veryLikely')}</Text>
-        </View>
-
-        {/* Comment */}
-        {selectedScore !== null && (
-          <View style={s.commentSection}>
-            <Text style={s.commentLabel}>{t('nps.commentLabel')}</Text>
-            <TextInput
-              style={s.commentInput}
-              placeholder={t('nps.commentPlaceholder')}
-              placeholderTextColor="#9CA3AF"
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              maxLength={2000}
-              textAlignVertical="top"
-            />
-          </View>
-        )}
-
-        {/* Submit */}
-        <Pressable
-          style={({ pressed }) => [
-            s.submitBtn,
-            pressed && { opacity: 0.9 },
-            (selectedScore === null || submitting) && { opacity: 0.5 },
+  const renderScoreCircle = (score: number) => {
+    const isSelected = selectedScore === score;
+    return (
+      <Pressable
+        key={score}
+        style={[
+          styles.scoreCircle,
+          isSelected && styles.scoreCircleSelected,
+        ]}
+        onPress={() => setSelectedScore(score)}
+      >
+        <Text
+          style={[
+            styles.scoreNumber,
+            isSelected && styles.scoreNumberSelected,
           ]}
-          onPress={handleSubmit}
-          disabled={selectedScore === null || submitting}
         >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={s.submitBtnText}>{t('nps.submit')}</Text>
-          )}
-        </Pressable>
+          {score}
+        </Text>
+      </Pressable>
+    );
+  };
 
-        {/* Skip */}
-        <Pressable style={s.skipBtn} onPress={() => router.back()}>
-          <Text style={s.skipBtnText}>{t('nps.skip')}</Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+  return (
+    <View style={styles.overlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
+      >
+        <View style={styles.card}>
+          {/* Close button */}
+          <Pressable
+            style={styles.closeBtn}
+            onPress={() => router.back()}
+            hitSlop={12}
+          >
+            <FontAwesome name="times" size={18} color={Theme.textTertiary} />
+          </Pressable>
+
+          {/* Trophy icon */}
+          <View style={styles.trophyCircle}>
+            <FontAwesome name="trophy" size={24} color={Theme.textInverse} />
+          </View>
+
+          {/* Title */}
+          <Text style={styles.title}>Bizni baholang</Text>
+          <Text style={styles.subtitle}>
+            Xizmatimizni 1 dan 10 gacha baholang
+          </Text>
+
+          {/* Score circles - Row 1 */}
+          <View style={styles.scoresRow}>
+            {SCORES_ROW1.map(renderScoreCircle)}
+          </View>
+          {/* Score circles - Row 2 */}
+          <View style={styles.scoresRow}>
+            {SCORES_ROW2.map(renderScoreCircle)}
+          </View>
+
+          {/* Comment */}
+          <Text style={styles.commentLabel}>
+            Sizning fikringiz (ixtiyoriy)
+          </Text>
+          <TextInput
+            style={styles.commentInput}
+            placeholder={t('nps.commentPlaceholder', 'Izoh yozing...')}
+            placeholderTextColor={Theme.textTertiary}
+            value={comment}
+            onChangeText={setComment}
+            multiline
+            maxLength={2000}
+            textAlignVertical="top"
+          />
+
+          {/* Submit CTA */}
+          <Pressable
+            style={({ pressed }) => [
+              pressed && { opacity: 0.9 },
+              (selectedScore === null || submitting) && { opacity: 0.5 },
+            ]}
+            onPress={handleSubmit}
+            disabled={selectedScore === null || submitting}
+          >
+            <LinearGradient
+              colors={Theme.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.submitBtn}
+            >
+              {submitting ? (
+                <ActivityIndicator color={Theme.textInverse} />
+              ) : (
+                <Text style={styles.submitBtnText}>Yuborish</Text>
+              )}
+            </LinearGradient>
+          </Pressable>
+
+          {/* Skip link */}
+          <Pressable
+            style={styles.skipBtn}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.skipText}>Keyinroq</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  flex: { flex: 1 },
-  center: {
+const styles = StyleSheet.create({
+  overlay: {
     flex: 1,
+    backgroundColor: Theme.overlay,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.xl,
-    gap: Spacing.md,
   },
-  content: { padding: Spacing.lg, paddingTop: Spacing.xl },
-  question: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
+  keyboardView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  card: {
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    maxWidth: 340,
+    width: '90%',
+    alignItems: 'center',
+  },
+
+  closeBtn: {
+    position: 'absolute',
+    top: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: 1,
+  },
+
+  trophyCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+
+  title: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 20,
+    color: Theme.text,
     textAlign: 'center',
     marginBottom: Spacing.xs,
   },
-  subText: {
+  subtitle: {
+    fontFamily: Fonts.inter,
     fontSize: 14,
-    color: '#6B7280',
+    color: Theme.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.xl,
   },
+
   scoresRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
-  scoreBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: '#D1D5DB',
+  scoreCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  scoreBtnText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
+  scoreCircleSelected: {
+    backgroundColor: Theme.primary,
   },
-  scaleLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.lg,
+  scoreNumber: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 15,
+    color: Theme.textSecondary,
   },
-  scaleLabel: { fontSize: 12, color: '#9CA3AF' },
-  commentSection: { marginBottom: Spacing.lg },
+  scoreNumberSelected: {
+    color: Theme.textInverse,
+  },
+
   commentLabel: {
+    fontFamily: Fonts.interMd,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: Spacing.xs,
+    color: Theme.text,
+    alignSelf: 'flex-start',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
   commentInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    fontFamily: Fonts.inter,
+    width: '100%',
+    backgroundColor: Theme.surfaceContainerLow,
     borderRadius: Radius.md,
     padding: Spacing.md,
-    fontSize: 16,
-    color: '#111827',
-    minHeight: 100,
+    fontSize: 14,
+    color: Theme.text,
+    height: 80,
+    marginBottom: Spacing.lg,
   },
+
   submitBtn: {
-    backgroundColor: Theme.primary,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: Radius.full,
     alignItems: 'center',
+    minWidth: 260,
   },
-  submitBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  skipBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
-  skipBtnText: { fontSize: 14, color: '#6B7280' },
-  thankTitle: { fontSize: 24, fontWeight: '700', color: '#111827' },
-  thankSub: { fontSize: 16, color: '#6B7280', textAlign: 'center' },
-  doneBtn: {
-    backgroundColor: Theme.primary,
-    paddingHorizontal: 32,
+  submitBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 16,
+    color: Theme.textInverse,
+  },
+
+  skipBtn: {
     paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
-    marginTop: Spacing.md,
   },
-  doneBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  skipText: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+  },
+
+  thankCard: {
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    maxWidth: 340,
+    width: '90%',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  thankTitle: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 20,
+    color: Theme.text,
+  },
+  thankSub: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+  },
 });

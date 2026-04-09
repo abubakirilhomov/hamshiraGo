@@ -31,6 +31,9 @@
   "MEDIC_ORDER_OUTSIDE_ZONE": "Заказ за пределами вашей рабочей зоны. Измените зону или отклоните.",
   "MEDIC_NOT_ASSIGNED_ORDER": "У вас нет активного заказа для этого клиента",
   "MEDIC_ACCESS_ONLY": "Доступ только для медиков",
+  "DOCTOR_ACCESS_ONLY": "Доступ только для врачей",
+  "DOCTOR_NOT_AUTHENTICATED": "Врач не авторизован",
+  "DOCTOR_PHONE_EXISTS": "Врач с таким телефоном уже зарегистрирован",
   "DISCOUNT_EXCEEDS_PRICE": "Скидка не может превышать стоимость услуги",
   "FIRST_ORDER_DISCOUNT_ONLY": "Скидка доступна только для первого заказа",
   "FIRST_ORDER_DISCOUNT_LIMIT": "Скидка первого заказа не может превышать 15% стоимости услуги",
@@ -82,5 +85,10 @@
   "NO_ADMIN_ROLE": "Токен не имеет роли администратора",
   "ADMIN_AUTH_REQUIRED": "Требуется авторизация администратора",
   "ADMIN_CREDENTIALS_NOT_CONFIGURED": "Учётные данные администратора не настроены на сервере",
-  "INVALID_PAYME_CREDENTIALS": "Неверные учётные данные Payme"
+  "INVALID_PAYME_CREDENTIALS": "Неверные учётные данные Payme",
+  "VOICE_SESSION_NOT_FOUND": "Голосовая сессия не найдена",
+  "VOICE_SESSION_COMPLETED": "Сессия уже завершена",
+  "VOICE_NO_RECOMMENDATION": "Рекомендация ещё не готова",
+  "VOICE_STT_NOT_CONFIGURED": "Распознавание речи не настроено",
+  "VOICE_TTS_NOT_CONFIGURED": "Озвучка не настроена"
 }

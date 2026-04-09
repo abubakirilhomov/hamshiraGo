@@ -2,8 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('doctors')
 export class Doctor {
@@ -34,6 +37,7 @@ export class Doctor {
   pricePerConsultation!: number;
 
   /** Phone for Telegram video call */
+  @Index({ unique: true })
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone!: string | null;
 
@@ -46,6 +50,46 @@ export class Doctor {
   @Column({ type: 'int', default: 0 })
   consultationCount!: number;
 
+  @Exclude()
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+  passwordHash!: string | null;
+
+  @Column({ type: 'varchar', nullable: true, default: null })
+  pushToken!: string | null;
+
+  @Column({ type: 'bigint', nullable: true, default: null })
+  telegramChatId!: string | null;
+
+  @Column({ type: 'boolean', default: false, nullable: true })
+  isOnline!: boolean;
+
+  @Column({ type: 'boolean', default: false, nullable: true })
+  isBlocked!: boolean;
+
+  @Column({ type: 'varchar', length: 20, nullable: true, default: 'PENDING' })
+  verificationStatus!: string; // PENDING | APPROVED | REJECTED
+
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  facePhotoUrl!: string | null;
+
+  @Column({ type: 'varchar', length: 512, nullable: true, default: null })
+  licensePhotoUrl!: string | null;
+
+  @Column({ type: 'text', nullable: true, default: null })
+  verificationRejectedReason!: string | null;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, nullable: true })
+  balance!: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0, nullable: true })
+  earnings!: number;
+
+  @Column({ type: 'timestamp', nullable: true, default: null })
+  lastSeenAt!: Date | null;
+
   @CreateDateColumn()
   createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

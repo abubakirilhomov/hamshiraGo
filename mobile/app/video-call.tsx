@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,9 +7,10 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -40,11 +41,34 @@ try {
   // LiveKit not available (Expo Go)
 }
 
+// ─── Timer hook ──────────────────────────────────────────────────────────────
+
+function useCallTimer(active: boolean) {
+  const [seconds, setSeconds] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (active) {
+      intervalRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [active]);
+
+  const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const secs = (seconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 export default function VideoCallScreen() {
   const { consultationId } = useLocalSearchParams<{ consultationId: string }>();
   const { token: authToken } = useAuth();
   const { t } = useTranslation();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
 
   const [livekitToken, setLivekitToken] = useState<string | null>(null);
   const [serverUrl, setServerUrl] = useState<string>('');
@@ -52,6 +76,8 @@ export default function VideoCallScreen() {
   const [connected, setConnected] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
+
+  const timer = useCallTimer(connected);
 
   // Initialize call
   useEffect(() => {
@@ -95,38 +121,54 @@ export default function VideoCallScreen() {
     router.back();
   }, [authToken, consultationId]);
 
-  // LiveKit not available — show fallback
+  // ─── LiveKit not available — fallback ─────────────────────────────
   if (!livekitAvailable) {
     return (
-      <View style={s.center}>
-        <FontAwesome name="video-camera" size={48} color="#6B7280" />
-        <Text style={s.errorText}>{t('videoCall.error')}</Text>
-        <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', paddingHorizontal: 32 }}>
-          Видеозвонки требуют dev build. Expo Go не поддерживается.
-        </Text>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backBtnText}>{t('nps.done')}</Text>
-        </Pressable>
+      <View style={s.fullDark}>
+        <View style={[s.center, { paddingTop: insets.top }]}>
+          <View style={s.fallbackIcon}>
+            <FontAwesome name="video-camera" size={40} color={Theme.textTertiary} />
+          </View>
+          <Text style={s.fallbackTitle}>{t('videoCall.error')}</Text>
+          <Text style={s.fallbackSubtext}>
+            Videozvonki requires dev build. Expo Go is not supported.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [s.fallbackBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.back()}
+          >
+            <Text style={s.fallbackBtnText}>{t('nps.done')}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
+  // ─── Loading ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <View style={s.center}>
-        <ActivityIndicator size="large" color={Theme.primary} />
-        <Text style={s.loadingText}>{t('videoCall.connecting')}</Text>
+      <View style={s.fullDark}>
+        <View style={[s.center, { paddingTop: insets.top }]}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={s.loadingText}>{t('videoCall.connecting')}</Text>
+        </View>
       </View>
     );
   }
 
+  // ─── Error — no token ─────────────────────────────────────────────
   if (!livekitToken || !serverUrl) {
     return (
-      <View style={s.center}>
-        <Text style={s.errorText}>{t('videoCall.error')}</Text>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
-          <Text style={s.backBtnText}>{t('nps.done')}</Text>
-        </Pressable>
+      <View style={s.fullDark}>
+        <View style={[s.center, { paddingTop: insets.top }]}>
+          <Text style={s.errorText}>{t('videoCall.error')}</Text>
+          <Pressable
+            style={({ pressed }) => [s.fallbackBtn, pressed && { opacity: 0.85 }]}
+            onPress={() => router.back()}
+          >
+            <Text style={s.fallbackBtnText}>{t('nps.done')}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -145,33 +187,54 @@ export default function VideoCallScreen() {
         router.back();
       }}
     >
-      <View style={s.container}>
-        <VideoLayout />
+      <View style={s.fullDark}>
+        {/* Remote video / Video layout */}
+        <VideoLayout insets={insets} timer={timer} />
 
-        <View style={s.controls}>
+        {/* Bottom control bar — glassmorphism */}
+        <View style={[s.controlBar, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
+          {/* Mic toggle */}
           <Pressable
-            style={[s.controlBtn, !micEnabled && s.controlBtnOff]}
+            style={({ pressed }) => [
+              s.controlBtn,
+              !micEnabled && s.controlBtnMuted,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => setMicEnabled((v) => !v)}
           >
             <FontAwesome
               name={micEnabled ? 'microphone' : 'microphone-slash'}
-              size={22}
-              color="#fff"
+              size={20}
+              color={micEnabled ? Theme.text : '#ffffff'}
             />
           </Pressable>
 
-          <Pressable style={s.endCallBtn} onPress={handleEndCall}>
-            <FontAwesome name="phone" size={24} color="#fff" />
+          {/* End call */}
+          <Pressable
+            style={({ pressed }) => [s.endCallBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.95 }] }]}
+            onPress={handleEndCall}
+          >
+            <FontAwesome
+              name="phone"
+              size={24}
+              color="#ffffff"
+              style={{ transform: [{ rotate: '135deg' }] }}
+            />
           </Pressable>
 
+          {/* Camera toggle */}
           <Pressable
-            style={[s.controlBtn, !camEnabled && s.controlBtnOff]}
+            style={({ pressed }) => [
+              s.controlBtn,
+              !camEnabled && s.controlBtnMuted,
+              pressed && { opacity: 0.8 },
+            ]}
             onPress={() => setCamEnabled((v) => !v)}
           >
             <FontAwesome
               name={camEnabled ? 'video-camera' : 'eye-slash'}
-              size={20}
-              color="#fff"
+              size={18}
+              color={camEnabled ? Theme.text : '#ffffff'}
             />
           </Pressable>
         </View>
@@ -180,7 +243,9 @@ export default function VideoCallScreen() {
   );
 }
 
-function VideoLayout() {
+// ─── Video Layout ────────────────────────────────────────────────────────────
+
+function VideoLayout({ insets, timer }: { insets: { top: number }; timer: string }) {
   const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
   const participants = useParticipants();
 
@@ -191,62 +256,189 @@ function VideoLayout() {
     (t: any) => isTrackReference(t) && t.participant.isLocal && t.source === Track.Source.Camera,
   );
 
+  // Get remote participant name
+  const remoteName = remoteTracks.length > 0
+    ? remoteTracks[0]?.participant?.name ?? 'Shifokor'
+    : 'Shifokor';
+
   return (
     <View style={s.videoContainer}>
+      {/* Remote video */}
       {remoteTracks.length > 0 && isTrackReference(remoteTracks[0]) ? (
         <VideoTrack trackRef={remoteTracks[0]} style={s.remoteVideo} />
       ) : (
         <View style={s.remoteVideo}>
-          <FontAwesome name="user-md" size={64} color="#6B7280" />
-          <Text style={s.waitingText}>Ожидание врача...</Text>
+          <View style={s.remoteAvatarCircle}>
+            <FontAwesome name="user-md" size={48} color="rgba(255,255,255,0.4)" />
+          </View>
+          <Text style={s.waitingText}>Shifokorni kutilmoqda...</Text>
         </View>
       )}
 
+      {/* Header overlay */}
+      <View style={[s.headerOverlay, { paddingTop: insets.top + 12 }]}>
+        <Text style={s.headerName}>{remoteName}</Text>
+        <Text style={s.headerTimer}>{timer}</Text>
+      </View>
+
+      {/* Local video preview — top right */}
       {localTrack && isTrackReference(localTrack) && VideoTrack && (
-        <View style={s.localVideoWrapper}>
+        <View style={[s.localVideoWrap, { top: insets.top + 60 }]}>
           <VideoTrack trackRef={localTrack} style={s.localVideo} />
         </View>
       )}
-
-      <View style={s.participantBadge}>
-        <FontAwesome name="users" size={12} color="#fff" />
-        <Text style={s.participantText}>{participants.length}</Text>
-      </View>
     </View>
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  fullDark: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
   center: {
-    flex: 1, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: '#000', gap: Spacing.md,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.xxl,
   },
-  loadingText: { color: '#fff', fontSize: 16, marginTop: Spacing.md },
-  errorText: { color: '#EF4444', fontSize: 16 },
-  backBtn: { backgroundColor: Theme.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: Radius.md },
-  backBtnText: { color: '#fff', fontWeight: '600' },
-  videoContainer: { flex: 1, position: 'relative' },
-  remoteVideo: { flex: 1, backgroundColor: '#1F2937', justifyContent: 'center', alignItems: 'center' },
-  waitingText: { color: '#9CA3AF', fontSize: 16, marginTop: Spacing.md },
-  localVideoWrapper: {
-    position: 'absolute', top: 50, right: 16, width: 120, height: 160,
-    borderRadius: Radius.md, overflow: 'hidden', borderWidth: 2, borderColor: '#fff',
+
+  /* Fallback */
+  fallbackIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  localVideo: { flex: 1 },
-  participantBadge: {
-    position: 'absolute', top: 50, left: 16, flexDirection: 'row', alignItems: 'center',
-    gap: 6, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999,
+  fallbackTitle: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 18,
+    color: '#ffffff',
+    textAlign: 'center',
   },
-  participantText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  controls: {
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
-    gap: 24, paddingVertical: 32, paddingBottom: 48, backgroundColor: 'rgba(0,0,0,0.8)',
+  fallbackSubtext: {
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  controlBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#374151', justifyContent: 'center', alignItems: 'center' },
-  controlBtnOff: { backgroundColor: '#6B7280' },
+  fallbackBtn: {
+    backgroundColor: Theme.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: Radius.full,
+    marginTop: Spacing.md,
+  },
+  fallbackBtnText: {
+    fontFamily: Fonts.manropeSb,
+    color: '#ffffff',
+    fontSize: 15,
+  },
+  loadingText: {
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 15,
+  },
+  errorText: {
+    fontFamily: Fonts.manropeSb,
+    color: '#EF4444',
+    fontSize: 16,
+  },
+
+  /* Video layout */
+  videoContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  remoteVideo: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  remoteAvatarCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  waitingText: {
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 15,
+  },
+
+  /* Header overlay */
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  headerName: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 17,
+    color: '#ffffff',
+  },
+  headerTimer: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
+  },
+
+  /* Local video preview */
+  localVideoWrap: {
+    position: 'absolute',
+    right: 16,
+    width: 120,
+    height: 160,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  localVideo: {
+    flex: 1,
+  },
+
+  /* Control bar */
+  controlBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 24,
+    paddingTop: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  controlBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlBtnMuted: {
+    backgroundColor: Theme.surfaceContainerLow,
+  },
   endCallBtn: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: '#EF4444',
-    justifyContent: 'center', alignItems: 'center', transform: [{ rotate: '135deg' }],
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#DC2626',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -10,10 +10,12 @@ import {
   View,
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -37,38 +39,17 @@ interface CreateForm {
 
 const EMPTY_FORM: CreateForm = { title: '', totalProcedures: '', intervalDays: '', nextDate: '' };
 
-function StatusBadge({ status }: { status: TreatmentCourse['status'] }) {
-  const { t } = useTranslation();
-  const colors: Record<TreatmentCourse['status'], string> = {
-    ACTIVE: Theme.primary,
-    COMPLETED: Theme.success,
-    CANCELED: Theme.error,
-  };
-  const labels: Record<TreatmentCourse['status'], string> = {
-    ACTIVE: t('courses.statusActive'),
-    COMPLETED: t('courses.statusDone'),
-    CANCELED: t('courses.statusCanceled'),
-  };
-  return (
-    <View style={[styles.badge, { backgroundColor: `${colors[status]}18`, borderColor: `${colors[status]}40` }]}>
-      <Text style={[styles.badgeText, { color: colors[status] }]}>{labels[status]}</Text>
-    </View>
-  );
-}
-
-function ProgressBar({ completed, total }: { completed: number; total: number }) {
-  const pct = total > 0 ? Math.min(completed / total, 1) : 0;
-  return (
-    <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: `${pct * 100}%` as any }]} />
-    </View>
-  );
-}
+const STATUS_CONFIG: Record<TreatmentCourse['status'], { bg: string; text: string; label: string }> = {
+  ACTIVE:    { bg: Theme.warningContainer,  text: '#92400E', label: 'JARAYONDA' },
+  COMPLETED: { bg: Theme.successContainer,  text: '#065F46', label: 'YAKUNLANGAN' },
+  CANCELED:  { bg: Theme.errorContainer,    text: '#991B1B', label: 'BEKOR QILINGAN' },
+};
 
 export default function CoursesScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
   const [courses, setCourses] = useState<TreatmentCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -159,33 +140,62 @@ export default function CoursesScreen() {
     ]);
   };
 
-  const renderCourse = ({ item }: { item: TreatmentCourse }) => (
-    <Pressable
-      style={({ pressed }) => [styles.courseCard, pressed && { opacity: 0.85 }]}
-      onPress={() => handleCardPress(item)}
-    >
-      <View style={styles.courseHeader}>
-        <Text style={styles.courseTitle}>{item.title}</Text>
-        <StatusBadge status={item.status} />
-      </View>
+  const renderCourse = ({ item }: { item: TreatmentCourse }) => {
+    const pct = item.totalProcedures > 0
+      ? Math.min(item.completedProcedures / item.totalProcedures, 1)
+      : 0;
+    const statusCfg = STATUS_CONFIG[item.status];
 
-      <View style={styles.progressRow}>
-        <ProgressBar completed={item.completedProcedures} total={item.totalProcedures} />
-        <Text style={styles.progressLabel}>
-          {item.completedProcedures}/{item.totalProcedures} {t('courses.procedures')}
-        </Text>
-      </View>
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.courseCard, Shadow.sm, pressed && { opacity: 0.85 }]}
+        onPress={() => handleCardPress(item)}
+      >
+        {/* Title + status */}
+        <View style={styles.courseHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.courseTitle}>{item.title}</Text>
+            {item.nextDate && item.status === 'ACTIVE' && (
+              <Text style={styles.startDate}>
+                {new Date(item.nextDate).toLocaleDateString('ru-RU')}
+              </Text>
+            )}
+          </View>
+          <View style={[styles.statusPill, { backgroundColor: statusCfg.bg }]}>
+            <Text style={[styles.statusText, { color: statusCfg.text }]}>
+              {statusCfg.label}
+            </Text>
+          </View>
+        </View>
 
-      {item.nextDate && item.status === 'ACTIVE' && (
-        <View style={styles.nextDateRow}>
-          <FontAwesome name="calendar" size={12} color={Theme.textSecondary} />
-          <Text style={styles.nextDateText}>
-            {t('courses.nextDate')}: {new Date(item.nextDate).toLocaleDateString('ru-RU')}
+        {/* Progress bar */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${pct * 100}%` as any }]} />
+          </View>
+          <Text style={styles.progressCount}>
+            {item.completedProcedures}/{item.totalProcedures} muolaja
           </Text>
         </View>
-      )}
-    </Pressable>
-  );
+        <Text style={styles.progressPercent}>
+          {Math.round(pct * 100)}% tugallandi
+        </Text>
+
+        {/* Next session */}
+        {item.nextDate && item.status === 'ACTIVE' && (
+          <View style={styles.nextSession}>
+            <Text style={styles.nextLabel}>NAVBATDAGI SEANS</Text>
+            <View style={styles.nextRow}>
+              <FontAwesome name="calendar" size={12} color={Theme.textSecondary} />
+              <Text style={styles.nextDate}>
+                {new Date(item.nextDate).toLocaleDateString('ru-RU')}
+              </Text>
+            </View>
+          </View>
+        )}
+      </Pressable>
+    );
+  };
 
   if (loading) {
     return (
@@ -201,11 +211,31 @@ export default function CoursesScreen() {
         data={courses}
         keyExtractor={(item) => item.id}
         renderItem={renderCourse}
-        contentContainerStyle={[styles.listContent, courses.length === 0 && styles.listEmpty]}
+        contentContainerStyle={[
+          styles.listContent,
+          courses.length === 0 && styles.listEmpty,
+        ]}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={{ paddingTop: insets.top + Spacing.lg }}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.brand}>HamshiraGo</Text>
+              <Pressable hitSlop={12}>
+                <FontAwesome name="bell-o" size={22} color={Theme.text} />
+              </Pressable>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.title}>Davolash kurslari</Text>
+            <Text style={styles.subtitle}>
+              {t('courses.empty', 'Davolash kurslaringizni kuzatib boring')}
+            </Text>
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <FontAwesome name="calendar-o" size={40} color={Theme.textSecondary} />
+            <FontAwesome name="calendar-o" size={48} color={Theme.surfaceContainerHigh} />
             <Text style={styles.emptyText}>{t('courses.empty')}</Text>
           </View>
         }
@@ -213,10 +243,15 @@ export default function CoursesScreen() {
 
       {/* FAB */}
       <Pressable
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.8 }]}
+        style={({ pressed }) => [pressed && { opacity: 0.9 }]}
         onPress={() => setModalVisible(true)}
       >
-        <FontAwesome name="plus" size={22} color="#fff" />
+        <LinearGradient
+          colors={Theme.primaryGradient}
+          style={[styles.fab, Shadow.md]}
+        >
+          <FontAwesome name="plus" size={24} color={Theme.textInverse} />
+        </LinearGradient>
       </Pressable>
 
       {/* Create modal */}
@@ -233,7 +268,7 @@ export default function CoursesScreen() {
               value={form.title}
               onChangeText={(v) => setForm((f) => ({ ...f, title: v }))}
               placeholder={t('courses.fieldTitlePlaceholder')}
-              placeholderTextColor={Theme.textSecondary}
+              placeholderTextColor={Theme.textTertiary}
             />
 
             <Text style={styles.fieldLabel}>{t('courses.fieldTotal')}</Text>
@@ -242,7 +277,7 @@ export default function CoursesScreen() {
               value={form.totalProcedures}
               onChangeText={(v) => setForm((f) => ({ ...f, totalProcedures: v }))}
               placeholder="10"
-              placeholderTextColor={Theme.textSecondary}
+              placeholderTextColor={Theme.textTertiary}
               keyboardType="number-pad"
             />
 
@@ -252,7 +287,7 @@ export default function CoursesScreen() {
               value={form.intervalDays}
               onChangeText={(v) => setForm((f) => ({ ...f, intervalDays: v }))}
               placeholder="7"
-              placeholderTextColor={Theme.textSecondary}
+              placeholderTextColor={Theme.textTertiary}
               keyboardType="number-pad"
             />
 
@@ -262,18 +297,26 @@ export default function CoursesScreen() {
               value={form.nextDate}
               onChangeText={(v) => setForm((f) => ({ ...f, nextDate: v }))}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={Theme.textSecondary}
+              placeholderTextColor={Theme.textTertiary}
             />
 
             <Pressable
-              style={({ pressed }) => [styles.submitBtn, pressed && { opacity: 0.85 }, submitting && { opacity: 0.7 }]}
+              style={({ pressed }) => [pressed && { opacity: 0.9 }, submitting && { opacity: 0.7 }]}
               onPress={handleCreate}
               disabled={submitting}
             >
-              {submitting
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.submitBtnText}>{t('courses.create')}</Text>
-              }
+              <LinearGradient
+                colors={Theme.primaryGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.submitBtn}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={Theme.textInverse} />
+                ) : (
+                  <Text style={styles.submitBtnText}>{t('courses.create')}</Text>
+                )}
+              </LinearGradient>
             </Pressable>
           </ScrollView>
         </View>
@@ -284,20 +327,54 @@ export default function CoursesScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: Theme.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { padding: Spacing.lg, gap: Spacing.md },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.background },
+  listContent: { paddingHorizontal: Spacing.lg, paddingBottom: 100, gap: Spacing.md },
   listEmpty: { flexGrow: 1 },
 
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
-  emptyText: { fontSize: 15, color: Theme.textSecondary, textAlign: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xl,
+  },
+  brand: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 20,
+    color: Theme.primary,
+  },
+
+  title: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 24,
+    color: Theme.text,
+    marginBottom: Spacing.xs,
+  },
+  subtitle: {
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.textSecondary,
+    marginBottom: Spacing.lg,
+  },
+
+  emptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.xxxl,
+  },
+  emptyText: {
+    fontFamily: Fonts.inter,
+    fontSize: 15,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+  },
 
   courseCard: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
+    borderRadius: Radius.lg,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: 10,
+    gap: Spacing.md,
   },
   courseHeader: {
     flexDirection: 'row',
@@ -306,25 +383,36 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   courseTitle: {
+    fontFamily: Fonts.manropeSb,
     fontSize: 16,
-    fontWeight: '600',
     color: Theme.text,
-    flex: 1,
   },
-  badge: {
+  startDate: {
+    fontFamily: Fonts.inter,
+    fontSize: 12,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
+  statusPill: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
+    borderRadius: Radius.full,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '600',
+  statusText: {
+    fontFamily: Fonts.interSb,
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
-  progressRow: { gap: Spacing.xs },
+
+  progressSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
   progressTrack: {
+    flex: 1,
     height: 6,
-    backgroundColor: Theme.border,
+    backgroundColor: Theme.surfaceContainerLow,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -333,17 +421,38 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
     borderRadius: 3,
   },
-  progressLabel: {
+  progressCount: {
+    fontFamily: Fonts.inter,
     fontSize: 12,
     color: Theme.textSecondary,
   },
-  nextDateRow: {
+  progressPercent: {
+    fontFamily: Fonts.inter,
+    fontSize: 13,
+    color: Theme.textSecondary,
+    marginTop: -Spacing.xs,
+  },
+
+  nextSession: {
+    borderTopWidth: 1,
+    borderTopColor: Theme.surfaceContainerLow,
+    paddingTop: Spacing.md,
+    gap: Spacing.xs,
+  },
+  nextLabel: {
+    fontFamily: Fonts.interMd,
+    fontSize: 10,
+    color: Theme.textTertiary,
+    letterSpacing: 1,
+  },
+  nextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Spacing.xs,
   },
-  nextDateText: {
-    fontSize: 12,
+  nextDate: {
+    fontFamily: Fonts.inter,
+    fontSize: 13,
     color: Theme.textSecondary,
   },
 
@@ -354,15 +463,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadow.lg,
   },
 
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: Theme.overlay,
   },
   sheet: {
     backgroundColor: Theme.surface,
@@ -376,26 +483,26 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Theme.border,
+    backgroundColor: Theme.surfaceContainerHigh,
     alignSelf: 'center',
     marginBottom: Spacing.lg,
   },
   sheetTitle: {
+    fontFamily: Fonts.manropeBd,
     fontSize: 18,
-    fontWeight: '700',
     color: Theme.text,
     marginBottom: 18,
   },
   fieldLabel: {
+    fontFamily: Fonts.interMd,
     fontSize: 13,
     color: Theme.textSecondary,
     marginBottom: 6,
   },
   input: {
-    backgroundColor: Theme.background,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: 10,
+    fontFamily: Fonts.inter,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
     paddingHorizontal: 14,
     paddingVertical: Spacing.md,
     fontSize: 15,
@@ -403,15 +510,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   submitBtn: {
-    backgroundColor: Theme.primary,
     paddingVertical: 15,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     alignItems: 'center',
     marginTop: Spacing.xs,
   },
   submitBtnText: {
+    fontFamily: Fonts.manropeSb,
     fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
+    color: Theme.textInverse,
   },
 });

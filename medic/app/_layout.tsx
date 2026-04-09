@@ -161,7 +161,12 @@ function RootLayoutNav() {
     if (!token && !inAuth) {
       router.replace('/auth');
     } else if (token && inAuth) {
-      router.replace('/(tabs)');
+      const role = medic?.role ?? 'medic';
+      if (role === 'doctor') {
+        router.replace('/(doctor-tabs)');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   }, [isLoaded, isFirstLaunch, token, segments, isLoading, onboardingDone]);
 
@@ -185,7 +190,9 @@ function RootLayoutNav() {
           | Record<string, string>
           | undefined;
         if (!data) return;
-        if (data.type === 'order' && data.orderId) {
+        if (data.type === 'consultation' && data.consultationId) {
+          router.push(`/doctor-consultation/${data.consultationId}`);
+        } else if (data.type === 'order' && data.orderId) {
           router.push(`/order/${data.orderId}`);
         } else if (data.type === 'invite') {
           router.push('/(tabs)/');
@@ -203,7 +210,9 @@ function RootLayoutNav() {
         | Record<string, string>
         | undefined;
       if (!data) return;
-      if (data.type === 'order' && data.orderId) {
+      if (data.type === 'consultation' && data.consultationId) {
+        router.push(`/doctor-consultation/${data.consultationId}`);
+      } else if (data.type === 'order' && data.orderId) {
         router.push(`/order/${data.orderId}`);
       } else if (data.type === 'invite') {
         router.push('/(tabs)/');
@@ -328,9 +337,14 @@ function RootLayoutNav() {
         <Stack.Screen name="language-picker" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(doctor-tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="order/[id]"
           options={{ title: 'Детали заказа', headerBackTitle: 'Назад' }}
+        />
+        <Stack.Screen
+          name="doctor-consultation/[id]"
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="verification"

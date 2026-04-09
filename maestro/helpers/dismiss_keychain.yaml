@@ -1,0 +1,9 @@
+appId: host.exp.Exponent
+---
+- runFlow:
+    when:
+      visible:
+        text: ".*е сейчас.*"
+    commands:
+      - tapOn:
+          text: ".*е сейчас.*"

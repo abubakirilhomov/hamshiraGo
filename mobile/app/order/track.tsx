@@ -21,8 +21,9 @@ import { useEffect, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as WebBrowser from 'expo-web-browser';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
-import { Theme } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Shadow, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -33,7 +34,7 @@ import type { OrderStatus } from '@/types/order';
 import { trackEvent } from '@/utils/analytics';
 import { styles } from './trackStyles';
 
-// ─── Types (local only) ───────────────────────────────────────────────────────
+// ---- Types (local only) ----
 
 type DispatchStatus = 'searching' | 'contacting' | 'no_medics';
 
@@ -42,7 +43,7 @@ const TrackMapComponent =
     ? null
     : require('react-native-maps');
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ---- Screen ----
 
 export default function TrackOrderScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
@@ -51,6 +52,7 @@ export default function TrackOrderScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
 
   const [payStatus, setPayStatus] = useState<'idle' | 'paid'>('idle');
   const [cancelModal, setCancelModal] = useState(false);
@@ -59,7 +61,6 @@ export default function TrackOrderScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoritesChecked, setFavoritesChecked] = useState(false);
-  const coursePromptShownRef = useRef(false);
 
   const {
     order,
@@ -87,7 +88,7 @@ export default function TrackOrderScreen() {
     }
   }, [order?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Pulse animation (while dispatching) ─────────────────────────────────────
+  // -- Pulse animation (while dispatching) --
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function TrackOrderScreen() {
     return () => anim.stop();
   }, [order?.status, dispatchState, pulseAnim]);
 
-  // ── Smooth medic marker interpolation ────────────────────────────────────────
+  // -- Smooth medic marker interpolation --
   const medicAnimCoordRef = useRef<any>(null);
   const [medicAnimReady, setMedicAnimReady] = useState(false);
 
@@ -129,28 +130,22 @@ export default function TrackOrderScreen() {
     }
   }, [medicLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Force rating: block back navigation until rated ──────────────────────────
+  // -- Rating: suggest but don't block navigation --
   const mustRate = order?.status === 'DONE' && order.clientRating === null && !!order.medic;
+  const ratingPromptShown = useRef(false);
 
   useEffect(() => {
-    if (!mustRate) return;
-    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      e.preventDefault();
-      Alert.alert(t('track.rateMedic'), t('track.rateBeforeBack'), [{ text: t('track.ok') }]);
-    });
-    return unsubscribe;
-  }, [navigation, mustRate, t]);
+    if (!mustRate || ratingPromptShown.current) return;
+    ratingPromptShown.current = true;
+    // Show a non-blocking prompt once
+    Alert.alert(
+      t('track.rateMedic'),
+      t('track.rateBeforeBack'),
+      [{ text: t('track.ok') }],
+    );
+  }, [mustRate, t]);
 
-  useEffect(() => {
-    if (!mustRate) return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert(t('track.rateMedic'), t('track.rateBeforeBack'), [{ text: t('track.ok') }]);
-      return true;
-    });
-    return () => sub.remove();
-  }, [mustRate]);
-
-  // ── Payment status check (when DONE) ─────────────────────────────────────────
+  // -- Payment status check (when DONE) --
   useEffect(() => {
     if (order?.status !== 'DONE' || !orderId || !token) return;
     apiFetch<{ status: string }>(`/payments/${orderId}/status`, { token })
@@ -158,7 +153,7 @@ export default function TrackOrderScreen() {
       .catch(() => {});
   }, [order?.status, orderId, token]);
 
-  // ── Check if medic is already favorited (when DONE) ──────────────────────────
+  // -- Check if medic is already favorited (when DONE) --
   useEffect(() => {
     if (order?.status !== 'DONE' || !order.medic || !token || favoritesChecked) return;
     setFavoritesChecked(true);
@@ -170,28 +165,17 @@ export default function TrackOrderScreen() {
       .catch(() => {});
   }, [order?.status, order?.medic, token, favoritesChecked]);
 
-  // ── Analytics: track order completion ─────────────────────────────────────────
+  // -- Analytics: track order completion --
   useEffect(() => {
     if (order?.status === 'DONE' && orderId) {
       trackEvent('order_completed', { orderId }).catch(() => {});
     }
   }, [order?.status, orderId]);
 
-  // ── Course prompt (when DONE, once) ──────────────────────────────────────────
-  useEffect(() => {
-    if (order?.status !== 'DONE' || coursePromptShownRef.current) return;
-    coursePromptShownRef.current = true;
-    Alert.alert(
-      t('courses.title'),
-      t('courses.createPrompt'),
-      [
-        { text: t('profile.cancel'), style: 'cancel' },
-        { text: t('courses.create'), onPress: () => router.push('/courses') },
-      ],
-    );
-  }, [order?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Course prompt removed — was auto-showing modal on DONE, blocking UI.
+  // User can create a course from Profile → Courses instead.
 
-  // ── Pay handler ───────────────────────────────────────────────────────────────
+  // -- Pay handler --
   const handlePay = async () => {
     try {
       const { paymeUrl, clickUrl } = await apiFetch<{ paymeUrl: string; clickUrl: string }>(
@@ -207,7 +191,7 @@ export default function TrackOrderScreen() {
     }
   };
 
-  // ── Favorite toggle ────────────────────────────────────────────────────────
+  // -- Favorite toggle --
   const handleFavoriteToggle = async () => {
     if (!order?.medic || favoriteLoading || !token) return;
     const medicId = order.medic.id;
@@ -228,7 +212,7 @@ export default function TrackOrderScreen() {
     }
   };
 
-  // ── Cancel handlers ────────────────────────────────────────────────────────
+  // -- Cancel handlers --
   const confirmCancel = async () => {
     setCancelModal(false);
     try {
@@ -238,7 +222,7 @@ export default function TrackOrderScreen() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // -----------------------------------------------------------------------
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -266,22 +250,55 @@ export default function TrackOrderScreen() {
 
   return (
     <>
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: Theme.background }}>
+      {/* Floating header with safe area */}
+      <View style={[trackLocalStyles.topBar, { paddingTop: insets.top + 8 }]}>
+        <Pressable
+          style={trackLocalStyles.topBackBtn}
+          onPress={() => {
+            if (mustRate) {
+              Alert.alert(t('track.rateMedic'), t('track.rateBeforeBack'), [{ text: t('track.ok') }]);
+            } else {
+              router.back();
+            }
+          }}
+          hitSlop={12}
+        >
+          <FontAwesome name="arrow-left" size={18} color={Theme.text} />
+        </Pressable>
 
-      {/* Header */}
+        {/* Status pill */}
+        {isActive && (
+          <View style={trackLocalStyles.statusPill}>
+            <View style={[trackLocalStyles.statusDot, { backgroundColor: getStatusColor(order.status) }]} />
+            <Text style={trackLocalStyles.statusPillText}>
+              {getStatusLabel(t, order.status)}
+            </Text>
+          </View>
+        )}
+
+        {wsConnected && isActive && (
+          <View style={trackLocalStyles.livePill}>
+            <View style={trackLocalStyles.liveDotSmall} />
+            <Text style={trackLocalStyles.liveTextSmall}>Live</Text>
+          </View>
+        )}
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingTop: 0, paddingBottom: 40 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
+
+      {/* Header card */}
       <View style={styles.headerCard}>
         <View style={styles.headerTop}>
           <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
-          {wsConnected && isActive && (
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>Live</Text>
-            </View>
-          )}
         </View>
         {order.isUrgent && (
           <View style={styles.urgentBadge}>
-            <Text style={styles.urgentBadgeText}>🔴 {t('urgent.badge')}</Text>
+            <Text style={styles.urgentBadgeText}>{t('urgent.badge')}</Text>
           </View>
         )}
         <Text style={styles.priceText}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
@@ -370,8 +387,8 @@ export default function TrackOrderScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('track.address')}</Text>
           <View style={styles.addressRow}>
-            <FontAwesome name="map-marker" size={14} color={Theme.textSecondary} />
-            <Text style={styles.addressText} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
+            <FontAwesome name="map-pin" size={14} color={Theme.primary} />
+            <Text style={styles.addressText}>
               {order.location.house}
               {order.location.floor ? `, ${t('confirm.floor')} ${order.location.floor}` : ''}
               {order.location.apartment ? `, ${t('confirm.apt')} ${order.location.apartment}` : ''}
@@ -390,7 +407,13 @@ export default function TrackOrderScreen() {
       {/* Loyalty points earned */}
       {isDone && (
         <View style={styles.card}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: Theme.primary, textAlign: 'center' }}>
+          <Text style={{
+            fontSize: 15,
+            fontFamily: Fonts.manropeSb,
+            fontWeight: '600',
+            color: Theme.primary,
+            textAlign: 'center',
+          }}>
             {t('loyalty.pointsEarned', { points: '10' })}
           </Text>
         </View>
@@ -406,7 +429,7 @@ export default function TrackOrderScreen() {
                 key={star}
                 name={star <= order.clientRating! ? 'star' : 'star-o'}
                 size={28}
-                color={star <= order.clientRating! ? Theme.primary : Theme.border}
+                color={star <= order.clientRating! ? Theme.primary : Theme.surfaceContainerHigh}
               />
             ))}
           </View>
@@ -416,25 +439,23 @@ export default function TrackOrderScreen() {
         </View>
       )}
 
-      {/* Chat button — visible when medic is assigned and order is active */}
-      {order.medic && !['DONE', 'CANCELED'].includes(order.status) && (
-        <Pressable
-          style={({ pressed }) => [
-            { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-              backgroundColor: '#fff', borderWidth: 1, borderColor: Theme.primary, borderRadius: 12,
-              paddingVertical: 12, marginBottom: 12 },
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => router.push({ pathname: '/order/chat', params: { orderId: order.id } })}
-        >
-          <FontAwesome name="comments" size={18} color={Theme.primary} />
-          <Text style={{ color: Theme.primary, fontWeight: '600', fontSize: 15 }}>
-            {t('chat.openChat')}
-          </Text>
-        </Pressable>
+      {/* Action buttons row */}
+      {isActive && order.medic && (
+        <View style={trackLocalStyles.actionRow}>
+          <Pressable
+            style={({ pressed }) => [
+              trackLocalStyles.actionBtnSecondary,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => router.push({ pathname: '/order/chat', params: { orderId: order.id } })}
+          >
+            <FontAwesome name="comments" size={16} color={Theme.primary} />
+            <Text style={trackLocalStyles.actionBtnSecondaryText}>{t('track.contact', { defaultValue: 'Aloqa' })}</Text>
+          </Pressable>
+        </View>
       )}
 
-      {/* Action buttons */}
+      {/* TrackActions (pay, favorite, done) */}
       <TrackActions
         orderStatus={order.status}
         mustRate={mustRate}
@@ -448,6 +469,7 @@ export default function TrackOrderScreen() {
         onGoToOrders={() => router.replace('/(tabs)/two')}
       />
     </ScrollView>
+    </View>
 
     <AppModal
       visible={cancelModal}
@@ -461,10 +483,10 @@ export default function TrackOrderScreen() {
     >
       <TextInput
         placeholder={t('track.cancelReasonPlaceholder')}
-        placeholderTextColor={Theme.textSecondary}
+        placeholderTextColor={Theme.textTertiary}
         value={cancelReason}
         onChangeText={setCancelReason}
-        style={{ fontSize: 14, color: Theme.text, paddingVertical: 8, borderWidth: 1, borderColor: Theme.border, borderRadius: 10, paddingHorizontal: 12, marginTop: 4 }}
+        style={trackLocalStyles.cancelReasonInput}
         maxLength={200}
       />
     </AppModal>
@@ -480,12 +502,12 @@ export default function TrackOrderScreen() {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ---- Helpers ----
 
 function formatElapsed(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return m > 0 ? `${m}м ${s}с` : `${s}с`;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 function getDispatchStatusText(t: (key: string, opts?: Record<string, string>) => string, dispatchState: { status: DispatchStatus; candidateName?: string } | null): string | null {
@@ -497,3 +519,160 @@ function getDispatchStatusText(t: (key: string, opts?: Record<string, string>) =
     default: return null;
   }
 }
+
+function getStatusColor(status: string): string {
+  const map: Record<string, string> = {
+    CREATED: Theme.statusCreated,
+    ASSIGNED: Theme.statusAssigned,
+    ACCEPTED: Theme.statusAccepted,
+    ON_THE_WAY: Theme.statusOnTheWay,
+    ARRIVED: Theme.statusArrived,
+    SERVICE_STARTED: Theme.statusStarted,
+    DONE: Theme.statusDone,
+    CANCELED: Theme.statusCanceled,
+  };
+  return map[status] ?? Theme.textSecondary;
+}
+
+function getStatusLabel(t: (key: string, opts?: any) => string, status: string): string {
+  const map: Record<string, string> = {
+    CREATED: 'Yaratildi',
+    ASSIGNED: 'Tayinlandi',
+    ACCEPTED: 'Qabul qilindi',
+    ON_THE_WAY: "Yo'lda",
+    ARRIVED: 'Yetib keldi',
+    SERVICE_STARTED: 'Xizmat boshlandi',
+    DONE: 'Bajarildi',
+    CANCELED: 'Bekor qilindi',
+  };
+  return map[status] ?? status;
+}
+
+// Local styles for track-specific UI not in trackStyles.ts
+import { StyleSheet } from 'react-native';
+
+const trackLocalStyles = StyleSheet.create({
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+    backgroundColor: Theme.surface,
+    gap: Spacing.sm,
+    ...Shadow.sm,
+  },
+  topBackBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.full,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    ...Shadow.md,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusPillText: {
+    fontSize: 14,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: Theme.text,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: `${Theme.success}15`,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: Radius.full,
+  },
+  liveDotSmall: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Theme.success,
+  },
+  liveTextSmall: {
+    fontSize: 11,
+    fontFamily: Fonts.interSb,
+    fontWeight: '600',
+    color: Theme.success,
+  },
+  chatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    ...Shadow.sm,
+  },
+  chatBtnText: {
+    color: Theme.primary,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  actionBtnSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.lg,
+  },
+  actionBtnSecondaryText: {
+    fontSize: 15,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: Theme.primary,
+  },
+  actionBtnError: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.lg,
+  },
+  actionBtnErrorText: {
+    fontSize: 15,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: Theme.error,
+  },
+  cancelReasonInput: {
+    fontSize: 14,
+    fontFamily: Fonts.inter,
+    color: Theme.text,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
+    marginTop: Spacing.xs,
+  },
+});

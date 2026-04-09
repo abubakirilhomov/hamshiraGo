@@ -1,0 +1,262 @@
+appId: host.exp.Exponent
+---
+# HamshiraGo FULL Test — restart app fresh
+
+# Reload app to ensure we start from Home
+- openLink: "exp://192.168.100.27:8081"
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 15000
+
+# Dismiss keychain
+- runFlow:
+    when:
+      visible:
+        text: ".*е сейчас.*"
+    commands:
+      - tapOn:
+          text: ".*е сейчас.*"
+
+# Skip onboarding if shown
+- runFlow:
+    when:
+      visible:
+        text: ".*Keyingi.*"
+    commands:
+      - tapOn:
+          text: ".*Keyingi.*"
+      - tapOn:
+          text: ".*Keyingi.*"
+      - tapOn:
+          text: ".*Boshlash.*"
+
+# Language picker if shown
+- runFlow:
+    when:
+      visible: "Davom etish"
+    commands:
+      - tapOn:
+          text: ".*zbekcha.*"
+      - tapOn: "Davom etish"
+
+# Auth if shown
+- runFlow:
+    when:
+      visible:
+        id: "auth_phone_input"
+    commands:
+      - tapOn:
+          id: "auth_phone_input"
+      - inputText: "200099944"
+      - tapOn:
+          id: "auth_password_input"
+      - inputText: "abubakir"
+      - tapOn:
+          text: ".*Xush.*"
+      - tapOn:
+          text: ".*Kirish.*|.*Войти.*"
+      - runFlow:
+          when:
+            visible:
+              text: ".*е сейчас.*"
+          commands:
+            - tapOn:
+                text: ".*е сейчас.*"
+      - extendedWaitUntil:
+          visible: "HamshiraGo"
+          timeout: 15000
+
+# Final keychain dismiss
+- runFlow:
+    when:
+      visible:
+        text: ".*е сейчас.*"
+    commands:
+      - tapOn:
+          text: ".*е сейчас.*"
+
+# ============================================================
+# 1. HOME (3 screenshots)
+# ============================================================
+- takeScreenshot: s01_home
+- scroll
+- takeScreenshot: s02_home_scroll
+
+# ============================================================
+# 2. SERVICE DETAIL — tap first service card
+# ============================================================
+- tapOn:
+    text: ".*UZS.*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s03_service_detail
+- scroll
+- takeScreenshot: s04_service_scroll
+
+# 2b. ORDER LOCATION
+- tapOn:
+    text: ".*uyurtma berish.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s05_order_location
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# Back from service
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 3. ORDERS TAB (middle tab ~50%,97%)
+# ============================================================
+- tapOn:
+    point: "50%,97%"
+- waitForAnimationToEnd
+- takeScreenshot: s06_orders
+- scroll
+- takeScreenshot: s07_orders_scroll
+
+# 3b. ORDER DETAIL — tap first order
+- tapOn:
+    text: ".*000 UZS.*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s08_order_detail
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 4. PROFILE TAB (~83%,97%)
+# ============================================================
+- tapOn:
+    point: "83%,97%"
+- waitForAnimationToEnd
+- takeScreenshot: s09_profile
+- scroll
+- takeScreenshot: s10_profile_menu
+
+# ============================================================
+# 5. LOYALTY — tap loyalty card
+# ============================================================
+- swipe:
+    start: "50%,30%"
+    end: "50%,80%"
+    duration: 300
+- tapOn:
+    text: ".*ball.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s11_loyalty
+- scroll
+- takeScreenshot: s12_loyalty_scroll
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 6. MEDICAL CARD
+# ============================================================
+- tapOn:
+    text: ".*tibbiy karta.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s13_medical_card
+- scroll
+- takeScreenshot: s14_medical_card_scroll
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 7. FAVORITES
+# ============================================================
+- tapOn:
+    text: ".*mediklarim.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s15_favorites
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 8. CONSULTATIONS
+# ============================================================
+- tapOn:
+    text: ".*konsultatsiya.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s16_consultations
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 9. COURSES
+# ============================================================
+- scroll
+- tapOn:
+    text: ".*kurslari.*|.*Davolash.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s17_courses
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 10. REFERRAL
+# ============================================================
+- tapOn:
+    text: ".*taklif.*|.*Do.st.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s18_referral
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 11. AI CHAT (from home)
+# ============================================================
+- tapOn:
+    point: "17%,97%"
+- waitForAnimationToEnd
+- tapOn:
+    text: ".*Savol berish.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s19_ai_chat
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# 12. DOCTORS
+# ============================================================
+- tapOn:
+    point: "83%,97%"
+- waitForAnimationToEnd
+- scroll
+- tapOn:
+    text: ".*Maslahat.*|.*Shifokor.*"
+    optional: true
+- waitForAnimationToEnd
+- takeScreenshot: s20_doctors
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
+
+# ============================================================
+# FINAL
+# ============================================================
+- tapOn:
+    point: "17%,97%"
+- waitForAnimationToEnd
+- takeScreenshot: s99_final

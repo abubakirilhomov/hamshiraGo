@@ -4,14 +4,16 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -42,6 +44,7 @@ export default function NearbyMedicsScreen() {
     longitude: number;
   } | null>(null);
   const [selectedMedic, setSelectedMedic] = useState<NearbyMedic | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadLocation = useCallback(async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -117,25 +120,67 @@ export default function NearbyMedicsScreen() {
         longitudeDelta: 0.1,
       };
 
+  const filteredMedics = searchQuery
+    ? medics.filter((m) =>
+        (m.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : medics;
+
+  const renderStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <FontAwesome
+          key={i}
+          name={i <= Math.round(rating) ? 'star' : 'star-o'}
+          size={14}
+          color={Theme.warning}
+        />,
+      );
+    }
+    return stars;
+  };
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: t('nearby.title', 'Медики рядом'),
-          headerStyle: { backgroundColor: Theme.primary },
-          headerTintColor: Theme.textInverse,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
+        {/* Search bar overlay */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchPill}>
+            <FontAwesome name="search" size={16} color={Theme.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('nearby.search', 'Hamshira qidirish...')}
+              placeholderTextColor={Theme.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <Pressable style={styles.filterBtn} hitSlop={8}>
+            <FontAwesome name="sliders" size={18} color={Theme.text} />
+          </Pressable>
+        </View>
+
+        {/* Count badge */}
+        {!loading && filteredMedics.length > 0 && (
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>
+              {filteredMedics.length} ta hamshira
+            </Text>
+          </View>
+        )}
+
+        {/* Map */}
         <MapView
           ref={mapRef}
           style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           initialRegion={initialRegion}
           showsUserLocation
-          showsMyLocationButton
+          showsMyLocationButton={false}
         >
-          {medics.map((medic) => (
+          {filteredMedics.map((medic) => (
             <Marker
               key={medic.id}
               coordinate={{
@@ -158,78 +203,77 @@ export default function NearbyMedicsScreen() {
                       </Text>
                     </View>
                   )}
-                  {medic.distance != null && (
-                    <Text style={styles.distanceText}>
-                      {medic.distance < 1
-                        ? `${Math.round(medic.distance * 1000)} м`
-                        : `${medic.distance.toFixed(1)} км`}
-                    </Text>
-                  )}
                 </View>
               </Callout>
             </Marker>
           ))}
         </MapView>
 
-        {/* Bottom card */}
+        {/* Refresh button */}
+        <Pressable
+          style={[styles.refreshBtn, Shadow.md]}
+          onPress={handleRefresh}
+        >
+          <FontAwesome name="refresh" size={18} color={Theme.primary} />
+        </Pressable>
+
+        {/* Selected medic bottom card */}
         {selectedMedic && (
-          <View style={styles.bottomCard}>
-            <View style={styles.cardHeader}>
+          <View style={[styles.bottomCard, Shadow.lg]}>
+            <View style={styles.cardRow}>
               <View style={styles.avatar}>
-                <FontAwesome name="user-md" size={24} color={Theme.primary} />
+                <FontAwesome name="user-md" size={26} color={Theme.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.medicName}>
                   {selectedMedic.name ?? t('nearby.noName', 'Медик')}
                 </Text>
-                <View style={styles.ratingRow}>
-                  {selectedMedic.rating != null && (
-                    <>
-                      <FontAwesome name="star" size={14} color={Theme.warning} />
-                      <Text style={styles.ratingTextLg}>
-                        {Number(selectedMedic.rating).toFixed(1)} ({selectedMedic.reviewCount}{' '}
-                        {t('nearby.reviews', 'отзывов')})
-                      </Text>
-                    </>
-                  )}
-                  {selectedMedic.experienceYears != null && (
-                    <Text style={styles.expText}>
-                      {selectedMedic.experienceYears}{' '}
-                      {t('nearby.yearsExp', 'лет опыта')}
-                    </Text>
-                  )}
+                <View style={styles.starsRow}>
+                  {selectedMedic.rating != null && renderStars(Number(selectedMedic.rating))}
                 </View>
-                {selectedMedic.distance != null && (
-                  <Text style={styles.distanceTextLg}>
-                    <FontAwesome name="map-marker" size={12} color={Theme.textSecondary} />{' '}
-                    {selectedMedic.distance < 1
-                      ? `${Math.round(selectedMedic.distance * 1000)} м от вас`
-                      : `${selectedMedic.distance.toFixed(1)} км от вас`}
-                  </Text>
-                )}
               </View>
-              <Pressable
-                onPress={() => setSelectedMedic(null)}
-                hitSlop={12}
-              >
-                <FontAwesome name="times" size={20} color={Theme.textTertiary} />
+              <Pressable onPress={() => setSelectedMedic(null)} hitSlop={12}>
+                <FontAwesome name="times" size={18} color={Theme.textTertiary} />
               </Pressable>
             </View>
+            <View style={styles.infoRow}>
+              {selectedMedic.distance != null && (
+                <View style={styles.infoItem}>
+                  <FontAwesome name="map-marker" size={14} color={Theme.textSecondary} />
+                  <Text style={styles.infoText}>
+                    {selectedMedic.distance < 1
+                      ? `${Math.round(selectedMedic.distance * 1000)} m`
+                      : `${selectedMedic.distance.toFixed(1)} km`}
+                  </Text>
+                </View>
+              )}
+              {selectedMedic.experienceYears != null && (
+                <View style={styles.infoItem}>
+                  <FontAwesome name="briefcase" size={13} color={Theme.textSecondary} />
+                  <Text style={styles.infoText}>
+                    {selectedMedic.experienceYears} yillik tajriba
+                  </Text>
+                </View>
+              )}
+            </View>
             <Pressable
-              style={styles.orderBtn}
+              style={({ pressed }) => [pressed && { opacity: 0.9 }]}
               onPress={() => router.push('/(tabs)')}
             >
-              <Text style={styles.orderBtnText}>
-                {t('nearby.orderService', 'Выбрать услугу')}
-              </Text>
+              <LinearGradient
+                colors={Theme.primaryGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaBtn}
+              >
+                <Text style={styles.ctaBtnText}>
+                  Xizmat tanlash
+                </Text>
+                <FontAwesome name="arrow-right" size={14} color={Theme.textInverse} />
+              </LinearGradient>
             </Pressable>
           </View>
         )}
-
-        {/* Refresh button */}
-        <Pressable style={styles.refreshBtn} onPress={handleRefresh}>
-          <FontAwesome name="refresh" size={18} color={Theme.primary} />
-        </Pressable>
 
         {/* Loading overlay */}
         {loading && (
@@ -261,14 +305,6 @@ export default function NearbyMedicsScreen() {
             </Text>
           </View>
         )}
-
-        {/* Count badge */}
-        {!loading && medics.length > 0 && (
-          <View style={styles.countBadge}>
-            <FontAwesome name="user-md" size={14} color={Theme.textInverse} />
-            <Text style={styles.countText}>{medics.length}</Text>
-          </View>
-        )}
       </View>
     </>
   );
@@ -279,21 +315,89 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
 
+  searchRow: {
+    position: 'absolute',
+    top: 60,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    zIndex: 10,
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  searchPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+    ...Shadow.md,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: Fonts.inter,
+    fontSize: 14,
+    color: Theme.text,
+  },
+  filterBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Theme.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadow.md,
+  },
+
+  countBadge: {
+    position: 'absolute',
+    top: 116,
+    left: Spacing.lg,
+    zIndex: 10,
+    backgroundColor: Theme.primary,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  countText: {
+    fontFamily: Fonts.interMd,
+    fontSize: 12,
+    color: Theme.textInverse,
+  },
+
   callout: {
     backgroundColor: Theme.surface,
     padding: Spacing.sm,
     borderRadius: Radius.md,
     minWidth: 120,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    ...Shadow.sm,
   },
-  calloutName: { fontSize: 14, fontWeight: '600', color: Theme.text },
+  calloutName: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 14,
+    color: Theme.text,
+  },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  ratingText: { fontSize: 12, color: Theme.textSecondary },
-  distanceText: { fontSize: 11, color: Theme.textTertiary, marginTop: 2 },
+  ratingText: {
+    fontFamily: Fonts.inter,
+    fontSize: 12,
+    color: Theme.textSecondary,
+  },
+
+  refreshBtn: {
+    position: 'absolute',
+    top: 60,
+    right: 72,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Theme.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
+  },
 
   bottomCard: {
     position: 'absolute',
@@ -303,56 +407,59 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
-    padding: Spacing.lg,
+    padding: 20,
     paddingBottom: Spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    gap: Spacing.md,
   },
-  cardHeader: {
+  cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Theme.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  medicName: { fontSize: 16, fontWeight: '700', color: Theme.text },
-  ratingTextLg: { fontSize: 13, color: Theme.textSecondary },
-  expText: { fontSize: 12, color: Theme.textTertiary, marginLeft: 8 },
-  distanceTextLg: { fontSize: 12, color: Theme.textSecondary, marginTop: 2 },
-
-  orderBtn: {
-    marginTop: Spacing.md,
-    backgroundColor: Theme.primary,
-    borderRadius: Radius.lg,
-    paddingVertical: 14,
-    alignItems: 'center',
+  medicName: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 16,
+    color: Theme.text,
+    marginBottom: 4,
   },
-  orderBtnText: { color: Theme.textInverse, fontSize: 16, fontWeight: '600' },
-
-  refreshBtn: {
-    position: 'absolute',
-    top: Spacing.lg,
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Theme.surface,
-    justifyContent: 'center',
+  starsRow: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    gap: Spacing.xl,
+  },
+  infoItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: Spacing.xs,
+  },
+  infoText: {
+    fontFamily: Fonts.inter,
+    fontSize: 13,
+    color: Theme.textSecondary,
+  },
+  ctaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 14,
+    borderRadius: Radius.full,
+  },
+  ctaBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 16,
+    color: Theme.textInverse,
   },
 
   loadingOverlay: {
@@ -363,28 +470,40 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Shadow.md,
   },
-  loadingText: { marginTop: Spacing.sm, color: Theme.textSecondary, fontSize: 14 },
+  loadingText: {
+    fontFamily: Fonts.inter,
+    marginTop: Spacing.sm,
+    color: Theme.textSecondary,
+    fontSize: 14,
+  },
 
   errorBanner: {
     position: 'absolute',
-    top: Spacing.lg,
+    top: 116,
     left: Spacing.lg,
-    right: 60,
-    backgroundColor: '#FEF2F2',
+    right: Spacing.lg,
+    backgroundColor: Theme.errorContainer,
     borderRadius: Radius.md,
     padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 10,
   },
-  errorText: { color: Theme.error, fontSize: 13, flex: 1 },
-  retryText: { color: Theme.primary, fontWeight: '600', fontSize: 13, marginLeft: 8 },
+  errorText: {
+    fontFamily: Fonts.inter,
+    color: Theme.error,
+    fontSize: 13,
+    flex: 1,
+  },
+  retryText: {
+    fontFamily: Fonts.interSb,
+    color: Theme.primary,
+    fontSize: 13,
+    marginLeft: 8,
+  },
 
   emptyBanner: {
     position: 'absolute',
@@ -393,20 +512,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: Radius.lg,
     padding: Spacing.lg,
+    ...Shadow.sm,
   },
-  emptyText: { color: Theme.textSecondary, fontSize: 14 },
-
-  countBadge: {
-    position: 'absolute',
-    top: Spacing.lg,
-    left: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Theme.primary,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  emptyText: {
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
+    fontSize: 14,
   },
-  countText: { color: Theme.textInverse, fontSize: 14, fontWeight: '600' },
 });

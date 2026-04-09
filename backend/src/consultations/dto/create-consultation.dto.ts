@@ -13,4 +13,8 @@ export class CreateConsultationDto {
   @IsString()
   @MaxLength(100)
   suggestedSpecialization?: string;
+
+  @IsOptional()
+  @IsUUID()
+  slotId?: string;
 }

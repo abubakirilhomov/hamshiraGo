@@ -14,8 +14,10 @@ import {
   View,
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Shadow, Spacing, Typography } from '@/constants/Theme';
 import type { OrderAddress } from '@/types/order';
 import { useAuth } from '@/context/AuthContext';
 import { GPS_ACCURACY_THRESHOLD_METERS } from '@/constants/config';
@@ -28,6 +30,7 @@ const LocationMapComponent: React.ComponentType<any> =
 export default function OrderLocationScreen() {
   const { serviceId } = useLocalSearchParams<{ serviceId?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
@@ -83,7 +86,6 @@ export default function OrderLocationScreen() {
     }
     const phoneTrimmed = (address.phone ?? '').trim();
     const phoneDigits = phoneTrimmed.replace(/\D/g, '');
-    // Accept +998XXXXXXXXX or bare 9-digit numbers (with any spacing/dashes)
     const isValidPhone = /^\+998\d{9}$/.test(phoneTrimmed.replace(/[\s\-()]/g, '')) || (phoneDigits.length >= 9 && phoneDigits.length <= 12);
     if (!isValidPhone) {
       Alert.alert('Неверный телефон', 'Введите номер в формате +998 XX XXX XX XX');
@@ -115,13 +117,22 @@ export default function OrderLocationScreen() {
   if (locationPermission === false) {
     return (
       <View style={styles.centered}>
-        <FontAwesome name="map-marker" size={48} color={Theme.textSecondary} />
+        <View style={styles.errorIconWrap}>
+          <FontAwesome name="map-marker" size={48} color={Theme.textSecondary} />
+        </View>
         <Text style={styles.errorTitle}>Нет доступа к геолокации</Text>
-        <Text style={styles.errorHint} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
+        <Text style={styles.errorHint}>
           Включите геолокацию в настройках или укажите адрес вручную ниже.
         </Text>
-        <Pressable style={styles.retryButton} onPress={fetchLocation}>
-          <Text style={styles.retryButtonText}>Повторить</Text>
+        <Pressable onPress={fetchLocation}>
+          <LinearGradient
+            colors={[Theme.primaryGradient[0], Theme.primaryGradient[1]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>Повторить</Text>
+          </LinearGradient>
         </Pressable>
       </View>
     );
@@ -131,106 +142,113 @@ export default function OrderLocationScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable style={styles.headerBack} onPress={() => router.back()} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color={Theme.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Manzilni tanlang</Text>
+        <Pressable style={styles.headerGps} onPress={fetchLocation} hitSlop={12}>
+          <FontAwesome name="crosshairs" size={20} color={Theme.primary} />
+        </Pressable>
+      </View>
+
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Accuracy & weak GPS warning */}
-        {accuracyMeters != null && (
-          <View style={[styles.accuracyRow, isWeakGps && styles.accuracyRowWeak]}>
-            <FontAwesome
-              name={isWeakGps ? 'exclamation-triangle' : 'crosshairs'}
-              size={16}
-              color={isWeakGps ? Theme.warning : Theme.primary}
-            />
-            <Text
-              style={[styles.accuracyText, isWeakGps && styles.accuracyTextWeak]}
-              lightColor={isWeakGps ? '#854d0e' : undefined}
-              darkColor={isWeakGps ? '#ca8a04' : undefined}
-            >
-              Точность ~{Math.round(accuracyMeters)} м
-              {isWeakGps && ' • Слабый сигнал GPS. Подвиньте метку на карте вручную.'}
+        {/* Accuracy warning */}
+        {accuracyMeters != null && isWeakGps && (
+          <View style={styles.accuracyRow}>
+            <FontAwesome name="exclamation-triangle" size={16} color={Theme.warning} />
+            <Text style={styles.accuracyText}>
+              Точность ~{Math.round(accuracyMeters)} м -- Слабый сигнал GPS. Подвиньте метку на карте.
             </Text>
           </View>
         )}
 
-        {/* Map — only on native; web shows coords text */}
+        {/* Map */}
         {Platform.OS !== 'web' && displayCoords ? (
-          <LocationMapComponent
-            latitude={displayCoords.latitude}
-            longitude={displayCoords.longitude}
-            onPinChange={setPin}
-            medics={[]}
-            selectedMedicId={null}
-            onSelectMedic={() => {}}
-          />
-        ) : displayCoords ? (
-          <View style={styles.coordsFallback}>
-            <Text style={styles.coordsText}>
-              Координаты: {displayCoords.latitude.toFixed(5)}, {displayCoords.longitude.toFixed(5)}
-            </Text>
-            <Text style={styles.coordsHint} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
-              На телефоне откроется карта для уточнения точки.
-            </Text>
+          <View style={styles.mapWrap}>
+            <LocationMapComponent
+              latitude={displayCoords.latitude}
+              longitude={displayCoords.longitude}
+              onPinChange={setPin}
+              medics={[]}
+              selectedMedicId={null}
+              onSelectMedic={() => {}}
+            />
           </View>
         ) : null}
 
-        {/* Address form */}
-        <Text style={styles.sectionTitle}>Адрес</Text>
-        <View style={styles.form}>
-          <Text style={styles.label}>Дом *</Text>
-          <TextInput
-            style={styles.input}
-            value={address.house ?? ''}
-            onChangeText={(house) => setAddress((a) => ({ ...a, house }))}
-            placeholder="ул. Примерная, 1"
-            placeholderTextColor={Theme.textSecondary}
-          />
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <Text style={styles.label}>Этаж</Text>
+        {/* Bottom sheet form */}
+        <View style={styles.formSheet}>
+          {/* House/Building */}
+          <View style={styles.inputWrap}>
+            <FontAwesome name="building-o" size={16} color={Theme.textTertiary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.tonalInput}
+              value={address.house ?? ''}
+              onChangeText={(house) => setAddress((a) => ({ ...a, house }))}
+              placeholder="Uy / Bino nomi *"
+              placeholderTextColor={Theme.textTertiary}
+            />
+          </View>
+
+          {/* Floor + Apartment row */}
+          <View style={styles.twoCol}>
+            <View style={[styles.inputWrap, styles.halfInput]}>
               <TextInput
-                style={styles.input}
+                style={styles.tonalInput}
                 value={address.floor ?? ''}
                 onChangeText={(floor) => setAddress((a) => ({ ...a, floor }))}
-                placeholder="3"
-                placeholderTextColor={Theme.textSecondary}
+                placeholder="Qavat"
+                placeholderTextColor={Theme.textTertiary}
                 keyboardType="number-pad"
               />
             </View>
-            <View style={styles.half}>
-              <Text style={styles.label}>Квартира</Text>
+            <View style={[styles.inputWrap, styles.halfInput]}>
               <TextInput
-                style={styles.input}
+                style={styles.tonalInput}
                 value={address.apartment ?? ''}
                 onChangeText={(apartment) => setAddress((a) => ({ ...a, apartment }))}
-                placeholder="42"
-                placeholderTextColor={Theme.textSecondary}
+                placeholder="Xonadon / Ofis"
+                placeholderTextColor={Theme.textTertiary}
                 keyboardType="number-pad"
               />
             </View>
           </View>
-          <Text style={styles.label}>Телефон *</Text>
-          <TextInput
-            style={styles.input}
-            value={address.phone ?? ''}
-            onChangeText={(phone) => setAddress((a) => ({ ...a, phone }))}
-            placeholder="+998 90 123 45 67"
-            placeholderTextColor={Theme.textSecondary}
-            keyboardType="phone-pad"
-          />
-        </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.confirmButton, pressed && styles.confirmButtonPressed]}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.confirmButtonText}>Подтвердить заказ</Text>
-        </Pressable>
+          {/* Phone */}
+          <View style={styles.inputWrap}>
+            <Text style={styles.phonePrefix}>+998</Text>
+            <TextInput
+              style={[styles.tonalInput, { paddingLeft: 52 }]}
+              value={address.phone ?? ''}
+              onChangeText={(phone) => setAddress((a) => ({ ...a, phone }))}
+              placeholder="Telefon raqami *"
+              placeholderTextColor={Theme.textTertiary}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* CTA */}
+          <Pressable onPress={handleConfirm}>
+            <LinearGradient
+              colors={[Theme.primaryGradient[0], Theme.primaryGradient[1]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.ctaButton}
+            >
+              <Text style={styles.ctaText}>Tasdiqlash</Text>
+              <FontAwesome name="arrow-right" size={16} color="#fff" />
+            </LinearGradient>
+          </Pressable>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -242,27 +260,44 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
   },
   scroll: { flex: 1 },
-  scrollContent: { padding: Spacing.lg, paddingBottom: 40 },
+  scrollContent: {
+    paddingHorizontal: 0,
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,
+    backgroundColor: Theme.background,
   },
   loadingText: {
     marginTop: Spacing.md,
     fontSize: 15,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
+  },
+
+  /* Error state */
+  errorIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
   },
   errorTitle: {
     fontSize: 18,
+    fontFamily: Fonts.manropeBd,
     fontWeight: '700',
     color: Theme.text,
-    marginTop: Spacing.lg,
     textAlign: 'center',
   },
   errorHint: {
     fontSize: 14,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
     textAlign: 'center',
     marginTop: Spacing.sm,
     paddingHorizontal: Spacing.xl,
@@ -270,88 +305,174 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 20,
     paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    backgroundColor: Theme.primary,
-    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.xxl,
+    borderRadius: Radius.full,
   },
   retryButtonText: {
     color: '#fff',
+    fontFamily: Fonts.manropeSb,
     fontWeight: '600',
+    fontSize: 15,
   },
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+    backgroundColor: Theme.surface,
+    ...Shadow.sm,
+  },
+  headerBack: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontFamily: Fonts.manropeBd,
+    fontWeight: '700',
+    color: Theme.text,
+  },
+  headerGps: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Accuracy */
   accuracyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     paddingVertical: 10,
-    paddingHorizontal: Spacing.md,
-    backgroundColor: `${Theme.primary}12`,
-    borderRadius: 10,
-    marginBottom: Spacing.md,
-  },
-  accuracyRowWeak: {
-    backgroundColor: `${Theme.warning}20`,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Theme.warningContainer,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    borderRadius: Radius.md,
   },
   accuracyText: {
     fontSize: 13,
-    color: Theme.primary,
+    fontFamily: Fonts.inter,
+    color: '#854d0e',
     flex: 1,
   },
-  accuracyTextWeak: {
-    fontSize: 13,
-    flex: 1,
+
+  /* Map */
+  mapWrap: {
+    height: '50%',
+    minHeight: 260,
+    maxHeight: 340,
+    marginBottom: 0,
   },
   coordsFallback: {
     padding: Spacing.lg,
-    backgroundColor: Theme.surface,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
   },
   coordsText: {
     fontSize: 14,
+    fontFamily: Fonts.interMd,
     color: Theme.text,
   },
   coordsHint: {
     fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
     marginTop: Spacing.xs,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Theme.text,
-    marginBottom: 10,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 13,
-    color: Theme.textSecondary,
-    marginBottom: Spacing.xs,
-  },
-  input: {
-    backgroundColor: Theme.surface,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: 10,
-    padding: Spacing.md,
-    fontSize: 16,
-    color: Theme.text,
-    marginBottom: Spacing.md,
-  },
-  row: { flexDirection: 'row', gap: Spacing.md },
-  half: { flex: 1 },
-  confirmButton: {
-    backgroundColor: Theme.primary,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
+
+  /* Address preview */
+  addressPreview: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    padding: Spacing.lg,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    ...Shadow.sm,
   },
-  confirmButtonPressed: { opacity: 0.9 },
-  confirmButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
+  addressPreviewText: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: Fonts.interMd,
+    color: Theme.text,
+  },
+
+  /* Form sheet */
+  formSheet: {
+    backgroundColor: Theme.surface,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    marginTop: Spacing.lg,
+    padding: Spacing.xl,
+    gap: Spacing.md,
+    ...Shadow.lg,
+  },
+  inputWrap: {
+    position: 'relative',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: Spacing.lg,
+    top: 16,
+    zIndex: 1,
+  },
+  tonalInput: {
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.lg,
+    paddingLeft: 44,
+    fontSize: 15,
+    fontFamily: Fonts.inter,
+    color: Theme.text,
+  },
+  phonePrefix: {
+    position: 'absolute',
+    left: Spacing.lg,
+    top: 15,
+    zIndex: 1,
+    fontSize: 15,
+    fontFamily: Fonts.interMd,
+    color: Theme.textSecondary,
+  },
+  twoCol: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  halfInput: {
+    flex: 1,
+  },
+
+  /* CTA */
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.lg,
+    borderRadius: Radius.full,
+    marginTop: Spacing.sm,
+  },
+  ctaText: {
+    fontSize: 16,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: '#fff',
   },
 });

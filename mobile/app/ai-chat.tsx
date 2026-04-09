@@ -10,10 +10,12 @@ import {
 } from 'react-native';
 import { useCallback, useRef, useState } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -37,11 +39,21 @@ interface DisplayMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  timestamp: Date;
   recommendation?: {
     specialization: string;
     summary: string;
   };
 }
+
+// ─── Quick suggestion chips ─────────────────────────────────────────────────
+
+const QUICK_SUGGESTIONS = [
+  'Bosh og\'rig\'i',
+  'Harorat',
+  'Qon bosimi',
+  'Uyqusizlik',
+];
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -50,12 +62,14 @@ export default function AiChatScreen() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       id: 'greeting',
       role: 'assistant',
       content: t('aiChat.greeting'),
+      timestamp: new Date(),
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -69,8 +83,8 @@ export default function AiChatScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
   }, []);
 
-  const handleSend = useCallback(async () => {
-    const text = inputText.trim();
+  const handleSend = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? inputText).trim();
     if (!text || loading || !token) return;
 
     setInputText('');
@@ -80,6 +94,7 @@ export default function AiChatScreen() {
       id: String(++idCounter.current),
       role: 'user',
       content: text,
+      timestamp: new Date(),
     };
     setMessages((prev) => [...prev, userMsg]);
     apiMessages.current.push({ role: 'user', content: text });
@@ -99,6 +114,7 @@ export default function AiChatScreen() {
         id: String(++idCounter.current),
         role: 'assistant',
         content: res.reply,
+        timestamp: new Date(),
         recommendation: res.recommendation,
       };
       setMessages((prev) => [...prev, aiMsg]);
@@ -124,12 +140,46 @@ export default function AiChatScreen() {
     [],
   );
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
+      {/* ── Teal gradient header ── */}
+      <LinearGradient
+        colors={Theme.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 12 }]}
+      >
+        <Pressable onPress={() => router.back()} style={styles.headerBack}>
+          <FontAwesome name="chevron-left" size={18} color="#fff" />
+        </Pressable>
+
+        <View style={styles.headerCenter}>
+          <View style={styles.headerAvatar}>
+            <FontAwesome name="commenting" size={20} color={Theme.primary} />
+          </View>
+          <View>
+            <Text style={styles.headerTitle}>AI Hamshira</Text>
+            <View style={styles.onlineRow}>
+              <View style={styles.onlineDot} />
+              <Text style={styles.onlineText}>ONLINE</Text>
+            </View>
+          </View>
+        </View>
+
+        <Pressable style={styles.headerMenu}>
+          <FontAwesome name="ellipsis-v" size={18} color="#fff" />
+        </Pressable>
+      </LinearGradient>
+
+      {/* ── Chat area ── */}
       <ScrollView
         ref={scrollRef}
         style={styles.messagesList}
@@ -142,14 +192,15 @@ export default function AiChatScreen() {
             key={msg.id}
             message={msg}
             onFindDoctor={handleFindDoctor}
+            formatTime={formatTime}
             t={t}
           />
         ))}
 
         {loading && (
           <View style={styles.typingRow}>
-            <View style={styles.aiAvatar}>
-              <FontAwesome name="heartbeat" size={14} color={Theme.primary} />
+            <View style={styles.aiAvatarSmall}>
+              <FontAwesome name="commenting" size={12} color={Theme.primary} />
             </View>
             <View style={styles.typingBubble}>
               <ActivityIndicator size="small" color={Theme.primary} />
@@ -159,7 +210,26 @@ export default function AiChatScreen() {
         )}
       </ScrollView>
 
-      <View style={styles.inputBar}>
+      {/* ── Quick suggestion chips ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContainer}
+        style={styles.chipsScroll}
+      >
+        {QUICK_SUGGESTIONS.map((chip) => (
+          <Pressable
+            key={chip}
+            style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
+            onPress={() => handleSend(chip)}
+          >
+            <Text style={styles.chipText}>{chip}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* ── Input bar ── */}
+      <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TextInput
           style={styles.input}
           value={inputText}
@@ -169,7 +239,7 @@ export default function AiChatScreen() {
           multiline
           maxLength={1000}
           editable={!loading}
-          onSubmitEditing={handleSend}
+          onSubmitEditing={() => handleSend()}
           blurOnSubmit={false}
         />
         <Pressable
@@ -178,7 +248,7 @@ export default function AiChatScreen() {
             (!inputText.trim() || loading) && styles.sendBtnDisabled,
             pressed && { opacity: 0.7 },
           ]}
-          onPress={handleSend}
+          onPress={() => handleSend()}
           disabled={!inputText.trim() || loading}
         >
           <FontAwesome
@@ -197,10 +267,12 @@ export default function AiChatScreen() {
 function MessageBubble({
   message,
   onFindDoctor,
+  formatTime,
   t,
 }: {
   message: DisplayMessage;
   onFindDoctor: (spec: string) => void;
+  formatTime: (date: Date) => string;
   t: (key: string) => string;
 }) {
   const isUser = message.role === 'user';
@@ -208,8 +280,8 @@ function MessageBubble({
   return (
     <View style={[styles.messageRow, isUser && styles.messageRowUser]}>
       {!isUser && (
-        <View style={styles.aiAvatar}>
-          <FontAwesome name="heartbeat" size={14} color={Theme.primary} />
+        <View style={styles.aiAvatarSmall}>
+          <FontAwesome name="commenting" size={12} color={Theme.primary} />
         </View>
       )}
       <View style={{ flex: 1, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
@@ -219,29 +291,43 @@ function MessageBubble({
           </Text>
         </View>
 
+        {/* Timestamp */}
+        <Text style={[styles.timestamp, isUser && styles.timestampUser]}>
+          {formatTime(message.timestamp)}
+        </Text>
+
+        {/* Doctor recommendation card */}
         {message.recommendation && (
           <View style={styles.recommendationCard}>
-            <View style={styles.recommendationHeader}>
-              <FontAwesome name="stethoscope" size={14} color={Theme.primary} />
-              <Text style={styles.recommendationTitle}>
-                {t('aiChat.recommendation')}
-              </Text>
+            <View style={styles.recDoctorRow}>
+              <View style={styles.recAvatar}>
+                <FontAwesome name="user-md" size={20} color={Theme.textTertiary} />
+              </View>
+              <View style={styles.recInfo}>
+                <Text style={styles.recName}>
+                  {message.recommendation.specialization}
+                </Text>
+                <Text style={styles.recSpec}>Mutaxassis</Text>
+                <Text style={styles.recExp}>
+                  {message.recommendation.summary}
+                </Text>
+              </View>
             </View>
-            <Text style={styles.recommendationSpec}>
-              {t('aiChat.suggestedSpec')}: {message.recommendation.specialization}
-            </Text>
-            <Text style={styles.recommendationSummary}>
-              {message.recommendation.summary}
-            </Text>
             <Pressable
               style={({ pressed }) => [
-                styles.findDoctorBtn,
+                styles.recButton,
                 pressed && { opacity: 0.8 },
               ]}
               onPress={() => onFindDoctor(message.recommendation!.specialization)}
             >
-              <FontAwesome name="search" size={13} color="#fff" />
-              <Text style={styles.findDoctorText}>{t('aiChat.findDoctor')}</Text>
+              <LinearGradient
+                colors={Theme.primaryGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.recButtonGradient}
+              >
+                <Text style={styles.recButtonText}>Konsultatsiya olish</Text>
+              </LinearGradient>
             </Pressable>
           </View>
         )}
@@ -257,16 +343,75 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Theme.background,
   },
+
+  /* ── Header ── */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 16,
+    paddingHorizontal: Spacing.lg,
+  },
+  headerBack: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginLeft: Spacing.sm,
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 18,
+    color: '#fff',
+  },
+  onlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 1,
+  },
+  onlineDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#4ADE80',
+  },
+  onlineText: {
+    fontFamily: Fonts.interMd,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 0.5,
+  },
+  headerMenu: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* ── Messages ── */
   messagesList: {
     flex: 1,
   },
   messagesContent: {
     padding: Spacing.lg,
     paddingBottom: Spacing.md,
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
 
-  // Message row
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -276,35 +421,32 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
 
-  // AI avatar
-  aiAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  aiAvatarSmall: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: `${Theme.primary}15`,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
 
-  // Bubbles
   bubble: {
     maxWidth: '85%',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderRadius: Radius.lg,
+    borderRadius: 16,
   },
   bubbleUser: {
     backgroundColor: Theme.primary,
-    borderBottomRightRadius: Radius.xs,
+    borderBottomRightRadius: 4,
   },
   bubbleAi: {
-    backgroundColor: Theme.surface,
-    borderBottomLeftRadius: Radius.xs,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderBottomLeftRadius: 4,
   },
   bubbleText: {
+    fontFamily: Fonts.inter,
     fontSize: 15,
     lineHeight: 22,
     color: Theme.text,
@@ -313,7 +455,19 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // Typing indicator
+  timestamp: {
+    fontFamily: Fonts.inter,
+    fontSize: 11,
+    color: Theme.textTertiary,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  timestampUser: {
+    marginRight: 4,
+    marginLeft: 0,
+  },
+
+  /* ── Typing ── */
   typingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,102 +477,131 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Theme.surface,
-    borderRadius: Radius.lg,
-    borderBottomLeftRadius: Radius.xs,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
   typingText: {
+    fontFamily: Fonts.inter,
     fontSize: 13,
     color: Theme.textSecondary,
     fontStyle: 'italic',
   },
 
-  // Recommendation card
+  /* ── Recommendation card ── */
   recommendationCard: {
     marginTop: Spacing.sm,
-    backgroundColor: `${Theme.primary}08`,
-    borderWidth: 1,
-    borderColor: `${Theme.primary}30`,
-    borderRadius: Radius.md,
+    backgroundColor: Theme.surface,
+    borderRadius: 16,
     padding: Spacing.lg,
-    gap: Spacing.sm,
+    gap: Spacing.md,
     maxWidth: '85%',
+    ...Shadow.sm,
   },
-  recommendationHeader: {
+  recDoctorRow: {
     flexDirection: 'row',
+    gap: Spacing.md,
     alignItems: 'center',
-    gap: Spacing.sm,
   },
-  recommendationTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Theme.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  recommendationSpec: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Theme.text,
-  },
-  recommendationSummary: {
-    fontSize: 14,
-    color: Theme.textSecondary,
-    lineHeight: 20,
-  },
-  findDoctorBtn: {
-    flexDirection: 'row',
+  recAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Theme.primary,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
-    marginTop: Spacing.xs,
   },
-  findDoctorText: {
+  recInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  recName: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 15,
+    color: Theme.text,
+  },
+  recSpec: {
+    fontFamily: Fonts.inter,
+    fontSize: 13,
+    color: Theme.textSecondary,
+  },
+  recExp: {
+    fontFamily: Fonts.inter,
+    fontSize: 12,
+    color: Theme.textTertiary,
+    marginTop: 2,
+  },
+  recButton: {
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+  },
+  recButtonGradient: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: Radius.full,
+  },
+  recButtonText: {
+    fontFamily: Fonts.manropeSb,
     fontSize: 14,
-    fontWeight: '600',
     color: '#fff',
   },
 
-  // Input bar
+  /* ── Quick suggestion chips ── */
+  chipsScroll: {
+    maxHeight: 44,
+    backgroundColor: Theme.surface,
+  },
+  chipsContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  chip: {
+    backgroundColor: Theme.surfaceContainerLow,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+  },
+  chipText: {
+    fontFamily: Fonts.interMd,
+    fontSize: 13,
+    color: Theme.text,
+  },
+
+  /* ── Input bar ── */
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.md,
     backgroundColor: Theme.surface,
-    borderTopWidth: 1,
-    borderTopColor: Theme.border,
   },
   input: {
     flex: 1,
+    fontFamily: Fonts.inter,
     fontSize: 15,
     color: Theme.text,
-    backgroundColor: Theme.surfaceSecondary,
-    borderRadius: Radius.lg,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: 24,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.md,
     maxHeight: 100,
-    borderWidth: 1,
-    borderColor: Theme.border,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnDisabled: {
-    backgroundColor: Theme.surfaceSecondary,
+    backgroundColor: Theme.surfaceContainerLow,
   },
 });

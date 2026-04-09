@@ -31,6 +31,9 @@
   "MEDIC_ORDER_OUTSIDE_ZONE": "Buyurtma ish zonangizdan tashqarida. Zonani o'zgartiring yoki rad eting.",
   "MEDIC_NOT_ASSIGNED_ORDER": "Sizda bu mijoz uchun faol buyurtma yo'q",
   "MEDIC_ACCESS_ONLY": "Faqat hamshiralar uchun",
+  "DOCTOR_ACCESS_ONLY": "Faqat shifokorlar uchun",
+  "DOCTOR_NOT_AUTHENTICATED": "Shifokor avtorizatsiya qilinmagan",
+  "DOCTOR_PHONE_EXISTS": "Bu telefon raqami bilan shifokor allaqachon ro'yxatdan o'tgan",
   "DISCOUNT_EXCEEDS_PRICE": "Chegirma xizmat narxidan oshib ketmasligi kerak",
   "FIRST_ORDER_DISCOUNT_ONLY": "Chegirma faqat birinchi buyurtma uchun mavjud",
   "FIRST_ORDER_DISCOUNT_LIMIT": "Birinchi buyurtma chegirmasi xizmat narxining 15% dan oshmasligi kerak",
@@ -82,5 +85,10 @@
   "NO_ADMIN_ROLE": "Token administrator roliga ega emas",
   "ADMIN_AUTH_REQUIRED": "Administrator avtorizatsiyasi talab qilinadi",
   "ADMIN_CREDENTIALS_NOT_CONFIGURED": "Serverda administrator hisob ma'lumotlari sozlanmagan",
-  "INVALID_PAYME_CREDENTIALS": "Noto'g'ri Payme hisob ma'lumotlari"
+  "INVALID_PAYME_CREDENTIALS": "Noto'g'ri Payme hisob ma'lumotlari",
+  "VOICE_SESSION_NOT_FOUND": "Ovozli sessiya topilmadi",
+  "VOICE_SESSION_COMPLETED": "Sessiya allaqachon yakunlangan",
+  "VOICE_NO_RECOMMENDATION": "Tavsiya hali tayyor emas",
+  "VOICE_STT_NOT_CONFIGURED": "Nutqni aniqlash sozlanmagan",
+  "VOICE_TTS_NOT_CONFIGURED": "Ovozli javob sozlanmagan"
 }

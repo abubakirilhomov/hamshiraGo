@@ -155,6 +155,9 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
         // Personal room for targeted dispatch invites
         client.join(`medic:${payload.sub}`);
       }
+      if (payload.role === 'doctor') {
+        client.join(`doctor:${payload.sub}`);
+      }
       this.clientConnectedAt.set(client.id, Date.now());
       this.logger.log(`Client connected: ${client.id} user=${payload.sub} role=${payload.role}`);
     } catch {
@@ -237,6 +240,12 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       payload.heading ?? null,
     );
     this.logger.debug(`medic_location received medic=${medicId} orderId=${payload.orderId}`);
+  }
+
+  /** Notify doctor about new pending consultation */
+  emitNewConsultation(doctorId: string, payload: Record<string, unknown>) {
+    this.server.to(`doctor:${doctorId}`).emit('new_consultation', payload);
+    this.logger.log(`Emitted new_consultation to doctor=${doctorId}`);
   }
 
   /** Send dispatch invite to a specific medic's personal room */

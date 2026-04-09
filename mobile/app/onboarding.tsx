@@ -4,6 +4,7 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
+  Text,
   View,
   ViewToken,
 } from 'react-native';
@@ -11,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -18,13 +20,24 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import {
+  Theme,
+  Fonts,
+  Radius,
+  Spacing,
+  Shadow,
+} from '@/constants/Theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+/* ------------------------------------------------------------------ */
+/*  Slides data                                                        */
+/* ------------------------------------------------------------------ */
 
 interface Slide {
   key: string;
-  icon: 'medkit' | 'map-marker' | 'star';
+  icon: React.ComponentProps<typeof FontAwesome>['name'];
+  badge: string;
   titleKey: string;
   descKey: string;
 }
@@ -32,36 +45,44 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     key: '1',
-    icon: 'medkit',
+    icon: 'user-md',
+    badge: 'Uyda tibbiy yordam',
     titleKey: 'onboarding.slide1Title',
     descKey: 'onboarding.slide1Desc',
   },
   {
     key: '2',
-    icon: 'map-marker',
+    icon: 'stethoscope',
+    badge: 'Tez va qulay',
     titleKey: 'onboarding.slide2Title',
     descKey: 'onboarding.slide2Desc',
   },
   {
     key: '3',
-    icon: 'star',
+    icon: 'heartbeat',
+    badge: 'Ishonchli xizmat',
     titleKey: 'onboarding.slide3Title',
     descKey: 'onboarding.slide3Desc',
   },
 ];
 
-const DOT_SIZE = 10;
-const DOT_GAP = Spacing.sm;
+/* ------------------------------------------------------------------ */
+/*  Dot indicator (Reanimated)                                         */
+/* ------------------------------------------------------------------ */
+
+const DOT_H = 6;
+const DOT_INACTIVE_W = 6;
+const DOT_ACTIVE_W = 24;
 
 function Dot({ active }: { active: boolean }) {
-  const animWidth = useSharedValue(active ? DOT_SIZE * 2.5 : DOT_SIZE);
-  const animOpacity = useSharedValue(active ? 1 : 0.4);
+  const animWidth = useSharedValue(active ? DOT_ACTIVE_W : DOT_INACTIVE_W);
+  const animOpacity = useSharedValue(active ? 1 : 0.35);
 
   React.useEffect(() => {
-    animWidth.value = withTiming(active ? DOT_SIZE * 2.5 : DOT_SIZE, {
-      duration: 250,
+    animWidth.value = withTiming(active ? DOT_ACTIVE_W : DOT_INACTIVE_W, {
+      duration: 280,
     });
-    animOpacity.value = withTiming(active ? 1 : 0.4, { duration: 250 });
+    animOpacity.value = withTiming(active ? 1 : 0.35, { duration: 280 });
   }, [active, animWidth, animOpacity]);
 
   const style = useAnimatedStyle(() => ({
@@ -73,15 +94,19 @@ function Dot({ active }: { active: boolean }) {
     <Animated.View
       style={[
         {
-          height: DOT_SIZE,
-          borderRadius: DOT_SIZE / 2,
-          backgroundColor: active ? Theme.primary : Theme.border,
+          height: DOT_H,
+          borderRadius: DOT_H / 2,
+          backgroundColor: active ? Theme.primary : Theme.textTertiary,
         },
         style,
       ]}
     />
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Main screen                                                        */
+/* ------------------------------------------------------------------ */
 
 export default function OnboardingScreen() {
   const { t } = useTranslation();
@@ -98,7 +123,9 @@ export default function OnboardingScreen() {
     },
   ).current;
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({
+    viewAreaCoveragePercentThreshold: 50,
+  }).current;
 
   const completeOnboarding = useCallback(async () => {
     await AsyncStorage.setItem('onboarding_completed', 'true');
@@ -116,42 +143,51 @@ export default function OnboardingScreen() {
     }
   }, [currentIndex, completeOnboarding]);
 
+  const isLastSlide = currentIndex === SLIDES.length - 1;
+
+  /* ---- render slide ---- */
   const renderItem = useCallback(
-    ({ item }: { item: Slide }) => (
+    ({ item, index }: { item: Slide; index: number }) => (
       <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
-        <View style={styles.iconContainer}>
-          <FontAwesome name={item.icon} size={72} color={Theme.primary} />
+        {/* Illustration card */}
+        <View style={styles.illustrationCard}>
+          <FontAwesome name={item.icon} size={80} color={Theme.primary} />
+          {/* Floating badge */}
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{item.badge}</Text>
+          </View>
         </View>
-        <View style={styles.textContainer}>
-          <Animated.Text style={styles.title}>{t(item.titleKey)}</Animated.Text>
-          <Animated.Text style={styles.description}>
-            {t(item.descKey)}
-          </Animated.Text>
-        </View>
+
+        {/* Page counter */}
+        <Text style={styles.counter}>
+          {index + 1} / {SLIDES.length}
+        </Text>
       </View>
     ),
-    [t],
+    [],
   );
-
-  const isLastSlide = currentIndex === SLIDES.length - 1;
 
   return (
     <View
       style={[
         styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
+        {
+          paddingTop: insets.top + Spacing.sm,
+          paddingBottom: insets.bottom + Spacing.md,
+        },
       ]}
     >
-      {/* Skip button */}
-      <View style={[styles.skipRow, { top: insets.top + Spacing.md }]}>
+      {/* ---- Header row: logo + skip ---- */}
+      <View style={styles.header}>
+        <Text style={styles.logoText}>HamshiraGo</Text>
         <Pressable onPress={completeOnboarding} hitSlop={16}>
-          <Animated.Text style={styles.skipText}>
-            {t('onboarding.skip')}
-          </Animated.Text>
+          <Text style={styles.skipText}>
+            {t('onboarding.skip', "O'tkazib yuborish")}
+          </Text>
         </Pressable>
       </View>
 
-      {/* Slides */}
+      {/* ---- Slides (illustration + counter) ---- */}
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -163,6 +199,7 @@ export default function OnboardingScreen() {
         bounces={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        style={styles.flatList}
         getItemLayout={(_, index) => ({
           length: SCREEN_WIDTH,
           offset: SCREEN_WIDTH * index,
@@ -170,100 +207,210 @@ export default function OnboardingScreen() {
         })}
       />
 
-      {/* Bottom section: dots + button */}
+      {/* ---- Bottom section ---- */}
       <View style={styles.bottomSection}>
-        {/* Dot indicators */}
+        {/* Dots */}
         <View style={styles.dotsRow}>
           {SLIDES.map((slide, i) => (
             <Dot key={slide.key} active={i === currentIndex} />
           ))}
         </View>
 
-        {/* Action button */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={handleNext}
-        >
-          <Animated.Text style={styles.buttonText}>
-            {isLastSlide ? t('onboarding.start') : t('onboarding.next')}
-          </Animated.Text>
+        {/* Title + description */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>{t(SLIDES[currentIndex].titleKey)}</Text>
+          <Text style={styles.description}>
+            {t(SLIDES[currentIndex].descKey)}
+          </Text>
+        </View>
+
+        {/* CTA button */}
+        <Pressable onPress={handleNext} style={{ width: '100%' }}>
+          {({ pressed }) => (
+            <LinearGradient
+              colors={Theme.primaryGradient as unknown as [string, string]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.button, pressed && styles.buttonPressed]}
+            >
+              <Text style={styles.buttonText}>
+                {isLastSlide
+                  ? t('onboarding.start', 'Boshlash')
+                  : t('onboarding.next', 'Keyingisi')}
+              </Text>
+              <FontAwesome
+                name="arrow-right"
+                size={16}
+                color={Theme.textInverse}
+                style={{ marginLeft: Spacing.sm }}
+              />
+            </LinearGradient>
+          )}
         </Pressable>
+
+        {/* Footer trust line */}
+        <View style={styles.footerRow}>
+          <FontAwesome
+            name="shield"
+            size={12}
+            color={Theme.textTertiary}
+            style={{ marginRight: Spacing.xs }}
+          />
+          <Text style={styles.footerText}>
+            Davlat litsenziyalangan tibbiyot xizmati
+          </Text>
+        </View>
       </View>
     </View>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Styles                                                             */
+/* ------------------------------------------------------------------ */
+
+const ILLUSTRATION_SIZE = SCREEN_WIDTH * 0.55;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Theme.background,
   },
-  skipRow: {
-    position: 'absolute',
-    right: Spacing.xl,
-    zIndex: 10,
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+  },
+  logoText: {
+    fontSize: 20,
+    fontFamily: Fonts.manropeBd,
+    fontWeight: '700',
+    color: Theme.primary,
   },
   skipText: {
-    ...Typography.body,
+    fontSize: 14,
+    fontFamily: Fonts.inter,
+    fontWeight: '400',
     color: Theme.textSecondary,
   },
+
+  /* Slide */
+  flatList: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   slide: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xxl,
+    paddingVertical: Spacing.xl,
   },
-  iconContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: Radius.full,
+
+  /* Illustration card */
+  illustrationCard: {
+    width: ILLUSTRATION_SIZE,
+    height: ILLUSTRATION_SIZE,
+    borderRadius: Radius.xl,
     backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.xxl,
+    ...Shadow.md,
   },
+  badge: {
+    position: 'absolute',
+    bottom: -14,
+    backgroundColor: Theme.surface,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    ...Shadow.sm,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontFamily: Fonts.interMd,
+    fontWeight: '500',
+    color: Theme.primary,
+  },
+
+  /* Counter */
+  counter: {
+    marginTop: Spacing.xxl,
+    fontSize: 14,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: Theme.textTertiary,
+  },
+
+  /* Bottom section */
+  bottomSection: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.lg,
+  },
+
+  /* Dots */
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+
+  /* Text */
   textContainer: {
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 26,
+    lineHeight: 34,
+    fontFamily: Fonts.manropeBd,
+    fontWeight: '700',
     color: Theme.text,
     textAlign: 'center',
   },
   description: {
-    ...Typography.body,
+    fontSize: 15,
+    lineHeight: 24,
+    fontFamily: Fonts.inter,
+    fontWeight: '400',
     color: Theme.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: Spacing.lg,
   },
-  bottomSection: {
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.xxl,
-    gap: Spacing.xl,
-  },
-  dotsRow: {
+
+  /* Button */
+  button: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: DOT_GAP,
-  },
-  button: {
-    width: '100%',
-    backgroundColor: Theme.primary,
+    justifyContent: 'center',
     paddingVertical: Spacing.lg,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
+    borderRadius: Radius.full,
   },
   buttonPressed: {
-    backgroundColor: Theme.primaryDark,
+    opacity: 0.85,
   },
   buttonText: {
-    ...Typography.button,
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
     color: Theme.textInverse,
+  },
+
+  /* Footer */
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.xs,
+  },
+  footerText: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    fontWeight: '400',
+    color: Theme.textTertiary,
   },
 });

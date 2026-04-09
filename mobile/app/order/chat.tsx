@@ -9,11 +9,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Shadow, Spacing } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useSocket } from '@/context/SocketContext';
@@ -30,8 +32,10 @@ export default function OrderChatScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { token, user } = useAuth();
   const { t } = useTranslation();
+  const router = useRouter();
   const socket = useSocket();
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +87,7 @@ export default function OrderChatScreen() {
         method: 'POST',
         body: JSON.stringify({ content }),
       });
-      setText(''); // Clear only on success
+      setText('');
       if (msg) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev;
@@ -92,132 +96,303 @@ export default function OrderChatScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       }
     } catch {
-      toast.show('Failed to send', 'error');
+      // Failed to send
     } finally {
       setSending(false);
     }
   }, [text, token, orderId, sending]);
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  /** Group messages by date for separators */
+  const getDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const months = ['YANVAR', 'FEVRAL', 'MART', 'APREL', 'MAY', 'IYUN', 'IYUL', 'AVGUST', 'SENTABR', 'OKTABR', 'NOYABR', 'DEKABR'];
+    return `${d.getDate()} ${months[d.getMonth()]}`;
+  };
+
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isMe = item.userId === user?.id;
+    const prevMsg = index > 0 ? messages[index - 1] : null;
+    const showDateSep = !prevMsg || getDateLabel(prevMsg.createdAt) !== getDateLabel(item.createdAt);
+
     return (
-      <View style={[s.bubble, isMe ? s.bubbleMe : s.bubbleThem]}>
-        <Text style={[s.bubbleText, isMe && s.bubbleTextMe]}>{item.content}</Text>
-        <Text style={[s.bubbleTime, isMe && s.bubbleTimeMe]}>
-          {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
+      <>
+        {showDateSep && (
+          <View style={s.dateSep}>
+            <Text style={s.dateSepText}>{getDateLabel(item.createdAt)}</Text>
+          </View>
+        )}
+        <View style={[s.bubble, isMe ? s.bubbleMe : s.bubbleThem]}>
+          <Text style={[s.bubbleText, isMe && s.bubbleTextMe]}>{item.content}</Text>
+          <Text style={[s.bubbleTime, isMe && s.bubbleTimeMe]}>
+            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </View>
+      </>
     );
   };
 
   if (loading) {
     return (
-      <View style={s.center}>
+      <View style={s.centerFull}>
         <ActivityIndicator size="large" color={Theme.primary} />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      style={s.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={s.list}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        ListEmptyComponent={
-          <View style={s.center}>
-            <FontAwesome name="comments-o" size={48} color="#D1D5DB" />
-            <Text style={s.emptyText}>{t('chat.empty')}</Text>
-          </View>
-        }
-      />
-
-      <View style={s.inputBar}>
-        <TextInput
-          style={s.input}
-          value={text}
-          onChangeText={setText}
-          placeholder={t('chat.placeholder')}
-          placeholderTextColor="#9CA3AF"
-          multiline
-          maxLength={2000}
-        />
-        <Pressable
-          style={[s.sendBtn, (!text.trim() || sending) && { opacity: 0.4 }]}
-          onPress={handleSend}
-          disabled={!text.trim() || sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <FontAwesome name="send" size={18} color="#fff" />
-          )}
+    <View style={s.flex}>
+      {/* Dark teal header */}
+      <LinearGradient
+        colors={['#006860', '#004D47']}
+        style={[s.header, { paddingTop: insets.top + 8 }]}
+      >
+        <Pressable style={s.headerBack} onPress={() => router.back()} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color="#fff" />
         </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        <View style={s.headerAvatar}>
+          <FontAwesome name="user-md" size={20} color="#fff" />
+        </View>
+        <View style={s.headerInfo}>
+          <Text style={s.headerName}>{t('chat.medic', { defaultValue: 'Shifokor' })}</Text>
+          <View style={s.headerStatusRow}>
+            <View style={s.onlineDot} />
+            <Text style={s.headerStatus}>Online</Text>
+          </View>
+        </View>
+        <Pressable style={s.headerMenu} hitSlop={12}>
+          <FontAwesome name="ellipsis-v" size={18} color="rgba(255,255,255,0.7)" />
+        </Pressable>
+      </LinearGradient>
+
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={s.list}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <View style={s.center}>
+              <View style={s.emptyIconWrap}>
+                <FontAwesome name="comments-o" size={48} color={Theme.textTertiary} />
+              </View>
+              <Text style={s.emptyText}>{t('chat.empty', { defaultValue: 'Xabarlar yo\'q' })}</Text>
+            </View>
+          }
+        />
+
+        {/* Input bar */}
+        <View style={[s.inputBar, { paddingBottom: insets.bottom + Spacing.sm }]}>
+          <Pressable style={s.attachBtn} hitSlop={8}>
+            <FontAwesome name="paperclip" size={20} color={Theme.textSecondary} />
+          </Pressable>
+          <TextInput
+            style={s.input}
+            value={text}
+            onChangeText={setText}
+            placeholder={t('chat.placeholder', { defaultValue: 'Xabar yozing...' })}
+            placeholderTextColor={Theme.textTertiary}
+            multiline
+            maxLength={2000}
+          />
+          <Pressable
+            style={[s.sendBtn, (!text.trim() || sending) && { opacity: 0.4 }]}
+            onPress={handleSend}
+            disabled={!text.trim() || sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <FontAwesome name="send" size={16} color="#fff" />
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#F9FAFB' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
-  list: { padding: Spacing.md, paddingBottom: Spacing.lg },
-  emptyText: { color: '#9CA3AF', fontSize: 14 },
+  flex: { flex: 1, backgroundColor: Theme.background },
+  centerFull: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Theme.background,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingTop: 80,
+  },
+
+  /* Header */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  headerBack: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  headerName: {
+    fontSize: 16,
+    fontFamily: Fonts.manropeSb,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  headerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ADE80',
+  },
+  headerStatus: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  headerMenu: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* Messages */
+  list: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  dateSep: {
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+  },
+  dateSepText: {
+    fontSize: 12,
+    fontFamily: Fonts.interMd,
+    fontWeight: '500',
+    color: Theme.textTertiary,
+    letterSpacing: 1,
+  },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: Theme.textTertiary,
+    fontSize: 14,
+    fontFamily: Fonts.inter,
+  },
+
+  /* Bubbles */
   bubble: {
     maxWidth: '78%',
-    padding: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.xs,
+    padding: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: Radius.lg,
+    marginBottom: Spacing.sm,
   },
   bubbleMe: {
     alignSelf: 'flex-end',
-    backgroundColor: Theme.primary,
-    borderBottomRightRadius: 4,
+    backgroundColor: '#006860',
+    borderBottomRightRadius: Radius.xs,
   },
   bubbleThem: {
     alignSelf: 'flex-start',
-    backgroundColor: '#fff',
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: Theme.surfaceContainerLow,
+    borderBottomLeftRadius: Radius.xs,
   },
-  bubbleText: { fontSize: 15, color: '#111827', lineHeight: 20 },
-  bubbleTextMe: { color: '#fff' },
-  bubbleTime: { fontSize: 11, color: '#9CA3AF', marginTop: 2, alignSelf: 'flex-end' },
-  bubbleTimeMe: { color: 'rgba(255,255,255,0.7)' },
+  bubbleText: {
+    fontSize: 15,
+    fontFamily: Fonts.inter,
+    color: Theme.text,
+    lineHeight: 22,
+  },
+  bubbleTextMe: {
+    color: '#fff',
+  },
+  bubbleTime: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: Theme.textTertiary,
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  bubbleTimeMe: {
+    color: 'rgba(255,255,255,0.6)',
+  },
+
+  /* Input bar */
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: Spacing.sm,
-    paddingBottom: Spacing.md,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    backgroundColor: Theme.surface,
     gap: Spacing.sm,
+    ...Shadow.sm,
+  },
+  attachBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
     fontSize: 15,
+    fontFamily: Fonts.inter,
     maxHeight: 100,
-    color: '#111827',
+    color: Theme.text,
   },
   sendBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: Theme.primary,
+    backgroundColor: '#006860',
     justifyContent: 'center',
     alignItems: 'center',
   },

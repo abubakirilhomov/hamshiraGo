@@ -1,0 +1,5 @@
+appId: host.exp.Exponent
+---
+- tapOn:
+    text: ".*[Bb]osh sahifa.*|.*[Aa]sosiy.*|.*лавная.*"
+- waitForAnimationToEnd

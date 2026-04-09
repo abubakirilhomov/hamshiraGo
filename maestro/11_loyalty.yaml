@@ -1,0 +1,13 @@
+appId: host.exp.Exponent
+---
+# TEST: Loyalty
+- runFlow: helpers/dismiss_keychain.yaml
+- runFlow: helpers/go_tab_profile.yaml
+
+- tapOn:
+    text: ".*ball.*"
+- waitForAnimationToEnd
+- takeScreenshot: loyalty_01_top
+- scroll
+- takeScreenshot: loyalty_02_history
+- runFlow: helpers/go_back.yaml

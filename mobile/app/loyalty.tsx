@@ -12,8 +12,9 @@ import { FlashList } from '@shopify/flash-list';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
-import { Theme, Radius, Spacing, Shadow } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -50,22 +51,32 @@ interface RedeemResponse {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
+const TIER_ORDER: Array<LoyaltyBalance['tier']> = ['BRONZE', 'SILVER', 'GOLD'];
+
 const TIER_CONFIG = {
-  BRONZE: { emoji: '\uD83E\uDD49', color: '#CD7F32', label: 'bronze' },
-  SILVER: { emoji: '\uD83E\uDD48', color: '#94A3B8', label: 'silver' },
-  GOLD:   { emoji: '\uD83E\uDD47', color: '#F59E0B', label: 'gold' },
+  BRONZE: { color: '#CD7F32', label: 'BRONZE' },
+  SILVER: { color: '#94A3B8', label: 'SILVER' },
+  GOLD:   { color: '#F59E0B', label: 'GOLD' },
 } as const;
 
-const TYPE_ICONS: Record<LoyaltyTransaction['type'], string> = {
-  EARNED: '\u2B06\uFE0F',
-  SPENT: '\u2B07\uFE0F',
-  MILESTONE: '\uD83C\uDFAF',
-  BONUS: '\uD83C\uDF81',
+const TYPE_ICON_NAME: Record<LoyaltyTransaction['type'], React.ComponentProps<typeof FontAwesome>['name']> = {
+  EARNED: 'arrow-up',
+  SPENT: 'arrow-down',
+  MILESTONE: 'trophy',
+  BONUS: 'gift',
 };
 
 const PRESET_POINTS = [100, 500, 1000];
 const CACHE_KEY = 'loyalty_balance';
 const PAGE_SIZE = 20;
+
+// ─── Redemption offers (static for now) ──────────────────────────────────────
+
+const REDEMPTION_OFFERS = [
+  { id: '1', title: 'Uyga hamshira chaqirish', subtitle: '15% chegirma', points: 500, icon: 'medkit' as const },
+  { id: '2', title: 'Analiz topshirish', subtitle: '10% chegirma', points: 300, icon: 'flask' as const },
+  { id: '3', title: 'Maslahat olish', subtitle: '20% chegirma', points: 800, icon: 'stethoscope' as const },
+];
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -73,6 +84,7 @@ export default function LoyaltyScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
 
   const [balance, setBalance] = useState<LoyaltyBalance | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,7 +161,6 @@ export default function LoyaltyScreen() {
       );
       setRedeemVisible(false);
       setRedeemPoints('');
-      // Refresh balance and history
       fetchBalance();
       fetchHistory(1, false);
     } catch (e: unknown) {
@@ -171,111 +182,171 @@ export default function LoyaltyScreen() {
   }
 
   const tier = balance?.tier ?? 'BRONZE';
-  const tierCfg = TIER_CONFIG[tier];
   const points = balance?.points ?? 0;
   const nextTierAt = balance?.nextTierAt;
   const nextTierName = balance?.nextTierName;
-  const progress =
-    nextTierAt && nextTierAt > 0 ? Math.min(points / nextTierAt, 1) : 1;
+  const pointsToNext = nextTierAt ? nextTierAt - points : 0;
 
   const redeemPointsNum = parseInt(redeemPoints, 10) || 0;
-  // Approximate: 1 point = 100 UZS (display only, backend computes actual)
   const estimatedDiscount = redeemPointsNum * 100;
 
   return (
     <>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Points balance card */}
+        {/* ── Hero gradient card ── */}
         <LinearGradient
-          colors={Theme.bannerGradient}
+          colors={['#006860', '#008379']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.balanceCard}
+          style={styles.heroCard}
         >
-          <Text style={styles.balanceLabel}>{t('loyalty.yourPoints')}</Text>
-          <Text style={styles.balanceValue}>{points.toLocaleString('ru-RU')}</Text>
-          <View style={styles.tierBadge}>
-            <Text style={styles.tierEmoji}>{tierCfg.emoji}</Text>
-            <Text style={styles.tierText}>{t(`loyalty.${tierCfg.label}`)}</Text>
+          {/* Tier badge pill */}
+          <View style={styles.tierBadgePill}>
+            <Text style={styles.tierBadgePillText}>{TIER_CONFIG[tier].label}</Text>
           </View>
+
+          {/* Points large */}
+          <Text style={styles.heroPoints}>{points.toLocaleString('ru-RU')}</Text>
+          <Text style={styles.heroBallLabel}>ball</Text>
+
+          {/* Next tier hint */}
+          {nextTierAt !== null && nextTierName && (
+            <Text style={styles.heroNextHint}>
+              Keyingi bosqichga: {pointsToNext > 0 ? pointsToNext : 0} ball
+            </Text>
+          )}
         </LinearGradient>
 
-        {/* Progress to next tier */}
-        {nextTierAt !== null && nextTierName && (
-          <View style={styles.progressCard}>
-            <Text style={styles.progressLabel}>
-              {t('loyalty.nextTier', {
-                tier: nextTierName,
-                points: String(nextTierAt),
-              })}
-            </Text>
-            <View style={styles.progressBarBg}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${Math.round(progress * 100)}%` },
-                ]}
-              />
+        {/* ── Mening darajam section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Mening darajam</Text>
+        </View>
+
+        <View style={styles.tierProgressRow}>
+          {TIER_ORDER.map((t, i) => {
+            const isCurrent = t === tier;
+            const isPast = TIER_ORDER.indexOf(tier) > i;
+            const isFuture = TIER_ORDER.indexOf(tier) < i;
+            const cfg = TIER_CONFIG[t];
+
+            return (
+              <View key={t} style={styles.tierStepContainer}>
+                {/* Connecting line (before circle, except first) */}
+                {i > 0 && (
+                  <View
+                    style={[
+                      styles.tierLine,
+                      { backgroundColor: isPast || isCurrent ? Theme.primary : Theme.surfaceContainerHigh },
+                    ]}
+                  />
+                )}
+                {/* Circle */}
+                <View
+                  style={[
+                    styles.tierCircle,
+                    isCurrent && { backgroundColor: Theme.primary, borderColor: Theme.primary },
+                    isPast && { backgroundColor: Theme.surfaceContainerHigh, borderColor: Theme.surfaceContainerHigh },
+                    isFuture && { backgroundColor: 'transparent', borderColor: Theme.surfaceContainerHigh, borderWidth: 2 },
+                  ]}
+                >
+                  {(isCurrent || isPast) && (
+                    <FontAwesome name="check" size={12} color={isCurrent ? '#fff' : Theme.textTertiary} />
+                  )}
+                </View>
+                {/* Label */}
+                <Text
+                  style={[
+                    styles.tierStepLabel,
+                    isCurrent && { color: Theme.primary, fontFamily: Fonts.manropeBd },
+                  ]}
+                >
+                  {cfg.label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* ── Ballarni sarflash section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Ballarni sarflash</Text>
+          <Pressable onPress={() => setRedeemVisible(true)}>
+            <Text style={styles.sectionLink}>Barchasi</Text>
+          </Pressable>
+        </View>
+
+        {REDEMPTION_OFFERS.map((offer) => (
+          <View key={offer.id} style={styles.redeemCard}>
+            <View style={styles.redeemIconCircle}>
+              <FontAwesome name={offer.icon} size={18} color={Theme.primary} />
             </View>
-            <Text style={styles.progressCount}>
-              {points} / {nextTierAt}
-            </Text>
+            <View style={styles.redeemCardBody}>
+              <Text style={styles.redeemCardTitle}>{offer.title}</Text>
+              <Text style={styles.redeemCardSubtitle}>{offer.subtitle}</Text>
+            </View>
+            <View style={styles.redeemCardRight}>
+              <View style={styles.pointsPill}>
+                <Text style={styles.pointsPillText}>{offer.points} ball</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [pressed && { opacity: 0.8 }]}
+                onPress={() => {
+                  setRedeemPoints(String(offer.points));
+                  setRedeemVisible(true);
+                }}
+              >
+                <LinearGradient
+                  colors={['#006860', '#008379']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.redeemSmallBtn}
+                >
+                  <Text style={styles.redeemSmallBtnText}>Sarflash</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+
+        {/* ── Tarix section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Tarix</Text>
+        </View>
+
+        {history.length === 0 && !historyLoading && (
+          <Text style={styles.emptyText}>{t('loyalty.noHistory')}</Text>
+        )}
+
+        {history.length > 0 && (
+          <View style={{ minHeight: 200 }}>
+            <FlashList
+              data={history}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item }) => <HistoryItem item={item} />}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                historyLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={Theme.primary}
+                    style={{ marginVertical: Spacing.md }}
+                  />
+                ) : null
+              }
+            />
           </View>
         )}
 
-        {/* Redeem button */}
-        {points > 0 && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.redeemBtn,
-              pressed && { opacity: 0.8 },
-            ]}
-            onPress={() => setRedeemVisible(true)}
-          >
-            <FontAwesome name="exchange" size={16} color="#fff" />
-            <Text style={styles.redeemBtnText}>{t('loyalty.redeem')}</Text>
-          </Pressable>
-        )}
-
-        {/* History */}
-        <View style={styles.historySection}>
-          <Text style={styles.sectionTitle}>{t('loyalty.history')}</Text>
-
-          {history.length === 0 && !historyLoading && (
-            <Text style={styles.emptyText}>{t('loyalty.noHistory')}</Text>
-          )}
-
-          {history.length > 0 && (
-            <View style={{ minHeight: 200 }}>
-              <FlashList
-                data={history}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <HistoryItem item={item} t={t} />
-                )}
-                onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                  historyLoading ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={Theme.primary}
-                      style={{ marginVertical: Spacing.md }}
-                    />
-                  ) : null
-                }
-              />
-            </View>
-          )}
-        </View>
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Redeem modal */}
+      {/* ── Redeem modal ── */}
       <Modal
         visible={redeemVisible}
         transparent
@@ -331,18 +402,24 @@ export default function LoyaltyScreen() {
 
             <Pressable
               style={({ pressed }) => [
-                styles.modalSubmitBtn,
                 pressed && { opacity: 0.85 },
                 (redeemPointsNum <= 0 || redeemLoading) && { opacity: 0.5 },
               ]}
               onPress={handleRedeem}
               disabled={redeemPointsNum <= 0 || redeemLoading}
             >
-              {redeemLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.modalSubmitText}>{t('loyalty.redeem')}</Text>
-              )}
+              <LinearGradient
+                colors={['#006860', '#008379']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.modalSubmitBtn}
+              >
+                {redeemLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.modalSubmitText}>{t('loyalty.redeem')}</Text>
+                )}
+              </LinearGradient>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -353,21 +430,26 @@ export default function LoyaltyScreen() {
 
 // ─── History item ────────────────────────────────────────────────────────────
 
-function HistoryItem({
-  item,
-  t,
-}: {
-  item: LoyaltyTransaction;
-  t: (key: string) => string;
-}) {
-  const icon = TYPE_ICONS[item.type] ?? '\u2B06\uFE0F';
+function HistoryItem({ item }: { item: LoyaltyTransaction }) {
+  const iconName = TYPE_ICON_NAME[item.type] ?? 'arrow-up';
   const isPositive = item.type !== 'SPENT';
   const date = new Date(item.createdAt);
   const dateStr = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
 
   return (
     <View style={styles.historyItem}>
-      <Text style={styles.historyIcon}>{icon}</Text>
+      <View
+        style={[
+          styles.historyIconCircle,
+          { backgroundColor: isPositive ? `${Theme.success}15` : `${Theme.error}15` },
+        ]}
+      >
+        <FontAwesome
+          name={iconName}
+          size={14}
+          color={isPositive ? Theme.success : Theme.error}
+        />
+      </View>
       <View style={styles.historyTexts}>
         <Text style={styles.historyDesc} numberOfLines={1}>
           {item.description}
@@ -390,116 +472,177 @@ function HistoryItem({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: Theme.background },
-  content: { padding: Spacing.lg, paddingBottom: 40, gap: Spacing.md },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: Spacing.lg, paddingBottom: 40, gap: Spacing.md },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.background },
 
-  // Balance card
-  balanceCard: {
-    borderRadius: Radius.lg,
+  // ── Hero card ──
+  heroCard: {
+    borderRadius: Radius.xl,
     padding: Spacing.xl,
-    alignItems: 'center',
-    gap: Spacing.sm,
+    paddingTop: 28,
+    paddingBottom: 24,
+    gap: 2,
   },
-  balanceLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
+  tierBadgePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: Radius.full,
+    marginBottom: Spacing.md,
+  },
+  tierBadgePillText: {
+    fontSize: 12,
+    fontFamily: Fonts.manropeBd,
+    color: '#006860',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
-  balanceValue: {
-    fontSize: 44,
-    fontWeight: '800',
+  heroPoints: {
+    fontSize: 48,
+    fontFamily: Fonts.manropeXb,
     color: '#fff',
     letterSpacing: 1,
   },
-  tierBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
-    marginTop: Spacing.xs,
+  heroBallLabel: {
+    fontSize: 16,
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: -2,
   },
-  tierEmoji: { fontSize: 18 },
-  tierText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
-    textTransform: 'uppercase',
-  },
-
-  // Progress
-  progressCard: {
-    backgroundColor: Theme.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: Spacing.sm,
-  },
-  progressLabel: {
+  heroNextHint: {
     fontSize: 13,
-    color: Theme.textSecondary,
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: Theme.surfaceSecondary,
-    borderRadius: Radius.full,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: Theme.primary,
-    borderRadius: Radius.full,
-  },
-  progressCount: {
-    fontSize: 12,
-    color: Theme.textTertiary,
-    textAlign: 'right',
+    fontFamily: Fonts.inter,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: Spacing.sm,
   },
 
-  // Redeem button
-  redeemBtn: {
+  // ── Section headers ──
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.text,
+  },
+  sectionLink: {
+    fontSize: 14,
+    fontFamily: Fonts.interMd,
+    color: Theme.primary,
+  },
+
+  // ── Tier progress row ──
+  tierProgressRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Theme.primary,
     paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-  },
-  redeemBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
-  },
-
-  // History section
-  historySection: {
+    paddingHorizontal: Spacing.xl,
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: Spacing.md,
+    ...Shadow.sm,
   },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Theme.textSecondary,
+  tierStepContainer: {
+    flex: 1,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  tierCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Theme.surfaceContainerHigh,
+  },
+  tierLine: {
+    position: 'absolute',
+    top: 17,
+    right: '50%',
+    left: -20,
+    height: 2,
+    zIndex: -1,
+  },
+  tierStepLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.interMd,
+    color: Theme.textTertiary,
+    marginTop: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+
+  // ── Redeem cards ──
+  redeemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    ...Shadow.sm,
+  },
+  redeemIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: `${Theme.primary}12`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  redeemCardBody: {
+    flex: 1,
+    gap: 2,
+  },
+  redeemCardTitle: {
+    fontSize: 15,
+    fontFamily: Fonts.interMd,
+    color: Theme.text,
+  },
+  redeemCardSubtitle: {
+    fontSize: 13,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
+  },
+  redeemCardRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  pointsPill: {
+    backgroundColor: `${Theme.success}15`,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  pointsPillText: {
+    fontSize: 12,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.success,
+  },
+  redeemSmallBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+  },
+  redeemSmallBtnText: {
+    fontSize: 12,
+    fontFamily: Fonts.manropeSb,
+    color: '#fff',
+  },
+
+  // ── History ──
   emptyText: {
     fontSize: 14,
+    fontFamily: Fonts.inter,
     color: Theme.textTertiary,
     textAlign: 'center',
     paddingVertical: Spacing.xl,
   },
-
-  // History item
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -508,10 +651,12 @@ const styles = StyleSheet.create({
     borderBottomColor: Theme.borderLight,
     gap: Spacing.md,
   },
-  historyIcon: {
-    fontSize: 20,
-    width: 28,
-    textAlign: 'center',
+  historyIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   historyTexts: {
     flex: 1,
@@ -519,19 +664,20 @@ const styles = StyleSheet.create({
   },
   historyDesc: {
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: Fonts.interMd,
     color: Theme.text,
   },
   historyDate: {
     fontSize: 12,
+    fontFamily: Fonts.inter,
     color: Theme.textTertiary,
   },
   historyPoints: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontFamily: Fonts.manropeBd,
   },
 
-  // Modal
+  // ── Modal ──
   modalOverlay: {
     flex: 1,
     backgroundColor: Theme.overlay,
@@ -548,25 +694,26 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: Theme.border,
+    backgroundColor: Theme.surfaceContainerHigh,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: Spacing.sm,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeBd,
     color: Theme.text,
     textAlign: 'center',
   },
   modalLabel: {
     fontSize: 13,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
     marginTop: Spacing.sm,
   },
   modalInput: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeBd,
     color: Theme.text,
     borderWidth: 1.5,
     borderColor: Theme.border,
@@ -582,7 +729,7 @@ const styles = StyleSheet.create({
   presetBtn: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Theme.border,
@@ -594,29 +741,27 @@ const styles = StyleSheet.create({
   },
   presetBtnText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
     color: Theme.textSecondary,
   },
   presetBtnTextActive: {
     color: Theme.primary,
-    fontWeight: '700',
   },
   estimateText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontFamily: Fonts.manropeSb,
     color: Theme.primary,
     textAlign: 'center',
   },
   modalSubmitBtn: {
-    backgroundColor: Theme.primary,
     paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     alignItems: 'center',
     marginTop: Spacing.sm,
   },
   modalSubmitText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeSb,
     color: '#fff',
   },
 });

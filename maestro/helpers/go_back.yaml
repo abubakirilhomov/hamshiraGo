@@ -1,0 +1,6 @@
+appId: host.exp.Exponent
+---
+# Tap back arrow at top-left (works for all screens with custom header)
+- tapOn:
+    point: "7%,7%"
+- waitForAnimationToEnd
