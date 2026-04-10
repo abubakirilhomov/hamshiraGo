@@ -77,7 +77,7 @@ export default function SlotPicker({ doctorId, onSelect, selectedSlotId }: SlotP
               onClick={() => handleDateChange(ds)}
               style={{
                 flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center",
-                padding: "8px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+                padding: "8px 12px", borderRadius: 10, cursor: "pointer",
                 background: isSelected ? "#0d9488" : isToday ? "#f0fdfa" : "#f8fafc",
                 color: isSelected ? "#fff" : isToday ? "#0d9488" : "#475569",
                 boxShadow: isSelected ? "0 2px 8px rgba(13,148,136,0.2)" : "none",
@@ -116,7 +116,7 @@ export default function SlotPicker({ doctorId, onSelect, selectedSlotId }: SlotP
                 key={slot.id}
                 onClick={() => onSelect(isSelected ? null : slot.id)}
                 style={{
-                  padding: "9px 6px", borderRadius: 8, border: "none", cursor: "pointer",
+                  padding: "9px 6px", borderRadius: 8, cursor: "pointer",
                   background: isSelected ? "#0d9488" : "#f8fafc",
                   color: isSelected ? "#fff" : "#0f172a",
                   fontSize: 13, fontWeight: isSelected ? 700 : 500,

@@ -119,12 +119,12 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
               }}
             >
               <div style={{
-                maxWidth: "80%", padding: "10px 14px", borderRadius: 14,
+                maxWidth: "80%", padding: "10px 14px",
+                borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
                 fontSize: 14, lineHeight: 1.5,
                 background: m.role === "user" ? "#0d9488" : "#fff",
                 color: m.role === "user" ? "#fff" : "#0f172a",
                 border: m.role === "assistant" ? "1px solid #e2e8f0" : "none",
-                borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
               }}>
                 {m.text}
               </div>

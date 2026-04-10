@@ -137,14 +137,14 @@ export default function LoyaltyPage() {
         {nextTierAt !== null && nextTierName && (
           <div style={{ background: "#fff", borderRadius: 16, padding: "16px 20px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
             <p style={{ fontSize: 13, color: "#64748b", marginBottom: 10 }}>
-              До уровня <strong style={{ color: "#0d9488" }}>{nextTierName}</strong> — ещё {(nextTierAt - points).toLocaleString("ru-RU")} баллов
+              До уровня <strong style={{ color: "#0d9488" }}>{nextTierName}</strong> — ещё {((nextTierAt ?? 0) - points).toLocaleString("ru-RU")} баллов
             </p>
             <div style={{ height: 8, background: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${Math.round(progress * 100)}%`, background: "#0d9488", borderRadius: 4, transition: "width 0.5s ease" }} />
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
               <span style={{ fontSize: 11, color: "#94a3b8" }}>{points.toLocaleString("ru-RU")}</span>
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>{nextTierAt.toLocaleString("ru-RU")}</span>
+              <span style={{ fontSize: 11, color: "#94a3b8" }}>{(nextTierAt ?? 0).toLocaleString("ru-RU")}</span>
             </div>
           </div>
         )}
