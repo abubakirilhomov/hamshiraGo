@@ -731,7 +731,20 @@ export class ClinicService {
       .skip((page - 1) * limit)
       .take(limit);
 
-    const [data, total] = await qb.getManyAndCount();
+    const [rawData, total] = await qb.getManyAndCount();
+
+    // Attach clinic names
+    const companyIds = [...new Set(rawData.map((l) => l.clinicId))];
+    const companies = companyIds.length
+      ? await this.companyRepo.findByIds(companyIds, { select: ['id', 'name'] as any })
+      : [];
+    const companyMap = new Map(companies.map((c) => [c.id, c.name]));
+
+    const data = rawData.map((l) => ({
+      ...l,
+      clinic: { id: l.clinicId, name: companyMap.get(l.clinicId) ?? '—' },
+    }));
+
     return { data, total, page, limit };
   }
 

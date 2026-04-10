@@ -454,6 +454,21 @@ export class ClinicAdminController {
     return this.clinicService.blockCompany(id, isActive);
   }
 
+  @Get(':id')
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clinicService.getCompany(id);
+  }
+
+  @Get(':id/staff')
+  getStaff(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clinicService.getStaff(id);
+  }
+
+  @Get(':id/stats/monthly')
+  getMonthlyStats(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clinicService.getMonthlyStats(id);
+  }
+
   @Get(':id/stats')
   getCompanyStats(@Param('id', ParseUUIDPipe) id: string) {
     return this.clinicService.getCompanyStatsAdmin(id);

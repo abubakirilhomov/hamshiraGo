@@ -1,5 +1,11 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-10
+
+- **[CLIN-SA-3]** Admin Panel — Salomat Лиды: `admin/src/pages/SalomatLeads.tsx` (4 KPI карточки, кликабельные status-badges для фильтрации, поиск по клинике/пациенту, таблица с кликом на клинику → /companies/:id); backend: `getAllLeads` теперь джойнит название клиники; `getLeadsOverview` + `getAdminLeads` в api.ts; Zap в AdminSidebar, роут `/salomat-leads`
+- **[CLIN-SA-2]** Admin Panel — Детали клиники: `admin/src/pages/CompanyDetail.tsx` (4 вкладки: Обзор/Сотрудники/Лиды/Статистика), 12-мес. Bar chart, KPI лидов по статусам, роут `/companies/:id`; backend: добавлены 3 admin endpoint'а в `clinic.controller.ts` (GET :id, GET :id/staff, GET :id/stats/monthly); типы и функции в `admin/src/lib/api.ts`, Building2 в AdminSidebar, роут `/companies` в App.tsx
+- **[CLIN-SA-1]** Admin Panel — Клиники: `admin/src/pages/Companies.tsx` (таблица + фильтры по городу/верификации + пагинация + модал создания с CEO аккаунтом + verify/block кнопки), типы `Company/CompaniesResponse/CreateCompanyDto` и функции `getCompanies, createCompany, verifyCompany, blockCompany, getCompany` в `admin/src/lib/api.ts`, Building2 в AdminSidebar, роут `/companies` в App.tsx
+
 ## 2026-04-05 (httpOnly Cookie Auth + OpenAI TTS)
 
 - **[backend]** httpOnly cookie auth: POST /auth/login/cookie, POST /auth/logout/cookie endpoints -- `backend/src/auth/auth.controller.ts`
@@ -31,6 +37,7 @@
 - **[backend]** CLIN-BE-14: POST /clinic/appointments/:id/prescription (all clinic roles) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
 - **[backend]** CLIN-BE-15: PatientPrescriptionsController: GET /patient/prescriptions, GET /patient/prescriptions/:id (client JWT auth) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
 - **[backend]** CLIN-BE-15: ClinicPrescription + PatientPrescriptionsController registered in ClinicModule -- `backend/src/clinic/clinic.module.ts`
+## 2026-04-09
 
 ## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
 
