@@ -1,33 +1,64 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 @theme {
+  /* === Stitch Design System === */
   /* Primary */
-  --color-primary: #0d9488;
-  --color-primary-dark: #0f766e;
-  --color-accent: #14b8a6;
+  --color-primary: #00685f;
+  --color-primary-container: #008378;
+  --color-primary-fixed: #89f5e7;
+  --color-primary-fixed-dim: #6bd8cb;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #f4fffc;
 
-  /* Status */
+  /* Secondary */
+  --color-secondary: #3f6560;
+  --color-secondary-container: #c2ebe3;
+  --color-on-secondary: #ffffff;
+
+  /* Tertiary (warm clay for human touches) */
+  --color-tertiary: #924628;
+  --color-tertiary-fixed: #ffdbce;
+  --color-on-tertiary-fixed-variant: #773215;
+
+  /* Surface hierarchy */
+  --color-surface: #f7f9fb;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-dim: #d8dadc;
+
+  /* On-surface */
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #3d4947;
+  --color-outline-variant: #bcc9c6;
+  --color-outline: #6d7a77;
+
+  /* Legacy compat */
+  --color-primary-dark: #005049;
+  --color-accent: #6bd8cb;
+  --color-background: #f7f9fb;
   --color-success: #22c55e;
   --color-warning: #eab308;
   --color-error: #ef4444;
-
-  /* Backgrounds & surfaces */
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-
-  /* Text */
-  --color-text: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-border: #e2e8f0;
+  --color-text: #191c1e;
+  --color-text-secondary: #3d4947;
+  --color-border: #eceef0;
 
   /* Border radius */
-  --radius-card: 12px;
-  --radius-card-lg: 14px;
-  --radius-modal: 20px;
-  --radius-input: 10px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+  --radius-modal: 28px;
+  --radius-input: 12px;
   --radius-btn: 12px;
-  --radius-badge: 20px;
-  --radius-banner: 16px;
+  --radius-badge: 999px;
+  --radius-banner: 20px;
+
+  /* Fonts */
+  --font-headline: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
 }
 
 * {
@@ -37,10 +68,14 @@
 }
 
 body {
-  background: #f8fafc;
-  color: #0f172a;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f7f9fb;
+  color: #191c1e;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
 
 /* Запрет зума при фокусе на input (iOS Safari) */
