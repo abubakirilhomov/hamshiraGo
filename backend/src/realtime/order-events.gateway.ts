@@ -201,6 +201,10 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
       if (payload.role === 'doctor') {
         client.join(`doctor:${payload.sub}`);
       }
+      if (payload.role === 'clinic') {
+        client.join(`clinic:${payload.companyId}`);
+        this.logger.log(`Clinic user connected: company=${payload.companyId} role=${payload.clinicRole}`);
+      }
       this.clientConnectedAt.set(client.id, Date.now());
       this.logger.log(`Client connected: ${client.id} user=${payload.sub} role=${payload.role}`);
     } catch {
@@ -338,6 +342,18 @@ export class OrderEventsGateway implements OnGatewayConnection, OnGatewayDisconn
   ) {
     this.server.to(`order:${orderId}`).emit('dispatch_update', { orderId, ...payload });
     this.logger.log(`Emitted dispatch_update orderId=${orderId} status=${payload.status}`);
+  }
+
+  /** Notify clinic about new lead from Salomat */
+  emitNewLead(companyId: string, payload: Record<string, unknown>) {
+    this.server.to(`clinic:${companyId}`).emit('clinic:new_lead', payload);
+    this.logger.log(`Emitted clinic:new_lead to company=${companyId}`);
+  }
+
+  /** Notify clinic about appointment status change */
+  emitAppointmentUpdate(companyId: string, payload: Record<string, unknown>) {
+    this.server.to(`clinic:${companyId}`).emit('clinic:appointment_update', payload);
+    this.logger.log(`Emitted clinic:appointment_update to company=${companyId}`);
   }
 
   async emitMedicLocation(

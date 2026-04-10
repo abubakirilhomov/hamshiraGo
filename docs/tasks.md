@@ -159,70 +159,73 @@
 
 ### 🔵 CLIN-BE — Backend (Абубакир)
 
-#### CLIN-BE-1. Company (Clinic) модуль
-- [ ] Entity `company`: id, name, legalName, phone, address, city, lat/lng, logoUrl, licenseNumber, licenseExpiry, isActive, isVerified, parentId (для филиалов), settings (JSON), createdAt
-- [ ] Entity `company_branch`: id, companyId, name, address, phone, lat/lng, isActive
-- [ ] CRUD endpoints: POST /companies, GET /companies, GET /companies/:id, PATCH /companies/:id
-- [ ] Admin endpoint: PATCH /companies/:id/verify, PATCH /companies/:id/block
-- [ ] `CompanyGuard` — проверка isActive + isVerified
+#### CLIN-BE-1. Company (Clinic) модуль — DONE 2026-04-05
+- [x] Entity `company`: id, name, legalName, phone, address, city, lat/lng, logoUrl, licenseNumber, licenseExpiry, isActive, isVerified, parentId (для филиалов), settings (JSON), pilotEnded, createdAt
+- [x] Entity `company_branch`: id, companyId, name, address, phone, lat/lng, isActive
+- [x] CRUD endpoints: GET /clinic/company, PATCH /clinic/company (CEO only)
+- [x] Admin endpoint: PATCH /admin/companies/:id/verify, PATCH /admin/companies/:id/block
+- [x] ClinicAuthGuard — проверка role === 'clinic'
 
-#### CLIN-BE-2. Company Staff (Xodimlar) — Auth
-- [ ] Entity `company_user`: id, companyId, branchId, role (CEO | RECEPTION | DOCTOR), name, phone, passwordHash, isActive
-- [ ] POST /clinic-auth/register — создание staff (только Admin или CEO)
-- [ ] POST /clinic-auth/login → JWT с полями: userId, companyId, role
-- [ ] GET /clinic-auth/me — профиль текущего пользователя
-- [ ] `ClinicAuthGuard` + `@ClinicUser()` decorator
-- [ ] `ClinicRoleGuard` — проверка role (CEO, RECEPTION, DOCTOR)
-- [ ] Связать Doctor (существующий) с company_user при создании аккаунта
+#### CLIN-BE-2. Company Staff (Xodimlar) — Auth — DONE 2026-04-05
+- [x] Entity `company_user`: id, companyId, branchId, role (CEO | RECEPTION | DOCTOR), name, phone, passwordHash, isActive, doctorId, pushToken
+- [x] POST /clinic-auth/register — создание company + CEO одним запросом
+- [x] POST /clinic-auth/login → JWT с полями: sub (userId), companyId, clinicRole
+- [x] GET /clinic-auth/me — профиль текущего пользователя + company
+- [x] `ClinicAuthGuard` + `@ClinicUser()` decorator
+- [x] `ClinicRoleGuard` — проверка clinicRole (CEO, RECEPTION, DOCTOR)
+- [x] Doctor entity: добавлено companyId (nullable) для связи с клиникой
 
-#### CLIN-BE-3. Rooms (Xonalar)
-- [ ] Entity `company_room`: id, companyId, name, floor, isActive
-- [ ] Entity `company_room_doctor`: id, roomId, doctorId, dayOfWeek (1–7), startTime, endTime
-- [ ] CRUD /clinic/rooms — только CEO
-- [ ] POST /clinic/rooms/:roomId/doctors — назначить врача в комнату (CEO)
-- [ ] GET /clinic/rooms/today — расписание на сегодня (Reception + CEO)
+#### CLIN-BE-3. Rooms (Xonalar) -- DONE
+- [x] Entity `company_room`: id, companyId, name, floor, isActive
+- [x] Entity `company_room_doctor`: id, roomId, doctorId, dayOfWeek (1–7), startTime, endTime
+- [x] CRUD /clinic/rooms — только CEO
+- [x] POST /clinic/rooms/:roomId/doctors — назначить врача в комнату (CEO)
+- [x] GET /clinic/rooms/today — расписание на сегодня (Reception + CEO)
 
-#### CLIN-BE-4. Clinic Services (Xizmatlar)
-- [ ] Entity `company_service`: id, companyId, name, category (CONSULTATION | LAB | DIAGNOSTIC | PROCEDURE), price, duration, isActive
-- [ ] CRUD /clinic/services — только CEO
-- [ ] GET /clinic/services — публичный (для пациентов при бронировании)
+#### CLIN-BE-4. Clinic Services (Xizmatlar) -- DONE
+- [x] Entity `company_service`: id, companyId, name, category (CONSULTATION | LAB | DIAGNOSTIC | PROCEDURE), price, duration, isActive
+- [x] CRUD /clinic/services — только CEO
+- [x] GET /companies/:companyId/services — публичный (для пациентов при бронировании)
 
-#### CLIN-BE-5. Clinic Appointment (Navbat tizimi)
-- [ ] Entity `clinic_appointment`: id, companyId, roomId, doctorId, patientName, patientPhone, patientId (nullable — если зарегистрирован), serviceId, date, time, status (SCHEDULED | CHECKED_IN | IN_PROGRESS | DONE | CANCELLED), source (MANUAL | SALOMAT_LEAD | ONLINE), paymentType (CASH | TERMINAL | ONLINE), createdBy (staff userId), notes, createdAt
-- [ ] POST /clinic/appointments — создать навбат (CEO + Reception)
-- [ ] GET /clinic/appointments?date=&doctorId= — список навбатов
-- [ ] PATCH /clinic/appointments/:id/checkin — Check In (CEO + Reception)
-- [ ] PATCH /clinic/appointments/:id/cancel — отмена с причиной
-- [ ] PATCH /clinic/appointments/:id/status — смена статуса
+#### CLIN-BE-5. Clinic Appointment (Navbat tizimi) -- DONE
+- [x] Entity `clinic_appointment`: id, companyId, roomId, doctorId, patientName, patientPhone, patientId (nullable — если зарегистрирован), serviceId, date, time, status (SCHEDULED | CHECKED_IN | IN_PROGRESS | DONE | CANCELLED), source (MANUAL | SALOMAT_LEAD | ONLINE), paymentType (CASH | TERMINAL | ONLINE), createdBy (staff userId), notes, createdAt
+- [x] POST /clinic/appointments — создать навбат (CEO + Reception)
+- [x] GET /clinic/appointments?date=&doctorId=&status= — список навбатов
+- [x] GET /clinic/appointments/today — сегодняшняя очередь
+- [x] GET /clinic/appointments/stats?period= — статистика
+- [x] PATCH /clinic/appointments/:id/checkin — Check In (CEO + Reception)
+- [x] PATCH /clinic/appointments/:id/cancel — отмена с причиной
+- [x] PATCH /clinic/appointments/:id/status — смена статуса
 
-#### CLIN-BE-6. CEO Stats (12 oylik statistika)
-- [ ] GET /clinic/stats/overview?period=today|week|month|year — bemorlar soni, daromad, комиссия
-- [ ] GET /clinic/stats/monthly — 12 oy oyma-oy grafik (bemorlar soni)
-- [ ] GET /clinic/stats/doctors — har shifokor uchun: bemorlar, reyting, daromad
+#### CLIN-BE-6. CEO Stats (12 oylik statistika) — DONE 2026-04-05
+- [x] GET /clinic/stats/overview?period=today|week|month|year — bemorlar soni, daromad, комиссия
+- [x] GET /clinic/stats/monthly — 12 oy oyma-oy grafik (bemorlar soni)
+- [x] GET /clinic/stats/doctors — har shifokor uchun: bemorlar, reyting, daromad
 - [ ] GET /clinic/stats/rooms — har xona bandligi
 - [ ] GET /clinic/stats/services — eng ko'p so'ralgan xizmatlar
 
-#### CLIN-BE-7. Salomat AI → Lead tizimi
-- [ ] Entity `salomat_lead`: id, clinicId, patientName, patientPhone, aiSummary, specialization, status (NEW | CONTACTED | BOOKED | VISITED | MISSED), appointmentId (nullable), commissionAmount (nullable), commissionPaid (boolean), createdAt
+#### CLIN-BE-7. Salomat AI → Lead tizimi — DONE 2026-04-05
+- [x] Entity `salomat_lead`: id, clinicId, patientName, patientPhone, aiSummary, specialization, status (NEW | CONTACTED | BOOKED | VISITED | MISSED), appointmentId (nullable), commissionAmount (nullable), commissionPaid (boolean), createdAt
 - [ ] В AI chat flow: после рекомендации кliniki — запросить имя и телефон пациента
-- [ ] POST /clinic/leads — сохранить лид (внутренний вызов из AI сервиса)
-- [ ] GET /clinic/leads — список лидов (CEO + Reception, только своя клиника)
-- [ ] PATCH /clinic/leads/:id/status — сменить статус (CEO + Reception)
-- [ ] DELETE /clinic/leads/:id — удалить (только CEO)
-- [ ] WebSocket event `clinic:new_lead` → уведомление Reception в реальном времени
-- [ ] Push уведомление Reception при новом лиде
-- [ ] Логика комиссии: при status → VISITED и companyId.pilotEnded=true → создать запись в `lead_commission`
+- [x] createLead() — внутренний метод сервиса (вызывается из Salomat AI)
+- [x] GET /clinic/leads — список лидов (CEO + Reception, только своя клиника)
+- [x] PATCH /clinic/leads/:id/status — сменить статус (CEO + Reception)
+- [x] DELETE /clinic/leads/:id — удалить (только CEO)
+- [x] WebSocket event `clinic:new_lead` → уведомление Reception в реальном времени
+- [x] Push уведомление Reception при новом лиде
+- [x] Логика комиссии: при status → VISITED и companyId.pilotEnded=true → set commissionAmount
 
-#### CLIN-BE-8. Admin: управление компаниями
-- [ ] GET /admin/companies — список всех компаний с фильтрами (isVerified, isActive, city)
-- [ ] POST /admin/companies — создать компанию + CEO аккаунт одним запросом
-- [ ] PATCH /admin/companies/:id/verify
-- [ ] PATCH /admin/companies/:id/block
+#### CLIN-BE-8. Admin: управление компаниями — PARTIALLY DONE 2026-04-05
+- [x] GET /admin/companies — список всех компаний с фильтрами (isVerified, isActive, city)
+- [x] POST /admin/companies — создать компанию + CEO аккаунт одним запросом
+- [x] PATCH /admin/companies/:id/verify
+- [x] PATCH /admin/companies/:id/block
 - [ ] GET /admin/companies/:id/stats — статистика конкретной клиники
-- [ ] GET /admin/leads/overview — все лиды по всем клиникам (сводка)
+- [x] GET /admin/leads/overview — все лиды по всем клиникам (сводка)
+- [x] GET /admin/leads — все лиды с фильтрами (clinicId, status, page, limit)
 
-#### CLIN-BE-9. Страница пациента + Рецепты
-- [ ] GET /clinic/patients/:phone — поиск пациента по телефону (Reception при бронировании)
+#### CLIN-BE-9. Страница пациента + Рецепты — PARTIALLY DONE 2026-04-05
+- [x] GET /clinic/patients/:phone — поиск пациента по телефону (Reception при бронировании)
 - [ ] GET /clinic/patients/:id/history — история визитов пациента в эту клинику
 - [ ] POST /clinic/appointments/:id/prescription — врач отправляет рецепт пациенту
   - Сохранить в БД + отправить SMS с ссылкой или push уведомление

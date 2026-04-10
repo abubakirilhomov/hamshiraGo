@@ -93,5 +93,22 @@
   "VOICE_TTS_NOT_CONFIGURED": "Ovozli javob sozlanmagan",
   "SALOMAT_RATE_LIMIT": "Bugungi xabarlar limiti tugadi. Ertaga urinib ko'ring yoki shifokorga yoziling.",
   "SALOMAT_RATE_LIMIT_WARNING": "Bugun kam xabarlar qoldi",
-  "SALOMAT_CONSENT_REQUIRED": "Salomat dan foydalanish uchun rozilik talab qilinadi"
+  "SALOMAT_CONSENT_REQUIRED": "Salomat dan foydalanish uchun rozilik talab qilinadi",
+  "COMPANY_NOT_FOUND": "Klinika topilmadi",
+  "COMPANY_PHONE_EXISTS": "Bu telefon raqami bilan klinika allaqachon ro'yxatdan o'tgan",
+  "COMPANY_NOT_VERIFIED": "Klinika tasdiqlanmagan",
+  "COMPANY_BLOCKED": "Klinika bloklangan",
+  "CLINIC_ACCESS_ONLY": "Faqat klinika xodimlari uchun",
+  "CLINIC_NOT_AUTHENTICATED": "Klinika xodimi avtorizatsiya qilinmagan",
+  "CLINIC_INSUFFICIENT_ROLE": "Bu amal uchun huquqlar yetarli emas",
+  "STAFF_NOT_FOUND": "Xodim topilmadi",
+  "STAFF_PHONE_EXISTS": "Bu telefon raqami bilan xodim allaqachon mavjud",
+  "ROOM_NOT_FOUND": "Xona topilmadi",
+  "SERVICE_NOT_FOUND": "Xizmat topilmadi",
+  "SERVICE_ALREADY_EXISTS": "Xizmat allaqachon mavjud",
+  "APPOINTMENT_NOT_FOUND": "Yozuv topilmadi",
+  "APPOINTMENT_ALREADY_CANCELLED": "Yozuv allaqachon bekor qilingan",
+  "APPOINTMENT_ALREADY_DONE": "Qabul allaqachon yakunlangan",
+  "LEAD_NOT_FOUND": "Lid topilmadi",
+  "LEAD_ALREADY_PROCESSED": "Lid allaqachon qayta ishlangan"
 }

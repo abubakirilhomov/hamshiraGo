@@ -3,6 +3,39 @@
 ## 2026-04-09
 
 - **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
+## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
+
+- **[backend]** CLIN-BE-6: SalomatLead entity (salomat_leads table) -- `backend/src/clinic/entities/salomat-lead.entity.ts`
+- **[backend]** CLIN-BE-6: CreateLeadDto + UpdateLeadStatusDto -- `backend/src/clinic/dto/create-lead.dto.ts`, `update-lead-status.dto.ts`
+- **[backend]** CLIN-BE-6: Lead CRUD in ClinicService: createLead (internal), getLeads, updateLeadStatus, deleteLead, getLeadStats -- `backend/src/clinic/clinic.service.ts`
+- **[backend]** CLIN-BE-6: Commission logic: when lead -> VISITED and pilotEnded=true, set commissionAmount from company settings -- `backend/src/clinic/clinic.service.ts`
+- **[backend]** CLIN-BE-6: Lead endpoints: GET/PATCH/DELETE /clinic/leads, GET /clinic/leads/stats (CEO+Reception, delete CEO only) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** CLIN-BE-7: Clinic stats: GET /clinic/stats/overview, /stats/monthly, /stats/doctors (CEO only) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** CLIN-BE-7: Patient search: GET /clinic/patients/:phone (CEO+Reception) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** CLIN-BE-8: Admin leads: GET /admin/leads/overview, GET /admin/leads (with filters) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** CLIN-BE-9: WebSocket clinic room: join clinic:{companyId} on connect, emitNewLead, emitAppointmentUpdate -- `backend/src/realtime/order-events.gateway.ts`
+- **[backend]** CLIN-BE-9: Push notifications to RECEPTION staff on new lead -- `backend/src/clinic/clinic.service.ts`
+- **[backend]** i18n: LEAD_NOT_FOUND, LEAD_ALREADY_PROCESSED in ru.json + uz.json -- `backend/src/common/i18n/`
+
+## 2026-04-05 (V6 Clinic Platform Stage 2 — Rooms, Services, Appointments)
+
+- **[backend]** CLIN-BE-3: CompanyRoom + CompanyRoomDoctor entities, CRUD endpoints, assign doctor to room, today schedule -- `backend/src/clinic/entities/company-room.entity.ts`, `company-room-doctor.entity.ts`
+- **[backend]** CLIN-BE-4: CompanyService entity, CRUD (CEO), public services endpoint GET /companies/:id/services -- `backend/src/clinic/entities/company-service.entity.ts`
+- **[backend]** CLIN-BE-5: ClinicAppointment entity, create/list/filter/checkin/cancel/status/today/stats endpoints (CEO+Reception) -- `backend/src/clinic/entities/clinic-appointment.entity.ts`
+- **[backend]** 5 new DTOs: CreateRoomDto, AssignRoomDoctorDto, CreateCompanyServiceDto, CreateAppointmentDto, UpdateAppointmentStatusDto -- `backend/src/clinic/dto/`
+- **[backend]** ClinicPublicController: public GET /companies/:companyId/services (no auth) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** i18n: 6 new keys (ROOM_NOT_FOUND, SERVICE_NOT_FOUND, SERVICE_ALREADY_EXISTS, APPOINTMENT_NOT_FOUND/CANCELLED/DONE) in ru.json + uz.json
+
+## 2026-04-05 (V6 Clinic Platform — Foundation)
+
+- **[backend]** CLIN-BE-1: Company entity + CompanyBranch entity + CRUD + admin verify/block -- `backend/src/clinic/entities/`
+- **[backend]** CLIN-BE-2: CompanyUser entity + clinic-auth register/login/me + staff CRUD (CEO only) -- `backend/src/clinic/`
+- **[backend]** CLIN-BE-8 (partial): Admin company endpoints (list, create, verify, block) -- `backend/src/clinic/clinic.controller.ts`
+- **[backend]** JWT strategy: added `clinic` role with companyId + clinicRole in payload -- `backend/src/auth/strategies/jwt.strategy.ts`
+- **[backend]** ClinicAuthGuard + ClinicRoleGuard + @ClinicUser() decorator -- `backend/src/auth/guards/`, `backend/src/auth/decorators/`
+- **[backend]** Doctor entity: added nullable companyId field -- `backend/src/consultations/entities/doctor.entity.ts`
+- **[backend]** i18n: 9 clinic keys added to ru.json + uz.json -- `backend/src/common/i18n/`
+- **[backend]** ClinicModule registered in AppModule -- `backend/src/app.module.ts`
 
 ## 2026-04-09 (Планирование: Clinic System + Salomat AI Leads)
 
