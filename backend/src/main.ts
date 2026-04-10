@@ -42,6 +42,8 @@ async function bootstrap() {
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
       if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // Allow any Railway deployment and hamshirago.uz subdomain
+      if (origin.endsWith('.up.railway.app') || origin.endsWith('.hamshirago.uz')) return callback(null, true);
       callback(new Error(`CORS: origin "${origin}" not allowed`));
     },
     credentials: true,
