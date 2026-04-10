@@ -230,12 +230,42 @@ export class VoiceAgentService {
     }
   }
 
-  // ── TTS: Placeholder ────────────────────────────────────────────────────
+  // ── TTS: OpenAI TTS-1 ───────────────────────────────────────────────────
 
-  // TODO: Enable when OPENAI_API_KEY is available
-  async synthesize(_text: string, _lang: string): Promise<Buffer | null> {
-    this.logger.warn('TTS not configured — OPENAI_API_KEY is not set');
-    return null;
+  async synthesize(text: string, lang: string = 'ru'): Promise<Buffer | null> {
+    const openaiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (!openaiKey) {
+      this.logger.warn('OPENAI_API_KEY not set — TTS unavailable');
+      return null;
+    }
+
+    try {
+      const voice = lang === 'uz' ? 'nova' : 'nova'; // both use nova for now
+      const response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          input: text.slice(0, 4096), // max 4096 chars
+          voice,
+          response_format: 'mp3',
+        }),
+      });
+
+      if (!response.ok) {
+        this.logger.error(`OpenAI TTS error: ${response.status}`);
+        return null;
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch (err) {
+      this.logger.error(`TTS error: ${err}`);
+      return null;
+    }
   }
 
   // ── Session management ──────────────────────────────────────────────────

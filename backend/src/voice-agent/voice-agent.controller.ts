@@ -9,11 +9,12 @@ import {
   Param,
   Post,
   Query,
-  ServiceUnavailableException,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
@@ -115,17 +116,24 @@ export class VoiceAgentController {
 
   @Post('synthesize')
   @UseGuards(OptionalJwtGuard)
-  @ApiOperation({ summary: 'Text-to-speech (TTS) — currently not configured' })
-  async synthesize(@Body() dto: VoiceSynthesizeDto) {
+  @ApiOperation({ summary: 'Text-to-speech (OpenAI TTS-1)' })
+  async synthesize(
+    @Body() dto: VoiceSynthesizeDto,
+    @Res() res: Response,
+  ) {
     const audio = await this.voiceAgentService.synthesize(
       dto.text,
       dto.lang ?? 'ru',
     );
+
     if (!audio) {
-      throw new ServiceUnavailableException('VOICE_TTS_NOT_CONFIGURED');
+      res.status(503).json({ error: 'VOICE_TTS_NOT_CONFIGURED' });
+      return;
     }
-    // When TTS is ready, stream audio/mpeg
-    return audio;
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', audio.length);
+    res.send(audio);
   }
 
   // ── Session ──────────────────────────────────────────────────────────────

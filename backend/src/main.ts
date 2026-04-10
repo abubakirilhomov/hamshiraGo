@@ -7,6 +7,7 @@ import * as nodeCrypto from 'crypto';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { seedServices } from './services/services.seed';
 import { ALLOWED_ORIGINS } from './common/cors.config';
@@ -20,6 +21,8 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+
+  app.use(cookieParser());
 
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Cloudinary images

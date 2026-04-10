@@ -1,5 +1,13 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-05 (httpOnly Cookie Auth + OpenAI TTS)
+
+- **[backend]** httpOnly cookie auth: POST /auth/login/cookie, POST /auth/logout/cookie endpoints -- `backend/src/auth/auth.controller.ts`
+- **[backend]** JWT strategy updated to extract token from cookies (fallback after Bearer header) -- `backend/src/auth/strategies/jwt.strategy.ts`
+- **[backend]** cookie-parser middleware added to bootstrap -- `backend/src/main.ts`
+- **[backend]** OpenAI TTS-1 integration in voice-agent synthesize() (requires OPENAI_API_KEY) -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** TTS endpoint updated to stream audio/mpeg response -- `backend/src/voice-agent/voice-agent.controller.ts`
+
 ## 2026-04-05 (Push Segmentation + Payments Ledger)
 
 - **[backend]** AdminModule created with PushCampaignService, PaymentLedgerService -- `backend/src/admin/admin.module.ts`

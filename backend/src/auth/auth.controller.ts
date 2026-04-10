@@ -11,8 +11,10 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -58,6 +60,43 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Неверный телефон или пароль' })
   loginClient(@Body() dto: LoginDto) {
     return this.authService.loginClient(dto);
+  }
+
+  @Post('login/cookie')
+  @UseGuards(IpThrottlerGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Логин клиента (httpOnly cookie для web)' })
+  @ApiResponse({ status: 200, description: 'Успешный логин, JWT сохранён в httpOnly cookie' })
+  @ApiResponse({ status: 401, description: 'Неверный телефон или пароль' })
+  async loginWithCookie(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.loginClient(dto);
+
+    res.cookie('token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
+    return { user: result.user };
+  }
+
+  @Post('logout/cookie')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout — очистить httpOnly cookie' })
+  async logoutCookie(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+    return { ok: true };
   }
 
   @Post('refresh')
