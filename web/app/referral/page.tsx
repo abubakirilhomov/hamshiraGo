@@ -25,7 +25,7 @@ export default function ReferralPage() {
   }, [router]);
 
   const inviteLink = data?.referralCode
-    ? `https://app.hamshirago.uz?ref=${data.referralCode}`
+    ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.hamshirago.uz"}?ref=${data.referralCode}`
     : "";
 
   function handleCopyCode() {

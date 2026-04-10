@@ -625,8 +625,7 @@ export const redeemLoyaltyPoints = (points: number) =>
 // ─── Error Reporting ──────────────────────────────────────────────────────────
 
 export function reportClientError(message: string, stack?: string): void {
-  const BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
-  fetch(`${BASE}/client-errors`, {
+  fetch(`${BASE_URL}/client-errors`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
