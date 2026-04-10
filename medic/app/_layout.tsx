@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import 'react-native-reanimated';
+import { setupSslPinning } from '@/utils/sslPinning';
 
 import { ONBOARDING_DONE_KEY } from './onboarding';
 
@@ -90,6 +91,10 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
   const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    setupSslPinning();
+  }, []);
 
   useEffect(() => {
     if (error) throw error;

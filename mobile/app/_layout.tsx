@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
+import { setupSslPinning } from '@/utils/sslPinning';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -84,6 +85,10 @@ export default function RootLayout() {
     Inter_600SemiBold: require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
   });
   const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    setupSslPinning();
+  }, []);
 
   useEffect(() => {
     if (error) throw error;
