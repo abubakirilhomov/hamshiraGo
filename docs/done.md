@@ -1,10 +1,15 @@
 # HamshiraGo --- Выполненные задачи
 
-## 2026-04-10
+## 2026-04-05 (Redis Cache + BullMQ Job Queues)
 
-- **[CLIN-SA-3]** Admin Panel — Salomat Лиды: `admin/src/pages/SalomatLeads.tsx` (4 KPI карточки, кликабельные status-badges для фильтрации, поиск по клинике/пациенту, таблица с кликом на клинику → /companies/:id); backend: `getAllLeads` теперь джойнит название клиники; `getLeadsOverview` + `getAdminLeads` в api.ts; Zap в AdminSidebar, роут `/salomat-leads`
-- **[CLIN-SA-2]** Admin Panel — Детали клиники: `admin/src/pages/CompanyDetail.tsx` (4 вкладки: Обзор/Сотрудники/Лиды/Статистика), 12-мес. Bar chart, KPI лидов по статусам, роут `/companies/:id`; backend: добавлены 3 admin endpoint'а в `clinic.controller.ts` (GET :id, GET :id/staff, GET :id/stats/monthly); типы и функции в `admin/src/lib/api.ts`, Building2 в AdminSidebar, роут `/companies` в App.tsx
-- **[CLIN-SA-1]** Admin Panel — Клиники: `admin/src/pages/Companies.tsx` (таблица + фильтры по городу/верификации + пагинация + модал создания с CEO аккаунтом + verify/block кнопки), типы `Company/CompaniesResponse/CreateCompanyDto` и функции `getCompanies, createCompany, verifyCompany, blockCompany, getCompany` в `admin/src/lib/api.ts`, Building2 в AdminSidebar, роут `/companies` в App.tsx
+- **[backend]** Redis caching via @nestjs/cache-manager with in-memory fallback when REDIS_URL is not set -- `backend/src/app.module.ts`
+- **[backend]** BullMQ job queues (push-notifications, telegram-messages) conditionally registered when REDIS_URL exists -- `backend/src/app.module.ts`
+- **[backend]** AppSettingsService migrated from manual in-memory cache to NestJS CacheManager (works with Redis or in-memory) -- `backend/src/app-settings/app-settings.service.ts`
+- **[backend]** QueueService abstraction with @Optional() injection, isQueueAvailable flag, retry with exponential backoff -- `backend/src/common/queue.service.ts`
+- **[backend]** PushProcessor (BullMQ worker for push-notifications queue) -- `backend/src/realtime/push.processor.ts`
+- **[backend]** TelegramProcessor (BullMQ worker for telegram-messages queue) -- `backend/src/realtime/telegram.processor.ts`
+- **[backend]** QueueService registered in CommonModule (global), processors in RealtimeModule (conditional) -- `backend/src/common/common.module.ts`, `backend/src/realtime/realtime.module.ts`
+- **[backend]** REDIS_URL added to .env.example -- `backend/.env.example`
 
 ## 2026-04-05 (httpOnly Cookie Auth + OpenAI TTS)
 
@@ -37,7 +42,6 @@
 - **[backend]** CLIN-BE-14: POST /clinic/appointments/:id/prescription (all clinic roles) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
 - **[backend]** CLIN-BE-15: PatientPrescriptionsController: GET /patient/prescriptions, GET /patient/prescriptions/:id (client JWT auth) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
 - **[backend]** CLIN-BE-15: ClinicPrescription + PatientPrescriptionsController registered in ClinicModule -- `backend/src/clinic/clinic.module.ts`
-## 2026-04-09
 
 ## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
 

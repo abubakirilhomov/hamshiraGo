@@ -736,7 +736,7 @@ export class ClinicService {
     // Attach clinic names
     const companyIds = [...new Set(rawData.map((l) => l.clinicId))];
     const companies = companyIds.length
-      ? await this.companyRepo.findByIds(companyIds, { select: ['id', 'name'] as any })
+      ? await this.companyRepo.find({ where: companyIds.map(id => ({ id })), select: ['id', 'name'] })
       : [];
     const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
