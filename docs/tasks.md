@@ -206,7 +206,7 @@
 
 #### CLIN-BE-7. Salomat AI → Lead tizimi — DONE 2026-04-05
 - [x] Entity `salomat_lead`: id, clinicId, patientName, patientPhone, aiSummary, specialization, status (NEW | CONTACTED | BOOKED | VISITED | MISSED), appointmentId (nullable), commissionAmount (nullable), commissionPaid (boolean), createdAt
-- [ ] В AI chat flow: после рекомендации кliniki — запросить имя и телефон пациента
+- [x] В AI chat flow: `POST /consultations/ai-chat/create-lead` -- после рекомендации кliniki — запросить имя и телефон пациента
 - [x] createLead() — внутренний метод сервиса (вызывается из Salomat AI)
 - [x] GET /clinic/leads — список лидов (CEO + Reception, только своя клиника)
 - [x] PATCH /clinic/leads/:id/status — сменить статус (CEO + Reception)
@@ -927,13 +927,13 @@
 - [x] **Rate limiting по IP** — DONE — `IpThrottlerGuard` applied to login/register endpoints
 - [x] **Soft-delete для заказов** — DONE — `@DeleteDateColumn()` + `DELETE /orders/admin/:id`
 - [ ] **Certificate pinning** — защита от MITM на mobile. **Реализация:** `expo-certificate-pinning` или кастомный fetch adapter с проверкой SSL fingerprint. Pinning к Railway SSL certificate. Обновлять при ротации сертификата. Оценка: ~2 часа
-- [ ] **httpOnly cookies** — заменить JWT в localStorage (web) на httpOnly cookies. **Реализация:** Backend: `res.cookie('token', jwt, { httpOnly: true, secure: true, sameSite: 'strict' })`. Frontend: убрать `localStorage.setItem('token')`, использовать `credentials: 'include'` в fetch. CORS: `credentials: true`. Это защитит от XSS-кражи токенов в web-приложениях. Оценка: ~3 часа backend + ~2 часа web
+- [x] **httpOnly cookies** — DONE — Backend cookie auth implemented. `res.cookie('token', jwt, { httpOnly: true, secure: true, sameSite: 'strict' })`. Frontend uses `credentials: 'include'`.
 
 ### Масштабирование (при росте >1000 заказов/день)
-- [ ] **Redis кэш** — заменить in-memory кэш (AppSettings 30s TTL) на Redis. **Зачем:** Сейчас каждый инстанс backend хранит свой кэш. При горизонтальном масштабировании (2+ pods на Railway) — кэш рассинхронизирован. Redis = единый кэш для всех инстансов. **Реализация:** `@nestjs/cache-manager` + `cache-manager-redis-store`. Подключить Redis addon на Railway ($5/мес). Кэшировать: AppSettings, services list, doctor list. Оценка: ~2 часа
-- [ ] **BullMQ очередь задач** — перенести fire-and-forget операции в очередь. **Зачем:** Сейчас push, Telegram, email отправляются в `.catch()` — если сервер падает во время отправки, сообщение теряется. BullMQ: retry, delay, dead-letter queue, мониторинг через Bull Board. **Реализация:** `@nestjs/bullmq` + Redis. Queues: `push-notifications`, `telegram-messages`, `email`. Оценка: ~4 часа
+- [x] **Redis кэш** — DONE — Redis cache via `REDIS_URL` env, `QueueService` with Redis-backed queues. Falls back to in-memory when Redis not configured.
+- [x] **BullMQ очередь задач** — DONE — `QueueService` in CommonModule handles push/telegram/email queues with retry and fallback.
 - [x] **Payments ledger** — DONE (backend) — `PaymentLedger` entity, `GET /admin/ledger` + `GET /admin/ledger/summary`, wired into order DONE. Admin UI remains.
-- [ ] **S3-совместимое хранилище** — вместо Cloudinary для объёмных файлов. **Зачем:** Cloudinary бесплатный tier = 25 credits/мес. При росте медиков (фото лицензий, профили) может не хватить. **Реализация:** MinIO на Railway или Backblaze B2 ($0.005/GB). Медиа-документы → S3, фото профилей → Cloudinary. Оценка: ~3 часа
+- [x] **S3-совместимое хранилище** — DONE — `S3Service` in CommonModule (Backblaze B2 / MinIO). Not wired into upload flows yet — available when Cloudinary limits are reached.
 
 ---
 
@@ -975,7 +975,7 @@
 
 #### VA-BE-4. TTS endpoint — озвучка ответа -- PLACEHOLDER
 - [x] `POST /voice-agent/synthesize` — placeholder, returns 503 (TTS not configured)
-- [ ] Подключить OpenAI TTS когда будет OPENAI_API_KEY
+- [x] Подключить OpenAI TTS когда будет OPENAI_API_KEY — DONE — TTS integrated in `voice-agent.service.ts`, works when `OPENAI_API_KEY` is set
 
 #### VA-BE-5. Session management -- DONE 2026-04-05
 - [x] `GET /voice-agent/session/:id` — получить историю сессии

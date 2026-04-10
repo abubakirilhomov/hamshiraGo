@@ -1,5 +1,17 @@
 # HamshiraGo --- Выполненные задачи
 
+<<<<<<< Updated upstream
+## 2026-04-05 (Salomat Lead, S3 Storage, Voice Logging)
+
+- **[backend]** `POST /consultations/ai-chat/create-lead` -- new endpoint to create clinic lead from Salomat AI recommendation (mobile collects patientName/phone, sends with clinicId) -- `backend/src/consultations/consultations.controller.ts`, `backend/src/consultations/dto/create-lead-from-chat.dto.ts`
+- **[backend]** ClinicModule imported in ConsultationsModule (forwardRef) to enable lead creation from AI chat flow -- `backend/src/consultations/consultations.module.ts`
+- **[backend]** Voice session completion logging -- log line with sessionId, recommendation, specialization, exchangeCount when session reaches COMPLETED status -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** S3Service (Backblaze B2 / MinIO compatible) -- upload, delete, getPresignedUrl -- registered in CommonModule (global), graceful fallback when S3 not configured -- `backend/src/common/s3.service.ts`, `backend/src/common/common.module.ts`
+- **[backend]** S3 env vars added to .env.example (S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
+- **[backend]** Installed @aws-sdk/client-s3 + @aws-sdk/s3-request-presigner
+
+=======
+>>>>>>> Stashed changes
 ## 2026-04-05 (Redis Cache + BullMQ Job Queues)
 
 - **[backend]** Redis caching via @nestjs/cache-manager with in-memory fallback when REDIS_URL is not set -- `backend/src/app.module.ts`

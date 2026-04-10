@@ -192,6 +192,10 @@ export class VoiceAgentService {
         session.suggestedSpecialization = parsed.specialization;
         session.status = 'COMPLETED';
 
+        this.logger.log(
+          `Voice session completed: ${session.id}, recommendation: ${parsed.recommendation}, specialization: ${parsed.specialization ?? 'none'}, exchanges: ${session.exchangeCount}`,
+        );
+
         // Try to match a service if NURSE recommendation
         if (parsed.recommendation === 'NURSE' && parsed.specialization) {
           const services = await this.servicesService.findAll();

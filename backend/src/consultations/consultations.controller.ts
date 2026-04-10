@@ -30,7 +30,9 @@ import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 import { ConfirmPrescriptionDto } from './dto/confirm-prescription.dto';
+import { CreateLeadFromChatDto } from './dto/create-lead-from-chat.dto';
 import { UsersService } from '../users/users.service';
+import { ClinicService } from '../clinic/clinic.service';
 
 @Controller('consultations')
 export class ConsultationsController {
@@ -40,6 +42,7 @@ export class ConsultationsController {
     private readonly videoService: VideoService,
     private readonly salomatAuditService: SalomatAuditService,
     private readonly usersService: UsersService,
+    private readonly clinicService: ClinicService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -148,6 +151,23 @@ export class ConsultationsController {
     }
 
     res.end();
+  }
+
+  /** Create a clinic lead from Salomat AI recommendation */
+  @UseGuards(JwtAuthGuard)
+  @Post('ai-chat/create-lead')
+  @HttpCode(HttpStatus.CREATED)
+  async createLeadFromSalomat(
+    @ClientId() userId: string,
+    @Body() dto: CreateLeadFromChatDto,
+  ) {
+    return this.clinicService.createLead({
+      clinicId: dto.clinicId,
+      patientName: dto.patientName,
+      patientPhone: dto.patientPhone,
+      specialization: dto.specialization,
+      aiSummary: dto.aiSummary,
+    });
   }
 
   /* ------------------------------------------------------------------ */
