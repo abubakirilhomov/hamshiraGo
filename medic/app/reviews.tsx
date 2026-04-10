@@ -7,11 +7,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -35,6 +36,7 @@ export default function ReviewsScreen() {
   const { token } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [reviews, setReviews] = useState<ReviewOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,6 +69,13 @@ export default function ReviewsScreen() {
     setRefreshing(false);
   }, [fetchReviews]);
 
+  /* ── Average rating ────────────────────────────────────────── */
+  const avgRating = useMemo(() => {
+    if (reviews.length === 0) return null;
+    const sum = reviews.reduce((acc, r) => acc + r.clientRating, 0);
+    return (sum / reviews.length).toFixed(1);
+  }, [reviews]);
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -76,149 +85,221 @@ export default function ReviewsScreen() {
   }
 
   return (
-    <FlatList
-      style={styles.container}
-      contentContainerStyle={reviews.length === 0 && !fetchError ? styles.emptyContainer : styles.listContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
-      }
-      data={reviews}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <FontAwesome name="arrow-left" size={16} color={Theme.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>{t('review.myReviews')}</Text>
-        </View>
-      }
-      ListEmptyComponent={
-        !fetchError ? (
-          <View style={styles.empty}>
-            <FontAwesome name="star-o" size={48} color={Theme.border} />
-            <Text style={styles.emptyTitle}>{t('review.noReviews')}</Text>
-          </View>
-        ) : (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{fetchError}</Text>
-            <Pressable onPress={fetchReviews} style={styles.retryBtn}>
-              <Text style={styles.retryText}>{t('common.retry')}</Text>
-            </Pressable>
-          </View>
-        )
-      }
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <View style={styles.cardTop}>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <FontAwesome
-                  key={star}
-                  name={star <= item.clientRating ? 'star' : 'star-o'}
-                  size={16}
-                  color={star <= item.clientRating ? Theme.primary : Theme.border}
-                />
-              ))}
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color={Theme.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Sharhlar</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={reviews.length === 0 && !fetchError ? styles.emptyContainer : styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
+        }
+        data={reviews}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          avgRating ? (
+            <View style={styles.avgCard}>
+              <Text style={styles.avgValue}>{avgRating}</Text>
+              <View style={styles.avgStars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FontAwesome
+                    key={star}
+                    name={star <= Math.round(Number(avgRating)) ? 'star' : 'star-o'}
+                    size={18}
+                    color={Theme.warning}
+                  />
+                ))}
+              </View>
+              <Text style={styles.avgCount}>{reviews.length} {t('review.reviews', { defaultValue: 'sharh' })}</Text>
             </View>
-            <Text style={styles.dateText}>
-              {new Date(item.created_at).toLocaleDateString('ru-RU')}
-            </Text>
+          ) : null
+        }
+        ListEmptyComponent={
+          !fetchError ? (
+            <View style={styles.empty}>
+              <FontAwesome name="star-o" size={48} color={Theme.surfaceContainerHigh} />
+              <Text style={styles.emptyTitle}>{t('review.noReviews')}</Text>
+            </View>
+          ) : (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{fetchError}</Text>
+              <Pressable onPress={fetchReviews} style={styles.retryBtn}>
+                <Text style={styles.retryText}>{t('common.retry')}</Text>
+              </Pressable>
+            </View>
+          )
+        }
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.cardTop}>
+              {/* Avatar circle */}
+              <View style={styles.avatar}>
+                <FontAwesome name="user" size={16} color={Theme.textTertiary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <FontAwesome
+                      key={star}
+                      name={star <= item.clientRating ? 'star' : 'star-o'}
+                      size={14}
+                      color={star <= item.clientRating ? Theme.warning : Theme.surfaceContainerHigh}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.serviceTitle}>{item.serviceTitle}</Text>
+              </View>
+              <Text style={styles.dateText}>
+                {new Date(item.created_at).toLocaleDateString('ru-RU')}
+              </Text>
+            </View>
+            <Text style={styles.reviewText}>"{item.clientReview}"</Text>
           </View>
-          <Text style={styles.reviewText}>"{item.clientReview}"</Text>
-          <Text style={styles.serviceTitle}>{item.serviceTitle}</Text>
-        </View>
-      )}
-    />
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.background },
+  root: { flex: 1, backgroundColor: Theme.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
-  listContent: { padding: 16, gap: 10 },
-  emptyContainer: { flexGrow: 1 },
+
+  /* ── Header ──────────────────────────────────────────────────── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Theme.surface,
+    ...Shadow.sm,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Theme.surface,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    ...Typography.h3,
     color: Theme.text,
   },
+
+  /* ── Average rating ──────────────────────────────────────────── */
+  avgCard: {
+    alignItems: 'center',
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    marginBottom: Spacing.lg,
+    ...Shadow.sm,
+  },
+  avgValue: {
+    ...Typography.display,
+    color: Theme.primary,
+    marginBottom: Spacing.xs,
+  },
+  avgStars: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  avgCount: {
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
+
+  /* ── List ─────────────────────────────────────────────────────── */
+  list: { flex: 1 },
+  listContent: { padding: Spacing.lg, gap: Spacing.md },
+  emptyContainer: { flexGrow: 1 },
+
+  /* ── Empty state ─────────────────────────────────────────────── */
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
     paddingTop: 80,
   },
   emptyTitle: {
-    fontSize: 16,
+    ...Typography.body,
     color: Theme.textSecondary,
   },
+
+  /* ── Error ───────────────────────────────────────────────────── */
   errorBox: {
-    padding: 16,
-    gap: 10,
+    padding: Spacing.lg,
+    gap: Spacing.md,
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 14,
+    ...Typography.bodySmall,
     color: Theme.error,
     textAlign: 'center',
   },
   retryBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     backgroundColor: Theme.primary,
-    borderRadius: 8,
+    borderRadius: Radius.full,
   },
   retryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#fff',
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
+    color: Theme.textInverse,
   },
+
+  /* ── Review card ─────────────────────────────────────────────── */
   card: {
     backgroundColor: Theme.surface,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    gap: 8,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+    ...Shadow.sm,
   },
   cardTop: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
   starsRow: {
     flexDirection: 'row',
-    gap: 4,
-  },
-  dateText: {
-    fontSize: 12,
-    color: Theme.textSecondary,
-  },
-  reviewText: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    color: Theme.text,
-    lineHeight: 20,
+    gap: 3,
+    marginBottom: 2,
   },
   serviceTitle: {
-    fontSize: 12,
-    color: Theme.textSecondary,
+    ...Typography.caption,
+    color: Theme.textTertiary,
+    marginTop: 2,
+  },
+  dateText: {
+    ...Typography.caption,
+    color: Theme.textTertiary,
+  },
+  reviewText: {
+    ...Typography.body,
+    fontStyle: 'italic',
+    color: Theme.text,
+    lineHeight: 22,
   },
 });

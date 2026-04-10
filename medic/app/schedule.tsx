@@ -13,7 +13,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Theme, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -263,15 +263,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Theme.surfaceSecondary,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: Typography.h3.fontSize,
-    fontWeight: '700',
+    ...Typography.h3,
     color: Theme.text,
   },
   scroll: { flex: 1 },
@@ -283,8 +282,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    ...Shadow.sm,
   },
   dayHeader: {
     flexDirection: 'row',
@@ -292,8 +290,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayName: {
-    fontSize: 15,
-    fontWeight: '600',
+    ...Typography.h4,
     color: Theme.text,
   },
   timeRow: {
@@ -304,8 +301,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   timeLabel: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '500',
+    ...Typography.caption,
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -317,7 +313,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 36,
     borderRadius: Radius.sm,
-    backgroundColor: Theme.surfaceSecondary,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -328,8 +324,8 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
   hourText: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
     color: Theme.text,
   },
   hourTextActive: {
@@ -354,8 +350,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveBtnText: {
-    fontSize: Typography.button.fontSize,
-    fontWeight: '600',
-    color: '#fff',
+    ...Typography.button,
+    color: Theme.textInverse,
   },
 });

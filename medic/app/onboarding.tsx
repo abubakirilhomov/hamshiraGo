@@ -9,6 +9,7 @@ import {
   ViewToken,
 } from 'react-native';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -19,7 +20,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { Radius, Spacing, Theme, Typography } from '@/constants/Theme';
+import { Fonts, Radius, Spacing, Theme, Typography, Shadow } from '@/constants/Theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -64,12 +65,12 @@ function DotIndicator({ count, activeIndex }: { count: number; activeIndex: numb
 }
 
 function Dot({ active }: { active: boolean }) {
-  const width = useSharedValue(active ? 24 : 8);
-  const opacity = useSharedValue(active ? 1 : 0.4);
+  const width = useSharedValue(active ? 28 : 8);
+  const opacity = useSharedValue(active ? 1 : 0.35);
 
   React.useEffect(() => {
-    width.value = withTiming(active ? 24 : 8, { duration: 250 });
-    opacity.value = withTiming(active ? 1 : 0.4, { duration: 250 });
+    width.value = withTiming(active ? 28 : 8, { duration: 250 });
+    opacity.value = withTiming(active ? 1 : 0.35, { duration: 250 });
   }, [active, width, opacity]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -81,7 +82,7 @@ function Dot({ active }: { active: boolean }) {
     <Animated.View
       style={[
         styles.dot,
-        { backgroundColor: active ? Theme.primary : Theme.border },
+        { backgroundColor: active ? Theme.primary : Theme.surfaceContainerHigh },
         animStyle,
       ]}
     />
@@ -126,7 +127,7 @@ export default function OnboardingScreen() {
         <View style={styles.iconContainer}>
           <FontAwesome6
             name={item.icon as any}
-            size={72}
+            size={64}
             color={Theme.primary}
           />
         </View>
@@ -139,7 +140,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Skip button */}
+      {/* Skip link top-right */}
       <View style={[styles.skipContainer, { top: insets.top + Spacing.md }]}>
         <Pressable onPress={finish} hitSlop={12}>
           <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
@@ -165,17 +166,24 @@ export default function OnboardingScreen() {
         })}
       />
 
-      {/* Bottom section: dots + button */}
+      {/* Bottom section: pill dots + gradient pill CTA */}
       <View style={styles.bottomSection}>
         <DotIndicator count={SLIDES.length} activeIndex={activeIndex} />
 
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [pressed && { opacity: 0.9 }]}
           onPress={handleNext}
         >
-          <Text style={styles.buttonText}>
-            {isLastSlide ? t('onboarding.start') : t('onboarding.next')}
-          </Text>
+          <LinearGradient
+            colors={Theme.primaryGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.button}
+          >
+            <Text style={styles.buttonText}>
+              {isLastSlide ? t('onboarding.start') : `${t('onboarding.next')}`}
+            </Text>
+          </LinearGradient>
         </Pressable>
       </View>
     </View>
@@ -194,6 +202,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     ...Typography.body,
+    fontFamily: Fonts.interMd,
     color: Theme.textSecondary,
   },
   slide: {
@@ -214,12 +223,14 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.h1,
+    fontFamily: Fonts.manropeBd,
     color: Theme.text,
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
   description: {
     ...Typography.body,
+    fontFamily: Fonts.inter,
     color: Theme.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
@@ -241,17 +252,14 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   button: {
-    width: '100%',
-    backgroundColor: Theme.primary,
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.lg,
+    width: SCREEN_WIDTH - Spacing.xxl * 2,
+    borderRadius: Radius.full,
+    paddingVertical: 16,
     alignItems: 'center',
-  },
-  buttonPressed: {
-    backgroundColor: Theme.primaryDark,
   },
   buttonText: {
     ...Typography.button,
+    fontFamily: Fonts.manropeSb,
     color: Theme.textInverse,
   },
 });

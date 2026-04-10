@@ -8,11 +8,13 @@ import {
   Platform,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -34,6 +36,7 @@ export default function WorkZoneScreen() {
   const { medic, token, refreshProfile } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<any>(null);
 
   const hasExistingZone =
@@ -82,7 +85,6 @@ export default function WorkZoneScreen() {
   // Fit map to circle when center or radius changes
   const fitMapToCircle = useCallback(() => {
     if (!mapRef.current || !center) return;
-    // Calculate approximate delta from radius in km
     const latDelta = (radius / 111) * 2.5;
     const lngDelta = (radius / (111 * Math.cos((center.latitude * Math.PI) / 180))) * 2.5;
     mapRef.current.animateToRegion(
@@ -166,162 +168,187 @@ export default function WorkZoneScreen() {
 
   if (loadingLocation || !center) {
     return (
-      <>
-        <Stack.Screen options={{ title: t('geofence.workZone') }} />
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={Theme.primary} />
-        </View>
-      </>
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color={Theme.primary} />
+      </View>
     );
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: t('geofence.workZone'),
-          headerBackTitle: t('common.back'),
-        }}
-      />
-      <View style={styles.container}>
-        {/* Map */}
-        {MapsModule ? (
-          <View style={styles.mapWrap}>
-            <MapsModule.default
-              ref={mapRef}
-              style={styles.map}
-              initialRegion={initialRegion}
-              onPress={handleMapPress}
-              pitchEnabled={false}
-              rotateEnabled={false}
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <Pressable style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color={Theme.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Ish zonasi</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {/* ── Map ──────────────────────────────────────────────────── */}
+      {MapsModule ? (
+        <View style={styles.mapWrap}>
+          <MapsModule.default
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={initialRegion}
+            onPress={handleMapPress}
+            pitchEnabled={false}
+            rotateEnabled={false}
+          >
+            {/* Center marker */}
+            <MapsModule.Marker
+              coordinate={center}
+              anchor={{ x: 0.5, y: 0.5 }}
+              tracksViewChanges={false}
             >
-              {/* Center marker */}
-              <MapsModule.Marker
-                coordinate={center}
-                anchor={{ x: 0.5, y: 0.5 }}
-                tracksViewChanges={false}
-              >
-                <View style={styles.markerDot}>
-                  <FontAwesome name="crosshairs" size={18} color="#fff" />
-                </View>
-              </MapsModule.Marker>
+              <View style={styles.markerDot}>
+                <FontAwesome name="crosshairs" size={18} color={Theme.textInverse} />
+              </View>
+            </MapsModule.Marker>
 
-              {/* Circle overlay */}
-              <MapsModule.Circle
-                center={center}
-                radius={radius * 1000}
-                fillColor="rgba(34, 197, 94, 0.15)"
-                strokeColor="rgba(34, 197, 94, 0.6)"
-                strokeWidth={2}
-              />
-            </MapsModule.default>
-          </View>
-        ) : (
-          <View style={[styles.mapWrap, styles.centered]}>
-            <Text style={styles.hintText}>{t('geofence.tapToSetCenter')}</Text>
-          </View>
-        )}
-
-        {/* Controls */}
-        <View style={styles.controls}>
-          {/* Hint */}
-          <View style={styles.hintRow}>
-            <FontAwesome name="map-marker" size={16} color={Theme.primary} />
-            <Text style={styles.hintText}>{t('geofence.tapToSetCenter')}</Text>
-          </View>
-
-          {/* Status indicator */}
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: hasExistingZone ? Theme.success : Theme.textSecondary },
-              ]}
+            {/* Circle overlay */}
+            <MapsModule.Circle
+              center={center}
+              radius={radius * 1000}
+              fillColor="rgba(0, 104, 96, 0.12)"
+              strokeColor="rgba(0, 104, 96, 0.5)"
+              strokeWidth={2}
             />
-            <Text style={styles.statusText}>
-              {hasExistingZone ? t('geofence.zoneActive') : t('geofence.noZone')}
-            </Text>
-          </View>
+          </MapsModule.default>
+        </View>
+      ) : (
+        <View style={[styles.mapWrap, styles.centered]}>
+          <Text style={styles.hintText}>{t('geofence.tapToSetCenter')}</Text>
+        </View>
+      )}
 
-          {/* Radius slider */}
-          <View style={styles.sliderSection}>
-            <Text style={styles.radiusLabel}>
-              {t('geofence.radius')}: {radius.toFixed(1)} {t('geofence.km')}
-            </Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={MIN_RADIUS}
-              maximumValue={MAX_RADIUS}
-              step={RADIUS_STEP}
-              value={radius}
-              onValueChange={setRadius}
-              minimumTrackTintColor={Theme.primary}
-              maximumTrackTintColor={Theme.border}
-              thumbTintColor={Theme.primary}
-            />
-            <View style={styles.sliderLabels}>
-              <Text style={styles.sliderMinMax}>
-                {MIN_RADIUS} {t('geofence.km')}
-              </Text>
-              <Text style={styles.sliderMinMax}>
-                {MAX_RADIUS} {t('geofence.km')}
-              </Text>
-            </View>
-          </View>
+      {/* ── Controls ─────────────────────────────────────────────── */}
+      <View style={styles.controls}>
+        {/* Hint */}
+        <View style={styles.hintRow}>
+          <FontAwesome name="map-marker" size={16} color={Theme.primary} />
+          <Text style={styles.hintText}>{t('geofence.tapToSetCenter')}</Text>
+        </View>
 
-          {/* Save button */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.saveBtn,
-              pressed && styles.btnPressed,
-              saving && styles.btnDisabled,
+        {/* Status indicator */}
+        <View style={styles.statusRow}>
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: hasExistingZone ? Theme.success : Theme.textTertiary },
             ]}
-            onPress={handleSave}
-            disabled={saving || clearing}
+          />
+          <Text style={styles.statusText}>
+            {hasExistingZone ? t('geofence.zoneActive') : t('geofence.noZone')}
+          </Text>
+        </View>
+
+        {/* Radius slider */}
+        <View style={styles.sliderSection}>
+          <Text style={styles.radiusLabel}>
+            {t('geofence.radius')}: {radius.toFixed(1)} {t('geofence.km')}
+          </Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={MIN_RADIUS}
+            maximumValue={MAX_RADIUS}
+            step={RADIUS_STEP}
+            value={radius}
+            onValueChange={setRadius}
+            minimumTrackTintColor={Theme.primary}
+            maximumTrackTintColor={Theme.surfaceContainerHigh}
+            thumbTintColor={Theme.primary}
+          />
+          <View style={styles.sliderLabels}>
+            <Text style={styles.sliderMinMax}>
+              {MIN_RADIUS} {t('geofence.km')}
+            </Text>
+            <Text style={styles.sliderMinMax}>
+              {MAX_RADIUS} {t('geofence.km')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Save button */}
+        <Pressable
+          style={({ pressed }) => [pressed && { opacity: 0.9 }, (saving || clearing) && { opacity: 0.6 }]}
+          onPress={handleSave}
+          disabled={saving || clearing}
+        >
+          <LinearGradient
+            colors={Theme.primaryGradient as unknown as [string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtn}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Theme.textInverse} />
             ) : (
-              <Text style={styles.saveBtnText}>{t('geofence.saveZone')}</Text>
+              <Text style={styles.saveBtnText}>Saqlash</Text>
+            )}
+          </LinearGradient>
+        </Pressable>
+
+        {/* Clear button -- only if zone exists */}
+        {hasExistingZone && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.clearBtn,
+              pressed && { opacity: 0.85 },
+              clearing && { opacity: 0.6 },
+            ]}
+            onPress={handleClear}
+            disabled={saving || clearing}
+          >
+            {clearing ? (
+              <ActivityIndicator color={Theme.textSecondary} />
+            ) : (
+              <Text style={styles.clearBtnText}>{t('geofence.clearZone')}</Text>
             )}
           </Pressable>
-
-          {/* Clear button — only if zone exists */}
-          {hasExistingZone && (
-            <Pressable
-              style={({ pressed }) => [
-                styles.clearBtn,
-                pressed && styles.btnPressed,
-                clearing && styles.btnDisabled,
-              ]}
-              onPress={handleClear}
-              disabled={saving || clearing}
-            >
-              {clearing ? (
-                <ActivityIndicator color={Theme.textSecondary} />
-              ) : (
-                <Text style={styles.clearBtnText}>{t('geofence.clearZone')}</Text>
-              )}
-            </Pressable>
-          )}
-        </View>
+        )}
       </View>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.background },
+  root: { flex: 1, backgroundColor: Theme.background },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Theme.background,
   },
+
+  /* ── Header ──────────────────────────────────────────────────── */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Theme.surface,
+    ...Shadow.sm,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    ...Typography.h3,
+    color: Theme.text,
+  },
+
+  /* ── Map ──────────────────────────────────────────────────────── */
   mapWrap: {
     height: 320,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.border,
   },
   map: { width: '100%', height: '100%' },
   markerDot: {
@@ -331,17 +358,15 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2.5,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    borderWidth: 3,
+    borderColor: Theme.textInverse,
+    ...Shadow.md,
   },
+
+  /* ── Controls ────────────────────────────────────────────────── */
   controls: {
     flex: 1,
-    padding: 20,
+    padding: Spacing.xl,
     gap: Spacing.lg,
   },
   hintRow: {
@@ -350,27 +375,28 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   hintText: {
-    fontSize: Typography.bodySmall.fontSize,
+    ...Typography.bodySmall,
     color: Theme.textSecondary,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Theme.surface,
-    borderRadius: Radius.sm,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
     padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Theme.border,
   },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  statusText: { fontSize: Typography.bodySmall.fontSize, color: Theme.text, fontWeight: '600' },
+  statusText: {
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
+    color: Theme.text,
+  },
   sliderSection: {
     gap: Spacing.xs,
   },
   radiusLabel: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '700',
+    ...Typography.h4,
     color: Theme.text,
   },
   slider: {
@@ -382,34 +408,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sliderMinMax: {
-    fontSize: Typography.caption.fontSize,
-    color: Theme.textSecondary,
+    ...Typography.caption,
+    color: Theme.textTertiary,
   },
+
+  /* ── Buttons ─────────────────────────────────────────────────── */
   saveBtn: {
-    backgroundColor: Theme.primary,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.full,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveBtnText: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
+    ...Typography.button,
+    color: Theme.textInverse,
   },
   clearBtn: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.full,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Theme.surfaceContainerLow,
   },
   clearBtnText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
     color: Theme.textSecondary,
   },
-  btnPressed: { opacity: 0.85 },
-  btnDisabled: { opacity: 0.6 },
 });

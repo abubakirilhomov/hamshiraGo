@@ -9,8 +9,9 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -60,6 +61,7 @@ const ACTIVE_STATUSES: string[] = ['PENDING', 'ACCEPTED', 'IN_PROGRESS'];
 export default function MyPatientsScreen() {
   const { token } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -177,49 +179,70 @@ export default function MyPatientsScreen() {
   }
 
   return (
-    <FlashList
-      data={sortedData}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={consultations.length === 0 && !error ? styles.emptyContainer : styles.listContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
-      }
-      ListHeaderComponent={
-        <>
-          {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-              <Pressable onPress={() => fetchConsultations(1)} style={styles.retryBtn}>
-                <Text style={styles.retryText}>Qayta urinish</Text>
-              </Pressable>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── Screen header ──────────────────────────────────────── */}
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Bemorlarim</Text>
+      </View>
+
+      <FlashList
+        data={sortedData}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={consultations.length === 0 && !error ? styles.emptyContainer : styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.primary} />
+        }
+        ListHeaderComponent={
+          <>
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+                <Pressable onPress={() => fetchConsultations(1)} style={styles.retryBtn}>
+                  <Text style={styles.retryText}>Qayta urinish</Text>
+                </Pressable>
+              </View>
+            )}
+            {active.length > 0 && (
+              <Text style={styles.sectionTitle}>Faol</Text>
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          !error ? (
+            <View style={styles.empty}>
+              <FontAwesome name="users" size={48} color={Theme.surfaceContainerHigh} />
+              <Text style={styles.emptyTitle}>Bemorlar yo'q</Text>
+              <Text style={styles.emptyHint}>Konsultatsiyalar tarixi bu yerda ko'rinadi</Text>
             </View>
-          )}
-          {active.length > 0 && (
-            <Text style={styles.sectionTitle}>Faol</Text>
-          )}
-        </>
-      }
-      ListEmptyComponent={
-        !error ? (
-          <View style={styles.empty}>
-            <FontAwesome name="users" size={48} color={Theme.border} />
-            <Text style={styles.emptyTitle}>Bemorlar yo'q</Text>
-            <Text style={styles.emptyHint}>Konsultatsiyalar tarixi bu yerda ko'rinadi</Text>
-          </View>
-        ) : null
-      }
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.3}
-      renderItem={renderItem}
-      estimatedItemSize={130}
-    />
+          ) : null
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        renderItem={renderItem}
+        estimatedItemSize={130}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Theme.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
   listContent: { padding: Spacing.lg, gap: Spacing.sm },
   emptyContainer: { flexGrow: 1 },
+
+  /* ── Screen header ───────────────────────────────────────────── */
+  screenHeader: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Theme.surface,
+    ...Shadow.sm,
+  },
+  screenTitle: {
+    ...Typography.h2,
+    color: Theme.text,
+  },
+
   empty: {
     flex: 1,
     justifyContent: 'center',
@@ -227,12 +250,17 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingTop: 80,
   },
-  emptyTitle: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text },
-  emptyHint: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Theme.text,
+  },
+  emptyHint: {
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
 
   sectionTitle: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '700',
+    ...Typography.caption,
     color: Theme.textSecondary,
     marginBottom: Spacing.sm,
     textTransform: 'uppercase',
@@ -243,11 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...Shadow.sm,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -257,8 +281,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   symptomsText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
     color: Theme.text,
   },
   statusBadge: {
@@ -266,7 +290,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
   },
-  statusText: { fontSize: 11, fontWeight: '700' },
+  statusText: {
+    fontSize: 11,
+    fontFamily: Fonts.manropeBd,
+  },
 
   infoRow: {
     flexDirection: 'row',
@@ -274,33 +301,49 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: Spacing.sm,
   },
-  infoText: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  infoText: {
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
 
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  price: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.primary },
-  dateText: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary },
+  price: {
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.primary,
+  },
+  dateText: {
+    ...Typography.caption,
+    color: Theme.textSecondary,
+  },
 
   errorBox: {
     marginBottom: Spacing.md,
-    padding: 14,
-    backgroundColor: '#fee2e220',
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: '#ef444440',
+    padding: Spacing.lg,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  errorText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.error },
+  errorText: {
+    flex: 1,
+    ...Typography.bodySmall,
+    color: Theme.error,
+  },
   retryBtn: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     backgroundColor: Theme.error,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
   },
-  retryText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: '#fff' },
+  retryText: {
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
+    color: Theme.textInverse,
+  },
 });

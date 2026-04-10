@@ -9,14 +9,17 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import AppModal from '@/components/AppModal';
 import { SkeletonProfileHeader, SkeletonLine } from '@/components/SkeletonLoader';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Location from 'expo-location';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { FontAwesome6 } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -45,6 +48,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [completedCount, setCompletedCount] = useState<number | null>(null);
   const [disconnectingTg, setDisconnectingTg] = useState(false);
@@ -105,7 +109,7 @@ export default function ProfileScreen() {
 
   if (!medic) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + Spacing.lg }]}>
         <SkeletonProfileHeader />
         <View style={{ marginHorizontal: 16, gap: 16 }}>
           <View style={[styles.card, { margin: 0 }]}>
@@ -155,7 +159,6 @@ export default function ProfileScreen() {
         try {
           await startBackgroundLocationUpdates();
         } catch {
-          // Do not block online mode if background tracking isn't available on this runtime/build.
           showToast(`${t('profile.bgLocationUnavailable')}. ${t('profile.bgLocationUnavailableMsg')}`, 'warning', 5000);
         }
       } else {
@@ -276,7 +279,7 @@ export default function ProfileScreen() {
 
   return (
     <>
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top }]}>
       {/* Header */}
       <ProfileHeader
         medic={medic}
@@ -287,11 +290,33 @@ export default function ProfileScreen() {
         noReviewsLabel={t('review.noReviews')}
         onSaveName={async (name: string) => {
           await apiFetch('/medics/profile', { token, method: 'PATCH', body: JSON.stringify({ name }) });
-          (medic as any).name = name; // update locally
+          (medic as any).name = name;
         }}
-        editNameLabel={t('editProfile.title', { defaultValue: 'Редактировать' })}
-        saveLabel={t('editProfile.save', { defaultValue: 'Сохранить' })}
+        editNameLabel={t('editProfile.title', { defaultValue: 'Tahrirlash' })}
+        saveLabel={t('editProfile.save', { defaultValue: 'Saqlash' })}
       />
+
+      {/* Earnings / Balance gradient card */}
+      <View style={styles.earningsCardWrap}>
+        <LinearGradient
+          colors={Theme.bannerGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.earningsCard}
+        >
+          <View style={styles.earningsRow}>
+            <View style={styles.earningsCol}>
+              <Text style={styles.earningsLabel}>{t('profile.balance', { defaultValue: 'Balans' })}</Text>
+              <Text style={styles.earningsValue}>{(medic.balance ?? 0).toLocaleString('ru-RU')} UZS</Text>
+            </View>
+            <View style={styles.earningsDivider} />
+            <View style={styles.earningsCol}>
+              <Text style={styles.earningsLabel}>{t('profile.earnings', { defaultValue: 'Daromad' })}</Text>
+              <Text style={styles.earningsValue}>{(medic.earnings ?? 0).toLocaleString('ru-RU')} UZS</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
 
       {/* Verification status card */}
       <VerificationCard
@@ -328,15 +353,112 @@ export default function ProfileScreen() {
         t={t}
       />
 
-      {/* Telegram */}
-      <View style={styles.card}>
-        <View style={styles.tgHeader}>
-          <View style={styles.tgIconWrap}>
-            <Text style={styles.tgIcon}>✈️</Text>
+      {/* Menu items */}
+      <View style={styles.menuSection}>
+        {/* Schedule */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.88 }]}
+          onPress={() => router.push('/schedule')}
+        >
+          <View style={styles.menuIconWrap}>
+            <FontAwesome name="calendar" size={18} color={Theme.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.tgTitle}>{t('profile.telegramNotifications')}</Text>
-            <Text style={styles.tgSubtitle}>
+            <Text style={styles.menuTitle}>{t('profile.schedule', { defaultValue: 'Ish jadvali' })}</Text>
+            <Text style={styles.menuSubtitle}>
+              {t('profile.scheduleDesc', { defaultValue: 'Ish kunlari va soatlarini sozlash' })}
+            </Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
+        </Pressable>
+
+        {/* Work zone */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.88 }]}
+          onPress={() => router.push('/work-zone')}
+        >
+          <View style={styles.menuIconWrap}>
+            <FontAwesome name="map-o" size={18} color={Theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('geofence.workZone')}</Text>
+            <Text style={styles.menuSubtitle}>
+              {medic.workZoneRadius != null
+                ? `${t('geofence.zoneActive')} - ${medic.workZoneRadius} ${t('geofence.km')}`
+                : t('geofence.noZone')}
+            </Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
+        </Pressable>
+
+        {/* Reviews */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.88 }]}
+          onPress={() => router.push('/reviews')}
+        >
+          <View style={styles.menuIconWrap}>
+            <FontAwesome name="star" size={18} color={Theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('review.reviews')}</Text>
+            <Text style={styles.menuSubtitle}>
+              {ratingDisplay ? `${ratingDisplay} / 5.0` : t('review.noReviews')}
+            </Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
+        </Pressable>
+
+        {/* Documents / Verification */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.88 }]}
+          onPress={() => router.push('/verification')}
+        >
+          <View style={styles.menuIconWrap}>
+            <FontAwesome name="file-text-o" size={18} color={Theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('profile.documents', { defaultValue: 'Hujjatlar' })}</Text>
+            <Text style={styles.menuSubtitle}>
+              {t(`profile.verStatus_${medic.verificationStatus}`, { defaultValue: medic.verificationStatus })}
+            </Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
+        </Pressable>
+
+        {/* Language */}
+        <View style={styles.menuItem}>
+          <View style={styles.menuIconWrap}>
+            <FontAwesome name="globe" size={18} color={Theme.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('language.title')}</Text>
+          </View>
+          <View style={styles.langToggle}>
+            {(['uz', 'ru'] as Language[]).map((lang) => (
+              <Pressable
+                key={lang}
+                style={[styles.langPill, language === lang && styles.langPillActive]}
+                onPress={() => setLanguage(lang)}
+              >
+                <Text style={[styles.langPillText, language === lang && styles.langPillTextActive]}>
+                  {lang.toUpperCase()}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* Telegram */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.88 }]}
+          onPress={medic.telegramChatId ? handleDisconnectTelegram : handleConnectTelegram}
+        >
+          <View style={[styles.menuIconWrap, { backgroundColor: '#e0f2fe' }]}>
+            <FontAwesome6 name="telegram" size={18} color="#229ED9" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('profile.telegramNotifications')}</Text>
+            <Text style={styles.menuSubtitle}>
               {medic.telegramChatId
                 ? t('profile.telegramNotificationsOn')
                 : t('profile.telegramNotificationsOff')}
@@ -344,103 +466,34 @@ export default function ProfileScreen() {
           </View>
           {medic.telegramChatId ? (
             <View style={styles.tgBadge}>
-              <Text style={styles.tgBadgeText}>✓ {t('profile.telegramActive')}</Text>
+              <Text style={styles.tgBadgeText}>{t('profile.telegramActive')}</Text>
             </View>
-          ) : null}
-        </View>
-
-        {medic.telegramChatId ? (
-          <Pressable
-            style={({ pressed }) => [styles.tgDisconnectBtn, pressed && { opacity: 0.8 }]}
-            onPress={handleDisconnectTelegram}
-            disabled={disconnectingTg}
-          >
-            {disconnectingTg
-              ? <ActivityIndicator color={Theme.textSecondary} size="small" />
-              : <Text style={styles.tgDisconnectText}>{t('profile.telegramDisconnect')}</Text>}
-          </Pressable>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [styles.tgConnectBtn, pressed && { opacity: 0.85 }]}
-            onPress={handleConnectTelegram}
-          >
-            <Text style={styles.tgConnectText}>{t('profile.telegramConnectVia')}</Text>
-          </Pressable>
-        )}
+          ) : (
+            <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
+          )}
+        </Pressable>
       </View>
 
-      {/* Channel banner — shown once Telegram is connected */}
+      {/* Channel banner */}
       {medic.telegramChatId && (
         <Pressable
           style={({ pressed }) => [styles.channelBanner, pressed && { opacity: 0.88 }]}
           onPress={() => Linking.openURL(TELEGRAM_CHANNEL)}
         >
-          <Text style={styles.channelEmoji}>📢</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.channelTitle}>{t('profile.channelTitle')}</Text>
-            <Text style={styles.channelSub}>{t('profile.channelSub')}</Text>
+          <View style={[styles.menuIconWrap, { backgroundColor: '#e0f2fe' }]}>
+            <FontAwesome name="bullhorn" size={16} color="#0e7490" />
           </View>
-          <FontAwesome name="chevron-right" size={13} color="#0e7490" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.menuTitle}>{t('profile.channelTitle')}</Text>
+            <Text style={styles.menuSubtitle}>{t('profile.channelSub')}</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
         </Pressable>
       )}
 
-      {/* Work zone */}
-      <Pressable
-        style={({ pressed }) => [styles.workZoneCard, pressed && { opacity: 0.88 }]}
-        onPress={() => router.push('/work-zone')}
-      >
-        <View style={styles.workZoneIconWrap}>
-          <FontAwesome name="map-o" size={18} color={Theme.primary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.workZoneTitle}>{t('geofence.workZone')}</Text>
-          <Text style={styles.workZoneSubtitle}>
-            {medic.workZoneRadius != null
-              ? `${t('geofence.zoneActive')} — ${medic.workZoneRadius} ${t('geofence.km')}`
-              : t('geofence.noZone')}
-          </Text>
-        </View>
-        <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
-      </Pressable>
-
-      {/* Schedule */}
-      <Pressable
-        style={({ pressed }) => [styles.workZoneCard, pressed && { opacity: 0.88 }]}
-        onPress={() => router.push('/schedule')}
-      >
-        <View style={styles.workZoneIconWrap}>
-          <FontAwesome name="calendar" size={18} color={Theme.primary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.workZoneTitle}>{t('profile.schedule', { defaultValue: 'Ish jadvali' })}</Text>
-          <Text style={styles.workZoneSubtitle}>
-            {t('profile.scheduleDesc', { defaultValue: 'Ish kunlari va soatlarini sozlash' })}
-          </Text>
-        </View>
-        <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
-      </Pressable>
-
-      {/* Language picker */}
-      <View style={styles.card}>
-        <Text style={styles.cardSectionTitle}>{t('language.title')}</Text>
-        <View style={styles.langRow}>
-          {(['ru', 'uz'] as Language[]).map((lang) => (
-            <Pressable
-              key={lang}
-              style={[styles.langBtn, language === lang && styles.langBtnActive]}
-              onPress={() => setLanguage(lang)}
-            >
-              <Text style={[styles.langBtnText, language === lang && styles.langBtnTextActive]}>
-                {lang === 'ru' ? '🇷🇺 Русский' : '🇺🇿 O\'zbekcha'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
       {/* Logout */}
       <Pressable
-        style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
+        style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.8 }]}
         onPress={handleLogout}
       >
         <FontAwesome name="sign-out" size={16} color={Theme.error} />
@@ -475,14 +528,48 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 100 },
+
+  earningsCardWrap: {
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  earningsCard: {
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    ...Shadow.md,
+  },
+  earningsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  earningsCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  earningsLabel: {
+    fontFamily: Fonts.inter,
+    fontSize: Typography.caption.fontSize,
+    color: 'rgba(255,255,255,0.75)',
+    marginBottom: 4,
+  },
+  earningsValue: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: Typography.numeric.fontSize,
+    color: Theme.textInverse,
+  },
+  earningsDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+
   card: {
     margin: Spacing.lg,
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    ...Shadow.sm,
   },
   statCard: {
     flex: 1,
@@ -490,85 +577,90 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Theme.border,
+    ...Shadow.sm,
   },
+
+  menuSection: {
+    marginHorizontal: Spacing.lg,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    ...Shadow.sm,
+    marginBottom: Spacing.lg,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    padding: Spacing.lg,
+  },
+  menuIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuTitle: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.body.fontSize,
+    color: Theme.text,
+  },
+  menuSubtitle: {
+    fontFamily: Fonts.inter,
+    fontSize: Typography.caption.fontSize,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
+
+  langToggle: {
+    flexDirection: 'row',
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.full,
+    padding: 3,
+  },
+  langPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: Radius.full,
+  },
+  langPillActive: {
+    backgroundColor: Theme.primary,
+  },
+  langPillText: {
+    fontFamily: Fonts.interSb,
+    fontSize: Typography.caption.fontSize,
+    color: Theme.textSecondary,
+  },
+  langPillTextActive: {
+    color: Theme.textInverse,
+  },
+
+  tgBadge: {
+    backgroundColor: Theme.successContainer,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+  },
+  tgBadgeText: {
+    fontFamily: Fonts.interSb,
+    fontSize: 11,
+    color: Theme.success,
+  },
+
   channelBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: '#e0f2fe',
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
-    paddingHorizontal: 14,
-    paddingVertical: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  channelEmoji: { fontSize: 20 },
-  channelTitle: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700', color: '#0c4a6e' },
-  channelSub: { fontSize: Typography.caption.fontSize, color: '#0e7490', marginTop: 1 },
-  tgHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: Spacing.md,
-    marginBottom: 14,
-  },
-  tgIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#e8f4ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tgIcon: { fontSize: 20 },
-  tgTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
-  tgSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
-  tgBadge: {
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.sm,
-  },
-  tgBadgeText: { fontSize: 11, fontWeight: '700', color: '#16a34a' },
-  tgConnectBtn: {
-    backgroundColor: '#229ED9',
-    borderRadius: Radius.md,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  tgConnectText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
-  tgDisconnectBtn: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Radius.sm,
-    paddingVertical: Spacing.sm,
-    alignItems: 'center',
-  },
-  tgDisconnectText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
-  workZoneCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
-    padding: 14,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    backgroundColor: Theme.surface,
+    ...Shadow.sm,
   },
-  workZoneIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: `${Theme.primary}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  workZoneTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
-  workZoneSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
+
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -576,45 +668,13 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: `${Theme.error}40`,
-    backgroundColor: `${Theme.error}08`,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.errorContainer,
+    marginBottom: Spacing.xxl,
   },
-  logoutBtnPressed: { opacity: 0.8 },
-  logoutText: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.error },
-  cardSectionTitle: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '700',
-    color: Theme.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: Spacing.md,
-  },
-  langRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  langBtn: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Theme.border,
-    backgroundColor: Theme.background,
-  },
-  langBtnActive: {
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}15`,
-  },
-  langBtnText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '500',
-    color: Theme.textSecondary,
-  },
-  langBtnTextActive: {
-    color: Theme.primary,
-    fontWeight: '700',
+  logoutText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.body.fontSize,
+    color: Theme.error,
   },
 });

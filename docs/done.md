@@ -1,6 +1,30 @@
 # HamshiraGo --- Выполненные задачи
 
-<<<<<<< Updated upstream
+## 2026-04-05 (Medic App — Clinical Sanctuary Redesign)
+
+- **[medic]** Redesign auth.tsx — light bg, medkit icon, tonal inputs (no borders), +998 phone prefix, gradient pill CTA, YOKI divider, ghost secondary button, useSafeAreaInsets — `medic/app/auth.tsx`
+- **[medic]** Redesign onboarding.tsx — editorial style, pill dots pagination, gradient pill CTA, skip link top-right, useSafeAreaInsets — `medic/app/onboarding.tsx`
+- **[medic]** Redesign language-picker.tsx — light bg, medkit icon, UZ/RU cards with radio buttons, gradient pill CTA, useSafeAreaInsets — `medic/app/language-picker.tsx`
+- **[medic]** Redesign (tabs)/index.tsx — custom header with bell icon, service icon in teal circle, gradient accept button, empty state with icon, useSafeAreaInsets — `medic/app/(tabs)/index.tsx`
+- **[medic]** Redesign (tabs)/my-orders.tsx — header, filter pills (Faol/Tugatilgan), status badges with semantic colors, no borders, useSafeAreaInsets — `medic/app/(tabs)/my-orders.tsx`
+- **[medic]** Redesign (tabs)/profile.tsx — earnings gradient card, menu items in grouped card, language toggle pills, no borders, useSafeAreaInsets — `medic/app/(tabs)/profile.tsx`
+- **[medic]** Redesign (tabs)/_layout.tsx — white bg, no top border, whisper Shadow.lg, height 85, paddingBottom 20, headerShown: false — `medic/app/(tabs)/_layout.tsx`
+- **[design]** All screens: Manrope for headlines/buttons, Inter for body/labels, pill buttons (borderRadius 9999), whisper shadows (4% opacity), tonal bg shifts instead of 1px borders, Theme tokens throughout
+
+## 2026-04-05 (Medic Sub-screens -- Clinical Sanctuary Redesign)
+
+- **[medic]** Redesign order/[id].tsx -- custom header (back + "Buyurtma" + order ID), service card with icon, status stepper (teal dots), photo cards 120x120, tonal surfaces, gradient modal close, useSafeAreaInsets -- `medic/app/order/[id].tsx`
+- **[medic]** Redesign order/chat.tsx -- teal gradient header with avatar + online dot, medic bubbles #006860 right / client #f2f4f6 left, tonal input + send circle, useSafeAreaInsets -- `medic/app/order/chat.tsx`
+- **[medic]** Fix order/chat.tsx -- useSocket -> useSharedSocket, toast.show -> showToast (pre-existing bugs) -- `medic/app/order/chat.tsx`
+- **[medic]** Redesign verification.tsx -- back + "Verifikatsiya" header, status badge (amber/green/red tonal), 120x120 photo upload cards, rejection reason card, "Yuborish" gradient pill CTA, useSafeAreaInsets -- `medic/app/verification.tsx`
+- **[medic]** Redesign work-zone.tsx -- back + "Ish zonasi" header, teal circle overlay on map, tonal status row, "Saqlash" gradient pill CTA, tonal clear button, useSafeAreaInsets -- `medic/app/work-zone.tsx`
+- **[medic]** Update schedule.tsx -- Typography spread tokens, Fonts tokens, Shadow.sm on day cards, surfaceContainerLow on hour buttons -- `medic/app/schedule.tsx`
+- **[medic]** Redesign reviews.tsx -- back + "Sharhlar" header, average rating display card, review cards with avatar circle + stars + date, useSafeAreaInsets -- `medic/app/reviews.tsx`
+- **[medic]** Redesign (doctor-tabs)/index.tsx -- "Konsultatsiyalar" Manrope_700Bold header, verify banner with tonal bg, symptoms + client info cards, accept/decline gradient pills, useSafeAreaInsets -- `medic/app/(doctor-tabs)/index.tsx`
+- **[medic]** Redesign (doctor-tabs)/my-patients.tsx -- "Bemorlarim" header, patient cards with status badges, section titles, tonal surfaces, useSafeAreaInsets -- `medic/app/(doctor-tabs)/my-patients.tsx`
+- **[medic]** Redesign (doctor-tabs)/profile.tsx -- specialization card with icon, stats row, tonal surfaces, pill buttons, telegram card, schedule menu, pill language toggle, tonal logout, useSafeAreaInsets -- `medic/app/(doctor-tabs)/profile.tsx`
+- **[medic]** Redesign doctor-consultation/[id].tsx -- back + "Konsultatsiya" header, symptoms card, video call gradient pill, tonal notes textarea, "Yakunlash" gradient pill CTA, useSafeAreaInsets -- `medic/app/doctor-consultation/[id].tsx`
+
 ## 2026-04-05 (Salomat Lead, S3 Storage, Voice Logging)
 
 - **[backend]** `POST /consultations/ai-chat/create-lead` -- new endpoint to create clinic lead from Salomat AI recommendation (mobile collects patientName/phone, sends with clinicId) -- `backend/src/consultations/consultations.controller.ts`, `backend/src/consultations/dto/create-lead-from-chat.dto.ts`
@@ -10,8 +34,6 @@
 - **[backend]** S3 env vars added to .env.example (S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
 - **[backend]** Installed @aws-sdk/client-s3 + @aws-sdk/s3-request-presigner
 
-=======
->>>>>>> Stashed changes
 ## 2026-04-05 (Redis Cache + BullMQ Job Queues)
 
 - **[backend]** Redis caching via @nestjs/cache-manager with in-memory fallback when REDIS_URL is not set -- `backend/src/app.module.ts`

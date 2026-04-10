@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome6 } from '@expo/vector-icons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Theme, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { trackEvent } from '@/utils/analytics';
 
@@ -24,6 +26,7 @@ type LoginRole = 'medic' | 'doctor';
 export default function AuthScreen() {
   const { login, loginDoctor, register } = useAuth();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('login');
   const [loginRole, setLoginRole] = useState<LoginRole>('medic');
   const [phone, setPhone] = useState('');
@@ -84,24 +87,30 @@ export default function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + Spacing.xxl }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={Theme.bannerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <View style={styles.logoWrap}>
-            <FontAwesome name="stethoscope" size={36} color="#fff" />
+        {/* Top bar: HamshiraGo + ? icon */}
+        <View style={styles.topBar}>
+          <Text style={styles.topBarTitle}>HamshiraGo</Text>
+          <View style={styles.helpIcon}>
+            <FontAwesome name="question" size={14} color={Theme.textSecondary} />
           </View>
-          <Text style={styles.appName}>HamshiraGo</Text>
-          <Text style={styles.appTagline}>{t('auth.tagline')}</Text>
-        </LinearGradient>
+        </View>
 
+        {/* Medkit icon */}
+        <View style={styles.iconWrap}>
+          <FontAwesome6 name="kit-medical" size={40} color={Theme.primary} />
+        </View>
+
+        {/* Welcome title */}
+        <Text style={styles.welcomeTitle}>Xush kelibsiz!</Text>
+        <Text style={styles.welcomeSubtitle}>{t('auth.tagline')}</Text>
+
+        {/* Form card */}
         <View style={styles.card}>
+          {/* Login / Register toggle */}
           <View style={styles.tabRow}>
             <Pressable
               style={[styles.tab, mode === 'login' && styles.tabActive]}
@@ -127,13 +136,14 @@ export default function AuthScreen() {
             </Pressable>
           </View>
 
+          {/* Hamshira / Doktor toggle */}
           {mode === 'login' && (
             <View style={styles.roleRow}>
               <Pressable
                 style={[styles.roleBtn, loginRole === 'medic' && styles.roleBtnActive]}
                 onPress={() => { setLoginRole('medic'); setError(null); }}
               >
-                <FontAwesome name="plus-square" size={14} color={loginRole === 'medic' ? Theme.primary : Theme.textSecondary} />
+                <FontAwesome name="plus-square" size={14} color={loginRole === 'medic' ? Theme.primary : Theme.textTertiary} />
                 <Text style={[styles.roleBtnText, loginRole === 'medic' && styles.roleBtnTextActive]}>
                   {t('auth.roleMedic', { defaultValue: 'Hamshira' })}
                 </Text>
@@ -142,7 +152,7 @@ export default function AuthScreen() {
                 style={[styles.roleBtn, loginRole === 'doctor' && styles.roleBtnActive]}
                 onPress={() => { setLoginRole('doctor'); setError(null); }}
               >
-                <FontAwesome name="stethoscope" size={14} color={loginRole === 'doctor' ? Theme.primary : Theme.textSecondary} />
+                <FontAwesome name="stethoscope" size={14} color={loginRole === 'doctor' ? Theme.primary : Theme.textTertiary} />
                 <Text style={[styles.roleBtnText, loginRole === 'doctor' && styles.roleBtnTextActive]}>
                   {t('auth.roleDoctor', { defaultValue: 'Doktor' })}
                 </Text>
@@ -158,9 +168,9 @@ export default function AuthScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder={t('auth.namePlaceholder')}
-                placeholderTextColor={Theme.textSecondary}
+                placeholderTextColor={Theme.textTertiary}
                 autoCapitalize="words"
-                accessibilityLabel="Имя"
+                accessibilityLabel="Ism"
               />
               <Text style={styles.label}>{t('auth.experienceYears')}</Text>
               <TextInput
@@ -168,24 +178,29 @@ export default function AuthScreen() {
                 value={experienceYears}
                 onChangeText={setExperienceYears}
                 placeholder="3"
-                placeholderTextColor={Theme.textSecondary}
+                placeholderTextColor={Theme.textTertiary}
                 keyboardType="number-pad"
-                accessibilityLabel="Опыт работы в годах"
+                accessibilityLabel="Tajriba yillari"
               />
             </>
           )}
 
           <Text style={styles.label}>{t('auth.phone')} *</Text>
-          <TextInput
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder={t('auth.phonePlaceholder')}
-            placeholderTextColor={Theme.textSecondary}
-            testID="auth_phone_input"
-            keyboardType="phone-pad"
-            accessibilityLabel="Телефон"
-          />
+          <View style={styles.phoneRow}>
+            <View style={styles.phonePrefix}>
+              <Text style={styles.phonePrefixText}>+998</Text>
+            </View>
+            <TextInput
+              style={styles.phoneInput}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder={t('auth.phonePlaceholder')}
+              placeholderTextColor={Theme.textTertiary}
+              testID="auth_phone_input"
+              keyboardType="phone-pad"
+              accessibilityLabel="Telefon"
+            />
+          </View>
 
           <Text style={styles.label}>{t('auth.password')} *</Text>
           <TextInput
@@ -194,11 +209,11 @@ export default function AuthScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder={t('auth.passwordPlaceholder')}
-            placeholderTextColor={Theme.textSecondary}
+            placeholderTextColor={Theme.textTertiary}
             secureTextEntry
             returnKeyType="done"
             onSubmitEditing={handleSubmit}
-            accessibilityLabel="Пароль"
+            accessibilityLabel="Parol"
           />
 
           {error && (
@@ -208,25 +223,45 @@ export default function AuthScreen() {
             </View>
           )}
 
+          {/* Gradient pill CTA */}
           <Pressable
             testID="auth_submit_button"
-            style={({ pressed }) => [
-              styles.submitBtn,
-              pressed && styles.submitBtnPressed,
-              loading && styles.submitBtnDisabled,
-            ]}
             onPress={handleSubmit}
             disabled={loading}
             accessibilityRole="button"
             accessibilityLabel={mode === 'login' ? t('auth.login') : t('auth.register')}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitBtnText}>
-                {mode === 'login' ? t('auth.login') : t('auth.register')}
-              </Text>
-            )}
+            <LinearGradient
+              colors={Theme.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitBtnText}>
+                  {mode === 'login' ? t('auth.login') : t('auth.register')}
+                </Text>
+              )}
+            </LinearGradient>
+          </Pressable>
+
+          {/* YOKI divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>YOKI</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Ghost secondary button */}
+          <Pressable
+            style={({ pressed }) => [styles.ghostBtn, pressed && { opacity: 0.7 }]}
+            onPress={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); }}
+          >
+            <Text style={styles.ghostBtnText}>
+              {mode === 'login' ? t('auth.register') : t('auth.login')}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -236,35 +271,65 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
-  scroll: { flexGrow: 1 },
-  header: {
-    paddingTop: 80,
-    paddingBottom: 48,
+  scroll: { flexGrow: 1, paddingHorizontal: Spacing.lg },
+
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xxl,
   },
-  logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  topBarTitle: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 22,
+    color: Theme.text,
+  },
+  helpIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
   },
-  appName: { fontSize: Typography.h1.fontSize, fontWeight: '700', color: '#fff' },
-  appTagline: { fontSize: Typography.body.fontSize, color: 'rgba(255,255,255,0.85)', marginTop: Spacing.xs },
+
+  iconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+
+  welcomeTitle: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 26,
+    color: Theme.text,
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  welcomeSubtitle: {
+    ...Typography.body,
+    fontFamily: Fonts.inter,
+    color: Theme.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+  },
+
   card: {
-    margin: Spacing.lg,
-    marginTop: -Spacing.xl,
     backgroundColor: Theme.surface,
-    borderRadius: Radius.xl,
+    borderRadius: 20,
     padding: 20,
-    ...Shadow.lg,
+    ...Shadow.sm,
   },
+
   tabRow: {
     flexDirection: 'row',
-    backgroundColor: Theme.background,
-    borderRadius: Radius.sm,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
     padding: Spacing.xs,
     marginBottom: 20,
   },
@@ -278,8 +343,13 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.surface,
     ...Shadow.sm,
   },
-  tabText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
+  tabText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.textSecondary,
+  },
   tabTextActive: { color: Theme.primary },
+
   roleRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
@@ -292,54 +362,123 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: Radius.sm,
-    borderWidth: 1.5,
-    borderColor: Theme.border,
-    backgroundColor: Theme.background,
+    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceContainerLow,
   },
   roleBtnActive: {
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}12`,
+    backgroundColor: Theme.primaryLight,
   },
   roleBtnText: {
+    fontFamily: Fonts.interMd,
     fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '500',
     color: Theme.textSecondary,
   },
   roleBtnTextActive: {
     color: Theme.primary,
-    fontWeight: '700',
+    fontFamily: Fonts.interSb,
   },
-  label: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginBottom: 6 },
+
+  label: {
+    fontFamily: Fonts.interMd,
+    fontSize: Typography.label.fontSize,
+    color: Theme.textSecondary,
+    marginBottom: 6,
+  },
   input: {
-    backgroundColor: Theme.background,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Radius.sm,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
     paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingVertical: 14,
+    fontFamily: Fonts.inter,
     fontSize: Typography.body.fontSize,
     color: Theme.text,
     marginBottom: 14,
   },
+
+  phoneRow: {
+    flexDirection: 'row',
+    gap: 0,
+    marginBottom: 14,
+  },
+  phonePrefix: {
+    backgroundColor: Theme.surfaceContainerHigh,
+    borderTopLeftRadius: Radius.md,
+    borderBottomLeftRadius: Radius.md,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+  },
+  phonePrefixText: {
+    fontFamily: Fonts.interSb,
+    fontSize: Typography.body.fontSize,
+    color: Theme.textSecondary,
+  },
+  phoneInput: {
+    flex: 1,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderTopRightRadius: Radius.md,
+    borderBottomRightRadius: Radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontFamily: Fonts.inter,
+    fontSize: Typography.body.fontSize,
+    color: Theme.text,
+  },
+
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: `${Theme.error}12`,
-    borderRadius: Radius.sm,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.md,
     padding: Spacing.md,
     marginBottom: 14,
   },
-  errorText: { flex: 1, fontSize: Typography.caption.fontSize, color: Theme.error },
+  errorText: {
+    flex: 1,
+    fontFamily: Fonts.inter,
+    fontSize: Typography.caption.fontSize,
+    color: Theme.error,
+  },
+
   submitBtn: {
-    backgroundColor: Theme.primary,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
+    paddingVertical: 16,
+    borderRadius: Radius.full,
     alignItems: 'center',
     marginTop: Spacing.xs,
   },
-  submitBtnPressed: { opacity: 0.9 },
   submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { fontSize: 17, fontWeight: '700', color: '#fff' },
+  submitBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.button.fontSize,
+    color: Theme.textInverse,
+  },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: Spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Theme.surfaceContainerHigh,
+  },
+  dividerText: {
+    fontFamily: Fonts.interMd,
+    fontSize: Typography.caption.fontSize,
+    color: Theme.textTertiary,
+  },
+
+  ghostBtn: {
+    paddingVertical: 14,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    backgroundColor: Theme.surfaceContainerLow,
+  },
+  ghostBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.button.fontSize,
+    color: Theme.primary,
+  },
 });

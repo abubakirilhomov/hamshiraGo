@@ -10,9 +10,10 @@ import React, { useCallback, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -33,6 +34,7 @@ interface Consultation {
 export default function DoctorPendingScreen() {
   const { token, medic } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,15 +121,23 @@ export default function DoctorPendingScreen() {
   const isNotApproved = vStatus !== 'APPROVED';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── Screen title ─────────────────────────────────────────── */}
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenTitle}>Konsultatsiyalar</Text>
+      </View>
+
       {isNotApproved && (
-        <View style={[styles.verifyBanner, vStatus === 'REJECTED' ? styles.verifyBannerRejected : styles.verifyBannerPending]}>
+        <View style={[
+          styles.verifyBanner,
+          { backgroundColor: vStatus === 'REJECTED' ? Theme.errorContainer : Theme.warningContainer },
+        ]}>
           <FontAwesome
             name={vStatus === 'REJECTED' ? 'times-circle' : 'clock-o'}
             size={15}
-            color={vStatus === 'REJECTED' ? '#ef4444' : '#92400e'}
+            color={vStatus === 'REJECTED' ? Theme.error : Theme.warning}
           />
-          <Text style={[styles.verifyBannerText, vStatus === 'REJECTED' && { color: '#ef4444' }]}>
+          <Text style={[styles.verifyBannerText, { color: vStatus === 'REJECTED' ? Theme.error : Theme.warning }]}>
             {vStatus === 'REJECTED'
               ? 'Akkaunt rad etildi'
               : 'Akkaunt tekshirilmoqda'}
@@ -153,7 +163,7 @@ export default function DoctorPendingScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <FontAwesome name="stethoscope" size={48} color={Theme.border} />
+            <FontAwesome name="stethoscope" size={48} color={Theme.surfaceContainerHigh} />
             <Text style={styles.emptyTitle}>Hozircha konsultatsiya yo'q</Text>
             <Text style={styles.emptyHint}>Yangi so'rovlar bu yerda ko'rinadi</Text>
           </View>
@@ -233,13 +243,13 @@ const ConsultationCard = React.memo(function ConsultationCard({
             disabled={loading}
           >
             <LinearGradient
-              colors={Theme.gradientWarm}
+              colors={Theme.gradientWarm as unknown as [string, string]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.acceptBtn}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={Theme.textInverse} />
               ) : (
                 <Text style={styles.acceptBtnText}>Qabul qilish</Text>
               )}
@@ -256,6 +266,19 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
   listContent: { padding: Spacing.lg, gap: Spacing.md },
   emptyContainer: { flexGrow: 1 },
+
+  /* ── Screen header ───────────────────────────────────────────── */
+  screenHeader: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Theme.surface,
+    ...Shadow.sm,
+  },
+  screenTitle: {
+    ...Typography.h2,
+    color: Theme.text,
+  },
+
   empty: {
     flex: 1,
     justifyContent: 'center',
@@ -263,62 +286,59 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingTop: 80,
   },
-  emptyTitle: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text },
-  emptyHint: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  emptyTitle: {
+    ...Typography.h3,
+    color: Theme.text,
+  },
+  emptyHint: {
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
 
   verifyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-  },
-  verifyBannerPending: {
-    backgroundColor: '#fef3c720',
-    borderBottomColor: '#f59e0b40',
-  },
-  verifyBannerRejected: {
-    backgroundColor: '#fee2e220',
-    borderBottomColor: '#ef444440',
+    paddingVertical: Spacing.md,
   },
   verifyBannerText: {
     flex: 1,
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
-    color: '#92400e',
+    ...Typography.caption,
+    fontFamily: Fonts.interSb,
   },
 
   errorBox: {
     margin: Spacing.md,
-    padding: 14,
-    backgroundColor: '#fee2e220',
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: '#ef444440',
+    padding: Spacing.lg,
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  errorText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.error },
+  errorText: {
+    flex: 1,
+    ...Typography.bodySmall,
+    color: Theme.error,
+  },
   retryBtn: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     backgroundColor: Theme.error,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
   },
-  retryText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: '#fff' },
+  retryText: {
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
+    color: Theme.textInverse,
+  },
 
   card: {
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    borderWidth: 0,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    ...Shadow.sm,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -329,23 +349,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: `${Theme.primary}15`,
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   symptomsLabel: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
+    ...Typography.caption,
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   symptomsText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '500',
+    ...Typography.body,
+    fontFamily: Fonts.interMd,
     color: Theme.text,
-    lineHeight: 22,
   },
 
   infoRow: {
@@ -354,7 +372,11 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 6,
   },
-  infoText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  infoText: {
+    flex: 1,
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
 
   cardFooter: {
     flexDirection: 'row',
@@ -363,10 +385,18 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Theme.borderLight,
+    borderTopColor: Theme.surfaceContainerLow,
   },
-  price: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.primary },
-  time: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
+  price: {
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.primary,
+  },
+  time: {
+    ...Typography.caption,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
 
   actionRow: {
     flexDirection: 'row',
@@ -376,13 +406,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Theme.border,
-    backgroundColor: Theme.surface,
+    backgroundColor: Theme.surfaceContainerLow,
   },
   declineBtnText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
     color: Theme.textSecondary,
   },
   acceptBtnWrap: {
@@ -397,8 +425,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   acceptBtnText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '700',
-    color: '#fff',
+    ...Typography.bodySmall,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.textInverse,
   },
 });

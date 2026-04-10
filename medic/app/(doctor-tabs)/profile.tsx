@@ -11,9 +11,10 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import AppModal from '@/components/AppModal';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch, API_BASE } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -28,6 +29,7 @@ export default function DoctorProfileScreen() {
   const { language, setLanguage } = useLanguage();
   const { showToast } = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [logoutModal, setLogoutModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [consultationCount, setConsultationCount] = useState<number | null>(null);
@@ -135,7 +137,11 @@ export default function DoctorProfileScreen() {
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={[styles.container, { paddingTop: insets.top }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 40 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <ProfileHeader
           medic={medic}
@@ -145,7 +151,7 @@ export default function DoctorProfileScreen() {
           reviewLabel="Sharhlar"
           noReviewsLabel="Sharhlar yo'q"
           onSaveName={async (name: string) => {
-            await apiFetch('/doctors/profile', { token, method: 'PATCH', body: JSON.stringify({ name }) });
+            await apiFetch('/doctors/profile', { token: token ?? undefined, method: 'PATCH', body: JSON.stringify({ name }) });
             (medic as any).name = name;
           }}
           editNameLabel="Tahrirlash"
@@ -153,29 +159,33 @@ export default function DoctorProfileScreen() {
         />
 
         {/* Verification */}
-        <VerificationCard
-          verificationStatus={medic.verificationStatus}
-          onPress={() => router.push('/verification')}
-          t={(key: string) => {
-            const labels: Record<string, string> = {
-              'profile.verified': 'Tasdiqlangan',
-              'profile.pendingVerification': 'Tekshirilmoqda',
-              'profile.rejected': 'Rad etilgan',
-              'profile.verificationPending': 'Akkaunt tekshirilmoqda',
-              'profile.verificationApproved': 'Akkaunt tasdiqlangan',
-              'profile.verificationRejected': 'Akkaunt rad etilgan',
-              'profile.tapToVerify': 'Hujjatlarni yuborish',
-            };
-            return labels[key] ?? key;
-          }}
-        />
+        <View style={styles.section}>
+          <VerificationCard
+            verificationStatus={medic.verificationStatus}
+            onPress={() => router.push('/verification')}
+            t={(key: string) => {
+              const labels: Record<string, string> = {
+                'profile.verified': 'Tasdiqlangan',
+                'profile.pendingVerification': 'Tekshirilmoqda',
+                'profile.rejected': 'Rad etilgan',
+                'profile.verificationPending': 'Akkaunt tekshirilmoqda',
+                'profile.verificationApproved': 'Akkaunt tasdiqlangan',
+                'profile.verificationRejected': 'Akkaunt rad etilgan',
+                'profile.tapToVerify': 'Hujjatlarni yuborish',
+              };
+              return labels[key] ?? key;
+            }}
+          />
+        </View>
 
         {/* Specialization */}
         {medic.specialization && (
           <View style={styles.card}>
             <Text style={styles.cardSectionTitle}>Mutaxassislik</Text>
             <View style={styles.specRow}>
-              <FontAwesome name="stethoscope" size={16} color={Theme.primary} />
+              <View style={styles.specIconWrap}>
+                <FontAwesome name="stethoscope" size={16} color={Theme.primary} />
+              </View>
               <Text style={styles.specText}>{medic.specialization}</Text>
             </View>
           </View>
@@ -217,7 +227,7 @@ export default function DoctorProfileScreen() {
         <View style={styles.card}>
           <View style={styles.tgHeader}>
             <View style={styles.tgIconWrap}>
-              <Text style={styles.tgIcon}>✈️</Text>
+              <FontAwesome name="paper-plane" size={16} color={Theme.info} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.tgTitle}>Telegram bildirishnomalar</Text>
@@ -254,17 +264,17 @@ export default function DoctorProfileScreen() {
 
         {/* Schedule link */}
         <Pressable
-          style={({ pressed }) => [styles.scheduleCard, pressed && { opacity: 0.88 }]}
+          style={({ pressed }) => [styles.menuCard, pressed && { opacity: 0.88 }]}
           onPress={() => router.push('/doctor-schedule')}
         >
-          <View style={styles.scheduleIconWrap}>
+          <View style={styles.menuIconWrap}>
             <FontAwesome name="calendar" size={18} color={Theme.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.scheduleTitle}>Jadval</Text>
-            <Text style={styles.scheduleSubtitle}>Qabul vaqtlarini sozlash</Text>
+            <Text style={styles.menuTitle}>Jadval</Text>
+            <Text style={styles.menuSubtitle}>Qabul vaqtlarini sozlash</Text>
           </View>
-          <FontAwesome name="chevron-right" size={13} color={Theme.textSecondary} />
+          <FontAwesome name="chevron-right" size={13} color={Theme.textTertiary} />
         </Pressable>
 
         {/* Language */}
@@ -278,7 +288,7 @@ export default function DoctorProfileScreen() {
                 onPress={() => setLanguage(lang)}
               >
                 <Text style={[styles.langBtnText, language === lang && styles.langBtnTextActive]}>
-                  {lang === 'ru' ? 'Русский' : 'O\'zbekcha'}
+                  {lang === 'ru' ? 'Russkiy' : 'O\'zbekcha'}
                 </Text>
               </Pressable>
             ))}
@@ -323,22 +333,19 @@ export default function DoctorProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
-  content: { paddingBottom: 40 },
+  content: { gap: 0 },
+  section: { marginHorizontal: Spacing.lg, marginBottom: Spacing.lg },
 
   card: {
-    margin: Spacing.lg,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadow.sm,
   },
   cardSectionTitle: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '700',
+    ...Typography.caption,
     color: Theme.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -350,9 +357,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
+  specIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Theme.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   specText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
     color: Theme.text,
   },
 
@@ -365,34 +380,29 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: Theme.surface,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     padding: 14,
     alignItems: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadow.sm,
   },
   statValue: {
-    fontSize: Typography.h3.fontSize,
-    fontWeight: '700',
+    ...Typography.h3,
     color: Theme.primary,
   },
   statLabel: {
-    fontSize: Typography.caption.fontSize,
+    ...Typography.caption,
     color: Theme.textSecondary,
     marginTop: 4,
   },
   statSub: {
     fontSize: 10,
+    fontFamily: Fonts.inter,
     color: Theme.textTertiary,
     marginTop: 2,
   },
 
   earningsValue: {
-    fontSize: Typography.h3.fontSize,
-    fontWeight: '700',
+    ...Typography.h3,
     color: Theme.success,
   },
 
@@ -406,84 +416,103 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e8f4ff',
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tgIcon: { fontSize: 20 },
-  tgTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
-  tgSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
+  tgTitle: {
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.text,
+  },
+  tgSubtitle: {
+    ...Typography.caption,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
   tgBadge: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: Theme.successContainer,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
   },
-  tgBadgeText: { fontSize: 11, fontWeight: '700', color: '#16a34a' },
+  tgBadgeText: {
+    fontSize: 11,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.success,
+  },
   tgConnectBtn: {
     backgroundColor: '#229ED9',
-    borderRadius: Radius.md,
+    borderRadius: Radius.full,
     paddingVertical: 13,
     alignItems: 'center',
   },
-  tgConnectText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
+  tgConnectText: {
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.textInverse,
+  },
   tgDisconnectBtn: {
-    borderWidth: 1,
-    borderColor: Theme.border,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
     paddingVertical: Spacing.sm,
     alignItems: 'center',
+    backgroundColor: Theme.surfaceContainerLow,
   },
-  tgDisconnectText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Theme.textSecondary },
+  tgDisconnectText: {
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interSb,
+    color: Theme.textSecondary,
+  },
 
-  scheduleCard: {
+  menuCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
-    padding: 14,
+    padding: Spacing.lg,
     borderRadius: Radius.lg,
     backgroundColor: Theme.surface,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadow.sm,
   },
-  scheduleIconWrap: {
+  menuIconWrap: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: `${Theme.primary}15`,
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scheduleTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text },
-  scheduleSubtitle: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary, marginTop: 2 },
+  menuTitle: {
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
+    color: Theme.text,
+  },
+  menuSubtitle: {
+    ...Typography.caption,
+    color: Theme.textSecondary,
+    marginTop: 2,
+  },
 
   langRow: { flexDirection: 'row', gap: Spacing.sm },
   langBtn: {
     flex: 1,
     paddingVertical: Spacing.sm,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Theme.border,
-    backgroundColor: Theme.background,
+    backgroundColor: Theme.surfaceContainerLow,
   },
   langBtnActive: {
-    borderColor: Theme.primary,
-    backgroundColor: `${Theme.primary}15`,
+    backgroundColor: Theme.primaryLight,
   },
   langBtnText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '500',
+    ...Typography.bodySmall,
+    fontFamily: Fonts.interMd,
     color: Theme.textSecondary,
   },
   langBtnTextActive: {
     color: Theme.primary,
-    fontWeight: '700',
+    fontFamily: Fonts.manropeBd,
   },
 
   logoutBtn: {
@@ -493,10 +522,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: `${Theme.error}40`,
-    backgroundColor: `${Theme.error}08`,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.errorContainer,
   },
-  logoutText: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.error },
+  logoutText: {
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
+    color: Theme.error,
+  },
 });

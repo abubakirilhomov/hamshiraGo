@@ -8,11 +8,14 @@ import {
 } from 'react-native';
 import React, { useCallback, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { useAuth } from '@/context/AuthContext';
 import { OrderInviteModal } from '@/components/OrderInviteModal';
 import AppModal from '@/components/AppModal';
@@ -27,6 +30,7 @@ export default function AvailableOrdersScreen() {
   const { medic } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [accepting, setAccepting] = useState<string | null>(null);
 
   const {
@@ -100,7 +104,13 @@ export default function AvailableOrdersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>HamshiraGo Medic</Text>
+          <View style={styles.bellWrap}>
+            <FontAwesome name="bell-o" size={20} color={Theme.text} />
+          </View>
+        </View>
         <View style={styles.listContent}>
           <SkeletonCard />
           <SkeletonCard />
@@ -114,7 +124,21 @@ export default function AvailableOrdersScreen() {
   const isNotApproved = vStatus !== 'APPROVED';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>HamshiraGo Medic</Text>
+        <View style={styles.headerRight}>
+          {/* WS status dot */}
+          {medic?.isOnline && (
+            <View style={[styles.wsDot, { backgroundColor: wsConnected ? Theme.success : Theme.warning }]} />
+          )}
+          <View style={styles.bellWrap}>
+            <FontAwesome name="bell-o" size={20} color={Theme.text} />
+          </View>
+        </View>
+      </View>
+
       {/* Verification warning banner */}
       {isNotApproved && (
         <Pressable
@@ -127,14 +151,14 @@ export default function AvailableOrdersScreen() {
           <FontAwesome
             name={vStatus === 'REJECTED' ? 'times-circle' : 'clock-o'}
             size={15}
-            color={vStatus === 'REJECTED' ? '#ef4444' : '#92400e'}
+            color={vStatus === 'REJECTED' ? Theme.error : '#92400e'}
           />
-          <Text style={[styles.verifyBannerText, vStatus === 'REJECTED' && { color: '#ef4444' }]}>
+          <Text style={[styles.verifyBannerText, vStatus === 'REJECTED' && { color: Theme.error }]}>
             {vStatus === 'REJECTED'
               ? t('profile.accountRejected')
               : t('profile.accountNotVerified')}
           </Text>
-          <FontAwesome name="chevron-right" size={11} color={vStatus === 'REJECTED' ? '#ef4444' : '#92400e'} />
+          <FontAwesome name="chevron-right" size={11} color={vStatus === 'REJECTED' ? Theme.error : '#92400e'} />
         </Pressable>
       )}
 
@@ -158,16 +182,6 @@ export default function AvailableOrdersScreen() {
           <FontAwesome name="power-off" size={14} color="#854d0e" />
           <Text style={styles.offlineText}>
             {t('profile.offlineBannerMsg')}
-          </Text>
-        </View>
-      )}
-
-      {/* Live connection status */}
-      {medic?.isOnline && (
-        <View style={[styles.statusBar, wsConnected ? styles.statusBarLive : styles.statusBarWaiting]}>
-          <View style={[styles.statusDot, { backgroundColor: wsConnected ? Theme.success : Theme.warning }]} />
-          <Text style={[styles.statusBarText, { color: wsConnected ? '#065f46' : '#78350f' }]}>
-            {wsConnected ? t('profile.wsConnected') : t('profile.wsConnecting')}
           </Text>
         </View>
       )}
@@ -200,7 +214,9 @@ export default function AvailableOrdersScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <FontAwesome name="inbox" size={48} color={Theme.border} />
+            <View style={styles.emptyIconWrap}>
+              <FontAwesome6 name="clipboard-list" size={40} color={Theme.textTertiary} />
+            </View>
             <Text style={styles.emptyTitle}>{t('orders.empty')}</Text>
             <Text style={styles.emptyHint}>{t('common.retry')}</Text>
           </View>
@@ -253,14 +269,20 @@ const AvailableOrderCard = React.memo(function AvailableOrderCard({
 
   return (
     <View style={styles.card} accessibilityRole="button" accessibilityLabel={`${order.serviceTitle}, ${order.location?.house ?? ''}, ${finalPrice.toLocaleString('ru-RU')} UZS`}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.serviceTitle}>{order.serviceTitle}</Text>
-        <Text style={styles.price}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
+      <View style={styles.cardTop}>
+        {/* Service icon in teal circle */}
+        <View style={styles.serviceIconWrap}>
+          <FontAwesome6 name="syringe" size={18} color={Theme.primary} />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.serviceTitle} numberOfLines={2}>{order.serviceTitle}</Text>
+          <Text style={styles.price}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
+        </View>
       </View>
 
       {order.location && (
         <View style={styles.locationRow}>
-          <FontAwesome name="map-marker" size={13} color={Theme.textSecondary} />
+          <FontAwesome name="map-marker" size={13} color={Theme.textTertiary} />
           <Text style={styles.locationText} numberOfLines={2}>
             {order.location.house}
             {order.location.floor ? `, ${t('orders.floor')} ${order.location.floor}` : ''}
@@ -271,7 +293,7 @@ const AvailableOrderCard = React.memo(function AvailableOrderCard({
 
       {order.location && (
         <View style={styles.locationRow}>
-          <FontAwesome name="phone" size={13} color={Theme.textSecondary} />
+          <FontAwesome name="phone" size={13} color={Theme.textTertiary} />
           <Text style={styles.locationText}>{order.location.phone}</Text>
         </View>
       )}
@@ -279,21 +301,23 @@ const AvailableOrderCard = React.memo(function AvailableOrderCard({
       <View style={styles.cardFooter}>
         <Text style={styles.time}>{timeStr}</Text>
         <Pressable
-          style={({ pressed }) => [
-            styles.acceptBtn,
-            pressed && styles.acceptBtnPressed,
-            accepting && styles.acceptBtnDisabled,
-          ]}
           onPress={onAccept}
           disabled={accepting}
           accessibilityRole="button"
           accessibilityLabel={t('dispatch.accept')}
         >
-          {accepting ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.acceptBtnText}>{t('dispatch.accept')}</Text>
-          )}
+          <LinearGradient
+            colors={Theme.primaryGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.acceptBtn, accepting && styles.acceptBtnDisabled]}
+          >
+            {accepting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.acceptBtnText}>{t('dispatch.accept')}</Text>
+            )}
+          </LinearGradient>
         </Pressable>
       </View>
     </View>
@@ -304,7 +328,37 @@ const AvailableOrderCard = React.memo(function AvailableOrderCard({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Theme.background },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  headerTitle: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: Typography.h2.fontSize,
+    color: Theme.text,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  wsDot: {
+    width: 8,
+    height: 8,
+    borderRadius: Radius.full,
+  },
+  bellWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   verifyBanner: {
     flexDirection: 'row',
@@ -312,20 +366,20 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.sm,
   },
   verifyBannerPending: {
-    backgroundColor: '#fef3c720',
-    borderBottomColor: '#f59e0b40',
+    backgroundColor: Theme.warningContainer,
   },
   verifyBannerRejected: {
-    backgroundColor: '#fee2e220',
-    borderBottomColor: '#ef444440',
+    backgroundColor: Theme.errorContainer,
   },
   verifyBannerText: {
     flex: 1,
+    fontFamily: Fonts.interSb,
     fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
     color: '#92400e',
   },
 
@@ -333,108 +387,151 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#fef3c720',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f59e0b40',
+    backgroundColor: Theme.warningContainer,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.sm,
   },
-  nophotoText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: '#92400e', fontWeight: '500' },
+  nophotoText: {
+    flex: 1,
+    fontFamily: Fonts.interMd,
+    fontSize: Typography.bodySmall.fontSize,
+    color: '#92400e',
+  },
 
   offlineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#eab30820',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eab30840',
+    backgroundColor: Theme.warningContainer,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.sm,
   },
-  offlineText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: '#854d0e', fontWeight: '500' },
-
-  statusBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 9,
-    borderBottomWidth: 1,
+  offlineText: {
+    flex: 1,
+    fontFamily: Fonts.interMd,
+    fontSize: Typography.bodySmall.fontSize,
+    color: '#854d0e',
   },
-  statusBarLive: { backgroundColor: '#d1fae520', borderBottomColor: '#6ee7b740' },
-  statusBarWaiting: { backgroundColor: '#fef3c720', borderBottomColor: '#fde68a40' },
-  statusDot: { width: 8, height: 8, borderRadius: Radius.xs },
-  statusBarText: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
-  listContent: { padding: Spacing.lg, gap: Spacing.md },
+  listContent: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 100 },
   emptyContainer: { flexGrow: 1 },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     paddingTop: 80,
   },
-  emptyTitle: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.text },
-  emptyHint: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  emptyTitle: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.h3.fontSize,
+    color: Theme.text,
+  },
+  emptyHint: {
+    fontFamily: Fonts.inter,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.textSecondary,
+  },
 
   card: {
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Theme.border,
+    ...Shadow.sm,
   },
-  cardHeader: {
+  cardTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  serviceTitle: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.text, flex: 1 },
-  price: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Theme.primary, marginLeft: Spacing.sm },
+  serviceIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    backgroundColor: Theme.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  serviceTitle: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.body.fontSize,
+    color: Theme.text,
+  },
+  price: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: Typography.h4.fontSize,
+    color: Theme.primary,
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
     marginBottom: 6,
   },
-  locationText: { flex: 1, fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  locationText: {
+    flex: 1,
+    fontFamily: Fonts.inter,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.textSecondary,
+  },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Theme.border,
   },
-  time: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  time: {
+    fontFamily: Fonts.inter,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Theme.textTertiary,
+  },
   acceptBtn: {
-    backgroundColor: Theme.primary,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.xl,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
     minWidth: 100,
     alignItems: 'center',
   },
-  acceptBtnPressed: { opacity: 0.9 },
   acceptBtnDisabled: { opacity: 0.7 },
-  acceptBtnText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
+  acceptBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: Typography.body.fontSize,
+    color: Theme.textInverse,
+  },
 
   fetchErrorBox: {
-    margin: Spacing.md,
+    margin: Spacing.lg,
     padding: 14,
-    backgroundColor: '#fee2e220',
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: '#ef444440',
+    backgroundColor: Theme.errorContainer,
+    borderRadius: Radius.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
   },
   fetchErrorText: {
     flex: 1,
+    fontFamily: Fonts.inter,
     fontSize: Typography.bodySmall.fontSize,
     color: Theme.error,
   },
@@ -442,11 +539,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     backgroundColor: Theme.error,
-    borderRadius: Radius.sm,
+    borderRadius: Radius.full,
   },
   fetchRetryText: {
+    fontFamily: Fonts.interSb,
     fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
-    color: '#fff',
+    color: Theme.textInverse,
   },
 });

@@ -12,9 +12,9 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Theme, Radius, Spacing, Typography } from '@/constants/Theme';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -92,7 +92,6 @@ export default function DoctorConsultationDetailScreen() {
         body: JSON.stringify({ role: 'doctor' }),
       });
       if (res.url) {
-        // Open LiveKit URL or handle token-based join
         showToast('Video qo\'ng\'iroqqa ulanilmoqda...', 'info');
       }
     } catch (e: unknown) {
@@ -133,11 +132,18 @@ export default function DoctorConsultationDetailScreen() {
 
   if (!consultation) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { paddingTop: insets.top }]}>
         <FontAwesome name="exclamation-circle" size={48} color={Theme.error} />
         <Text style={styles.errorTitle}>Konsultatsiya topilmadi</Text>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Orqaga</Text>
+        <Pressable onPress={() => router.back()}>
+          <LinearGradient
+            colors={Theme.primaryGradient as unknown as [string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.errorBackBtn}
+          >
+            <Text style={styles.errorBackBtnText}>Orqaga</Text>
+          </LinearGradient>
         </Pressable>
       </View>
     );
@@ -149,24 +155,24 @@ export default function DoctorConsultationDetailScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Theme.background }}
+      style={[styles.root, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={styles.headerBack}>
-          <FontAwesome name="chevron-left" size={18} color={Theme.text} />
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.headerBack} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color={Theme.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Konsultatsiya</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: isActive ? 120 : 40 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Status badge */}
+        {/* Status badge + date */}
         <View style={styles.statusRow}>
           <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
@@ -244,16 +250,23 @@ export default function DoctorConsultationDetailScreen() {
         {/* Video call button */}
         {isActive && (
           <Pressable
-            style={({ pressed }) => [styles.videoCallBtn, pressed && { opacity: 0.9 }]}
+            style={({ pressed }) => [pressed && { opacity: 0.9 }]}
             onPress={handleJoinCall}
             disabled={joiningCall}
           >
-            <FontAwesome name="video-camera" size={20} color="#fff" />
-            {joiningCall ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.videoCallText}>Video qo'ng'iroq</Text>
-            )}
+            <LinearGradient
+              colors={[Theme.info, '#0369a1'] as [string, string]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.videoCallBtn}
+            >
+              <FontAwesome name="video-camera" size={20} color={Theme.textInverse} />
+              {joiningCall ? (
+                <ActivityIndicator size="small" color={Theme.textInverse} />
+              ) : (
+                <Text style={styles.videoCallText}>Video qo'ng'iroq</Text>
+              )}
+            </LinearGradient>
           </Pressable>
         )}
 
@@ -270,7 +283,7 @@ export default function DoctorConsultationDetailScreen() {
           </View>
         )}
 
-        {/* Complete form */}
+        {/* Complete form -- doctor notes textarea */}
         {isActive && (
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
@@ -293,7 +306,7 @@ export default function DoctorConsultationDetailScreen() {
         )}
       </ScrollView>
 
-      {/* Bottom CTA */}
+      {/* ── Bottom CTA ─────────────────────────────────────────── */}
       {isActive && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <Pressable
@@ -302,13 +315,13 @@ export default function DoctorConsultationDetailScreen() {
             disabled={completing}
           >
             <LinearGradient
-              colors={Theme.gradientWarm}
+              colors={Theme.gradientWarm as unknown as [string, string]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.completeBtn}
             >
               {completing ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={Theme.textInverse} />
               ) : (
                 <Text style={styles.completeBtnText}>Yakunlash</Text>
               )}
@@ -321,6 +334,7 @@ export default function DoctorConsultationDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Theme.background },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -328,39 +342,47 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.background,
     gap: Spacing.md,
   },
-  errorTitle: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.text },
-  backBtn: {
+  errorTitle: {
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
+    color: Theme.text,
+  },
+  errorBackBtn: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.full,
-    backgroundColor: Theme.primary,
     marginTop: Spacing.md,
   },
-  backBtnText: { fontSize: Typography.body.fontSize, fontWeight: '600', color: '#fff' },
+  errorBackBtnText: {
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
+    color: Theme.textInverse,
+  },
 
+  /* ── Header ──────────────────────────────────────────────────── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingVertical: Spacing.md,
     backgroundColor: Theme.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.borderLight,
+    ...Shadow.sm,
   },
   headerBack: {
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: Typography.h4.fontSize,
-    fontWeight: '700',
+    ...Typography.h3,
     color: Theme.text,
   },
 
-  content: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: 120 },
+  content: { padding: Spacing.lg, gap: Spacing.md },
 
   statusRow: {
     flexDirection: 'row',
@@ -373,18 +395,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: Radius.full,
   },
-  statusText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '700' },
-  dateText: { fontSize: Typography.caption.fontSize, color: Theme.textSecondary },
+  statusText: {
+    ...Typography.bodySmall,
+    fontFamily: Fonts.manropeBd,
+  },
+  dateText: {
+    ...Typography.caption,
+    color: Theme.textSecondary,
+  },
 
   card: {
     backgroundColor: Theme.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    ...Shadow.sm,
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -396,57 +420,76 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: `${Theme.primary}15`,
+    backgroundColor: Theme.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '700',
+    ...Typography.body,
+    fontFamily: Fonts.manropeBd,
     color: Theme.text,
   },
   symptomsBody: {
-    fontSize: Typography.body.fontSize,
+    ...Typography.body,
     color: Theme.text,
     lineHeight: 24,
   },
 
   clientRow: { gap: 4 },
-  clientName: { fontSize: Typography.body.fontSize, fontWeight: '600', color: Theme.text },
-  clientPhone: { fontSize: Typography.bodySmall.fontSize, color: Theme.textSecondary },
+  clientName: {
+    ...Typography.body,
+    fontFamily: Fonts.interSb,
+    color: Theme.text,
+  },
+  clientPhone: {
+    ...Typography.bodySmall,
+    color: Theme.textSecondary,
+  },
 
-  slotTime: { fontSize: Typography.body.fontSize, fontWeight: '500', color: Theme.text },
+  slotTime: {
+    ...Typography.body,
+    fontFamily: Fonts.interMd,
+    color: Theme.text,
+  },
 
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  priceLabel: { fontSize: Typography.body.fontSize, color: Theme.textSecondary },
-  priceValue: { fontSize: Typography.h3.fontSize, fontWeight: '700', color: Theme.primary },
+  priceLabel: {
+    ...Typography.body,
+    color: Theme.textSecondary,
+  },
+  priceValue: {
+    ...Typography.numeric,
+    color: Theme.primary,
+  },
 
   videoCallBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Theme.info,
     borderRadius: Radius.full,
     paddingVertical: 14,
   },
-  videoCallText: { fontSize: Typography.body.fontSize, fontWeight: '700', color: '#fff' },
+  videoCallText: {
+    ...Typography.button,
+    color: Theme.textInverse,
+  },
 
   notesBody: {
-    fontSize: Typography.body.fontSize,
+    ...Typography.body,
     color: Theme.text,
     lineHeight: 24,
   },
 
   notesInput: {
-    backgroundColor: Theme.background,
-    borderRadius: Radius.md,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.lg,
     padding: Spacing.md,
-    fontSize: Typography.body.fontSize,
+    ...Typography.body,
     color: Theme.text,
     minHeight: 140,
     lineHeight: 22,
@@ -456,8 +499,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     backgroundColor: Theme.surface,
-    borderTopWidth: 1,
-    borderTopColor: Theme.borderLight,
+    ...Shadow.lg,
   },
   completeBtnWrap: {
     borderRadius: Radius.full,
@@ -470,8 +512,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   completeBtnText: {
-    fontSize: Typography.button.fontSize,
-    fontWeight: '700',
-    color: '#fff',
+    ...Typography.button,
+    color: Theme.textInverse,
   },
 });

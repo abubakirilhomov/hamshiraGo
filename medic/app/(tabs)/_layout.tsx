@@ -2,7 +2,7 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Theme } from '@/constants/Theme';
+import { Theme, Fonts, Shadow, Typography } from '@/constants/Theme';
 
 function TabIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -18,34 +18,41 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Theme.primary,
-        tabBarInactiveTintColor: Theme.textSecondary,
-        headerStyle: { backgroundColor: Theme.surface },
-        headerTitleStyle: { color: Theme.text, fontWeight: '700' },
-        tabBarStyle: { borderTopColor: Theme.border },
+        tabBarInactiveTintColor: Theme.textTertiary,
+        tabBarLabelStyle: {
+          fontFamily: Fonts.interMd,
+          fontSize: 11,
+        },
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: Theme.surface,
+          borderTopWidth: 0,
+          height: 85,
+          paddingBottom: 20,
+          paddingTop: 8,
+          ...Shadow.lg,
+        },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: t('tabs.available'),
-          tabBarIcon: ({ color }) => <TabIcon name="list-alt" color={color} />,
-          headerTitle: t('orders.available'),
+          title: t('tabs.available', { defaultValue: 'Buyurtmalar' }),
+          tabBarIcon: ({ color }) => <TabIcon name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="my-orders"
         options={{
-          title: t('tabs.myOrders'),
-          tabBarIcon: ({ color }) => <TabIcon name="briefcase" color={color} />,
-          headerTitle: t('orders.my'),
+          title: t('tabs.myOrders', { defaultValue: 'Mening' }),
+          tabBarIcon: ({ color }) => <TabIcon name="list" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: t('tabs.profile'),
+          title: t('tabs.profile', { defaultValue: 'Profil' }),
           tabBarIcon: ({ color }) => <TabIcon name="user" color={color} />,
-          headerTitle: t('tabs.profile'),
         }}
       />
     </Tabs>

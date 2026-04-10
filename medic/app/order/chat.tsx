@@ -10,13 +10,15 @@ import {
   View,
 } from 'react-native';
 import { Text } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useTranslation } from 'react-i18next';
-import { Theme, Radius, Spacing } from '@/constants/Theme';
+import { Theme, Fonts, Radius, Spacing, Typography, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
-import { useSocket } from '@/context/SocketContext';
+import { useSharedSocket } from '@/context/SocketContext';
 import { useToast } from '@/context/ToastContext';
 
 interface Message {
@@ -31,8 +33,10 @@ export default function MedicOrderChatScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { token, medic } = useAuth();
   const { t } = useTranslation();
-  const socket = useSocket();
-  const toast = useToast();
+  const { socket } = useSharedSocket();
+  const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -94,7 +98,7 @@ export default function MedicOrderChatScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       }
     } catch {
-      toast.show('Failed to send', 'error');
+      showToast('Failed to send', 'error');
     } finally {
       setSending(false);
     }
@@ -121,80 +125,201 @@ export default function MedicOrderChatScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={s.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={s.list}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        ListEmptyComponent={
-          <View style={s.center}>
-            <FontAwesome name="comments-o" size={48} color="#D1D5DB" />
-            <Text style={s.emptyText}>{t('chat.empty')}</Text>
-          </View>
-        }
-      />
-
-      <View style={s.inputBar}>
-        <TextInput
-          style={s.input}
-          value={text}
-          onChangeText={setText}
-          placeholder={t('chat.placeholder')}
-          placeholderTextColor="#9CA3AF"
-          multiline
-          maxLength={2000}
-        />
-        <Pressable
-          style={[s.sendBtn, (!text.trim() || sending) && { opacity: 0.4 }]}
-          onPress={handleSend}
-          disabled={!text.trim() || sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <FontAwesome name="send" size={18} color="#fff" />
-          )}
+    <View style={[s.root, { paddingTop: insets.top }]}>
+      {/* ── Teal gradient header ─────────────────────────────────── */}
+      <LinearGradient
+        colors={Theme.primaryGradient as unknown as [string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={s.header}
+      >
+        <Pressable style={s.headerBack} onPress={() => router.back()} hitSlop={12}>
+          <FontAwesome name="arrow-left" size={18} color={Theme.textInverse} />
         </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        <View style={s.headerAvatar}>
+          <FontAwesome name="user" size={16} color={Theme.textInverse} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerName}>{t('chat.client', { defaultValue: 'Mijoz' })}</Text>
+          <View style={s.onlineRow}>
+            <View style={s.onlineDot} />
+            <Text style={s.onlineText}>Online</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={s.list}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <View style={s.emptyWrap}>
+              <FontAwesome name="comments-o" size={48} color={Theme.surfaceContainerHigh} />
+              <Text style={s.emptyText}>{t('chat.empty')}</Text>
+            </View>
+          }
+        />
+
+        {/* ── Input bar ──────────────────────────────────────────── */}
+        <View style={[s.inputBar, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+          <TextInput
+            style={s.input}
+            value={text}
+            onChangeText={setText}
+            placeholder={t('chat.placeholder')}
+            placeholderTextColor={Theme.textTertiary}
+            multiline
+            maxLength={2000}
+          />
+          <Pressable
+            style={[s.sendBtn, (!text.trim() || sending) && { opacity: 0.4 }]}
+            onPress={handleSend}
+            disabled={!text.trim() || sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color={Theme.textInverse} />
+            ) : (
+              <FontAwesome name="send" size={16} color={Theme.textInverse} />
+            )}
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#F9FAFB' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
+  root: { flex: 1, backgroundColor: Theme.background },
+  flex: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Theme.background, gap: Spacing.md },
+
+  /* ── Header ──────────────────────────────────────────────────── */
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  headerBack: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerName: {
+    ...Typography.h4,
+    color: Theme.textInverse,
+  },
+  onlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ade80',
+  },
+  onlineText: {
+    ...Typography.caption,
+    color: 'rgba(255,255,255,0.8)',
+  },
+
+  /* ── Messages ────────────────────────────────────────────────── */
   list: { padding: Spacing.md, paddingBottom: Spacing.lg },
-  emptyText: { color: '#9CA3AF', fontSize: 14 },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingTop: 80,
+  },
+  emptyText: {
+    ...Typography.bodySmall,
+    color: Theme.textTertiary,
+  },
   bubble: {
-    maxWidth: '78%', padding: Spacing.sm, paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md, marginBottom: Spacing.xs,
+    maxWidth: '78%',
+    padding: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.lg,
+    marginBottom: Spacing.xs,
   },
-  bubbleMe: { alignSelf: 'flex-end', backgroundColor: Theme.primary, borderBottomRightRadius: 4 },
+  bubbleMe: {
+    alignSelf: 'flex-end',
+    backgroundColor: Theme.primary,
+    borderBottomRightRadius: Radius.xs,
+  },
   bubbleThem: {
-    alignSelf: 'flex-start', backgroundColor: '#fff', borderBottomLeftRadius: 4,
-    borderWidth: 1, borderColor: '#E5E7EB',
+    alignSelf: 'flex-start',
+    backgroundColor: Theme.surfaceContainerLow,
+    borderBottomLeftRadius: Radius.xs,
   },
-  bubbleText: { fontSize: 15, color: '#111827', lineHeight: 20 },
-  bubbleTextMe: { color: '#fff' },
-  bubbleTime: { fontSize: 11, color: '#9CA3AF', marginTop: 2, alignSelf: 'flex-end' },
-  bubbleTimeMe: { color: 'rgba(255,255,255,0.7)' },
+  bubbleText: {
+    ...Typography.body,
+    color: Theme.text,
+  },
+  bubbleTextMe: {
+    color: Theme.textInverse,
+  },
+  bubbleTime: {
+    fontSize: 11,
+    fontFamily: Fonts.inter,
+    color: Theme.textTertiary,
+    marginTop: 2,
+    alignSelf: 'flex-end',
+  },
+  bubbleTimeMe: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+
+  /* ── Input bar ───────────────────────────────────────────────── */
   inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end', padding: Spacing.sm, paddingBottom: Spacing.md,
-    backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E5E7EB', gap: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: Spacing.sm,
+    paddingTop: Spacing.md,
+    backgroundColor: Theme.surface,
+    gap: Spacing.sm,
+    ...Shadow.sm,
   },
   input: {
-    flex: 1, backgroundColor: '#F3F4F6', borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, fontSize: 15, maxHeight: 100, color: '#111827',
+    flex: 1,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    ...Typography.body,
+    color: Theme.text,
+    maxHeight: 100,
   },
   sendBtn: {
-    width: 42, height: 42, borderRadius: 21, backgroundColor: Theme.primary,
-    justifyContent: 'center', alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Theme.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
