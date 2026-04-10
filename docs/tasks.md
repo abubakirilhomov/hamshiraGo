@@ -146,10 +146,6 @@
 
 
 
-#### SAL-D-3. Web-medic: страница деталей консультации врача
-- [ ] Показать блок "Предварительная информация от Salomat" — поле `salomatSummary` уже есть в `consultation.entity.ts`
-- [ ] Если `salomatSummary` пустой — блок скрывается
-
 ---
 
 ## 🏥 CLINIC SYSTEM — Новый модуль
@@ -369,10 +365,7 @@
   - Список услуг + цены
   - Кнопка "Записаться" → BookingModal или переход к врачу
 
-#### SAL-D-3. Web-medic: Salomat summary у врача (Жафар)
-- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — блок "Предварительная информация от Salomat"
-  - Показать если `salomatSummary` не пустой
-  - Стиль: teal блок с иконкой AI
+#### SAL-D-3. Web-medic: Salomat summary у врача (Жафар) ✅ DONE
 
 ### MVP V0.1 Gap Closures — DONE 2026-04-05
 

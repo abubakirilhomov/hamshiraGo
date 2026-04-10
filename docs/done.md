@@ -1,5 +1,9 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-09
+
+- **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
+
 ## 2026-04-09 (Планирование: Clinic System + Salomat AI Leads)
 
 - **[docs]** Спроектирована архитектура клиники: company, company_user, company_room, clinic_appointment, salomat_lead
