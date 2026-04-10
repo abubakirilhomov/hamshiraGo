@@ -21,8 +21,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import type { Language } from '@/i18n';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { VerificationCard } from '@/components/profile/VerificationCard';
-
-const TELEGRAM_BOT = 'hamshirago_medic_bot';
+import { getDoctorDeepLink } from '@/constants/telegram';
 
 export default function DoctorProfileScreen() {
   const { medic, token, refreshProfile, logout } = useAuth();
@@ -101,8 +100,7 @@ export default function DoctorProfileScreen() {
   };
 
   const handleConnectTelegram = () => {
-    const deepLink = `tg://resolve?domain=${TELEGRAM_BOT}&start=doctor_${medic?.id ?? ''}`;
-    const webFallback = `https://t.me/${TELEGRAM_BOT}?start=doctor_${medic?.id ?? ''}`;
+    const { deepLink, webFallback } = getDoctorDeepLink(medic?.id ?? '');
     Linking.canOpenURL(deepLink)
       .then((ok) => Linking.openURL(ok ? deepLink : webFallback))
       .catch(() => Linking.openURL(webFallback));

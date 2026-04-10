@@ -35,9 +35,7 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { VerificationCard } from '@/components/profile/VerificationCard';
 import { OnlineToggle } from '@/components/profile/OnlineToggle';
 import { StatsSection } from '@/components/profile/StatsSection';
-
-const TELEGRAM_BOT = 'hamshirago_medic_bot';
-const TELEGRAM_CHANNEL = 'https://t.me/hamshirago_medics'; // канал для медиков
+import { TELEGRAM_CHANNEL, getMedicDeepLink } from '@/constants/telegram';
 
 interface OrderCount { id: string; status: string; }
 
@@ -251,9 +249,7 @@ export default function ProfileScreen() {
   const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
-    // Deep link: opens bot with /start {medicId} pre-filled — bot auto-links account
-    const deepLink = `tg://resolve?domain=${TELEGRAM_BOT}&start=${medic?.id ?? ''}`;
-    const webFallback = `https://t.me/${TELEGRAM_BOT}?start=${medic?.id ?? ''}`;
+    const { deepLink, webFallback } = getMedicDeepLink(medic?.id ?? '');
     Linking.canOpenURL(deepLink)
       .then((ok) => Linking.openURL(ok ? deepLink : webFallback))
       .catch(() => Linking.openURL(webFallback));
