@@ -1,5 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bullmq';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -39,6 +41,36 @@ import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: (): any => {
+        const redisUrl = process.env.REDIS_URL;
+        if (redisUrl) {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const redisStore = require('cache-manager-redis-store');
+          return {
+            store: redisStore,
+            url: redisUrl,
+            ttl: 30, // default 30 seconds
+          };
+        }
+        // Fallback: in-memory cache
+        return { ttl: 30 };
+      },
+    }),
+    ...(process.env.REDIS_URL
+      ? [
+          BullModule.forRoot({
+            connection: {
+              url: process.env.REDIS_URL,
+            },
+          }),
+          BullModule.registerQueue(
+            { name: 'push-notifications' },
+            { name: 'telegram-messages' },
+          ),
+        ]
+      : []),
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',

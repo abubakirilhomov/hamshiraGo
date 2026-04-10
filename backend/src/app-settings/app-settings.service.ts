@@ -1,25 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppSettings } from './entities/app-settings.entity';
 import { PatchSettingsDto } from './dto/patch-settings.dto';
 
 const SINGLETON_ID = 'singleton';
+const CACHE_KEY = 'app_settings';
+const CACHE_TTL_MS = 30_000; // 30 seconds
 
 @Injectable()
 export class AppSettingsService {
-  private cache: { settings: AppSettings; expiresAt: number } | null = null;
-  private readonly CACHE_TTL_MS = 30_000;
-
   constructor(
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     @InjectRepository(AppSettings)
     private readonly repo: Repository<AppSettings>,
   ) {}
 
   async get(): Promise<AppSettings> {
-    if (this.cache && Date.now() < this.cache.expiresAt) {
-      return this.cache.settings;
-    }
+    const cached = await this.cacheManager.get<AppSettings>(CACHE_KEY);
+    if (cached) return cached;
     let settings: AppSettings | null = null;
     try {
       settings = await this.repo.findOne({ where: { id: SINGLETON_ID } });
@@ -75,7 +76,7 @@ export class AppSettingsService {
         }
       }
     }
-    this.cache = { settings, expiresAt: Date.now() + this.CACHE_TTL_MS };
+    await this.cacheManager.set(CACHE_KEY, settings, CACHE_TTL_MS);
     return settings;
   }
 
@@ -103,7 +104,7 @@ export class AppSettingsService {
         throw err;
       }
     }
-    this.cache = null; // invalidate cache
+    await this.cacheManager.del(CACHE_KEY); // invalidate cache
     return this.get();
   }
 
