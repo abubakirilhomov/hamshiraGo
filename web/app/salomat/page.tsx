@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ??
-  "https://hamshirago-production-0a65.up.railway.app";
+  "https://hamshirago-production-739a.up.railway.app";
 
 const DISCLAIMER_KEY = "salomat_disclaimer_shown";
 
