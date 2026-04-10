@@ -24,10 +24,13 @@ import { CreateCompanyServiceDto } from './dto/create-company-service.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto';
 import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
+import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { ClinicAuthGuard } from '../auth/guards/clinic-auth.guard';
 import { ClinicRoleGuard } from '../auth/guards/clinic-role.guard';
 import { ClinicUser, ClinicUserPayload } from '../auth/decorators/clinic-user.decorator';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ClientId } from '../auth/decorators/client-id.decorator';
 
 // ── Public auth routes ──────────────────────────────────────────────────
 
@@ -359,6 +362,49 @@ export class ClinicController {
   ) {
     return this.clinicService.searchPatientByPhone(user.companyId, phone);
   }
+
+  // ── Room Stats (CEO only) ───────────────────────────────────────
+
+  @Get('stats/rooms')
+  @UseGuards(ClinicRoleGuard('CEO'))
+  getRoomStats(@ClinicUser() user: ClinicUserPayload) {
+    return this.clinicService.getRoomStats(user.companyId);
+  }
+
+  // ── Service Stats (CEO only) ────────────────────────────────────
+
+  @Get('stats/services')
+  @UseGuards(ClinicRoleGuard('CEO'))
+  getServiceStats(@ClinicUser() user: ClinicUserPayload) {
+    return this.clinicService.getServiceStats(user.companyId);
+  }
+
+  // ── Patient History (CEO + RECEPTION) ───────────────────────────
+
+  @Get('patients/:id/history')
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  getPatientHistory(
+    @ClinicUser() user: ClinicUserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.clinicService.getPatientHistory(user.companyId, id);
+  }
+
+  // ── Prescription (all clinic roles) ─────────────────────────────
+
+  @Post('appointments/:id/prescription')
+  createPrescription(
+    @ClinicUser() user: ClinicUserPayload,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreatePrescriptionDto,
+  ) {
+    return this.clinicService.createPrescription(
+      user.companyId,
+      id,
+      user.userId,
+      dto,
+    );
+  }
 }
 
 // ── Admin routes ────────────────────────────────────────────────────────
@@ -407,6 +453,11 @@ export class ClinicAdminController {
   ) {
     return this.clinicService.blockCompany(id, isActive);
   }
+
+  @Get(':id/stats')
+  getCompanyStats(@Param('id', ParseUUIDPipe) id: string) {
+    return this.clinicService.getCompanyStatsAdmin(id);
+  }
 }
 
 // ── Admin leads routes ─────────────────────────────────────────────────
@@ -447,5 +498,27 @@ export class ClinicPublicController {
     @Param('companyId', ParseUUIDPipe) companyId: string,
   ) {
     return this.clinicService.getPublicServices(companyId);
+  }
+}
+
+// ── Patient prescriptions (client JWT auth) ────────────────────────────
+
+@Controller('patient')
+export class PatientPrescriptionsController {
+  constructor(private readonly clinicService: ClinicService) {}
+
+  @Get('prescriptions')
+  @UseGuards(JwtAuthGuard)
+  getMyPrescriptions(@ClientId() userId: string) {
+    return this.clinicService.getPatientPrescriptions(userId);
+  }
+
+  @Get('prescriptions/:id')
+  @UseGuards(JwtAuthGuard)
+  getPrescriptionDetail(
+    @ClientId() userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.clinicService.getPatientPrescriptionDetail(userId, id);
   }
 }

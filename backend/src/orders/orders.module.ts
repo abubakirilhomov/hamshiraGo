@@ -20,6 +20,7 @@ import { ReviewsModule } from '../reviews/reviews.module';
 import { LoyaltyModule } from '../loyalty/loyalty.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { TelegramBotModule } from '../telegram/telegram-bot.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { TelegramBotModule } from '../telegram/telegram-bot.module';
     LoyaltyModule,
     SubscriptionsModule,
     forwardRef(() => TelegramBotModule),
+    AdminModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, DispatchService],

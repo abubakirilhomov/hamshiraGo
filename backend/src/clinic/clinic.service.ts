@@ -20,6 +20,7 @@ import { CompanyRoomDoctor } from './entities/company-room-doctor.entity';
 import { CompanyService as CompanyServiceEntity } from './entities/company-service.entity';
 import { ClinicAppointment } from './entities/clinic-appointment.entity';
 import { SalomatLead } from './entities/salomat-lead.entity';
+import { ClinicPrescription } from './entities/clinic-prescription.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { LoginClinicDto } from './dto/login-clinic.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -32,6 +33,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
+import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { PushNotificationsService } from '../realtime/push-notifications.service';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
 import { User } from '../users/entities/user.entity';
@@ -57,6 +59,8 @@ export class ClinicService {
     private readonly appointmentRepo: Repository<ClinicAppointment>,
     @InjectRepository(SalomatLead)
     private readonly leadRepo: Repository<SalomatLead>,
+    @InjectRepository(ClinicPrescription)
+    private readonly clinicPrescriptionRepo: Repository<ClinicPrescription>,
     @InjectRepository(User)
     private readonly patientRepo: Repository<User>,
     private readonly jwtService: JwtService,
@@ -897,6 +901,158 @@ export class ClinicService {
         : null,
       visits,
     };
+  }
+
+  // ── Room Stats (CEO) ─────────────────────────────────────────────
+
+  async getRoomStats(companyId: string) {
+    const rooms = await this.roomRepo.find({
+      where: { companyId, isActive: true },
+    });
+    const today = new Date().toISOString().split('T')[0];
+
+    const stats = await Promise.all(
+      rooms.map(async (room) => {
+        const todayCount = await this.appointmentRepo.count({
+          where: { companyId, roomId: room.id, date: today },
+        });
+        return {
+          roomId: room.id,
+          name: room.name,
+          floor: room.floor,
+          todayAppointments: todayCount,
+        };
+      }),
+    );
+    return stats;
+  }
+
+  // ── Service Stats (CEO) ─────────────────────────────────────────
+
+  async getServiceStats(companyId: string) {
+    const result = await this.appointmentRepo
+      .createQueryBuilder('a')
+      .select('a.serviceId', 'serviceId')
+      .addSelect('COUNT(*)', 'count')
+      .where('a.companyId = :companyId', { companyId })
+      .andWhere('a.serviceId IS NOT NULL')
+      .groupBy('a.serviceId')
+      .orderBy('count', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    const serviceIds = result.map(
+      (r: { serviceId: string }) => r.serviceId,
+    );
+    const services = serviceIds.length
+      ? await this.serviceRepo.findByIds(serviceIds)
+      : [];
+
+    return result.map((r: { serviceId: string; count: string }) => ({
+      serviceId: r.serviceId,
+      serviceName:
+        services.find((s) => s.id === r.serviceId)?.name ?? 'Unknown',
+      count: parseInt(r.count, 10),
+    }));
+  }
+
+  // ── Admin Company Stats ─────────────────────────────────────────
+
+  async getCompanyStatsAdmin(companyId: string) {
+    const company = await this.companyRepo.findOne({
+      where: { id: companyId },
+    });
+    if (!company) throw new NotFoundException('COMPANY_NOT_FOUND');
+
+    const staffCount = await this.userRepo.count({
+      where: { companyId, isActive: true },
+    });
+    const doctorCount = await this.userRepo.count({
+      where: { companyId, role: 'DOCTOR', isActive: true },
+    });
+    const totalAppointments = await this.appointmentRepo.count({
+      where: { companyId },
+    });
+    const doneAppointments = await this.appointmentRepo.count({
+      where: { companyId, status: 'DONE' },
+    });
+    const totalLeads = await this.leadRepo.count({
+      where: { clinicId: companyId },
+    });
+    const visitedLeads = await this.leadRepo.count({
+      where: { clinicId: companyId, status: 'VISITED' },
+    });
+
+    return {
+      company,
+      staffCount,
+      doctorCount,
+      totalAppointments,
+      doneAppointments,
+      totalLeads,
+      visitedLeads,
+      conversionRate:
+        totalLeads > 0
+          ? Math.round((visitedLeads / totalLeads) * 100)
+          : 0,
+    };
+  }
+
+  // ── Patient History ─────────────────────────────────────────────
+
+  async getPatientHistory(companyId: string, patientId: string) {
+    return this.appointmentRepo.find({
+      where: { companyId, patientId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // ── Clinic Prescriptions ────────────────────────────────────────
+
+  async createPrescription(
+    companyId: string,
+    appointmentId: string,
+    doctorUserId: string,
+    dto: CreatePrescriptionDto,
+  ) {
+    const appointment = await this.appointmentRepo.findOne({
+      where: { id: appointmentId, companyId },
+    });
+    if (!appointment) throw new NotFoundException('APPOINTMENT_NOT_FOUND');
+
+    return this.clinicPrescriptionRepo.save(
+      this.clinicPrescriptionRepo.create({
+        companyId,
+        appointmentId,
+        doctorId: doctorUserId,
+        patientName: appointment.patientName,
+        patientPhone: appointment.patientPhone,
+        patientId: appointment.patientId,
+        content: dto.content,
+        notes: dto.notes ?? null,
+      }),
+    );
+  }
+
+  // ── Patient Prescriptions (client auth) ─────────────────────────
+
+  async getPatientPrescriptions(patientId: string) {
+    return this.clinicPrescriptionRepo.find({
+      where: { patientId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getPatientPrescriptionDetail(
+    patientId: string,
+    prescriptionId: string,
+  ) {
+    const prescription = await this.clinicPrescriptionRepo.findOne({
+      where: { id: prescriptionId, patientId },
+    });
+    if (!prescription)
+      throw new NotFoundException('PRESCRIPTION_NOT_FOUND');
+    return prescription;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────

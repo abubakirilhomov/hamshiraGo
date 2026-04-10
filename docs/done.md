@@ -1,8 +1,29 @@
 # HamshiraGo --- Выполненные задачи
 
-## 2026-04-09
+## 2026-04-05 (Push Segmentation + Payments Ledger)
 
-- **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
+- **[backend]** AdminModule created with PushCampaignService, PaymentLedgerService -- `backend/src/admin/admin.module.ts`
+- **[backend]** PaymentLedger entity (payment_ledger table) with orderId, consultationId, medicId, doctorId, companyId, amount, type, description -- `backend/src/admin/entities/payment-ledger.entity.ts`
+- **[backend]** PushCampaignService: segmented push (all, new_7d, inactive_30d, tier_gold) with batch sending -- `backend/src/admin/push-campaign.service.ts`
+- **[backend]** PushCampaignDto with class-validator -- `backend/src/admin/dto/push-campaign.dto.ts`
+- **[backend]** PaymentLedgerService: record(), findAll() with filters/pagination, getSummary() -- `backend/src/admin/payment-ledger.service.ts`
+- **[backend]** POST /admin/push-campaign endpoint (AdminGuard) -- `backend/src/app.controller.ts`
+- **[backend]** GET /admin/ledger endpoint with type/medicId/doctorId/companyId/from/to filters -- `backend/src/app.controller.ts`
+- **[backend]** GET /admin/ledger/summary?days=30 endpoint -- `backend/src/app.controller.ts`
+- **[backend]** Ledger wired into order completion: EARNING + COMMISSION recorded on DONE status -- `backend/src/orders/orders.service.ts`
+
+## 2026-04-05 (V6 Clinic Platform Stage 4 — Stats, Prescriptions, Patient History)
+
+- **[backend]** CLIN-BE-10: Room stats endpoint GET /clinic/stats/rooms (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-11: Service stats endpoint GET /clinic/stats/services (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-12: Admin company stats GET /admin/companies/:id/stats -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-13: Patient visit history GET /clinic/patients/:id/history (CEO+Reception) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-14: ClinicPrescription entity (clinic_prescriptions table) -- `backend/src/clinic/entities/clinic-prescription.entity.ts`
+- **[backend]** CLIN-BE-14: CreatePrescriptionDto -- `backend/src/clinic/dto/create-prescription.dto.ts`
+- **[backend]** CLIN-BE-14: POST /clinic/appointments/:id/prescription (all clinic roles) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-15: PatientPrescriptionsController: GET /patient/prescriptions, GET /patient/prescriptions/:id (client JWT auth) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-15: ClinicPrescription + PatientPrescriptionsController registered in ClinicModule -- `backend/src/clinic/clinic.module.ts`
+
 ## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
 
 - **[backend]** CLIN-BE-6: SalomatLead entity (salomat_leads table) -- `backend/src/clinic/entities/salomat-lead.entity.ts`

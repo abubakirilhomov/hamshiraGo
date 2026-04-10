@@ -1,13 +1,18 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AdminGuard } from './auth/guards/admin.guard';
 import { AuditLogService } from './common/audit-log.service';
+import { PushCampaignService } from './admin/push-campaign.service';
+import { PaymentLedgerService } from './admin/payment-ledger.service';
+import { PushCampaignDto } from './admin/dto/push-campaign.dto';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly dataSource: DataSource,
     private readonly auditLogService: AuditLogService,
+    private readonly pushCampaignService: PushCampaignService,
+    private readonly paymentLedgerService: PaymentLedgerService,
   ) {}
 
   @Get('health')
@@ -72,5 +77,35 @@ export class AppController {
     const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
     const l = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
     return this.auditLogService.findAll(p, l, action);
+  }
+
+  @UseGuards(AdminGuard)
+  @Post('admin/push-campaign')
+  pushCampaign(@Body() dto: PushCampaignDto) {
+    return this.pushCampaignService.sendCampaign(dto.segment, dto.title, dto.body);
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('admin/ledger')
+  getLedger(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('type') type?: string,
+    @Query('medicId') medicId?: string,
+    @Query('doctorId') doctorId?: string,
+    @Query('companyId') companyId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const p = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const l = Math.min(100, Math.max(1, parseInt(limit ?? '50', 10) || 50));
+    return this.paymentLedgerService.findAll(p, l, { type, medicId, doctorId, companyId, from, to });
+  }
+
+  @UseGuards(AdminGuard)
+  @Get('admin/ledger/summary')
+  getLedgerSummary(@Query('days') days?: string) {
+    const d = Math.max(1, parseInt(days ?? '30', 10) || 30);
+    return this.paymentLedgerService.getSummary(d);
   }
 }

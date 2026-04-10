@@ -34,6 +34,7 @@ import { PromoModule } from './promo/promo.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { VoiceAgentModule } from './voice-agent/voice-agent.module';
 import { ClinicModule } from './clinic/clinic.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { ClinicModule } from './clinic/clinic.module';
     AnalyticsModule,
     VoiceAgentModule,
     ClinicModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

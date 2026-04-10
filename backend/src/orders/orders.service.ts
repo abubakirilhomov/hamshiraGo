@@ -24,6 +24,7 @@ import { User } from '../users/entities/user.entity';
 import { Referral } from '../referrals/entities/referral.entity';
 import { TelegramBotService } from '../telegram/telegram-bot.service';
 import { CloudinaryService } from '../common/cloudinary.service';
+import { PaymentLedgerService } from '../admin/payment-ledger.service';
 import { haversineKm } from '../utils/geo';
 
 /** Safely convert a DB value (possibly string from decimal columns) to a number.
@@ -77,6 +78,7 @@ export class OrdersService {
     private telegramBotService: TelegramBotService,
     private dataSource: DataSource,
     private cloudinaryService: CloudinaryService,
+    private paymentLedgerService: PaymentLedgerService,
   ) {}
 
   private isMissingColumnError(err: unknown): boolean {
@@ -845,6 +847,26 @@ export class OrdersService {
         }
         await manager.increment(Medic, { id: medicId }, 'earnings', earnings);
       });
+
+      // Record in payment ledger (fire-and-forget)
+      this.paymentLedgerService
+        .record({
+          orderId: order.id,
+          medicId: order.medicId ?? undefined,
+          amount: earnings,
+          type: 'EARNING',
+          description: `Order ${order.id.slice(0, 8)} — ${order.serviceTitle ?? 'service'}`,
+        })
+        .catch((err) => this.logger.warn('Ledger EARNING record failed', err));
+
+      this.paymentLedgerService
+        .record({
+          orderId: order.id,
+          amount: safeNumber(order.platformFee),
+          type: 'COMMISSION',
+          description: `Commission for order ${order.id.slice(0, 8)}`,
+        })
+        .catch((err) => this.logger.warn('Ledger COMMISSION record failed', err));
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it
       const result = await this.orderRepo.update(

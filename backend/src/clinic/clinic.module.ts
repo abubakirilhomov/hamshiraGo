@@ -11,6 +11,7 @@ import { CompanyRoomDoctor } from './entities/company-room-doctor.entity';
 import { CompanyService as CompanyServiceEntity } from './entities/company-service.entity';
 import { ClinicAppointment } from './entities/clinic-appointment.entity';
 import { SalomatLead } from './entities/salomat-lead.entity';
+import { ClinicPrescription } from './entities/clinic-prescription.entity';
 import { User } from '../users/entities/user.entity';
 import { ClinicService } from './clinic.service';
 import {
@@ -19,6 +20,7 @@ import {
   ClinicAdminController,
   ClinicAdminLeadsController,
   ClinicPublicController,
+  PatientPrescriptionsController,
 } from './clinic.controller';
 import { RealtimeModule } from '../realtime/realtime.module';
 
@@ -33,6 +35,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
       CompanyServiceEntity,
       ClinicAppointment,
       SalomatLead,
+      ClinicPrescription,
       User,
     ]),
     JwtModule.registerAsync({
@@ -52,6 +55,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
     ClinicAdminController,
     ClinicAdminLeadsController,
     ClinicPublicController,
+    PatientPrescriptionsController,
   ],
   providers: [ClinicService],
   exports: [ClinicService],

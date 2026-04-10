@@ -201,8 +201,8 @@
 - [x] GET /clinic/stats/overview?period=today|week|month|year — bemorlar soni, daromad, комиссия
 - [x] GET /clinic/stats/monthly — 12 oy oyma-oy grafik (bemorlar soni)
 - [x] GET /clinic/stats/doctors — har shifokor uchun: bemorlar, reyting, daromad
-- [ ] GET /clinic/stats/rooms — har xona bandligi
-- [ ] GET /clinic/stats/services — eng ko'p so'ralgan xizmatlar
+- [x] GET /clinic/stats/rooms — har xona bandligi
+- [x] GET /clinic/stats/services — eng ko'p so'ralgan xizmatlar
 
 #### CLIN-BE-7. Salomat AI → Lead tizimi — DONE 2026-04-05
 - [x] Entity `salomat_lead`: id, clinicId, patientName, patientPhone, aiSummary, specialization, status (NEW | CONTACTED | BOOKED | VISITED | MISSED), appointmentId (nullable), commissionAmount (nullable), commissionPaid (boolean), createdAt
@@ -220,17 +220,16 @@
 - [x] POST /admin/companies — создать компанию + CEO аккаунт одним запросом
 - [x] PATCH /admin/companies/:id/verify
 - [x] PATCH /admin/companies/:id/block
-- [ ] GET /admin/companies/:id/stats — статистика конкретной клиники
+- [x] GET /admin/companies/:id/stats — статистика конкретной клиники
 - [x] GET /admin/leads/overview — все лиды по всем клиникам (сводка)
 - [x] GET /admin/leads — все лиды с фильтрами (clinicId, status, page, limit)
 
-#### CLIN-BE-9. Страница пациента + Рецепты — PARTIALLY DONE 2026-04-05
+#### ~~CLIN-BE-9. Страница пациента + Рецепты~~ DONE 2026-04-05
 - [x] GET /clinic/patients/:phone — поиск пациента по телефону (Reception при бронировании)
-- [ ] GET /clinic/patients/:id/history — история визитов пациента в эту клинику
-- [ ] POST /clinic/appointments/:id/prescription — врач отправляет рецепт пациенту
-  - Сохранить в БД + отправить SMS с ссылкой или push уведомление
-- [ ] GET /patient/prescriptions — пациент видит свои рецепты (JWT auth)
-- [ ] GET /patient/prescriptions/:id — детали рецепта (PDF)
+- [x] GET /clinic/patients/:id/history — история визитов пациента в эту клинику
+- [x] POST /clinic/appointments/:id/prescription — врач отправляет рецепт пациенту
+- [x] GET /patient/prescriptions — пациент видит свои рецепты (JWT auth)
+- [x] GET /patient/prescriptions/:id — детали рецепта
 
 ---
 
@@ -933,7 +932,7 @@
 
 ### Рост и удержание
 - [x] **Расписание медика** — DONE (backend) — `MedicSchedule` entity, `GET/PUT /medics/me/schedule`, dispatch фильтрует по рабочим часам. Mobile UI remains.
-- [ ] **Push-сегментация** — admin отправляет push по сегментам (новые клиенты, неактивные 30+ дней, тир GOLD). **Реализация:** Endpoint `POST /admin/push-campaign` с body `{ segment, title, body }`. Segments: `new_7d` (регистрация <7 дней), `inactive_30d` (нет заказов 30+ дней), `tier_gold`, `all`. SQL query фильтрует users, шлёт push батчами по 100. Admin UI: форма с dropdown сегмента + textarea. Оценка: ~3 часа backend + ~2 часа admin
+- [x] **Push-сегментация** — DONE (backend) — `POST /admin/push-campaign`, segments: all/new_7d/inactive_30d/tier_gold, batch send. Admin UI remains.
 - [x] **Фото до/после процедуры** — DONE (backend) — `beforePhotoUrl`/`afterPhotoUrl` columns, `POST /orders/:id/photo` endpoint, Cloudinary upload. Mobile part remains.
 - [x] **Уведомления в Telegram для клиентов** — DONE (backend) — full chain verified: User entity `telegramChatId`, `/start client_{userId}`, `notifyClientStatus()`, `notifyClient()`. Mobile deep link part remains.
 
@@ -951,7 +950,7 @@
 ### Масштабирование (при росте >1000 заказов/день)
 - [ ] **Redis кэш** — заменить in-memory кэш (AppSettings 30s TTL) на Redis. **Зачем:** Сейчас каждый инстанс backend хранит свой кэш. При горизонтальном масштабировании (2+ pods на Railway) — кэш рассинхронизирован. Redis = единый кэш для всех инстансов. **Реализация:** `@nestjs/cache-manager` + `cache-manager-redis-store`. Подключить Redis addon на Railway ($5/мес). Кэшировать: AppSettings, services list, doctor list. Оценка: ~2 часа
 - [ ] **BullMQ очередь задач** — перенести fire-and-forget операции в очередь. **Зачем:** Сейчас push, Telegram, email отправляются в `.catch()` — если сервер падает во время отправки, сообщение теряется. BullMQ: retry, delay, dead-letter queue, мониторинг через Bull Board. **Реализация:** `@nestjs/bullmq` + Redis. Queues: `push-notifications`, `telegram-messages`, `email`. Оценка: ~4 часа
-- [ ] **Payments ledger** — отдельная таблица для финансовой прозрачности. **Зачем:** Сейчас earnings считаются на лету из orders. Для бухгалтерии нужен аудит-трейл: кто, когда, сколько получил/заплатил. **Реализация:** Entity `PaymentLedger` (orderId, medicId, amount, type: EARNING/COMMISSION/REFUND, createdAt). Записывать при DONE. Admin endpoint: `GET /admin/ledger` с фильтрами. Оценка: ~3 часа
+- [x] **Payments ledger** — DONE (backend) — `PaymentLedger` entity, `GET /admin/ledger` + `GET /admin/ledger/summary`, wired into order DONE. Admin UI remains.
 - [ ] **S3-совместимое хранилище** — вместо Cloudinary для объёмных файлов. **Зачем:** Cloudinary бесплатный tier = 25 credits/мес. При росте медиков (фото лицензий, профили) может не хватить. **Реализация:** MinIO на Railway или Backblaze B2 ($0.005/GB). Медиа-документы → S3, фото профилей → Cloudinary. Оценка: ~3 часа
 
 ---
