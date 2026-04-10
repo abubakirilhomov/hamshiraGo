@@ -50,19 +50,20 @@ export default function AuthScreen() {
       setError(t('auth.errorPasswordLength'));
       return;
     }
+    const fullPhone = phone.trim().startsWith('+998') ? phone.trim() : `+998${phone.trim()}`;
     setLoading(true);
     try {
       if (mode === 'login') {
         if (loginRole === 'doctor') {
-          await loginDoctor(phone.trim(), password);
+          await loginDoctor(fullPhone, password);
           trackEvent('login_doctor').catch(() => {});
         } else {
-          await login(phone.trim(), password);
+          await login(fullPhone, password);
           trackEvent('login').catch(() => {});
         }
       } else {
         const years = parseInt(experienceYears) || 0;
-        await register(phone.trim(), password, name.trim(), years);
+        await register(fullPhone, password, name.trim(), years);
         trackEvent('register').catch(() => {});
       }
     } catch (e: unknown) {
@@ -198,6 +199,7 @@ export default function AuthScreen() {
               placeholderTextColor={Theme.textTertiary}
               testID="auth_phone_input"
               keyboardType="phone-pad"
+              maxLength={9}
               accessibilityLabel="Telefon"
             />
           </View>
