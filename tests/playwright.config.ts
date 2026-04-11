@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const WEB_URL = process.env.WEB_URL || 'http://localhost:3001';
 const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:3003';
+const CLINIC_URL = process.env.CLINIC_URL || 'http://localhost:3000';
 
 export default defineConfig({
   timeout: 30_000,
@@ -40,6 +41,19 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: ADMIN_URL,
+        screenshot: 'only-on-failure',
+        video: 'retain-on-failure',
+        trace: 'retain-on-failure',
+      },
+    },
+
+    /* ── Clinic portal browser tests ── */
+    {
+      name: 'clinic',
+      testDir: './web-medic',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: CLINIC_URL,
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
         trace: 'retain-on-failure',

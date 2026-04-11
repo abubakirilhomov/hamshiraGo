@@ -1,82 +1,39 @@
 # HamshiraGo --- Выполненные задачи
 
-## 2026-04-05 (Medic App — Clinical Sanctuary Redesign)
+## 2026-04-11 (CLIN-FE-5 улучшения + CLIN-FE-6 + CLIN-FE-7 CSV)
 
-- **[medic]** Redesign auth.tsx — light bg, medkit icon, tonal inputs (no borders), +998 phone prefix, gradient pill CTA, YOKI divider, ghost secondary button, useSafeAreaInsets — `medic/app/auth.tsx`
-- **[medic]** Redesign onboarding.tsx — editorial style, pill dots pagination, gradient pill CTA, skip link top-right, useSafeAreaInsets — `medic/app/onboarding.tsx`
-- **[medic]** Redesign language-picker.tsx — light bg, medkit icon, UZ/RU cards with radio buttons, gradient pill CTA, useSafeAreaInsets — `medic/app/language-picker.tsx`
-- **[medic]** Redesign (tabs)/index.tsx — custom header with bell icon, service icon in teal circle, gradient accept button, empty state with icon, useSafeAreaInsets — `medic/app/(tabs)/index.tsx`
-- **[medic]** Redesign (tabs)/my-orders.tsx — header, filter pills (Faol/Tugatilgan), status badges with semantic colors, no borders, useSafeAreaInsets — `medic/app/(tabs)/my-orders.tsx`
-- **[medic]** Redesign (tabs)/profile.tsx — earnings gradient card, menu items in grouped card, language toggle pills, no borders, useSafeAreaInsets — `medic/app/(tabs)/profile.tsx`
-- **[medic]** Redesign (tabs)/_layout.tsx — white bg, no top border, whisper Shadow.lg, height 85, paddingBottom 20, headerShown: false — `medic/app/(tabs)/_layout.tsx`
-- **[design]** All screens: Manrope for headlines/buttons, Inter for body/labels, pill buttons (borderRadius 9999), whisper shadows (4% opacity), tonal bg shifts instead of 1px borders, Theme tokens throughout
+- **[CLIN-FE-5]** Настройки клиники — расширен `web-medic/app/clinic/settings/page.tsx`: добавлена секция **Рабочих часов** (таблица Пн–Вс с toggle open/close + time inputs, localStorage), секция **Возможностей клиники** (3 карточки с toggle-переключателями: онлайн-консультация/house call/онлайн-оплата, localStorage), секция **Длительность слота** (pill-кнопки 15/20/30/45/60 мин, localStorage). ToggleSwitch как отдельный a11y-компонент (role=switch, aria-checked).
+- **[CLIN-FE-6]** Лиды — обновлён `web-medic/app/clinic/leads/page.tsx`: добавлена кнопка **Позвонить** (tel: ссылка), кнопка **Записать** (redirect → /clinic/reception) для NEW/IN_PROGRESS лидов.
+- **[CLIN-FE-7]** Финансы — обновлён `web-medic/app/clinic/finance/page.tsx`: добавлена кнопка **Экспорт CSV** (client-side, генерирует monthly stats + top doctors с BOM для UTF-8, скачивает как `hamshirago-finance-YYYY-MM-DD.csv`).
 
-## 2026-04-05 (Medic Sub-screens -- Clinical Sanctuary Redesign)
+## 2026-04-11 (CLIN-FE-3 → CLIN-FE-12)
 
-- **[medic]** Redesign order/[id].tsx -- custom header (back + "Buyurtma" + order ID), service card with icon, status stepper (teal dots), photo cards 120x120, tonal surfaces, gradient modal close, useSafeAreaInsets -- `medic/app/order/[id].tsx`
-- **[medic]** Redesign order/chat.tsx -- teal gradient header with avatar + online dot, medic bubbles #006860 right / client #f2f4f6 left, tonal input + send circle, useSafeAreaInsets -- `medic/app/order/chat.tsx`
-- **[medic]** Fix order/chat.tsx -- useSocket -> useSharedSocket, toast.show -> showToast (pre-existing bugs) -- `medic/app/order/chat.tsx`
-- **[medic]** Redesign verification.tsx -- back + "Verifikatsiya" header, status badge (amber/green/red tonal), 120x120 photo upload cards, rejection reason card, "Yuborish" gradient pill CTA, useSafeAreaInsets -- `medic/app/verification.tsx`
-- **[medic]** Redesign work-zone.tsx -- back + "Ish zonasi" header, teal circle overlay on map, tonal status row, "Saqlash" gradient pill CTA, tonal clear button, useSafeAreaInsets -- `medic/app/work-zone.tsx`
-- **[medic]** Update schedule.tsx -- Typography spread tokens, Fonts tokens, Shadow.sm on day cards, surfaceContainerLow on hour buttons -- `medic/app/schedule.tsx`
-- **[medic]** Redesign reviews.tsx -- back + "Sharhlar" header, average rating display card, review cards with avatar circle + stars + date, useSafeAreaInsets -- `medic/app/reviews.tsx`
-- **[medic]** Redesign (doctor-tabs)/index.tsx -- "Konsultatsiyalar" Manrope_700Bold header, verify banner with tonal bg, symptoms + client info cards, accept/decline gradient pills, useSafeAreaInsets -- `medic/app/(doctor-tabs)/index.tsx`
-- **[medic]** Redesign (doctor-tabs)/my-patients.tsx -- "Bemorlarim" header, patient cards with status badges, section titles, tonal surfaces, useSafeAreaInsets -- `medic/app/(doctor-tabs)/my-patients.tsx`
-- **[medic]** Redesign (doctor-tabs)/profile.tsx -- specialization card with icon, stats row, tonal surfaces, pill buttons, telegram card, schedule menu, pill language toggle, tonal logout, useSafeAreaInsets -- `medic/app/(doctor-tabs)/profile.tsx`
-- **[medic]** Redesign doctor-consultation/[id].tsx -- back + "Konsultatsiya" header, symptoms card, video call gradient pill, tonal notes textarea, "Yakunlash" gradient pill CTA, useSafeAreaInsets -- `medic/app/doctor-consultation/[id].tsx`
+- **[CLIN-FE-3]** CEO Portal — Кабинеты — `web-medic/app/clinic/rooms/page.tsx`: список кабинетов с расписанием в таблице, форма создания кабинета (название + этаж), модал назначения врача (выбор врача из DOCTOR staff, дни недели, время), отображение schedule через `clinicApi.rooms.schedule()`
+- **[CLIN-FE-4]** CEO Portal — Сотрудники — `web-medic/app/clinic/staff/page.tsx`: grid карточек с аватаром, бейджи по роли (CEO/RECEPTION/DOCTOR), форма создания с полями имя/телефон/пароль/роль + специализация и photoUrl для врача, кнопка деактивации
+- **[CLIN-FE-5]** CEO Portal — Настройки клиники — `web-medic/app/clinic/settings/page.tsx`: редактирование данных клиники (логотип URL, название, адрес, телефон, email), CRUD услуг через `clinicApi.services` (инлайн редактирование, inline create form)
+- **[CLIN-FE-6]** CEO Portal — Лиды — `web-medic/app/clinic/leads/page.tsx`: KPI блок (5 метрик из `clinicApi.leads.stats()`), фильтр по статусу, список с пагинацией, кнопки смены статуса (NEW→IN_PROGRESS→DONE, + Отменить)
+- **[CLIN-FE-7]** CEO Portal — Финансы — `web-medic/app/clinic/finance/page.tsx`: KPI (выручка, приёмы, % отмен) с period selector, 12-месячная таблица с inline bar (выручка), топ-5 врачей по доходу с медалями
+- **[CLIN-FE-8]** Reception Portal — `web-medic/app/clinic/reception/page.tsx`: список записей на сегодня с сортировкой по времени, кнопка Check In через `clinicApi.appointments.checkin()`, быстрые счётчики (ожидают/на приёме/готово), боковая панель новых лидов AI, кнопка «Записать пациента» → BookingModal
+- **[CLIN-FE-9]** BookingModal — `web-medic/components/clinic/BookingModal.tsx`: поиск пациента по телефону через `clinicApi.patients.getByPhone()`, автозаполнение имени, ручной ввод если не найден, выбор врача (DOCTOR role), дата/время, тип оплаты CASH/TERMINAL/ONLINE
+- **[CLIN-FE-10]** Страница пациента в web/ — `web/app/patient/page.tsx` (табы: визиты/рецепты/медкарта с плейсхолдерами аллергий и хронических болезней), `web/app/patient/prescriptions/page.tsx` (список рецептов), `web/app/patient/prescriptions/[id]/page.tsx` (детали + кнопка скачать PDF заглушка)
+- **[CLIN-FE-11]** Расширен `web-medic/app/doctor/consultation/[id]/page.tsx`: добавлен блок «История визитов» (плейсхолдер), форма рецепта (препарат/доза/кратность/дни), кнопка «Отправить рецепт пациенту» (alert), кнопка «Назначить следующий визит» (alert). Попутно исправлен дублирующий `border` в `web-medic/app/doctor/schedule/page.tsx` (TS error)
+- **[CLIN-FE-12]** Список и профиль клиник в web/ — `web/app/clinics/page.tsx` (текстовый поиск, карточки с рейтингом, специализациями), `web/app/clinics/[id]/page.tsx` (профиль: врачи, услуги с ценами в UZS, фиксированная кнопка «Записаться» → /clinic/auth). Mock данные — заменить на API когда появится публичный эндпоинт.
+- **[bugfix]** Исправлен TS error дублирующего `border` в `web-medic/app/doctor/schedule/page.tsx:136`
 
-## 2026-04-05 (Salomat Lead, S3 Storage, Voice Logging)
+## 2026-04-10 (Playwright Clinic Portal audit)
 
-- **[backend]** `POST /consultations/ai-chat/create-lead` -- new endpoint to create clinic lead from Salomat AI recommendation (mobile collects patientName/phone, sends with clinicId) -- `backend/src/consultations/consultations.controller.ts`, `backend/src/consultations/dto/create-lead-from-chat.dto.ts`
-- **[backend]** ClinicModule imported in ConsultationsModule (forwardRef) to enable lead creation from AI chat flow -- `backend/src/consultations/consultations.module.ts`
-- **[backend]** Voice session completion logging -- log line with sessionId, recommendation, specialization, exchangeCount when session reaches COMPLETED status -- `backend/src/voice-agent/voice-agent.service.ts`
-- **[backend]** S3Service (Backblaze B2 / MinIO compatible) -- upload, delete, getPresignedUrl -- registered in CommonModule (global), graceful fallback when S3 not configured -- `backend/src/common/s3.service.ts`, `backend/src/common/common.module.ts`
-- **[backend]** S3 env vars added to .env.example (S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
-- **[backend]** Installed @aws-sdk/client-s3 + @aws-sdk/s3-request-presigner
+- **[test]** Создан Playwright тест `tests/web-medic/clinic.spec.ts` (12 тестов, все проходят): рендер формы, phone prefill, password toggle, disabled submit, login request, hydration errors, broken resources, dashboard redirect, spinner state. Добавлен проект `clinic` в `tests/playwright.config.ts`. Скриншоты сохранены в `test-screenshots/`.
+- **[bug-found]** CLIN-BUG-1: `/clinic/auth` входит в `/clinic/layout.tsx` — layout блокирует форму спиннером когда нет `clinic_token`. Форма входа недоступна без токена. Добавлено в tasks.md.
+- **[bug-found]** CLIN-BUG-2: Выручка на dashboard отображается в ₽ (рублях), а не в UZS. Добавлено в tasks.md.
 
-## 2026-04-05 (Redis Cache + BullMQ Job Queues)
+## 2026-04-10
 
-- **[backend]** Redis caching via @nestjs/cache-manager with in-memory fallback when REDIS_URL is not set -- `backend/src/app.module.ts`
-- **[backend]** BullMQ job queues (push-notifications, telegram-messages) conditionally registered when REDIS_URL exists -- `backend/src/app.module.ts`
-- **[backend]** AppSettingsService migrated from manual in-memory cache to NestJS CacheManager (works with Redis or in-memory) -- `backend/src/app-settings/app-settings.service.ts`
-- **[backend]** QueueService abstraction with @Optional() injection, isQueueAvailable flag, retry with exponential backoff -- `backend/src/common/queue.service.ts`
-- **[backend]** PushProcessor (BullMQ worker for push-notifications queue) -- `backend/src/realtime/push.processor.ts`
-- **[backend]** TelegramProcessor (BullMQ worker for telegram-messages queue) -- `backend/src/realtime/telegram.processor.ts`
-- **[backend]** QueueService registered in CommonModule (global), processors in RealtimeModule (conditional) -- `backend/src/common/common.module.ts`, `backend/src/realtime/realtime.module.ts`
-- **[backend]** REDIS_URL added to .env.example -- `backend/.env.example`
+- **[CLIN-FE-2]** CEO Portal Dashboard — полностью переписан `web-medic/app/clinic/dashboard/page.tsx`: period selector (today/week/month/year), 4 KPI карточки из stats.overview, таблица по месяцам с inline прогресс-баром (recharts не установлен), блок врачей с прогресс-барами, реал-тайм очередь (setInterval 10s) из appointments.today, последние 5 лидов из leads.list. Skeleton/error states. Все типы из clinicApi.ts.
+- **[CLIN-FE-1]** Clinic Portal базовая инфраструктура — создан `web-medic/lib/clinicApi.ts` (clinic_token, getClinicRole, clearClinicSession, все clinic эндпоинты с типами); `web-medic/app/clinic/layout.tsx` (sidebar с ролями CEO/RECEPTION/DOCTOR, Stethoscope лого, мобильный hamburger); `web-medic/app/clinic/auth/page.tsx` (login форма, phone форматирование, редирект по роли); `web-medic/app/clinic/dashboard/page.tsx` (placeholder). Исправлено: clearClinicSession удаляет clinic_user вместо clinic_role; auth сохраняет clinic_user (JSON); иконки CalendarDays/TrendingUp/Stethoscope согласно спецификации
 
-## 2026-04-05 (httpOnly Cookie Auth + OpenAI TTS)
+## 2026-04-09
 
-- **[backend]** httpOnly cookie auth: POST /auth/login/cookie, POST /auth/logout/cookie endpoints -- `backend/src/auth/auth.controller.ts`
-- **[backend]** JWT strategy updated to extract token from cookies (fallback after Bearer header) -- `backend/src/auth/strategies/jwt.strategy.ts`
-- **[backend]** cookie-parser middleware added to bootstrap -- `backend/src/main.ts`
-- **[backend]** OpenAI TTS-1 integration in voice-agent synthesize() (requires OPENAI_API_KEY) -- `backend/src/voice-agent/voice-agent.service.ts`
-- **[backend]** TTS endpoint updated to stream audio/mpeg response -- `backend/src/voice-agent/voice-agent.controller.ts`
-
-## 2026-04-05 (Push Segmentation + Payments Ledger)
-
-- **[backend]** AdminModule created with PushCampaignService, PaymentLedgerService -- `backend/src/admin/admin.module.ts`
-- **[backend]** PaymentLedger entity (payment_ledger table) with orderId, consultationId, medicId, doctorId, companyId, amount, type, description -- `backend/src/admin/entities/payment-ledger.entity.ts`
-- **[backend]** PushCampaignService: segmented push (all, new_7d, inactive_30d, tier_gold) with batch sending -- `backend/src/admin/push-campaign.service.ts`
-- **[backend]** PushCampaignDto with class-validator -- `backend/src/admin/dto/push-campaign.dto.ts`
-- **[backend]** PaymentLedgerService: record(), findAll() with filters/pagination, getSummary() -- `backend/src/admin/payment-ledger.service.ts`
-- **[backend]** POST /admin/push-campaign endpoint (AdminGuard) -- `backend/src/app.controller.ts`
-- **[backend]** GET /admin/ledger endpoint with type/medicId/doctorId/companyId/from/to filters -- `backend/src/app.controller.ts`
-- **[backend]** GET /admin/ledger/summary?days=30 endpoint -- `backend/src/app.controller.ts`
-- **[backend]** Ledger wired into order completion: EARNING + COMMISSION recorded on DONE status -- `backend/src/orders/orders.service.ts`
-
-## 2026-04-05 (V6 Clinic Platform Stage 4 — Stats, Prescriptions, Patient History)
-
-- **[backend]** CLIN-BE-10: Room stats endpoint GET /clinic/stats/rooms (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-11: Service stats endpoint GET /clinic/stats/services (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-12: Admin company stats GET /admin/companies/:id/stats -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-13: Patient visit history GET /clinic/patients/:id/history (CEO+Reception) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-14: ClinicPrescription entity (clinic_prescriptions table) -- `backend/src/clinic/entities/clinic-prescription.entity.ts`
-- **[backend]** CLIN-BE-14: CreatePrescriptionDto -- `backend/src/clinic/dto/create-prescription.dto.ts`
-- **[backend]** CLIN-BE-14: POST /clinic/appointments/:id/prescription (all clinic roles) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-15: PatientPrescriptionsController: GET /patient/prescriptions, GET /patient/prescriptions/:id (client JWT auth) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
-- **[backend]** CLIN-BE-15: ClinicPrescription + PatientPrescriptionsController registered in ClinicModule -- `backend/src/clinic/clinic.module.ts`
-
+- **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
 ## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
 
 - **[backend]** CLIN-BE-6: SalomatLead entity (salomat_leads table) -- `backend/src/clinic/entities/salomat-lead.entity.ts`
