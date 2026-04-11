@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FaMedkit, FaTint, FaHeartbeat, FaUser, FaChevronLeft, FaClock } from "react-icons/fa";
 import { useTelegramBackButton, useHaptic } from "@/hooks/useTelegram";
 import { api, Service, formatPrice } from "@/lib/api";
 
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  "Уколы":      FaMedkit,
-  "Капельницы": FaTint,
-  "Измерения":  FaHeartbeat,
-  "Анализы":    FaTint,
-  "Перевязки":  FaMedkit,
-  "Уход":       FaUser,
+const CATEGORY_ICONS: Record<string, string> = {
+  "Уколы":      "vaccines",
+  "Капельницы": "water_drop",
+  "Измерения":  "monitor_heart",
+  "Анализы":    "biotech",
+  "Перевязки":  "healing",
+  "Уход":       "personal_injury",
 };
 
 export default function ServicePage() {
@@ -34,129 +33,138 @@ export default function ServicePage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            border: "3px solid #e2e8f0", borderTopColor: "#0d9488",
-            animation: "spin 0.8s linear infinite",
-            margin: "0 auto 12px",
-          }} />
-          <p style={{ color: "#94a3b8", fontSize: 14 }}>Загружаем...</p>
-        </div>
+      <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #eceef0", borderTopColor: "#00685f", animation: "spin 0.8s linear infinite", margin: "0 auto 14px" }} />
+          <p style={{ color: "#6d7a77", fontSize: 14, fontWeight: 500 }}>Загружаем...</p>
+        </div>
       </div>
     );
   }
 
   if (notFound || !service) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", padding: 24 }}>
-          <p style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Услуга не найдена</p>
-          <button onClick={() => router.push("/")} style={backBtnStyle}>На главную</button>
-        </div>
+      <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+        <span className="mat-icon" style={{ fontSize: 52, color: "#bcc9c6", marginBottom: 16 }}>search_off</span>
+        <p style={{ fontSize: 16, fontWeight: 700, color: "#191c1e", marginBottom: 20 }}>Услуга не найдена</p>
+        <button onClick={() => router.push("/")} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "13px 28px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+          На главную
+        </button>
       </div>
     );
   }
 
-  const Icon = CATEGORY_ICONS[service.category] ?? FaMedkit;
+  const iconName = CATEGORY_ICONS[service.category] ?? "medical_services";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Шапка */}
-      <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)", padding: "16px 24px 56px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <button
-            onClick={() => router.back()}
-            style={{
-              background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%",
-              width: 36, height: 36,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", color: "#fff",
-            }}
-          >
-            <FaChevronLeft size={16} />
-          </button>
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .mat-icon { font-family:'Material Symbols Outlined'; font-style:normal; font-weight:400; line-height:1;
+          letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap;
+          -webkit-font-smoothing:antialiased; }
+      `}</style>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
 
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <div style={{
-              width: 76, height: 76, borderRadius: "50%",
-              background: "rgba(255,255,255,0.2)",
-              border: "3px solid rgba(255,255,255,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 14px",
-            }}>
-              <Icon size={34} color="#fff" />
-            </div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 6, letterSpacing: "-0.3px" }}>
-              {service.title}
-            </h1>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
-              {formatPrice(service.price)} UZS
-            </p>
-          </div>
-        </div>
-      </div>
+      <div style={{ minHeight: "100vh", background: "#f7f9fb" }}>
 
-      {/* Контент */}
-      <div style={{ maxWidth: 720, margin: "-28px auto 0", padding: "0 24px 32px" }}>
-        <div style={{ background: "#fff", borderRadius: 20, padding: 24, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
+        {/* ── Header ── */}
+        <div style={{ background: "linear-gradient(145deg,#00685f 0%,#008378 60%,#005049 100%)", padding: "20px 20px 60px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+          <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
+            <button onClick={() => router.back()} style={{ background: "rgba(255,255,255,0.18)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
+              <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
+            </button>
 
-          {/* Цена */}
-          <div style={{ background: "#f8fafc", borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 14, color: "#64748b" }}>Стоимость</span>
-              <span style={{ fontSize: 20, fontWeight: 800, color: "#0d9488" }}>
-                {formatPrice(service.price)} UZS
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "3px solid rgba(255,255,255,0.35)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", backdropFilter: "blur(4px)" }}>
+                <span className="mat-icon" style={{ fontSize: 38, color: "#fff", fontVariationSettings: "'FILL' 1" }}>{iconName}</span>
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.4px", marginBottom: 8 }}>
+                {service.title}
+              </h1>
+              <span style={{ display: "inline-block", background: "rgba(255,255,255,0.18)", borderRadius: 999, padding: "5px 16px", fontSize: 14, fontWeight: 700, color: "#fff", backdropFilter: "blur(4px)" }}>
+                {service.category}
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Длительность */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            marginBottom: 16,
-            background: "#0d948814", borderRadius: 10, padding: "10px 14px",
-          }}>
-            <FaClock size={14} color="#0d9488" />
-            <span style={{ fontSize: 14, color: "#0d9488", fontWeight: 600 }}>
-              Время процедуры: ~{service.durationMinutes} мин
-            </span>
+        {/* ── Content ── */}
+        <div style={{ maxWidth: 720, margin: "-28px auto 0", padding: "0 16px 48px" }}>
+          <div style={{ background: "#fff", borderRadius: 24, padding: 24, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
+
+            {/* Price row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f7f9fb", borderRadius: 16, padding: "16px 20px", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#00685f" }}>payments</span>
+                </div>
+                <span style={{ fontSize: 14, color: "#6d7a77", fontWeight: 500 }}>Стоимость</span>
+              </div>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                {formatPrice(service.price)} UZS
+              </span>
+            </div>
+
+            {/* Duration */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(0,104,95,0.07)", borderRadius: 14, padding: "12px 16px", marginBottom: 20 }}>
+              <span className="mat-icon" style={{ fontSize: 20, color: "#00685f" }}>schedule</span>
+              <span style={{ fontSize: 14, color: "#00685f", fontWeight: 600 }}>
+                Время процедуры: ~{service.durationMinutes} мин
+              </span>
+            </div>
+
+            {/* Description */}
+            <p style={{ fontSize: 15, color: "#3d4947", lineHeight: 1.7, marginBottom: 28 }}>
+              {service.description}
+            </p>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "#f2f4f6", marginBottom: 20 }} />
+
+            {/* Trust points */}
+            {[
+              { icon: "verified_user", text: "Проверенные медики с опытом работы" },
+              { icon: "schedule", text: "Выезд медика в течение 30–60 минут" },
+              { icon: "star", text: "Оценка качества после каждого визита" },
+            ].map(({ icon, text }) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span className="mat-icon" style={{ fontSize: 16, color: "#00685f" }}>{icon}</span>
+                </div>
+                <span style={{ fontSize: 13, color: "#6d7a77", fontWeight: 500 }}>{text}</span>
+              </div>
+            ))}
+
+            {/* CTA */}
+            <button
+              onClick={() => {
+                impact("medium");
+                router.push(`/order/location?service=${service.id}&title=${encodeURIComponent(service.title)}&price=${service.price}`);
+              }}
+              style={{
+                width: "100%", background: "linear-gradient(135deg,#00685f,#008378)",
+                color: "#fff", fontSize: 17, fontWeight: 800,
+                fontFamily: "'Plus Jakarta Sans',sans-serif",
+                borderRadius: 16, padding: "17px 24px",
+                border: "none", cursor: "pointer", marginTop: 20,
+                boxShadow: "0 6px 20px rgba(0,104,95,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                transition: "opacity 150ms",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+            >
+              <span className="mat-icon" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>add_circle</span>
+              Заказать услугу
+            </button>
           </div>
-
-          {/* Описание */}
-          <p style={{ fontSize: 15, color: "#0f172a", lineHeight: 1.6, marginBottom: 24 }}>
-            {service.description}
-          </p>
-
-          {/* Кнопка заказать */}
-          <button
-            onClick={() => {
-              impact("medium");
-              router.push(
-                `/order/location?service=${service.id}&title=${encodeURIComponent(service.title)}&price=${service.price}`
-              );
-            }}
-            style={{
-              width: "100%",
-              background: "#0d9488", color: "#fff",
-              fontSize: 17, fontWeight: 700,
-              borderRadius: 12, padding: "16px 24px",
-              border: "none", cursor: "pointer",
-            }}
-          >
-            Заказать
-          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
-
-const backBtnStyle: React.CSSProperties = {
-  background: "#0d9488", color: "#fff",
-  fontSize: 16, fontWeight: 600,
-  borderRadius: 12, padding: "12px 24px",
-  border: "none", cursor: "pointer",
-};

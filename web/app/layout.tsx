@@ -8,7 +8,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { LanguageProvider } from "@/context/LanguageContext";
 import GlobalErrorHandler from "@/components/GlobalErrorHandler";
 
-const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-739a.up.railway.app").replace(/\/$/, "");
+const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app").replace(/\/$/, "");
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.hamshirago.uz";
 

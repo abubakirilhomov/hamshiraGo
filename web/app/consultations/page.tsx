@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { FaArrowLeft, FaCalendarAlt, FaFileAlt, FaVideo } from "react-icons/fa";
 import { getMyConsultations, Consultation } from "@/lib/api";
 
 const STATUS_CONFIG: Record<Consultation["status"], { color: string; bg: string; label: string }> = {
@@ -14,12 +13,11 @@ const STATUS_CONFIG: Record<Consultation["status"], { color: string; bg: string;
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
 }
 
 export default function ConsultationsPage() {
   const router = useRouter();
-
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -48,108 +46,127 @@ export default function ConsultationsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0d9488", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #eceef0", borderTopColor: "#00685f", animation: "spin 0.8s linear infinite" }} />
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 20px 28px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button onClick={() => router.push("/profile")} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
-              <FaArrowLeft size={15} />
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        .mat-icon { font-family:'Material Symbols Outlined'; font-style:normal; font-weight:400; line-height:1;
+          letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap;
+          -webkit-font-smoothing:antialiased; }
+        .consult-card { background:#fff; border-radius:20px; padding:16px 18px; margin-bottom:12px;
+          box-shadow:0 2px 12px rgba(0,0,0,0.06); animation:fadeUp 200ms ease; }
+      `}</style>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+
+      <div style={{ minHeight: "100vh", background: "#f7f9fb" }}>
+
+        {/* Header */}
+        <div style={{ background: "linear-gradient(145deg,#00685f 0%,#008378 60%,#005049 100%)", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+          <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 20px 32px", position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => router.push("/profile")} style={{ background: "rgba(255,255,255,0.18)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, backdropFilter: "blur(4px)" }}>
+              <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
             </button>
-            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Мои консультации</p>
-            <div style={{ width: 36 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span className="mat-icon" style={{ fontSize: 22, color: "rgba(255,255,255,0.9)", fontVariationSettings: "'FILL' 1" }}>video_call</span>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Мои консультации</p>
+            </div>
           </div>
+        </div>
+
+        <div style={{ maxWidth: 600, margin: "-16px auto 0", padding: "0 16px 100px" }}>
+
+          {consultations.length === 0 && (
+            <div style={{ background: "#fff", borderRadius: 24, padding: "48px 24px", marginTop: 12, textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#f2f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <span className="mat-icon" style={{ fontSize: 34, color: "#bcc9c6" }}>calendar_month</span>
+              </div>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }}>Консультаций пока нет</p>
+              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20 }}>Запишитесь к врачу прямо сейчас</p>
+              <button onClick={() => router.push("/doctors")} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(0,104,95,0.25)" }}>
+                Найти врача
+              </button>
+            </div>
+          )}
+
+          {consultations.map((item) => {
+            const st = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.PENDING;
+            return (
+              <div key={item.id} className="consult-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{item.doctor?.name ?? "—"}</p>
+                    <p style={{ fontSize: 13, color: "#6d7a77", marginTop: 2 }}>{item.doctor?.specialization ?? ""}</p>
+                  </div>
+                  <span style={{ background: st.bg, color: st.color, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>{st.label}</span>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <span style={{ fontSize: 12, color: "#bcc9c6" }}>{formatDate(item.createdAt)}</span>
+                  {(item as any).price && (
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#00685f" }}>{(item as any).price.toLocaleString("ru-RU")} сум</span>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(item.status === "PENDING" || item.status === "ACTIVE") && (
+                    <button onClick={() => router.push(`/video-call/${item.id}`)} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff",
+                      border: "none", borderRadius: 10, padding: "9px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      boxShadow: "0 3px 10px rgba(0,104,95,0.2)",
+                    }}>
+                      <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>video_call</span>
+                      Видеозвонок
+                    </button>
+                  )}
+                  {item.doctorNotes && (
+                    <button onClick={() => setNotesModal(item.doctorNotes!)} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "#f7f9fb", border: "none", borderRadius: 10,
+                      padding: "9px 14px", fontSize: 12, fontWeight: 700, color: "#6d7a77", cursor: "pointer",
+                    }}>
+                      <span className="mat-icon" style={{ fontSize: 14 }}>description</span>
+                      Заметки врача
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {page < totalPages && (
+            <button onClick={() => fetchConsultations(page + 1, true)} disabled={loadingMore} style={{
+              width: "100%", background: "transparent", border: "1.5px solid #eceef0",
+              borderRadius: 14, padding: "14px", fontSize: 14, color: "#00685f", fontWeight: 700, cursor: "pointer",
+            }}>
+              {loadingMore ? "Загружаем..." : "Загрузить ещё"}
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{ maxWidth: 600, margin: "-20px auto 0", padding: "0 16px 80px", display: "flex", flexDirection: "column", gap: 10 }}>
-
-        {consultations.length === 0 && !loading && (
-          <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <FaCalendarAlt size={48} color="#cbd5e1" style={{ marginBottom: 12 }} />
-            <p style={{ fontSize: 15, color: "#94a3b8", marginBottom: 16 }}>Консультаций пока нет</p>
-            <button onClick={() => router.push("/doctors")} style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 12, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-              Найти врача
-            </button>
-          </div>
-        )}
-
-        {consultations.map((item) => {
-          const st = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.PENDING;
-          return (
-            <div key={item.id} style={{ background: "#fff", borderRadius: 14, padding: "16px", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{item.doctor?.name ?? "—"}</p>
-                  <p style={{ fontSize: 13, color: "#64748b" }}>{item.doctor?.specialization ?? ""}</p>
-                </div>
-                <span style={{ background: st.bg, color: st.color, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20 }}>{st.label}</span>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 12, color: "#94a3b8" }}>{formatDate(item.createdAt)}</span>
-                {(item as any).price && (
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0d9488" }}>{(item as any).price.toLocaleString("ru-RU")} сум</span>
-                )}
-              </div>
-
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                {(item.status === "PENDING" || item.status === "ACTIVE") && (
-                  <button
-                    onClick={() => router.push(`/video-call/${item.id}`)}
-                    style={{ display: "flex", alignItems: "center", gap: 6, background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
-                  >
-                    <FaVideo size={12} />
-                    Видеозвонок
-                  </button>
-                )}
-                {item.doctorNotes && (
-                  <button
-                    onClick={() => setNotesModal(item.doctorNotes!)}
-                    style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
-                  >
-                    <FaFileAlt size={12} color="#64748b" />
-                    <span style={{ fontSize: 12, color: "#64748b", textDecoration: "underline" }}>Заметки врача</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {page < totalPages && (
-          <button
-            onClick={() => fetchConsultations(page + 1, true)}
-            disabled={loadingMore}
-            style={{ background: "transparent", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "13px", fontSize: 14, color: "#0d9488", fontWeight: 600, cursor: "pointer" }}
-          >
-            {loadingMore ? "Загружаем..." : "Загрузить ещё"}
-          </button>
-        )}
-      </div>
-
-      {/* Doctor notes modal */}
+      {/* Notes modal */}
       {notesModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#fff", borderRadius: 20, padding: "24px", width: "100%", maxWidth: 440 }}>
-            <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>Заметки врача</p>
-            <p style={{ fontSize: 14, color: "#334155", lineHeight: 1.6, marginBottom: 20 }}>{notesModal}</p>
-            <button onClick={() => setNotesModal(null)} style={{ width: "100%", background: "#0d9488", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: 600, animation: "slideUp 250ms ease" }}>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }}>Заметки врача</p>
+            <p style={{ fontSize: 14, color: "#3d4947", lineHeight: 1.6, marginBottom: 20 }}>{notesModal}</p>
+            <button onClick={() => setNotesModal(null)} style={{ width: "100%", background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
               Закрыть
             </button>
           </div>
         </div>
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </>
   );
 }

@@ -8,17 +8,6 @@ import { useTranslation } from "react-i18next";
 
 const TrackingMap = dynamic(() => import("@/components/TrackingMap"), { ssr: false });
 import {
-  FaArrowLeft,
-  FaMapMarker,
-  FaUserNurse,
-  FaStar,
-  FaPhone,
-  FaBriefcaseMedical,
-  FaTimes,
-  FaComments,
-  FaPaperPlane,
-} from "react-icons/fa";
-import {
   api,
   WS_URL,
   Order,
@@ -36,10 +25,10 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   const { text, bg } = ORDER_STATUS_COLOR[status];
   return (
     <span style={{
-      padding: "5px 12px", borderRadius: 20,
-      fontSize: 13, fontWeight: 700,
+      padding: "5px 14px", borderRadius: 999,
+      fontSize: 12, fontWeight: 700,
       color: text, background: bg,
-      whiteSpace: "nowrap",
+      whiteSpace: "nowrap", letterSpacing: "0.2px",
     }}>
       {ORDER_STATUS_LABEL[status]}
     </span>
@@ -50,13 +39,18 @@ const STATUS_FLOW: OrderStatus[] = [
   "CREATED", "ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED", "DONE",
 ];
 
-function StatusStepper({ current, canceledLabel, cancelReason }: { current: OrderStatus; canceledLabel: string; cancelReason?: string | null }) {
+function StatusStepper({ current, canceledLabel, cancelReason }: {
+  current: OrderStatus;
+  canceledLabel: string;
+  cancelReason?: string | null;
+}) {
   if (current === "CANCELED") {
     return (
-      <div style={{ background: "#ef444412", borderRadius: 12, padding: "12px 16px", textAlign: "center" }}>
+      <div style={{ background: "#fef2f2", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+        <span className="mat-icon" style={{ fontSize: 28, color: "#ef4444", marginBottom: 6, display: "block" }}>cancel</span>
         <p style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>{canceledLabel}</p>
         {cancelReason && (
-          <p style={{ fontSize: 13, color: "#ef4444", marginTop: 6, opacity: 0.8 }}>{cancelReason}</p>
+          <p style={{ fontSize: 13, color: "#ef4444", marginTop: 6, opacity: 0.7 }}>{cancelReason}</p>
         )}
       </div>
     );
@@ -73,30 +67,34 @@ function StatusStepper({ current, canceledLabel, cancelReason }: { current: Orde
           <div key={s} style={{ display: "flex", alignItems: "flex-start", flex: 1 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{
-                width: 26, height: 26, borderRadius: "50%",
-                background: done || active ? "#0d9488" : "#e2e8f0",
+                width: 28, height: 28, borderRadius: "50%",
+                background: done ? "#00685f" : active ? "#fff" : "#eceef0",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 800,
-                color: done || active ? "#fff" : "#94a3b8",
-                border: active ? "2.5px solid #0f766e" : "none",
-                boxSizing: "border-box",
-                flexShrink: 0,
+                fontSize: 11, fontWeight: 800,
+                color: done ? "#fff" : active ? "#00685f" : "#bcc9c6",
+                border: active ? "2.5px solid #00685f" : "none",
+                boxSizing: "border-box", flexShrink: 0,
+                boxShadow: active ? "0 0 0 4px rgba(0,104,95,0.12)" : "none",
+                transition: "all 200ms",
               }}>
-                {done ? "✓" : i + 1}
+                {done
+                  ? <span className="mat-icon" style={{ fontSize: 14, color: "#fff" }}>check</span>
+                  : i + 1
+                }
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 600,
-                color: active ? "#0d9488" : done ? "#0d9488" : "#94a3b8",
-                marginTop: 4, textAlign: "center", width: 44,
-                lineHeight: 1.2,
+                color: active ? "#00685f" : done ? "#00685f" : "#bcc9c6",
+                marginTop: 5, textAlign: "center", width: 46, lineHeight: 1.3,
               }}>
                 {ORDER_STATUS_LABEL[s]}
               </span>
             </div>
             {i < STATUS_FLOW.length - 1 && (
               <div style={{
-                flex: 1, height: 2, marginTop: 12,
-                background: done ? "#0d9488" : "#e2e8f0",
+                flex: 1, height: 2, marginTop: 13,
+                background: done ? "#00685f" : "#eceef0",
+                transition: "background 300ms",
               }} />
             )}
           </div>
@@ -167,10 +165,7 @@ export default function OrderDetailPage() {
       status: "searching" | "contacting" | "no_medics";
       medic?: { name: string; latitude: number | null; longitude: number | null; rating: number | null };
     }) => {
-      setDispatchState({
-        status: payload.status,
-        candidateName: payload.medic?.name,
-      });
+      setDispatchState({ status: payload.status, candidateName: payload.medic?.name });
     });
 
     socket.on("order_status", ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
@@ -282,7 +277,7 @@ export default function OrderDetailPage() {
     if (order?.status === "DONE") {
       api.payments.getPaymentStatus(order.id)
         .then((res) => setPaymentStatus(res.status))
-        .catch(() => { /* ignore — payment may not exist yet */ });
+        .catch(() => {});
     }
   }, [order?.status, order?.id]);
 
@@ -303,11 +298,8 @@ export default function OrderDetailPage() {
     try {
       await addFavorite(order.medic.id);
       setIsFavorite(true);
-    } catch {
-      // ignore
-    } finally {
-      setFavoriteLoading(false);
-    }
+    } catch {}
+    finally { setFavoriteLoading(false); }
   }
 
   async function handleInitiatePayment(provider: PaymentProvider) {
@@ -324,21 +316,22 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#0d9488", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-          <p style={{ fontSize: 14, color: "#64748b" }}>{t("order.loading")}</p>
-        </div>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7f9fb" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #eceef0", borderTopColor: "#00685f", animation: "spin 0.8s linear infinite", margin: "0 auto 14px" }} />
+          <p style={{ fontSize: 14, color: "#6d7a77", fontWeight: 500 }}>{t("order.loading")}</p>
+        </div>
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f8fafc", padding: 24 }}>
-        <p style={{ fontSize: 15, color: "#ef4444", marginBottom: 16 }}>{error || t("order.notFound")}</p>
-        <button onClick={() => router.push("/orders")} style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#f7f9fb", padding: 24 }}>
+        <span className="mat-icon" style={{ fontSize: 48, color: "#bcc9c6", marginBottom: 16 }}>error_outline</span>
+        <p style={{ fontSize: 15, color: "#ef4444", marginBottom: 20, fontWeight: 600 }}>{error || t("order.notFound")}</p>
+        <button onClick={() => router.push("/orders")} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
           {t("order.toOrderList")}
         </button>
       </div>
@@ -353,490 +346,431 @@ export default function OrderDetailPage() {
   const canConfirmDone = order.status === "SERVICE_STARTED";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
-      {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)" }}>
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <img src="/logo.png" alt="HamshiraGo" style={{ width: 34, height: 34, borderRadius: 10, objectFit: "cover" }} />
-          <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.3px" }}>HamshiraGo</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => router.push("/orders")}
-            style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", flexShrink: 0 }}
-          >
-            <FaArrowLeft size={15} />
-          </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {order.serviceTitle}
-            </h1>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
-              {dateStr}, {timeStr}
-            </p>
-          </div>
-          <StatusBadge status={order.status} />
-        </div>
-      </div>
-      </div>
+    <>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+        @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        .mat-icon { font-family:'Material Symbols Outlined'; font-style:normal; font-weight:400; line-height:1;
+          letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap;
+          -webkit-font-smoothing:antialiased; }
+        .card { background:#fff; border-radius:20px; padding:18px; margin-bottom:12px;
+          box-shadow:0 2px 12px rgba(0,0,0,0.06); }
+        .btn-primary { background:linear-gradient(135deg,#00685f,#008378); color:#fff; border:none;
+          border-radius:14px; padding:15px 24px; font-size:15px; font-weight:700; cursor:pointer;
+          transition:opacity 150ms; width:100%; box-shadow:0 4px 14px rgba(0,104,95,0.22); }
+        .btn-primary:disabled { opacity:0.65; cursor:not-allowed; }
+        .btn-ghost-teal { background:#f2f4f6; color:#00685f; border:none; border-radius:14px;
+          padding:15px 24px; font-size:15px; font-weight:700; cursor:pointer; width:100%;
+          transition:background 150ms; }
+        .btn-ghost-teal:hover { background:#e6e8ea; }
+        .btn-ghost-danger { background:transparent; color:#ef4444; border:1.5px solid #ef4444;
+          border-radius:14px; padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer; width:100%; }
+      `}</style>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
 
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 24px 80px" }}>
+      <div style={{ minHeight: "100vh", background: "#f7f9fb" }}>
 
-        {/* Connection lost banner */}
-        {!socketOk && (
-          <div style={{ background: "#fef3c7", border: "1px solid #fbbf24", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13, fontWeight: 600, color: "#92400e" }}>
-            {t("order.connectionLost")}
-          </div>
-        )}
-
-        {/* Status stepper */}
-        <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-          <p style={sectionLabel}>{t("order.orderStatus")}</p>
-          <StatusStepper current={order.status} canceledLabel={t("order.canceled")} cancelReason={order.cancelReason} />
-        </div>
-
-        {/* Medic */}
-        {order.medic ? (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <p style={sectionLabel}>{t("order.nurse")}</p>
+        {/* ── Header ── */}
+        <div style={{ background: "linear-gradient(145deg,#00685f 0%,#008378 60%,#005049 100%)", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+          <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 20px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+              <img src="/logo.png" alt="HamshiraGo" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.3px" }}>HamshiraGo</span>
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "2px solid #0d9488" }}>
-                {order.medic.profilePhotoUrl
-                  ? <img src={order.medic.profilePhotoUrl} alt={order.medic.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                  : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0d9488, #0f766e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 700, color: "#fff" }}>
-                      {order.medic.name.charAt(0).toUpperCase()}
-                    </div>
-                }
+              <button onClick={() => router.push("/orders")} style={{ background: "rgba(255,255,255,0.18)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, backdropFilter: "blur(4px)" }}>
+                <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h1 style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.3px" }}>
+                  {order.serviceTitle}
+                </h1>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", marginTop: 2 }}>{dateStr}, {timeStr}</p>
               </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{order.medic.name}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4, flexWrap: "wrap" }}>
-                  {order.medic.rating !== null && (
-                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#64748b" }}>
-                      <FaStar size={11} color="#eab308" />
-                      {Number(order.medic.rating).toFixed(1)}
-                      <span style={{ color: "#94a3b8" }}>({order.medic.reviewCount})</span>
+              <StatusBadge status={order.status} />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 16px 96px" }}>
+
+          {/* Connection lost */}
+          {!socketOk && (
+            <div style={{ background: "#fffbeb", borderRadius: 14, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 600, color: "#92400e" }}>
+              <span className="mat-icon" style={{ fontSize: 18, color: "#f59e0b" }}>wifi_off</span>
+              {t("order.connectionLost")}
+            </div>
+          )}
+
+          {/* Status stepper */}
+          <div className="card">
+            <p style={sectionLabel}>{t("order.orderStatus")}</p>
+            <StatusStepper current={order.status} canceledLabel={t("order.canceled")} cancelReason={order.cancelReason} />
+          </div>
+
+          {/* Medic card */}
+          {order.medic ? (
+            <div className="card">
+              <p style={sectionLabel}>{t("order.nurse")}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "2.5px solid #00685f" }}>
+                  {order.medic.profilePhotoUrl
+                    ? <img src={order.medic.profilePhotoUrl} alt={order.medic.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#00685f,#008378)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                        {order.medic.name.charAt(0).toUpperCase()}
+                      </div>
+                  }
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{order.medic.name}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 5, flexWrap: "wrap" }}>
+                    {order.medic.rating !== null && (
+                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#6d7a77" }}>
+                        <span style={{ color: "#eab308", fontSize: 14 }}>★</span>
+                        {Number(order.medic.rating).toFixed(1)}
+                        <span style={{ color: "#bcc9c6" }}>({order.medic.reviewCount})</span>
+                      </span>
+                    )}
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#6d7a77" }}>
+                      <span className="mat-icon" style={{ fontSize: 14, color: "#bcc9c6" }}>work</span>
+                      {order.medic.experienceYears} {t("order.years")}
                     </span>
-                  )}
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#64748b" }}>
-                    <FaBriefcaseMedical size={11} color="#94a3b8" />
-                    {order.medic.experienceYears} {t("order.years")}
-                  </span>
-                  <button
-                    onClick={() => router.push(`/reviews/medic/${order.medic!.id}`)}
-                    style={{
-                      background: "#f0fdf9", border: "1px solid #0d9488",
-                      borderRadius: 8, padding: "3px 10px",
-                      fontSize: 12, fontWeight: 700, color: "#0d9488",
-                      cursor: "pointer", whiteSpace: "nowrap",
-                    }}
-                  >
-                    {t("reviews.title")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : order.status === "CREATED" ? (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", textAlign: "center" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#f1f5f9", margin: "0 auto 10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FaUserNurse size={24} color="#94a3b8" />
-            </div>
-            {dispatchState?.status === "contacting" && dispatchState.candidateName ? (
-              <>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
-                  {t("order.contactingMedic", { name: dispatchState.candidateName })}
-                </p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.medicReviewing")}</p>
-              </>
-            ) : dispatchState?.status === "no_medics" ? (
-              <>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.allMedicsBusy")}</p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.keepSearching")}</p>
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.searchingMedicDefault")}</p>
-                <p style={{ fontSize: 13, color: "#64748b" }}>{t("order.eta")}</p>
-              </>
-            )}
-          </div>
-        ) : null}
-
-        {/* Medic on map */}
-        {medicLocation &&
-          order.location?.latitude != null &&
-          order.location?.longitude != null &&
-          ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED"].includes(order.status) && (
-          <div style={{ background: "#fff", borderRadius: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-            <div style={{ padding: "12px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <p style={sectionLabel}>{t("order.medicOnMap")}</p>
-              <span style={{ fontSize: 11, color: "#64748b" }}>
-                {t("order.updated")} {new Date(medicLocation.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-              </span>
-            </div>
-            <div style={{ height: 240 }}>
-              <TrackingMap
-                clientLat={order.location.latitude}
-                clientLng={order.location.longitude}
-                medicLat={medicLocation.lat}
-                medicLng={medicLocation.lng}
-                medicName={order.medic?.name ?? t("order.nurse")}
-                medicPhotoUrl={order.medic?.profilePhotoUrl}
-                heading={medicLocation.heading}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Address */}
-        {order.location && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <p style={sectionLabel}>{t("order.address")}</p>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <FaMapMarker size={16} color="#0d9488" style={{ marginTop: 2, flexShrink: 0 }} />
-              <div>
-                <p style={{ fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{order.location.house}</p>
-                {(order.location.floor || order.location.apartment) && (
-                  <p style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
-                    {order.location.floor ? `${t("order.floor")} ${order.location.floor}` : ""}
-                    {order.location.floor && order.location.apartment ? ", " : ""}
-                    {order.location.apartment ? `${t("order.apt")} ${order.location.apartment}` : ""}
-                  </p>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                  <FaPhone size={11} color="#94a3b8" />
-                  <span style={{ fontSize: 13, color: "#64748b" }}>{order.location.phone}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Price */}
-        <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-          <p style={sectionLabel}>{t("order.price")}</p>
-          {order.isUrgent && (order.urgentFee ?? 0) > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>⚡ {t("confirm.urgentFee")}</span>
-              <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>+{formatPrice(order.urgentFee!)} UZS</span>
-            </div>
-          )}
-          {order.discountAmount > 0 && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, color: "#94a3b8" }}>{t("order.discount")}</span>
-              <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 600 }}>−{formatPrice(order.discountAmount)} UZS</span>
-            </div>
-          )}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>{t("order.total")}</span>
-            <span style={{ fontSize: 22, fontWeight: 800, color: "#0d9488" }}>{formatPrice(finalPrice)} UZS</span>
-          </div>
-        </div>
-
-        {/* Confirm done */}
-        {canConfirmDone && (
-          <div style={{
-            background: "#fff",
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 12,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            border: "1.5px solid #0d948840",
-          }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
-              {t("order.serviceInProgress")}
-            </p>
-            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
-              {t("order.confirmDoneText")}
-            </p>
-            <button
-              onClick={handleConfirmDone}
-              disabled={confirming}
-              style={{
-                width: "100%",
-                background: confirming ? "#94a3b8" : "#0d9488",
-                color: "#fff",
-                border: "none",
-                borderRadius: 12,
-                padding: "13px 16px",
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: confirming ? "not-allowed" : "pointer",
-              }}
-            >
-              {confirming ? t("order.confirming") : t("order.confirmDone")}
-            </button>
-          </div>
-        )}
-
-        {/* Rating */}
-        {order.status === "DONE" && order.medic && (
-          <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.04)", textAlign: "center" }}>
-            {order.clientRating !== null || ratingDone ? (
-              <>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{t("order.yourRating")}</p>
-                <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <span key={s} style={{ fontSize: 28, color: s <= (order.clientRating ?? rating) ? "#eab308" : "#e2e8f0" }}>★</span>
-                  ))}
-                </div>
-                <p style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>{t("order.thanksForRating")}</p>
-              </>
-            ) : (
-              <>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>{t("order.rateNurse")}</p>
-                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 14 }}>{order.medic.name}</p>
-                <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
-                  {[1, 2, 3, 4, 5].map((s) => (
                     <button
-                      key={s}
-                      disabled={ratingLoading}
-                      onClick={() => setRating(s)}
-                      onMouseEnter={() => setHoverStar(s)}
-                      onMouseLeave={() => setHoverStar(0)}
-                      style={{
-                        background: "none", border: "none", cursor: ratingLoading ? "not-allowed" : "pointer",
-                        fontSize: 36, lineHeight: 1, padding: "0 2px",
-                        color: s <= (hoverStar || rating) ? "#eab308" : "#e2e8f0",
-                        transition: "color 100ms ease",
-                      }}
+                      onClick={() => router.push(`/reviews/medic/${order.medic!.id}`)}
+                      style={{ background: "#f2f4f6", border: "none", borderRadius: 8, padding: "4px 12px", fontSize: 12, fontWeight: 700, color: "#00685f", cursor: "pointer" }}
                     >
-                      ★
+                      {t("reviews.title")}
                     </button>
-                  ))}
-                </div>
-                <textarea
-                  value={review}
-                  onChange={(e) => setReview(e.target.value)}
-                  placeholder={t("order.ratePlaceholder")}
-                  rows={3}
-                  style={{
-                    width: "100%", borderRadius: 10, border: "1.5px solid #e2e8f0",
-                    padding: "10px 12px", fontSize: 14, color: "#0f172a",
-                    resize: "none", outline: "none", marginBottom: 12,
-                    boxSizing: "border-box", fontFamily: "inherit",
-                  }}
-                />
-                <button
-                  disabled={ratingLoading || rating === 0}
-                  onClick={() => handleRate(rating)}
-                  style={{
-                    width: "100%", background: rating === 0 ? "#e2e8f0" : "#0d9488",
-                    color: rating === 0 ? "#94a3b8" : "#fff",
-                    border: "none", borderRadius: 12,
-                    padding: "13px 16px", fontSize: 15, fontWeight: 700,
-                    cursor: ratingLoading || rating === 0 ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {ratingLoading ? t("order.saving") : t("order.rateSubmit")}
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Favorite medic button */}
-        {order.status === "DONE" && order.medic && (
-          <div style={{ marginBottom: 12 }}>
-            <button
-              onClick={handleAddFavorite}
-              disabled={favoriteLoading || isFavorite}
-              style={{
-                width: "100%",
-                background: isFavorite ? "#f0fdf9" : "#fff",
-                color: isFavorite ? "#0d9488" : "#0d9488",
-                border: `1.5px solid ${isFavorite ? "#0d9488" : "#0d9488"}`,
-                borderRadius: 14,
-                padding: "14px 16px",
-                fontSize: 15, fontWeight: 700,
-                cursor: favoriteLoading || isFavorite ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                opacity: favoriteLoading ? 0.6 : 1,
-                transition: "background 0.2s",
-              }}
-            >
-              <FaStar size={15} color={isFavorite ? "#eab308" : "#0d9488"} />
-              {isFavorite ? t("favorites.pinned") : (favoriteLoading ? t("common.loading") : t("favorites.pin"))}
-            </button>
-          </div>
-        )}
-
-        {/* Payment block */}
-        {order.status === "DONE" && paymentStatus !== "PAID" && (
-          <div style={{
-            background: "#fff",
-            borderRadius: 16,
-            padding: 20,
-            marginBottom: 12,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            border: "1.5px solid #0d948840",
-          }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 6 }}>
-              Оплата заказа
-            </p>
-            <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
-              Выберите удобный способ оплаты
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => handleInitiatePayment("payme")}
-                disabled={paymentLoading !== null}
-                style={{
-                  flex: 1,
-                  background: paymentLoading === "payme" ? "#94a3b8" : "#00A1E0",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "13px 12px",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: paymentLoading !== null ? "not-allowed" : "pointer",
-                  opacity: paymentLoading !== null && paymentLoading !== "payme" ? 0.5 : 1,
-                }}
-              >
-                {paymentLoading === "payme" ? "Загрузка..." : "Payme"}
-              </button>
-              <button
-                onClick={() => handleInitiatePayment("click")}
-                disabled={paymentLoading !== null}
-                style={{
-                  flex: 1,
-                  background: paymentLoading === "click" ? "#94a3b8" : "#F58220",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: "13px 12px",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: paymentLoading !== null ? "not-allowed" : "pointer",
-                  opacity: paymentLoading !== null && paymentLoading !== "click" ? 0.5 : 1,
-                }}
-              >
-                {paymentLoading === "click" ? "Загрузка..." : "Click"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Chat button */}
-        {order.medicId && order.status !== "CREATED" && (
-          <button
-            onClick={() => setChatOpen(true)}
-            style={{
-              width: "100%", background: "#f0fdf9", color: "#0d9488",
-              border: "1.5px solid #99f6e4", borderRadius: 14, padding: "14px 16px",
-              fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 10,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            <FaComments size={15} />
-            Чат с медиком
-          </button>
-        )}
-
-        {/* Cancel button */}
-        {canCancel && (
-          <button
-            onClick={handleCancel}
-            disabled={canceling}
-            style={{
-              width: "100%", background: "transparent",
-              color: "#ef4444", border: "1.5px solid #ef4444",
-              borderRadius: 14, padding: "14px 16px",
-              fontSize: 15, fontWeight: 700,
-              cursor: canceling ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              opacity: canceling ? 0.6 : 1,
-            }}
-          >
-            <FaTimes size={14} />
-            {canceling ? t("order.canceling") : t("order.cancel")}
-          </button>
-        )}
-      </div>
-
-      {/* Chat panel */}
-      {chatOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" }}>
-          <div style={{ flex: 1, background: "rgba(0,0,0,0.3)" }} onClick={() => setChatOpen(false)} />
-          <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", height: "70vh", display: "flex", flexDirection: "column" }}>
-            {/* Chat header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #f1f5f9" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <FaComments size={16} color="#0d9488" />
-                <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>Чат с медиком</span>
-              </div>
-              <button onClick={() => setChatOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}>
-                <FaTimes size={18} />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {messages.length === 0 && (
-                <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 14, marginTop: 40 }}>Сообщений пока нет</p>
-              )}
-              {messages.map((msg) => {
-                const isMe = msg.userId === myUserId.current || msg.role === "user";
-                return (
-                  <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
-                    <div style={{
-                      maxWidth: "75%", padding: "10px 14px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                      background: isMe ? "#0d9488" : "#f1f5f9",
-                      color: isMe ? "#fff" : "#0f172a",
-                    }}>
-                      <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>{msg.content}</p>
-                      <p style={{ fontSize: 10, opacity: 0.7, margin: "4px 0 0", textAlign: isMe ? "right" : "left" }}>
-                        {new Date(msg.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
                   </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
+                </div>
+              </div>
             </div>
+          ) : order.status === "CREATED" ? (
+            <div className="card" style={{ textAlign: "center", padding: "24px 18px" }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg,#00685f20,#00685f10)", margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center", animation: "pulse 2s ease infinite" }}>
+                <span className="mat-icon" style={{ fontSize: 28, color: "#00685f" }}>personal_injury</span>
+              </div>
+              {dispatchState?.status === "contacting" && dispatchState.candidateName ? (
+                <>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4 }}>{t("order.contactingMedic", { name: dispatchState.candidateName })}</p>
+                  <p style={{ fontSize: 13, color: "#6d7a77" }}>{t("order.medicReviewing")}</p>
+                </>
+              ) : dispatchState?.status === "no_medics" ? (
+                <>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4 }}>{t("order.allMedicsBusy")}</p>
+                  <p style={{ fontSize: 13, color: "#6d7a77" }}>{t("order.keepSearching")}</p>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4 }}>{t("order.searchingMedicDefault")}</p>
+                  <p style={{ fontSize: 13, color: "#6d7a77" }}>{t("order.eta")}</p>
+                </>
+              )}
+            </div>
+          ) : null}
 
-            {/* Input */}
-            <div style={{ padding: "12px 16px", borderTop: "1px solid #f1f5f9", display: "flex", gap: 10, alignItems: "flex-end" }}>
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMsg(); } }}
-                placeholder={order?.status === "DONE" || order?.status === "CANCELED" ? "Заказ завершён" : "Написать сообщение..."}
-                disabled={order?.status === "DONE" || order?.status === "CANCELED"}
-                rows={1}
-                maxLength={2000}
-                style={{
-                  flex: 1, border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "10px 14px",
-                  fontSize: 14, resize: "none", outline: "none", fontFamily: "inherit",
-                  background: (order?.status === "DONE" || order?.status === "CANCELED") ? "#f8fafc" : "#fff",
-                }}
-              />
-              <button
-                onClick={handleSendMsg}
-                disabled={sendingMsg || !chatInput.trim() || order?.status === "DONE" || order?.status === "CANCELED"}
-                style={{
-                  width: 44, height: 44, borderRadius: "50%", background: "#0d9488", border: "none",
-                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  opacity: sendingMsg || !chatInput.trim() ? 0.5 : 1, flexShrink: 0,
-                }}
-              >
-                <FaPaperPlane size={16} color="#fff" />
-              </button>
+          {/* Tracking map */}
+          {medicLocation &&
+            order.location?.latitude != null &&
+            order.location?.longitude != null &&
+            ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "SERVICE_STARTED"].includes(order.status) && (
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "14px 18px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#00685f" }}>location_on</span>
+                  <p style={sectionLabel}>{t("order.medicOnMap")}</p>
+                </div>
+                <span style={{ fontSize: 11, color: "#bcc9c6", fontWeight: 500 }}>
+                  {new Date(medicLocation.updatedAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              </div>
+              <div style={{ height: 240 }}>
+                <TrackingMap
+                  clientLat={order.location.latitude}
+                  clientLng={order.location.longitude}
+                  medicLat={medicLocation.lat}
+                  medicLng={medicLocation.lng}
+                  medicName={order.medic?.name ?? t("order.nurse")}
+                  medicPhotoUrl={order.medic?.profilePhotoUrl}
+                  heading={medicLocation.heading}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Address */}
+          {order.location && (
+            <div className="card">
+              <p style={sectionLabel}>{t("order.address")}</p>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#00685f" }}>home</span>
+                </div>
+                <div>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "#191c1e" }}>{order.location.house}</p>
+                  {(order.location.floor || order.location.apartment) && (
+                    <p style={{ fontSize: 13, color: "#6d7a77", marginTop: 3 }}>
+                      {order.location.floor ? `${t("order.floor")} ${order.location.floor}` : ""}
+                      {order.location.floor && order.location.apartment ? ", " : ""}
+                      {order.location.apartment ? `${t("order.apt")} ${order.location.apartment}` : ""}
+                    </p>
+                  )}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                    <span className="mat-icon" style={{ fontSize: 14, color: "#bcc9c6" }}>phone</span>
+                    <span style={{ fontSize: 13, color: "#6d7a77" }}>{order.location.phone}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Price */}
+          <div className="card">
+            <p style={sectionLabel}>{t("order.price")}</p>
+            {order.isUrgent && (order.urgentFee ?? 0) > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span className="mat-icon" style={{ fontSize: 14 }}>bolt</span>
+                  {t("confirm.urgentFee")}
+                </span>
+                <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>+{formatPrice(order.urgentFee!)} UZS</span>
+              </div>
+            )}
+            {order.discountAmount > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ fontSize: 14, color: "#6d7a77" }}>{t("order.discount")}</span>
+                <span style={{ fontSize: 14, color: "#22c55e", fontWeight: 600 }}>−{formatPrice(order.discountAmount)} UZS</span>
+              </div>
+            )}
+            <div style={{ height: 1, background: "#f2f4f6", margin: "10px 0" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#191c1e" }}>{t("order.total")}</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{formatPrice(finalPrice)} UZS</span>
             </div>
           </div>
-        </div>
-      )}
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+          {/* Confirm done */}
+          {canConfirmDone && (
+            <div className="card" style={{ border: "1.5px solid rgba(0,104,95,0.2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <span className="mat-icon" style={{ fontSize: 20, color: "#00685f" }}>task_alt</span>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#191c1e" }}>{t("order.serviceInProgress")}</p>
+              </div>
+              <p style={{ fontSize: 13, color: "#6d7a77", marginBottom: 16, lineHeight: 1.5 }}>{t("order.confirmDoneText")}</p>
+              <button className="btn-primary" onClick={handleConfirmDone} disabled={confirming} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {confirming && <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                {confirming ? t("order.confirming") : t("order.confirmDone")}
+              </button>
+            </div>
+          )}
+
+          {/* Rating */}
+          {order.status === "DONE" && order.medic && (
+            <div className="card" style={{ textAlign: "center" }}>
+              {order.clientRating !== null || ratingDone ? (
+                <>
+                  <span className="mat-icon" style={{ fontSize: 32, color: "#22c55e", marginBottom: 8, display: "block" }}>verified</span>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "#191c1e", marginBottom: 10 }}>{t("order.yourRating")}</p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+                    {[1,2,3,4,5].map((s) => (
+                      <span key={s} style={{ fontSize: 28, color: s <= (order.clientRating ?? rating) ? "#eab308" : "#e6e8ea" }}>★</span>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 13, color: "#6d7a77", marginTop: 10 }}>{t("order.thanksForRating")}</p>
+                </>
+              ) : (
+                <>
+                  <span className="mat-icon" style={{ fontSize: 32, color: "#eab308", marginBottom: 8, display: "block" }}>star</span>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4 }}>{t("order.rateNurse")}</p>
+                  <p style={{ fontSize: 13, color: "#6d7a77", marginBottom: 16 }}>{order.medic.name}</p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
+                    {[1,2,3,4,5].map((s) => (
+                      <button key={s} disabled={ratingLoading} onClick={() => setRating(s)}
+                        onMouseEnter={() => setHoverStar(s)} onMouseLeave={() => setHoverStar(0)}
+                        style={{ background: "none", border: "none", cursor: ratingLoading ? "not-allowed" : "pointer", fontSize: 38, lineHeight: 1, padding: "0 2px", color: s <= (hoverStar || rating) ? "#eab308" : "#e6e8ea", transition: "color 100ms,transform 100ms", transform: s <= (hoverStar || rating) ? "scale(1.1)" : "scale(1)" }}>
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <textarea value={review} onChange={(e) => setReview(e.target.value)}
+                    placeholder={t("order.ratePlaceholder")} rows={3}
+                    style={{ width: "100%", borderRadius: 14, border: "1.5px solid #eceef0", padding: "12px 14px", fontSize: 14, color: "#191c1e", resize: "none", outline: "none", marginBottom: 12, boxSizing: "border-box", fontFamily: "inherit", background: "#f7f9fb", transition: "border-color 150ms" }}
+                    onFocus={(e) => e.target.style.borderColor = "#00685f"}
+                    onBlur={(e) => e.target.style.borderColor = "#eceef0"}
+                  />
+                  <button className="btn-primary" disabled={ratingLoading || rating === 0} onClick={() => handleRate(rating)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: (ratingLoading || rating === 0) ? 0.6 : 1 }}>
+                    {ratingLoading && <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                    {ratingLoading ? t("order.saving") : t("order.rateSubmit")}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Favorite medic */}
+          {order.status === "DONE" && order.medic && (
+            <div style={{ marginBottom: 12 }}>
+              <button onClick={handleAddFavorite} disabled={favoriteLoading || isFavorite}
+                style={{
+                  width: "100%", background: isFavorite ? "#c2ebe3" : "#f2f4f6",
+                  color: "#00685f", border: "none", borderRadius: 14, padding: "14px 16px",
+                  fontSize: 15, fontWeight: 700, cursor: favoriteLoading || isFavorite ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  opacity: favoriteLoading ? 0.6 : 1, transition: "background 200ms",
+                }}>
+                <span className="mat-icon" style={{ fontSize: 18, color: isFavorite ? "#eab308" : "#00685f" }}>{isFavorite ? "star" : "star_border"}</span>
+                {isFavorite ? t("favorites.pinned") : (favoriteLoading ? t("common.loading") : t("favorites.pin"))}
+              </button>
+            </div>
+          )}
+
+          {/* Payment */}
+          {order.status === "DONE" && paymentStatus !== "PAID" && (
+            <div className="card" style={{ border: "1.5px solid rgba(0,104,95,0.2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <span className="mat-icon" style={{ fontSize: 20, color: "#00685f" }}>payments</span>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#191c1e" }}>Оплата заказа</p>
+              </div>
+              <p style={{ fontSize: 13, color: "#6d7a77", marginBottom: 16 }}>Выберите удобный способ оплаты</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => handleInitiatePayment("payme")} disabled={paymentLoading !== null}
+                  style={{ flex: 1, background: paymentLoading === "payme" ? "#bcc9c6" : "#00A1E0", color: "#fff", border: "none", borderRadius: 12, padding: "13px 12px", fontSize: 14, fontWeight: 700, cursor: paymentLoading !== null ? "not-allowed" : "pointer", opacity: paymentLoading !== null && paymentLoading !== "payme" ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {paymentLoading === "payme" && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                  Payme
+                </button>
+                <button onClick={() => handleInitiatePayment("click")} disabled={paymentLoading !== null}
+                  style={{ flex: 1, background: paymentLoading === "click" ? "#bcc9c6" : "#F58220", color: "#fff", border: "none", borderRadius: 12, padding: "13px 12px", fontSize: 14, fontWeight: 700, cursor: paymentLoading !== null ? "not-allowed" : "pointer", opacity: paymentLoading !== null && paymentLoading !== "click" ? 0.5 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {paymentLoading === "click" && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                  Click
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Chat button */}
+          {order.medicId && order.status !== "CREATED" && (
+            <button onClick={() => setChatOpen(true)} className="btn-ghost-teal"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
+              <span className="mat-icon" style={{ fontSize: 18 }}>chat</span>
+              Чат с медиком
+            </button>
+          )}
+
+          {/* Cancel */}
+          {canCancel && (
+            <button onClick={handleCancel} disabled={canceling} className="btn-ghost-danger"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: canceling ? 0.6 : 1 }}>
+              {canceling
+                ? <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>
+                : <span className="mat-icon" style={{ fontSize: 18 }}>close</span>
+              }
+              {canceling ? t("order.canceling") : t("order.cancel")}
+            </button>
+          )}
+        </div>
+
+        {/* ── Chat drawer ── */}
+        {chatOpen && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, background: "rgba(25,28,30,0.4)", backdropFilter: "blur(4px)" }} onClick={() => setChatOpen(false)} />
+            <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", height: "72vh", display: "flex", flexDirection: "column", animation: "slideUp 250ms ease" }}>
+
+              {/* Drag handle */}
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: 10, paddingBottom: 4 }}>
+                <div style={{ width: 40, height: 4, borderRadius: 999, background: "#eceef0" }} />
+              </div>
+
+              {/* Chat header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px 14px", borderBottom: "1px solid #f2f4f6" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span className="mat-icon" style={{ fontSize: 18, color: "#00685f" }}>chat</span>
+                  </div>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Чат с медиком</span>
+                </div>
+                <button onClick={() => setChatOpen(false)} style={{ background: "#f2f4f6", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#6d7a77" }}>close</span>
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {messages.length === 0 && (
+                  <div style={{ textAlign: "center", marginTop: 40 }}>
+                    <span className="mat-icon" style={{ fontSize: 40, color: "#eceef0", display: "block", marginBottom: 10 }}>chat_bubble_outline</span>
+                    <p style={{ color: "#bcc9c6", fontSize: 14 }}>Сообщений пока нет</p>
+                  </div>
+                )}
+                {messages.map((msg) => {
+                  const isMe = msg.userId === myUserId.current || msg.role === "user";
+                  return (
+                    <div key={msg.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                      <div style={{
+                        maxWidth: "75%", padding: "10px 14px",
+                        borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                        background: isMe ? "linear-gradient(135deg,#00685f,#008378)" : "#f2f4f6",
+                        color: isMe ? "#fff" : "#191c1e",
+                        boxShadow: isMe ? "0 2px 8px rgba(0,104,95,0.2)" : "none",
+                      }}>
+                        <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>{msg.content}</p>
+                        <p style={{ fontSize: 10, opacity: 0.65, margin: "4px 0 0", textAlign: isMe ? "right" : "left" }}>
+                          {new Date(msg.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div style={{ padding: "12px 16px", borderTop: "1px solid #f2f4f6", display: "flex", gap: 10, alignItems: "flex-end" }}>
+                <textarea value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMsg(); } }}
+                  placeholder={order?.status === "DONE" || order?.status === "CANCELED" ? "Заказ завершён" : "Написать сообщение..."}
+                  disabled={order?.status === "DONE" || order?.status === "CANCELED"}
+                  rows={1} maxLength={2000}
+                  style={{ flex: 1, border: "1.5px solid #eceef0", borderRadius: 14, padding: "10px 14px", fontSize: 14, resize: "none", outline: "none", fontFamily: "inherit", background: (order?.status === "DONE" || order?.status === "CANCELED") ? "#f7f9fb" : "#fff", transition: "border-color 150ms" }}
+                  onFocus={(e) => e.target.style.borderColor = "#00685f"}
+                  onBlur={(e) => e.target.style.borderColor = "#eceef0"}
+                />
+                <button onClick={handleSendMsg}
+                  disabled={sendingMsg || !chatInput.trim() || order?.status === "DONE" || order?.status === "CANCELED"}
+                  style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg,#00685f,#008378)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: (sendingMsg || !chatInput.trim()) ? 0.5 : 1, flexShrink: 0 }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#fff" }}>send</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom nav */}
+        <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(12px)", borderTop: "1px solid #f2f4f6", display: "flex", justifyContent: "space-around", padding: "8px 0 20px", zIndex: 100 }}>
+          {[
+            { icon: "home", label: "Главная", path: "/" },
+            { icon: "receipt_long", label: "Заказы", path: "/orders" },
+            { icon: "smart_toy", label: "ИИ", path: "/ai-chat" },
+            { icon: "person", label: "Профиль", path: "/profile" },
+          ].map(({ icon, label, path }) => {
+            const active = path === "/orders";
+            return (
+              <button key={path} onClick={() => router.push(path)} style={{ flex: 1, background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "4px 0" }}>
+                <span className="mat-icon" style={{ fontSize: 22, color: active ? "#00685f" : "#bcc9c6", fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: active ? "#00685f" : "#bcc9c6" }}>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </>
   );
 }
 
 const sectionLabel: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: "#94a3b8",
-  textTransform: "uppercase", letterSpacing: "0.5px",
+  fontSize: 11, fontWeight: 700, color: "#bcc9c6",
+  textTransform: "uppercase", letterSpacing: "0.6px",
   marginBottom: 12,
 };

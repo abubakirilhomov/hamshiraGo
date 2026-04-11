@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { api, Service, formatPrice, checkNps } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
@@ -21,6 +21,7 @@ const CATEGORY_UZ: Record<string, string> = {
 
 export default function HomePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
@@ -382,7 +383,7 @@ export default function HomePage() {
           { icon: "smart_toy", label: "AI", path: "/salomat" },
           { icon: "person", label: "Профиль", path: "/profile" },
         ].map((item) => {
-          const isActive = typeof window !== "undefined" && window.location.pathname === item.path;
+          const isActive = pathname === item.path;
           return (
             <button key={item.path} onClick={() => router.push(item.path)} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 3,

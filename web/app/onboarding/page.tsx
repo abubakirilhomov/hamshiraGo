@@ -2,24 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaStethoscope, FaMapMarkerAlt, FaStar, FaArrowRight, FaTimes } from "react-icons/fa";
 
 const SLIDES = [
   {
-    Icon: FaStethoscope,
-    color: "#0d9488",
+    icon: "stethoscope",
+    color: "#00685f",
+    bg: "#c2ebe3",
     title: "Врач на дом",
     desc: "Вызовите медика в любое удобное место — домой, в офис или на улицу",
   },
   {
-    Icon: FaMapMarkerAlt,
+    icon: "location_on",
     color: "#0284c7",
+    bg: "#dbeafe",
     title: "Отслеживайте медика",
     desc: "Смотрите в реальном времени, где находится специалист на карте",
   },
   {
-    Icon: FaStar,
+    icon: "star",
     color: "#d97706",
+    bg: "#fef3c7",
     title: "Только лучшие",
     desc: "Проверенные медики с реальными отзывами и оценками клиентов",
   },
@@ -40,69 +42,65 @@ export default function OnboardingPage() {
   }
 
   const slide = SLIDES[current];
-  const Icon = slide.Icon;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", flexDirection: "column" }}>
-      {/* Skip */}
-      <div style={{ display: "flex", justifyContent: "flex-end", padding: "20px 20px 0" }}>
-        <button
-          onClick={finish}
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "none", color: "#94a3b8", fontSize: 14, cursor: "pointer", padding: "6px 12px", borderRadius: 20 }}
-        >
-          <FaTimes size={12} />
-          Пропустить
-        </button>
-      </div>
+    <>
+      <style>{`
+        @keyframes fadeSlide { from { opacity:0; transform:translateX(28px); } to { opacity:1; transform:translateX(0); } }
+        .mat-icon { font-family:'Material Symbols Outlined'; font-style:normal; font-weight:400; line-height:1;
+          letter-spacing:normal; text-transform:none; display:inline-block; white-space:nowrap;
+          -webkit-font-smoothing:antialiased; }
+      `}</style>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
 
-      {/* Slide */}
-      <div
-        key={current}
-        style={{
-          flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          padding: "0 32px", textAlign: "center",
-          animation: "fadeSlide 0.35s ease",
-        }}
-      >
-        <div style={{ width: 120, height: 120, borderRadius: "50%", background: `${slide.color}18`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32 }}>
-          <Icon size={48} color={slide.color} />
-        </div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: "#0f172a", marginBottom: 14 }}>{slide.title}</h1>
-        <p style={{ fontSize: 15, color: "#64748b", lineHeight: 1.7, maxWidth: 320 }}>{slide.desc}</p>
-      </div>
+      <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", flexDirection: "column" }}>
 
-      {/* Bottom */}
-      <div style={{ padding: "0 24px 48px" }}>
-        {/* Dots */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 28 }}>
-          {SLIDES.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: 8, borderRadius: 4,
-                width: i === current ? 24 : 8,
-                background: i === current ? "#0d9488" : "#e2e8f0",
-                transition: "width 0.3s ease, background 0.3s ease",
-              }}
-            />
-          ))}
+        {/* Skip */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 20px 0" }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>HamshiraGo</span>
+          <button onClick={finish} style={{ display: "flex", alignItems: "center", gap: 5, background: "#f2f4f6", border: "none", color: "#6d7a77", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "7px 14px", borderRadius: 999 }}>
+            <span className="mat-icon" style={{ fontSize: 14 }}>close</span>
+            Пропустить
+          </button>
         </div>
 
-        <button
-          onClick={next}
-          style={{
-            width: "100%", background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
-            color: "#fff", border: "none", borderRadius: 16, padding: "16px",
-            fontSize: 16, fontWeight: 700, cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          }}
-        >
-          {current < SLIDES.length - 1 ? "Далее" : "Начать"}
-          <FaArrowRight size={14} />
-        </button>
-      </div>
+        {/* Slide */}
+        <div key={current} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 32px", textAlign: "center", animation: "fadeSlide 0.35s ease" }}>
+          <div style={{ width: 130, height: 130, borderRadius: "50%", background: slide.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36, boxShadow: `0 8px 30px ${slide.color}25` }}>
+            <span className="mat-icon" style={{ fontSize: 58, color: slide.color, fontVariationSettings: "'FILL' 1" }}>{slide.icon}</span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 14, letterSpacing: "-0.4px" }}>
+            {slide.title}
+          </h1>
+          <p style={{ fontSize: 16, color: "#6d7a77", lineHeight: 1.7, maxWidth: 320 }}>{slide.desc}</p>
+        </div>
 
-      <style>{`@keyframes fadeSlide { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }`}</style>
-    </div>
+        {/* Bottom */}
+        <div style={{ padding: "0 24px 52px" }}>
+          {/* Dots */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 28 }}>
+            {SLIDES.map((_, i) => (
+              <div key={i} style={{
+                height: 8, borderRadius: 999,
+                width: i === current ? 28 : 8,
+                background: i === current ? "#00685f" : "#eceef0",
+                transition: "width 300ms ease, background 300ms ease",
+              }} />
+            ))}
+          </div>
+
+          <button onClick={next} style={{
+            width: "100%", background: "linear-gradient(135deg,#00685f,#008378)",
+            color: "#fff", border: "none", borderRadius: 18, padding: "17px",
+            fontSize: 16, fontWeight: 800, fontFamily: "'Plus Jakarta Sans',sans-serif",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+            boxShadow: "0 6px 20px rgba(0,104,95,0.28)",
+          }}>
+            {current < SLIDES.length - 1 ? "Далее" : "Начать"}
+            <span className="mat-icon" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>arrow_forward</span>
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
