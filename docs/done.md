@@ -1,5 +1,18 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-11 (Admin Analytics fix + Web redesign + URL update)
+
+- **[fix]** Analytics.tsx — добавлен `useMemo` с try/catch вокруг всех вычислений, null-guard для `serviceTitle` (`|| "Неизвестная услуга"`), `Number(o.priceAmount) || 0` и `Number(o.platformFee) || 0` для безопасных числовых операций, guard `res?.data` в while loop, `loadError` state с кнопкой retry — `admin/src/pages/Analytics.tsx`
+- **[fix]** globals.css — CSS parse error исправлен: `@import url(fonts...)` перенесён ДО `@import "tailwindcss"` — `web/app/globals.css`
+- **[fix]** web/app/page.tsx — hydration mismatch исправлен: заменён `window.location.pathname` на `usePathname()` из next/navigation в bottom nav — `web/app/page.tsx`
+- **[config]** Все фронтенды (11 файлов) — backend URL обновлён с `739a` на `0a65.up.railway.app` — `web/`, `web-medic/`, `admin/`
+- **[redesign]** web/app/prescriptions/page.tsx — Stitch Editorial Serenity, mat-icons, pill badges
+- **[redesign]** web/app/prescriptions/[id]/page.tsx — GPS section, address form, bottom-sheet modals
+- **[redesign]** web/app/consultations/page.tsx — video_call mat-icon, consult-card, notes modal
+- **[redesign]** web/app/salomat/page.tsx — streaming preserved, teal header, 103 emergency, RecommendationCards
+- **[redesign]** web/app/voice-agent/page.tsx — arrow_back mat-icon, info banner
+- **[redesign]** web/app/video-call/[id]/page.tsx — LiveKit preserved, mat-icons mic/cam/call/person
+
 ## 2026-04-05 (Medic App — Clinical Sanctuary Redesign)
 
 - **[medic]** Redesign auth.tsx — light bg, medkit icon, tonal inputs (no borders), +998 phone prefix, gradient pill CTA, YOKI divider, ghost secondary button, useSafeAreaInsets — `medic/app/auth.tsx`
