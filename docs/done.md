@@ -1,5 +1,18 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-12 (Жафар — bugfixes после аудита)
+
+- **[fix]** WM-BUG-1 — `/auth` больше не редиректит на `/onboarding` при прямом заходе: авто-ставит `medic_onboarding_completed=true`, редиректит на `/` если уже залогинен — `web-medic/app/auth/page.tsx`
+- **[fix]** WM-BUG-2 — `formatPhone()` корректно обрабатывает вставку полного номера `+998XXXXXXXXX` в поле с пред-заполненным `+998 ` префиксом (убирает дубликат `998998`) — `web-medic/app/auth/page.tsx`, `web-medic/app/clinic/auth/page.tsx`
+- **[fix]** WM-BUG-3 — React hydration error #418 на дашборде: `greeting` вычисляется в `useEffect` вместо рендера (SSR/CSR time mismatch) — `web-medic/app/page.tsx`
+- **[deploy]** Push clinic portal + bugfixes на Railway (commits 656b300, 44274fe)
+
+## 2026-04-11
+
+- **[audit]** Комплексный Playwright-аудит web-medic app (medic.hamshirago.uz) — скрипты `tests/scripts/web-medic-audit.js`, `tests/scripts/web-medic-deep-audit.js`. Выявлены: баг onboarding-redirect (подтверждён), баг UI-логина (phone-маска), React hydration error #418 на дашборде, баг отсутствия кнопки вывода средств. Все 7 страниц прошли без 4xx/5xx ошибок при авторизованном запросе. Logout работает корректно.
+
+- **[test]** Playwright-скрипт полного E2E потока медика — `tests/scripts/medic-login-check.js`: регистрация через API `/medics/register`, логин через API `/medics/login`, обход onboarding-guard через `localStorage.setItem('medic_onboarding_completed','true')`, заполнение формы на `/auth`, submit, ожидание навигации на `/`, скриншот в `test-screenshots/medic-login-result.png`.
+
 ## 2026-04-11 (CLIN-FE-5 улучшения + CLIN-FE-6 + CLIN-FE-7 CSV)
 
 - **[CLIN-FE-5]** Настройки клиники — расширен `web-medic/app/clinic/settings/page.tsx`: добавлена секция **Рабочих часов** (таблица Пн–Вс с toggle open/close + time inputs, localStorage), секция **Возможностей клиники** (3 карточки с toggle-переключателями: онлайн-консультация/house call/онлайн-оплата, localStorage), секция **Длительность слота** (pill-кнопки 15/20/30/45/60 мин, localStorage). ToggleSwitch как отдельный a11y-компонент (role=switch, aria-checked).
