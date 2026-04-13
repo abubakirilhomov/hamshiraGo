@@ -1,5 +1,21 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-12 (Диёр — web bugs + admin analytics)
+
+- **[fix]** admin/Analytics.tsx — добавлен `useMemo` с try/catch вокруг всех вычислений; null-guard `serviceTitle || "Неизвестная услуга"`; `Number(o.priceAmount) || 0` и `Number(o.platformFee) || 0`; guard `res?.data` в while loop; `loadError` state с кнопкой retry — предотвращает краш ErrorBoundary
+- **[fix]** web/consultations — пустой `catch {}` заменён на `setFetchError()`; добавлен UI ошибки с кнопкой retry — `web/app/consultations/page.tsx`
+- **[fix]** web/consultations — `(item as any).price` (поле не существует) заменён на `item.doctor?.pricePerConsultation` — `web/app/consultations/page.tsx`
+- **[fix]** web/orders — дублирующиеся socket-подписки устранены через `useRef<Set<string>>` (subscribedRef) — `web/app/orders/page.tsx`
+- **[fix]** web/order/confirm — мёртвый `(orders as any)?.data` убран: `api.orders.list()` всегда возвращает `Order[]` — `web/app/order/confirm/page.tsx`
+- **[config]** backend/.env.example — добавлены `BACKEND_URL`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_CHANNEL_LINK` (были пропущены; без `BACKEND_URL` Telegram webhook регистрируется молча без действия)
+
+## 2026-04-12 (Жафар — bugfixes после аудита)
+
+- **[fix]** WM-BUG-1 — `/auth` больше не редиректит на `/onboarding` при прямом заходе: авто-ставит `medic_onboarding_completed=true`, редиректит на `/` если уже залогинен — `web-medic/app/auth/page.tsx`
+- **[fix]** WM-BUG-2 — `formatPhone()` корректно обрабатывает вставку полного номера `+998XXXXXXXXX` в поле с пред-заполненным `+998 ` префиксом (убирает дубликат `998998`) — `web-medic/app/auth/page.tsx`, `web-medic/app/clinic/auth/page.tsx`
+- **[fix]** WM-BUG-3 — React hydration error #418 на дашборде: `greeting` вычисляется в `useEffect` вместо рендера (SSR/CSR time mismatch) — `web-medic/app/page.tsx`
+- **[deploy]** Push clinic portal + bugfixes на Railway (commits 656b300, 44274fe)
+
 ## 2026-04-11 (Admin Analytics fix + Web redesign + URL update)
 
 - **[fix]** Analytics.tsx — добавлен `useMemo` с try/catch вокруг всех вычислений, null-guard для `serviceTitle` (`|| "Неизвестная услуга"`), `Number(o.priceAmount) || 0` и `Number(o.platformFee) || 0` для безопасных числовых операций, guard `res?.data` в while loop, `loadError` state с кнопкой retry — `admin/src/pages/Analytics.tsx`
@@ -12,6 +28,47 @@
 - **[redesign]** web/app/salomat/page.tsx — streaming preserved, teal header, 103 emergency, RecommendationCards
 - **[redesign]** web/app/voice-agent/page.tsx — arrow_back mat-icon, info banner
 - **[redesign]** web/app/video-call/[id]/page.tsx — LiveKit preserved, mat-icons mic/cam/call/person
+
+## 2026-04-11
+
+- **[audit]** Комплексный Playwright-аудит web-medic app (medic.hamshirago.uz) — скрипты `tests/scripts/web-medic-audit.js`, `tests/scripts/web-medic-deep-audit.js`. Выявлены: баг onboarding-redirect (подтверждён), баг UI-логина (phone-маска), React hydration error #418 на дашборде, баг отсутствия кнопки вывода средств. Все 7 страниц прошли без 4xx/5xx ошибок при авторизованном запросе. Logout работает корректно.
+
+- **[test]** Playwright-скрипт полного E2E потока медика — `tests/scripts/medic-login-check.js`: регистрация через API `/medics/register`, логин через API `/medics/login`, обход onboarding-guard через `localStorage.setItem('medic_onboarding_completed','true')`, заполнение формы на `/auth`, submit, ожидание навигации на `/`, скриншот в `test-screenshots/medic-login-result.png`.
+
+## 2026-04-11 (CLIN-FE-5 улучшения + CLIN-FE-6 + CLIN-FE-7 CSV)
+
+- **[CLIN-FE-5]** Настройки клиники — расширен `web-medic/app/clinic/settings/page.tsx`: добавлена секция **Рабочих часов** (таблица Пн–Вс с toggle open/close + time inputs, localStorage), секция **Возможностей клиники** (3 карточки с toggle-переключателями: онлайн-консультация/house call/онлайн-оплата, localStorage), секция **Длительность слота** (pill-кнопки 15/20/30/45/60 мин, localStorage). ToggleSwitch как отдельный a11y-компонент (role=switch, aria-checked).
+- **[CLIN-FE-6]** Лиды — обновлён `web-medic/app/clinic/leads/page.tsx`: добавлена кнопка **Позвонить** (tel: ссылка), кнопка **Записать** (redirect → /clinic/reception) для NEW/IN_PROGRESS лидов.
+- **[CLIN-FE-7]** Финансы — обновлён `web-medic/app/clinic/finance/page.tsx`: добавлена кнопка **Экспорт CSV** (client-side, генерирует monthly stats + top doctors с BOM для UTF-8, скачивает как `hamshirago-finance-YYYY-MM-DD.csv`).
+
+## 2026-04-11 (CLIN-FE-3 → CLIN-FE-12)
+
+- **[CLIN-FE-3]** CEO Portal — Кабинеты — `web-medic/app/clinic/rooms/page.tsx`: список кабинетов с расписанием в таблице, форма создания кабинета (название + этаж), модал назначения врача (выбор врача из DOCTOR staff, дни недели, время), отображение schedule через `clinicApi.rooms.schedule()`
+- **[CLIN-FE-4]** CEO Portal — Сотрудники — `web-medic/app/clinic/staff/page.tsx`: grid карточек с аватаром, бейджи по роли (CEO/RECEPTION/DOCTOR), форма создания с полями имя/телефон/пароль/роль + специализация и photoUrl для врача, кнопка деактивации
+- **[CLIN-FE-5]** CEO Portal — Настройки клиники — `web-medic/app/clinic/settings/page.tsx`: редактирование данных клиники (логотип URL, название, адрес, телефон, email), CRUD услуг через `clinicApi.services` (инлайн редактирование, inline create form)
+- **[CLIN-FE-6]** CEO Portal — Лиды — `web-medic/app/clinic/leads/page.tsx`: KPI блок (5 метрик из `clinicApi.leads.stats()`), фильтр по статусу, список с пагинацией, кнопки смены статуса (NEW→IN_PROGRESS→DONE, + Отменить)
+- **[CLIN-FE-7]** CEO Portal — Финансы — `web-medic/app/clinic/finance/page.tsx`: KPI (выручка, приёмы, % отмен) с period selector, 12-месячная таблица с inline bar (выручка), топ-5 врачей по доходу с медалями
+- **[CLIN-FE-8]** Reception Portal — `web-medic/app/clinic/reception/page.tsx`: список записей на сегодня с сортировкой по времени, кнопка Check In через `clinicApi.appointments.checkin()`, быстрые счётчики (ожидают/на приёме/готово), боковая панель новых лидов AI, кнопка «Записать пациента» → BookingModal
+- **[CLIN-FE-9]** BookingModal — `web-medic/components/clinic/BookingModal.tsx`: поиск пациента по телефону через `clinicApi.patients.getByPhone()`, автозаполнение имени, ручной ввод если не найден, выбор врача (DOCTOR role), дата/время, тип оплаты CASH/TERMINAL/ONLINE
+- **[CLIN-FE-10]** Страница пациента в web/ — `web/app/patient/page.tsx` (табы: визиты/рецепты/медкарта с плейсхолдерами аллергий и хронических болезней), `web/app/patient/prescriptions/page.tsx` (список рецептов), `web/app/patient/prescriptions/[id]/page.tsx` (детали + кнопка скачать PDF заглушка)
+- **[CLIN-FE-11]** Расширен `web-medic/app/doctor/consultation/[id]/page.tsx`: добавлен блок «История визитов» (плейсхолдер), форма рецепта (препарат/доза/кратность/дни), кнопка «Отправить рецепт пациенту» (alert), кнопка «Назначить следующий визит» (alert). Попутно исправлен дублирующий `border` в `web-medic/app/doctor/schedule/page.tsx` (TS error)
+- **[CLIN-FE-12]** Список и профиль клиник в web/ — `web/app/clinics/page.tsx` (текстовый поиск, карточки с рейтингом, специализациями), `web/app/clinics/[id]/page.tsx` (профиль: врачи, услуги с ценами в UZS, фиксированная кнопка «Записаться» → /clinic/auth). Mock данные — заменить на API когда появится публичный эндпоинт.
+- **[bugfix]** Исправлен TS error дублирующего `border` в `web-medic/app/doctor/schedule/page.tsx:136`
+
+## 2026-04-10 (Playwright Clinic Portal audit)
+
+- **[test]** Создан Playwright тест `tests/web-medic/clinic.spec.ts` (12 тестов, все проходят): рендер формы, phone prefill, password toggle, disabled submit, login request, hydration errors, broken resources, dashboard redirect, spinner state. Добавлен проект `clinic` в `tests/playwright.config.ts`. Скриншоты сохранены в `test-screenshots/`.
+- **[bug-found]** CLIN-BUG-1: `/clinic/auth` входит в `/clinic/layout.tsx` — layout блокирует форму спиннером когда нет `clinic_token`. Форма входа недоступна без токена. Добавлено в tasks.md.
+- **[bug-found]** CLIN-BUG-2: Выручка на dashboard отображается в ₽ (рублях), а не в UZS. Добавлено в tasks.md.
+
+## 2026-04-10
+
+- **[CLIN-FE-2]** CEO Portal Dashboard — полностью переписан `web-medic/app/clinic/dashboard/page.tsx`: period selector (today/week/month/year), 4 KPI карточки из stats.overview, таблица по месяцам с inline прогресс-баром (recharts не установлен), блок врачей с прогресс-барами, реал-тайм очередь (setInterval 10s) из appointments.today, последние 5 лидов из leads.list. Skeleton/error states. Все типы из clinicApi.ts.
+- **[CLIN-FE-1]** Clinic Portal базовая инфраструктура — создан `web-medic/lib/clinicApi.ts` (clinic_token, getClinicRole, clearClinicSession, все clinic эндпоинты с типами); `web-medic/app/clinic/layout.tsx` (sidebar с ролями CEO/RECEPTION/DOCTOR, Stethoscope лого, мобильный hamburger); `web-medic/app/clinic/auth/page.tsx` (login форма, phone форматирование, редирект по роли); `web-medic/app/clinic/dashboard/page.tsx` (placeholder). Исправлено: clearClinicSession удаляет clinic_user вместо clinic_role; auth сохраняет clinic_user (JSON); иконки CalendarDays/TrendingUp/Stethoscope согласно спецификации
+
+## 2026-04-09
+
+- **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
 
 ## 2026-04-05 (Medic App — Clinical Sanctuary Redesign)
 

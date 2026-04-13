@@ -7,6 +7,7 @@
     "test:api": "playwright test --project=api",
     "test:web": "playwright test --project=web",
     "test:admin": "playwright test --project=admin",
+    "test:clinic": "playwright test --project=clinic",
     "test:report": "playwright show-report"
   },
   "devDependencies": {

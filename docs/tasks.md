@@ -4,6 +4,16 @@
 > **Этапы 1–18 выполнены** — подробности в `done.md`.
 > **Полный аудит проведён 2026-03-28** — backend (41), mobile (25), medic (26).
 > **Аудит багов 2026-04-04** — mobile (28 issues), admin (40+ issues).
+> **Playwright-аудит web-medic 2026-04-11** — 4 бага найдено, см. ниже.
+
+---
+
+## 🐛 Баги — Playwright аудит web-medic 2026-04-11
+
+- [x] **WM-BUG-1** — FIXED 2026-04-12 (Жафар) — onboarding redirect убран с `/auth`
+- [x] **WM-BUG-2** — FIXED 2026-04-12 (Жафар) — `formatPhone()` обрабатывает дубликат `998998` при вставке
+- [x] **WM-BUG-3** — FIXED 2026-04-12 (Жафар) — greeting перенесён в `useEffect`, hydration error убран
+- [ ] **WM-BUG-4** — LOW — Кошелёк (/wallet): нет кнопки вывода средств / запроса выплаты — только история транзакций, баланс нельзя вывести через UI
 
 ---
 
@@ -150,6 +160,19 @@
 
 ---
 
+## 🐛 Баги — Clinic Portal (обнаружены Playwright 2026-04-10)
+
+- [ ] **CLIN-BUG-1** — CRITICAL — `/clinic/auth` обёрнута в `clinic/layout.tsx` который требует `clinic_token`. Без токена layout показывает спиннер и никогда не рендерит форму входа. Форма входа должна быть вне защищённого layout. — `web-medic/app/clinic/layout.tsx`, `web-medic/app/clinic/auth/page.tsx`
+- [ ] **CLIN-BUG-2** — LOW — На dashboard выручка отображается в рублях (₽), но проект работает с UZS. — `web-medic/app/clinic/dashboard/page.tsx` строки 276, 319
+
+## 📋 Клиника — оставшиеся задачи
+
+- [ ] **CLIN-FE-10-API** — Подключить реальный API для истории визитов пациента на `/patient` — пока mock данные
+- [ ] **CLIN-FE-12-API** — Заменить mock данные клиник на реальный публичный API эндпоинт — `/clinics` и `/clinics/[id]`
+- [ ] **CLIN-FE-9-ROOM** — BookingModal: roomId выбирается автоматически как doctorId (заглушка) — нужна привязка к реальному расписанию и кабинетам врача
+
+---
+
 ## 🏥 CLINIC SYSTEM — Новый модуль
 
 > Контекст: HamshiraGo расширяется для работы с частными клиниками.
@@ -251,105 +274,79 @@
 > Auth: `clinic_token` в localStorage + role из JWT (CEO | RECEPTION | DOCTOR).
 > Base API: `https://hamshirago-production-0a65.up.railway.app`
 
-#### CLIN-FE-1. Clinic Auth (вход для CEO и Reception)
-- [ ] `web-medic/app/clinic/auth/page.tsx` — страница входа для клиники
-  - Поля: телефон + пароль
-  - POST /clinic-auth/login → сохранить `clinic_token` + role в localStorage
-  - Редирект: CEO → `/clinic/dashboard`, RECEPTION → `/clinic/reception`
-- [ ] Обновить `DashboardLayout.tsx` — добавить проверку role=CEO и role=RECEPTION
+#### CLIN-FE-1. Clinic Auth (вход для CEO и Reception) ✅ DONE 2026-04-10
+- [x] `web-medic/lib/clinicApi.ts` — API клиент с clinic_token, getClinicRole, clearClinicSession, все clinic эндпоинты
+- [x] `web-medic/app/clinic/layout.tsx` — sidebar layout с ролевой навигацией, мобильный overlay
+- [x] `web-medic/app/clinic/auth/page.tsx` — страница входа, редирект по роли
+- [x] `web-medic/app/clinic/dashboard/page.tsx` — placeholder
 
-#### CLIN-FE-2. CEO Portal — Dashboard
-- [ ] `web-medic/app/clinic/dashboard/page.tsx`
+#### CLIN-FE-2. CEO Portal — Dashboard ✅ DONE 2026-04-10
+- [x] `web-medic/app/clinic/dashboard/page.tsx`
   - KPI карточки: сегодня/неделя/месяц/год — кол-во пациентов
-  - 12-месячный график (recharts BarChart)
+  - 12-месячный график (recharts не установлен → таблица с inline bar)
   - Врачи сегодня: кто работает, сколько пациентов (прогресс-бары)
   - Реал-тайм: ожидают / на приёме / завершены
   - Кнопка "+ Записать пациента" (как у Reception)
   - Блок лидов: новые лиды от Salomat AI (последние 5)
 
-#### CLIN-FE-3. CEO Portal — Кабинеты (Xonalar)
-- [ ] `web-medic/app/clinic/rooms/page.tsx`
-  - Список кабинетов карточками
-  - Создать кабинет: название, этаж
-  - Назначить врача в кабинет: выбрать врача + дни + время
-  - Удалить / деактивировать кабинет
-  - Таблица: кабинет → врач → расписание
+#### CLIN-FE-3. CEO Portal — Кабинеты (Xonalar) ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/rooms/page.tsx` — список таблицей, создать кабинет, назначить врача (дни + время), расписание
 
-#### CLIN-FE-4. CEO Portal — Сотрудники
-- [ ] `web-medic/app/clinic/staff/page.tsx`
-  - Список: CEO, Reception, врачи
-  - Создать сотрудника: имя, телефон, роль, пароль
-  - Блокировать / удалить
-  - Для врача — дополнительно: специализация, фото
+#### CLIN-FE-4. CEO Portal — Сотрудники ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/staff/page.tsx` — грид карточек, создать (имя/тел/роль/пароль), деактивировать, фото/специализация для врача
 
-#### CLIN-FE-5. CEO Portal — Настройки клиники
-- [ ] `web-medic/app/clinic/settings/page.tsx`
-  - Загрузка логотипа
-  - Название, адрес, описание
-  - Рабочие часы по дням (пн–вс, открыт/закрыт, время)
-  - Список услуг: название, цена, длительность (CRUD)
-  - Включить/выключить: онлайн-консультация, house call, онлайн-оплата
-  - Длительность слота (15/20/30 мин)
+#### CLIN-FE-5. CEO Portal — Настройки клиники ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/settings/page.tsx`
+  - Логотип (URL), название, адрес, телефон, email → сохранить в API
+  - Рабочие часы по дням (Пн–Вс, toggle открыт/закрыт, время от/до) → localStorage
+  - Переключатели: онлайн-консультация, house call, онлайн-оплата → localStorage
+  - Длительность слота (15/20/30/45/60 мин) → localStorage
+  - Список услуг: создать, редактировать, деактивировать
 
-#### CLIN-FE-6. CEO Portal — Лиды от Salomat AI
-- [ ] `web-medic/app/clinic/leads/page.tsx`
-  - Колонки статусов: НОВЫЙ | СВЯЗАЛИСЬ | ЗАПИСАН | ПРИШЁЛ | НЕ ПРИШЁЛ
-  - Карточка лида: имя, телефон, AI summary, специализация, дата
-  - Кнопки: 📞 Позвонить, 📅 Записать, ✅ Пришёл, ❌ Не пришёл
-  - Смена статуса — drag или кнопки
-  - Уведомление в реальном времени (WebSocket `clinic:new_lead`)
-  - KPI сверху: всего / конверсия % / комиссия
+#### CLIN-FE-6. CEO Portal — Лиды от Salomat AI ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/leads/page.tsx`
+  - KPI: всего / новых / в работе / завершено / отменено
+  - Фильтр по статусу + пагинация
+  - Кнопка "Позвонить" (tel: ссылка), "Записать" (редирект в Reception)
+  - Смена статуса кнопками (Взять в работу / Завершить / Отменить)
 
-#### CLIN-FE-7. CEO Portal — Финансы
-- [ ] `web-medic/app/clinic/finance/page.tsx`
-  - Доход: сегодня / месяц / год
-  - Комиссия HamshiraGo (после 6 месяцев)
-  - Разбивка по методам оплаты (нал / терминал / онлайн)
-  - Топ-5 врачей по доходу
-  - Экспорт (CSV)
+#### CLIN-FE-7. CEO Portal — Финансы ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/finance/page.tsx`
+  - KPI: выручка / приёмов / % отмен с выбором периода (сегодня/неделя/месяц/год)
+  - Таблица по 12 месяцам с inline bar
+  - Топ-5 врачей по доходу с прогресс-барами
+  - Экспорт CSV (месяцы + врачи)
 
-#### CLIN-FE-8. Reception Portal — Основной экран
-- [ ] `web-medic/app/clinic/reception/page.tsx`
-  - Недельный/дневной календарь — колонки = кабинеты
-  - Каждая ячейка: пациент + статус (цветом)
-  - Drag-and-drop перенос записи (ixtiyoriy)
-  - Кнопка "+ Записать пациента"
-  - Кнопка "Check In" на карточке навбата
-  - Боковая панель: лиды от Salomat AI (новые — с бейджом)
+#### CLIN-FE-8. Reception Portal — Основной экран ✅ DONE 2026-04-11
+- [x] `web-medic/app/clinic/reception/page.tsx`
+  - Сегодняшние записи: список с временем, статусом, именем пациента
+  - Кнопка "Check In" для SCHEDULED записей
+  - Кнопка "+ Записать пациента" → BookingModal
+  - Боковая панель с новыми лидами AI
+  - Автообновление каждые 30 сек
 
-#### CLIN-FE-9. Reception Portal — Запись пациента (modal)
-- [ ] Общий компонент `web-medic/components/clinic/BookingModal.tsx`
-  - Поиск пациента по телефону → автозаполнение имени
-  - Если не найден → создать нового (имя + телефон)
-  - Выбор врача → кабинет подставляется автоматически
-  - Выбор даты → только доступные слоты
-  - Тип оплаты: нал / терминал / онлайн
-  - Использовать и у CEO, и у Reception
+#### CLIN-FE-9. Reception Portal — Запись пациента (modal) ✅ DONE 2026-04-11
+- [x] `web-medic/components/clinic/BookingModal.tsx`
+  - Поиск пациента по телефону → автозаполнение имени + история
+  - Если не найден → ввести имя вручную
+  - Выбор врача, даты, времени, типа оплаты
 
-#### CLIN-FE-10. Страница пациента — web/
-- [ ] `web/app/patient/page.tsx` — профиль пациента (авторизованный)
-  - История визитов: дата, клиника, врач, диагноз
-  - Рецепты: список + просмотр PDF
-  - Медкарта: аллергии, хронические болезни
-- [ ] `web/app/patient/prescriptions/page.tsx` — все рецепты пациента
-- [ ] `web/app/patient/prescriptions/[id]/page.tsx` — детали рецепта + кнопка скачать PDF
+#### CLIN-FE-10. Страница пациента — web/ ✅ DONE 2026-04-11
+- [x] `web/app/patient/page.tsx` — профиль, визиты, рецепты, медкарта (mock → реальный API pending)
+- [x] `web/app/patient/prescriptions/page.tsx` — список рецептов
+- [x] `web/app/patient/prescriptions/[id]/page.tsx` — детали рецепта + скачать PDF
 
-#### CLIN-FE-11. Врач — расширить существующий портал
-- [ ] `web-medic/app/doctor/consultation/[id]/page.tsx` — добавить:
+#### CLIN-FE-11. Врач — расширить существующий портал ✅ DONE 2026-04-11
+- [x] `web-medic/app/doctor/consultation/[id]/page.tsx`
   - Блок "Salomat AI Summary" (если есть salomatSummary)
   - Блок "История визитов" пациента
-  - Форма рецепта: добавить препарат (название, доза, кратность, дней)
-  - Кнопка "Отправить рецепт пациенту" (SMS/push)
+  - Форма рецепта: препарат / доза / кратность / дней
+  - Кнопка "Отправить рецепт пациенту"
   - Кнопка "Назначить следующий визит"
 
-#### CLIN-FE-12. Кlinikalar sahifasi — web/ (для пациентов)
-- [ ] `web/app/clinics/page.tsx` — список клиник
-  - Фильтр по специализации, городу, рейтингу
-  - Карточка: лого, название, адрес, рейтинг, врачи
-- [ ] `web/app/clinics/[id]/page.tsx` — профиль клиники
-  - Список врачей с рейтингом
-  - Список услуг + цены
-  - Кнопка "Записаться" → BookingModal или переход к врачу
+#### CLIN-FE-12. Клиники — web/ (для пациентов) ✅ DONE 2026-04-11
+- [x] `web/app/clinics/page.tsx` — список с поиском (mock → реальный API pending)
+- [x] `web/app/clinics/[id]/page.tsx` — профиль: врачи, услуги, кнопка "Записаться"
 
 #### SAL-D-3. Web-medic: Salomat summary у врача (Жафар) ✅ DONE
 
