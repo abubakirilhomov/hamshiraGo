@@ -629,6 +629,7 @@ export function reportClientError(message: string, stack?: string): void {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      appType: "web",
       message,
       stack,
       url: typeof window !== "undefined" ? window.location.href : undefined,
