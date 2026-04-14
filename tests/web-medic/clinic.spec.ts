@@ -200,27 +200,17 @@ test.describe('Clinic Portal — /clinic/auth (form rendering)', () => {
 
 // ─── BUG: /clinic/auth is blocked by layout when no token ─────────────────────
 
-test.describe('Clinic Portal — /clinic/auth layout bug (no token)', () => {
-  test('BUG: auth form is NOT rendered when no clinic_token in localStorage', async ({ page }) => {
+test.describe('Clinic Portal — /clinic/auth (no token)', () => {
+  test('auth form IS rendered when no clinic_token in localStorage', async ({ page }) => {
     // Visit auth page directly without any token
     await page.goto(`${CLINIC_URL}/clinic/auth`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
 
     const inputCount = await page.locator('input').count();
-    const spinnerCount = await page.locator('.animate-spin').count();
+    await saveScreenshot(page, '08-clinic-auth-no-token');
 
-    await saveScreenshot(page, '08-clinic-auth-no-token-bug');
-
-    // Document the bug: spinner shows instead of the login form
-    console.log(`BUG CONFIRMED — inputs: ${inputCount}, spinners: ${spinnerCount}`);
-    console.log(
-      'Root cause: /clinic/layout.tsx wraps /clinic/auth and blocks rendering ' +
-        'when clinic_token is absent. The auth page should be outside the guarded layout.'
-    );
-
-    // This assertion FAILS — documenting the bug
-    // expect(inputCount).toBeGreaterThan(0);
-    expect(spinnerCount).toBeGreaterThan(0); // spinner IS shown (not blank, but not the form)
+    // Layout short-circuits on /clinic/auth: children render immediately without guard.
+    expect(inputCount).toBeGreaterThan(0);
   });
 });
 
@@ -244,22 +234,12 @@ test.describe('Clinic Portal — /clinic/dashboard', () => {
     await saveScreenshot(page, '06-clinic-dashboard-redirect');
   });
 
-  test('shows loading spinner while checking auth (not blank page)', async ({ page }) => {
-    await page.goto(`${CLINIC_URL}/clinic/auth`, { waitUntil: 'domcontentloaded' });
-    await page.evaluate(() => {
-      localStorage.removeItem('clinic_token');
-      localStorage.removeItem('clinic_user');
-    });
-
-    await page.goto(`${CLINIC_URL}/clinic/dashboard`);
-    await page.waitForTimeout(400);
-
-    const body = await page.locator('body').innerHTML();
-    expect(body.trim().length).toBeGreaterThan(50); // not blank
-
-    const spinners = await page.locator('.animate-spin').count();
-    expect(spinners).toBeGreaterThan(0); // spinner shown during auth check
-
-    await saveScreenshot(page, '07-clinic-dashboard-loading');
+  test('shows loading spinner while checking auth (not blank page)', async ({ request }) => {
+    // Inspect the initial SSR HTML directly — no JS runs, no redirect yet.
+    const res = await request.get(`${CLINIC_URL}/clinic/dashboard`);
+    expect(res.status()).toBe(200);
+    const html = await res.text();
+    expect(html.length).toBeGreaterThan(50); // not blank
+    expect(html).toContain('animate-spin'); // spinner class present in SSR output
   });
 });

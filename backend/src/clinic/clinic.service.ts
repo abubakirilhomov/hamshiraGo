@@ -350,6 +350,42 @@ export class ClinicService {
     return result;
   }
 
+  async getRoomsForDoctor(
+    companyId: string,
+    doctorId: string,
+    date?: string,
+  ) {
+    const target = date ? new Date(date) : new Date();
+    const jsDay = target.getDay(); // 0=Sun..6=Sat
+    const dayOfWeek = jsDay === 0 ? 7 : jsDay; // 1=Mon..7=Sun
+
+    const assignments = await this.roomDoctorRepo.find({
+      where: { doctorId, dayOfWeek },
+      order: { startTime: 'ASC' },
+    });
+    if (assignments.length === 0) return [];
+
+    const roomIds = Array.from(new Set(assignments.map((a) => a.roomId)));
+    const rooms = await this.roomRepo.find({
+      where: { companyId, isActive: true },
+    });
+    const roomMap = new Map(rooms.map((r) => [r.id, r]));
+
+    return assignments
+      .filter((a) => roomMap.has(a.roomId))
+      .map((a) => {
+        const r = roomMap.get(a.roomId)!;
+        return {
+          roomId: r.id,
+          roomName: r.name,
+          floor: r.floor,
+          startTime: a.startTime,
+          endTime: a.endTime,
+          dayOfWeek: a.dayOfWeek,
+        };
+      });
+  }
+
   // ── Company Services ──────────────────────────────────────────────────
 
   async createCompanyService(companyId: string, dto: CreateCompanyServiceDto) {
@@ -380,6 +416,86 @@ export class ClinicService {
       where: { companyId, isActive: true },
       order: { category: 'ASC', name: 'ASC' },
     });
+  }
+
+  async listPublicClinics(q?: string) {
+    const qb = this.companyRepo
+      .createQueryBuilder('c')
+      .where('c.isActive = :active', { active: true })
+      .andWhere('c.isVerified = :verified', { verified: true });
+
+    if (q && q.trim()) {
+      const like = `%${q.trim().toLowerCase()}%`;
+      qb.andWhere(
+        '(LOWER(c.name) LIKE :q OR LOWER(c.address) LIKE :q OR LOWER(c.city) LIKE :q)',
+        { q: like },
+      );
+    }
+
+    const companies = await qb.orderBy('c.name', 'ASC').getMany();
+
+    const result = await Promise.all(
+      companies.map(async (c) => {
+        const doctorsCount = await this.userRepo.count({
+          where: { companyId: c.id, role: 'DOCTOR', isActive: true },
+        });
+        const services = await this.serviceRepo.find({
+          where: { companyId: c.id, isActive: true },
+          select: ['category'],
+        });
+        const specializations = Array.from(
+          new Set(services.map((s) => s.category).filter(Boolean)),
+        );
+        return {
+          id: c.id,
+          name: c.name,
+          address: c.address,
+          city: c.city,
+          logoUrl: c.logoUrl,
+          phone: c.phone,
+          specializations,
+          doctorsCount,
+        };
+      }),
+    );
+
+    return result;
+  }
+
+  async getPublicClinicDetail(companyId: string) {
+    const company = await this.companyRepo.findOne({
+      where: { id: companyId, isActive: true, isVerified: true },
+    });
+    if (!company) throw new NotFoundException('COMPANY_NOT_FOUND');
+
+    const doctors = await this.userRepo.find({
+      where: { companyId, role: 'DOCTOR', isActive: true },
+      order: { name: 'ASC' },
+    });
+    const services = await this.serviceRepo.find({
+      where: { companyId, isActive: true },
+      order: { category: 'ASC', name: 'ASC' },
+    });
+
+    return {
+      id: company.id,
+      name: company.name,
+      address: company.address,
+      city: company.city,
+      phone: company.phone,
+      logoUrl: company.logoUrl,
+      doctors: doctors.map((d) => ({
+        id: d.id,
+        name: d.name,
+      })),
+      services: services.map((s) => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        price: s.price,
+        durationMinutes: s.durationMinutes,
+      })),
+    };
   }
 
   async updateCompanyService(
@@ -1048,6 +1164,50 @@ export class ClinicService {
   }
 
   // ── Patient Prescriptions (client auth) ─────────────────────────
+
+  async getMyVisits(patientId: string) {
+    const visits = await this.appointmentRepo.find({
+      where: { patientId },
+      order: { date: 'DESC', time: 'DESC' },
+    });
+    if (visits.length === 0) return [];
+
+    const doctorIds = Array.from(
+      new Set(visits.map((v) => v.doctorId).filter((x): x is string => !!x)),
+    );
+    const companyIds = Array.from(new Set(visits.map((v) => v.companyId)));
+    const serviceIds = Array.from(
+      new Set(visits.map((v) => v.serviceId).filter((x): x is string => !!x)),
+    );
+
+    const [doctors, companies, services] = await Promise.all([
+      doctorIds.length
+        ? this.userRepo.findByIds(doctorIds)
+        : Promise.resolve([]),
+      this.companyRepo.findByIds(companyIds),
+      serviceIds.length
+        ? this.serviceRepo.findByIds(serviceIds)
+        : Promise.resolve([]),
+    ]);
+
+    return visits.map((v) => ({
+      id: v.id,
+      date: v.date,
+      time: v.time,
+      status: v.status,
+      companyId: v.companyId,
+      companyName: companies.find((c) => c.id === v.companyId)?.name ?? null,
+      doctorId: v.doctorId,
+      doctorName: v.doctorId
+        ? doctors.find((d) => d.id === v.doctorId)?.name ?? null
+        : null,
+      serviceId: v.serviceId,
+      serviceName: v.serviceId
+        ? services.find((s) => s.id === v.serviceId)?.name ?? null
+        : null,
+      notes: v.notes,
+    }));
+  }
 
   async getPatientPrescriptions(patientId: string) {
     return this.clinicPrescriptionRepo.find({

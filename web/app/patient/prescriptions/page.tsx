@@ -1,38 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, ChevronRight, Pill } from "lucide-react";
+import { ArrowLeft, FileText, ChevronRight, Pill, AlertCircle } from "lucide-react";
 
-// Placeholder prescription list — replace with API call when endpoint is available
-const MOCK_PRESCRIPTIONS = [
-  {
-    id: "rx-1",
-    date: "2026-03-15",
-    doctor: "Д-р Иванов А.А.",
-    specialization: "Терапевт",
-    drugs: ["Ибупрофен 400мг — 3 раза/день, 5 дней"],
-    diagnosis: "ОРВИ",
-  },
-  {
-    id: "rx-2",
-    date: "2026-02-10",
-    doctor: "Д-р Петрова М.С.",
-    specialization: "Кардиолог",
-    drugs: ["Аспирин 75мг — 1 раз/день", "Метопролол 50мг — 2 раза/день"],
-    diagnosis: "Плановый осмотр",
-  },
-  {
-    id: "rx-3",
-    date: "2026-01-20",
-    doctor: "Д-р Смирнов В.П.",
-    specialization: "Невролог",
-    drugs: ["Суматриптан 50мг — при приступе", "Магний B6 — 2 раза/день, 30 дней"],
-    diagnosis: "Мигрень",
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
+
+interface ClinicPrescription {
+  id: string;
+  content: string;
+  notes: string | null;
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
+  createdAt: string;
+  patientName: string;
+}
+
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  ACTIVE:    { bg: "#dcfce7", color: "#16a34a", label: "Активный" },
+  COMPLETED: { bg: "#dbeafe", color: "#1d4ed8", label: "Завершён" },
+  CANCELLED: { bg: "#fee2e2", color: "#dc2626", label: "Отменён" },
+};
+
+function formatDateRu(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("ru-RU", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+}
 
 export default function PrescriptionsListPage() {
   const router = useRouter();
+  const [prescriptions, setPrescriptions] = useState<ClinicPrescription[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!token) { router.replace("/auth"); return; }
+      try {
+        const res = await fetch(`${API_BASE}/patient/prescriptions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          router.replace("/auth");
+          return;
+        }
+        if (!res.ok) throw new Error("Ошибка загрузки рецептов");
+        const data: ClinicPrescription[] = await res.json();
+        if (!cancelled) { setPrescriptions(data); setLoading(false); }
+      } catch (e) {
+        if (!cancelled) { setError(e instanceof Error ? e.message : "Ошибка"); setLoading(false); }
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [router]);
 
   const card: React.CSSProperties = {
     background: "#fff", borderRadius: 16, border: "1px solid #f1f5f9",
@@ -49,65 +73,114 @@ export default function PrescriptionsListPage() {
             style={{
               background: "#f1f5f9", border: "none", borderRadius: 8, padding: "8px 12px",
               cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center", gap: 4, fontSize: 13,
+              minHeight: 36,
             }}
           >
             <ArrowLeft size={14} /> Назад
           </button>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: 0 }}>Мои рецепты</h1>
-            <p style={{ fontSize: 12, color: "#94a3b8", margin: "2px 0 0" }}>{MOCK_PRESCRIPTIONS.length} рецептов</p>
+            <p style={{ fontSize: 12, color: "#94a3b8", margin: "2px 0 0" }}>
+              {loading ? "Загрузка..." : `${prescriptions.length} рецептов`}
+            </p>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 720, margin: "auto", padding: "24px 16px" }}>
-        {MOCK_PRESCRIPTIONS.length === 0 ? (
-          <div style={{ ...card, padding: 60, textAlign: "center" }}>
-            <Pill size={40} color="#cbd5e1" style={{ marginBottom: 12 }} />
-            <p style={{ color: "#94a3b8", fontSize: 14 }}>Рецептов нет</p>
-          </div>
-        ) : (
+
+        {/* Loading */}
+        {loading && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {MOCK_PRESCRIPTIONS.map((rx) => (
-              <button
-                key={rx.id}
-                onClick={() => router.push(`/patient/prescriptions/${rx.id}`)}
-                style={{
-                  ...card, padding: "18px 20px", textAlign: "left", width: "100%", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  border: "1px solid #f1f5f9",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 12, background: "#faf5ff", flexShrink: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <FileText size={20} color="#9333ea" />
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Рецепт — {rx.diagnosis}</span>
-                    </div>
-                    <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 3px" }}>{rx.doctor} · {rx.specialization}</p>
-                    <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>
-                      {new Date(rx.date).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
-                    </p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                      {rx.drugs.map((d, idx) => (
-                        <span key={idx} style={{
-                          fontSize: 11, padding: "2px 8px", borderRadius: 6,
-                          background: "#faf5ff", color: "#7c3aed", fontWeight: 600,
-                        }}>
-                          {d.split("—")[0].trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight size={16} color="#94a3b8" style={{ flexShrink: 0 }} />
-              </button>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{
+                ...card, padding: 20, height: 88,
+                background: "linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer 1.5s infinite",
+              }} />
             ))}
+            <style>{`@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }`}</style>
+          </div>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div style={{ ...card, padding: "40px 24px", textAlign: "center" }}>
+            <AlertCircle size={36} color="#ef4444" style={{ marginBottom: 10 }} />
+            <p style={{ color: "#ef4444", fontWeight: 700, fontSize: 15, margin: "0 0 14px" }}>{error}</p>
+            <button
+              onClick={() => { setLoading(true); setError(null); }}
+              style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+            >
+              Повторить
+            </button>
+          </div>
+        )}
+
+        {/* Empty */}
+        {!loading && !error && prescriptions.length === 0 && (
+          <div style={{ ...card, padding: 60, textAlign: "center" }}>
+            <div style={{
+              width: 60, height: 60, borderRadius: "50%", background: "#faf5ff",
+              display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px",
+            }}>
+              <Pill size={26} color="#9333ea" />
+            </div>
+            <p style={{ fontWeight: 700, fontSize: 15, color: "#0f172a", margin: "0 0 6px" }}>Рецептов нет</p>
+            <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>Рецепты, выписанные врачом, появятся здесь</p>
+          </div>
+        )}
+
+        {/* List */}
+        {!loading && !error && prescriptions.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {prescriptions.map((rx) => {
+              const st = STATUS_STYLES[rx.status] ?? { bg: "#f1f5f9", color: "#64748b", label: rx.status };
+              return (
+                <button
+                  key={rx.id}
+                  onClick={() => router.push(`/patient/prescriptions/${rx.id}`)}
+                  style={{
+                    ...card, padding: "18px 20px", textAlign: "left", width: "100%", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    border: "1px solid #f1f5f9", transition: "box-shadow 150ms ease, border-color 150ms ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12, background: "#faf5ff", flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <FileText size={20} color="#9333ea" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
+                          Рецепт #{rx.id.slice(-8).toUpperCase()}
+                        </span>
+                        <span style={{
+                          fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 700,
+                          background: st.bg, color: st.color,
+                        }}>
+                          {st.label}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12, color: "#94a3b8", margin: "0 0 4px" }}>
+                        {formatDateRu(rx.createdAt)}
+                      </p>
+                      <p style={{
+                        fontSize: 12, color: "#64748b", margin: 0,
+                        overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
+                      }}>
+                        {rx.content.length > 70 ? rx.content.slice(0, 70) + "..." : rx.content}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} color="#94a3b8" style={{ flexShrink: 0, marginLeft: 8 }} />
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

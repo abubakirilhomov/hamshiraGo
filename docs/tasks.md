@@ -8,12 +8,30 @@
 
 ---
 
+## 🆕 Жафар — Sprint 2026-04-14
+
+- [x] **JF-FIX-1** — DONE 2026-04-14 (Жафар) — Рецепт пациента: real API вместо mock + print/PDF страница (`web/app/patient/prescriptions/[id]/page.tsx`, `print/page.tsx`)
+- [x] **JF-FIX-2** — DONE 2026-04-14 (Жафар) — Доктор: кнопка «Сформировать рецепт (PDF)» вместо alert-заглушки + print страница (`web-medic/app/doctor/prescription/print/page.tsx`)
+- [x] **JF-UI-1** — DONE 2026-04-14 (Жафар) — Фильтр услуг по категории в профиле клиники (`web/app/clinics/[id]/page.tsx`) — pill-табы Все/Консультация/Лаборатория/Диагностика/Процедуры
+- [x] **JF-UI-2** — DONE 2026-04-14 (Жафар) — Редизайн страницы списка клиник: hero, floating search, card grid, skeleton, empty state (`web/app/clinics/page.tsx`)
+- [x] **JF-UI-3** — DONE 2026-04-14 (Жафар) — Редизайн страницы пациента: pill-табы с иконками, visit cards, prescription cards, medcard placeholder, skeleton (`web/app/patient/page.tsx`)
+- [x] **JF-BUG-1** — FIXED 2026-04-14 (Жафар) — Список рецептов пациента: MOCK → real API `GET /patient/prescriptions`, skeleton, status badge, empty/error state (`web/app/patient/prescriptions/page.tsx`)
+- [x] **JF-UI-4** — DONE 2026-04-14 (Жафар) — Редизайн профиля клиники: skeleton, doctor cards + specialization, service color badges, price в сум, floating tel CTA (`web/app/clinics/[id]/page.tsx`)
+- [x] **JF-UI-5** — DONE 2026-04-14 (Жафар) — Редизайн страницы регистратуры: header, stat-strip, appointment cards с color accent, AI leads sidebar, shimmer skeleton (`web-medic/app/clinic/reception/page.tsx`)
+
+---
+
+## 🆕 Reception UI 2026-04-12
+
+- [x] **WM-FEAT-1** — DONE 2026-04-12 (Жафар) — Reception portal: переключатель «Список / Календарь» (дневной view)
+
+---
+
 ## 🐛 Баги — Playwright аудит web-medic 2026-04-11
 
 - [x] **WM-BUG-1** — FIXED 2026-04-12 (Жафар) — onboarding redirect убран с `/auth`
 - [x] **WM-BUG-2** — FIXED 2026-04-12 (Жафар) — `formatPhone()` обрабатывает дубликат `998998` при вставке
 - [x] **WM-BUG-3** — FIXED 2026-04-12 (Жафар) — greeting перенесён в `useEffect`, hydration error убран
-- [ ] **WM-BUG-4** — LOW — Кошелёк (/wallet): нет кнопки вывода средств / запроса выплаты — только история транзакций, баланс нельзя вывести через UI
 
 ---
 
@@ -159,17 +177,6 @@
 
 
 ---
-
-## 🐛 Баги — Clinic Portal (обнаружены Playwright 2026-04-10)
-
-- [ ] **CLIN-BUG-1** — CRITICAL — `/clinic/auth` обёрнута в `clinic/layout.tsx` который требует `clinic_token`. Без токена layout показывает спиннер и никогда не рендерит форму входа. Форма входа должна быть вне защищённого layout. — `web-medic/app/clinic/layout.tsx`, `web-medic/app/clinic/auth/page.tsx`
-- [ ] **CLIN-BUG-2** — LOW — На dashboard выручка отображается в рублях (₽), но проект работает с UZS. — `web-medic/app/clinic/dashboard/page.tsx` строки 276, 319
-
-## 📋 Клиника — оставшиеся задачи
-
-- [ ] **CLIN-FE-10-API** — Подключить реальный API для истории визитов пациента на `/patient` — пока mock данные
-- [ ] **CLIN-FE-12-API** — Заменить mock данные клиник на реальный публичный API эндпоинт — `/clinics` и `/clinics/[id]`
-- [ ] **CLIN-FE-9-ROOM** — BookingModal: roomId выбирается автоматически как doctorId (заглушка) — нужна привязка к реальному расписанию и кабинетам врача
 
 ---
 
@@ -997,55 +1004,55 @@
 ### 📌 Фаза 2 — Mobile: голосовой интерфейс (Абубакир)
 
 #### VA-MOB-1. Экран голосового ассистента `app/voice-agent.tsx`
-- [ ] Кнопка-микрофон по центру (большая, анимированная пульсация при записи)
-- [ ] Запись через `expo-av` (`Audio.Recording`) — формат m4a
-- [ ] При отпускании → отправить на `POST /voice-agent/transcribe`
-- [ ] Показать распознанный текст пользователю (для проверки)
-- [ ] Отправить в `POST /voice-agent/chat` → получить ответ
-- [ ] Воспроизвести аудио ответ через `POST /voice-agent/synthesize` → `Audio.Sound`
+- [x] Кнопка-микрофон по центру (большая, анимированная пульсация при записи)
+- [x] Запись через `expo-av` (`Audio.Recording`) — формат m4a
+- [x] При отпускании → отправить на `POST /voice-agent/transcribe`
+- [x] Показать распознанный текст пользователю (для проверки)
+- [x] Отправить в `POST /voice-agent/chat` → получить ответ
+- [x] Воспроизвести аудио ответ через `POST /voice-agent/synthesize` → `Audio.Sound`
 
 #### VA-MOB-2. UI состояния
-- [ ] IDLE: большая кнопка микрофона + текст "Нажмите и говорите"
-- [ ] RECORDING: анимация звуковых волн (пульсация), таймер записи
-- [ ] PROCESSING: spinner "Думаю..."
-- [ ] SPEAKING: анимация динамика, текст ответа ассистента
-- [ ] RECOMMENDATION: карточка с рекомендацией + кнопки "Записаться к врачу" / "Вызвать медсестру"
+- [x] IDLE: большая кнопка микрофона + текст "Нажмите и говорите"
+- [x] RECORDING: анимация звуковых волн (пульсация), таймер записи
+- [x] PROCESSING: spinner "Думаю..."
+- [x] SPEAKING: анимация динамика, текст ответа ассистента
+- [x] RECOMMENDATION: карточка с рекомендацией + кнопки "Записаться к врачу" / "Вызвать медсестру"
 
 #### VA-MOB-3. История диалога
-- [ ] Bubble-чат под кнопкой микрофона (прокручиваемый)
-- [ ] Сообщения пользователя (правый пузырь) + ассистент (левый пузырь с иконкой)
-- [ ] Текст ответа отображается одновременно с озвучкой
+- [x] Bubble-чат под кнопкой микрофона (прокручиваемый)
+- [x] Сообщения пользователя (правый пузырь) + ассистент (левый пузырь с иконкой)
+- [x] Текст ответа отображается одновременно с озвучкой
 
 #### VA-MOB-4. Переход к заказу/консультации
-- [ ] При `recommendation: NURSE` → кнопка "Вызвать медсестру" → `router.push("/order/location")`
-- [ ] При `recommendation: DOCTOR` → кнопка "Записаться к врачу" → `router.push("/doctors")`
-- [ ] Передать симптомы через params чтобы предзаполнить поля
+- [x] При `recommendation: NURSE` → кнопка "Вызвать медсестру" → `router.push("/order/location")`
+- [x] При `recommendation: DOCTOR` → кнопка "Записаться к врачу" → `router.push("/doctors")`
+- [x] Передать симптомы через params чтобы предзаполнить поля
 
 #### VA-MOB-5. Навигация
-- [ ] Добавить кнопку на главном экране (index.tsx) — "Голосовой ассистент" с иконкой микрофона
-- [ ] Или таб в нижней панели (заменить один из менее используемых)
+- [x] Добавить кнопку на главном экране (index.tsx) — "Голосовой ассистент" с иконкой микрофона
+- [x] Или таб в нижней панели (заменить один из менее используемых)
 
 ---
 
 ### 📌 Фаза 3 — Web: голосовой интерфейс (Диёр)
 
 #### VA-WEB-1. Страница `/voice-agent` в web/
-- [ ] Большая кнопка микрофона (Web Speech API или MediaRecorder → отправка на backend)
-- [ ] `MediaRecorder` → blob (webm) → FormData → `POST /voice-agent/transcribe`
-- [ ] Отображение распознанного текста
-- [ ] Отправка в `POST /voice-agent/chat`
-- [ ] Получение аудио из `POST /voice-agent/synthesize` → `new Audio(url).play()`
+- [x] Большая кнопка микрофона (Web Speech API или MediaRecorder → отправка на backend)
+- [x] `MediaRecorder` → blob (webm) → FormData → `POST /voice-agent/transcribe`
+- [x] Отображение распознанного текста
+- [x] Отправка в `POST /voice-agent/chat`
+- [x] Получение аудио из `POST /voice-agent/synthesize` → `new Audio(url).play()`
 
 #### VA-WEB-2. UI компонент `VoiceAssistant`
-- [ ] `web/components/VoiceAssistant.tsx` — переиспользуемый компонент
-- [ ] Состояния: idle / recording / processing / speaking
-- [ ] CSS анимации: pulse при записи, wave при воспроизведении
-- [ ] Чат-история под микрофоном
+- [x] `web/components/VoiceAssistant.tsx` — переиспользуемый компонент
+- [x] Состояния: idle / recording / processing / speaking
+- [x] CSS анимации: pulse при записи, wave при воспроизведении
+- [x] Чат-история под микрофоном
 
 #### VA-WEB-3. Переход к флоу
-- [ ] При `recommendation: NURSE` → `router.push("/order/confirm")`
-- [ ] При `recommendation: DOCTOR` → `router.push("/doctors")`
-- [ ] Кнопка "Голосовой ассистент" на главной странице `/`
+- [x] При `recommendation: NURSE` → `router.push("/order/confirm")`
+- [x] При `recommendation: DOCTOR` → `router.push("/doctors")`
+- [x] Кнопка "Голосовой ассистент" на главной странице `/`
 
 ---
 
@@ -1054,34 +1061,28 @@
 > Необходимо для полноценного шага 2 (клиент записывается к врачу на конкретное время)
 
 #### VA-SCH-1. Backend: DoctorSchedule
-- [ ] Entity `DoctorSlot` — `doctorId`, `startsAt` (timestamp), `endsAt`, `isBooked` (bool), `consultationId` (nullable FK)
-- [ ] `POST /doctors/:id/slots` (admin) — создать слоты (bulk: дата + время + кол-во)
-- [ ] `GET /doctors/:id/slots?date=YYYY-MM-DD` — доступные слоты на дату
-- [ ] При создании консультации → занять слот (`isBooked = true`)
-- [ ] При отмене консультации → освободить слот
+- [x] Entity `DoctorSlot` + эндпоинты `POST/GET /doctors/:id/slots`, bookSlot/releaseSlot в `DoctorsService`, интеграция в `ConsultationsService` (create/cancel/delete)
 
 #### VA-SCH-2. Mobile: выбор времени при записи к врачу
-- [ ] На экране бронирования (`consultation.tsx`) — добавить календарь + список доступных слотов
-- [ ] При выборе слота — `slotId` передаётся в `POST /consultations`
+- [x] `mobile/app/consultation.tsx` — DatePicker + сетка слотов, slotId передаётся в `POST /consultations`
 
 #### VA-SCH-3. Web: выбор времени (Диёр)
-- [ ] На странице `/consultation` — добавить DatePicker + слоты
-- [ ] Компонент `SlotPicker` — сетка времени (09:00, 09:30, 10:00...) с пометкой занятых
+- [x] `web/app/consultation/page.tsx` + компонент `web/components/SlotPicker.tsx`
 
 ---
 
 ### 📌 Фаза 5 — Admin: мониторинг голосового ассистента (Диёр)
 
 #### VA-ADM-1. Admin страница «Голосовой агент»
-- [ ] Новая страница `admin/src/pages/VoiceAgent.tsx`
-- [ ] Карточки статистики: всего сессий, конверсия в заказы (%), топ-5 симптомов
-- [ ] Таблица сессий: дата, клиент (id), длительность, кол-во обменов, рекомендация, результат (заказ создан?)
-- [ ] Фильтры: по дате, по recommendation (DOCTOR/NURSE/NONE), по результату
-- [ ] Клик на сессию → модал с полной историей диалога
+- [x] Новая страница `admin/src/pages/VoiceAgent.tsx`
+- [x] Карточки статистики: всего сессий, завершено, DOCTOR/NURSE, конверсия, avg exchanges
+- [x] Таблица сессий: дата, id, язык, сообщений, рекомендация, статус
+- [x] Фильтры: по статусу, по recommendation (DOCTOR/NURSE/NONE)
+- [x] Клик на сессию → модал с полной историей диалога
 
 #### VA-ADM-2. Sidebar и роутинг
-- [ ] Добавить в `AdminSidebar.tsx` пункт «Голосовой агент» (иконка `Mic`)
-- [ ] Добавить роут `/voice-agent` в `App.tsx`
+- [x] Добавить в `AdminSidebar.tsx` пункт «Голосовой агент» (иконка `Mic`)
+- [x] Добавить роут `/voice-agent` в `App.tsx`
 
 ---
 

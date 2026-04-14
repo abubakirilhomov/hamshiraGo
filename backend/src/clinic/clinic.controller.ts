@@ -133,6 +133,19 @@ export class ClinicController {
     return this.clinicService.getTodayRoomSchedule(user.companyId);
   }
 
+  @Get('doctors/:doctorId/rooms')
+  getRoomsForDoctor(
+    @ClinicUser() user: ClinicUserPayload,
+    @Param('doctorId', ParseUUIDPipe) doctorId: string,
+    @Query('date') date?: string,
+  ) {
+    return this.clinicService.getRoomsForDoctor(
+      user.companyId,
+      doctorId,
+      date,
+    );
+  }
+
   @Post('rooms/:roomId/doctors')
   @UseGuards(ClinicRoleGuard('CEO'))
   assignRoomDoctor(
@@ -508,6 +521,18 @@ export class ClinicAdminLeadsController {
 export class ClinicPublicController {
   constructor(private readonly clinicService: ClinicService) {}
 
+  @Get()
+  listPublicClinics(@Query('q') q?: string) {
+    return this.clinicService.listPublicClinics(q);
+  }
+
+  @Get(':companyId')
+  getPublicClinicDetail(
+    @Param('companyId', ParseUUIDPipe) companyId: string,
+  ) {
+    return this.clinicService.getPublicClinicDetail(companyId);
+  }
+
   @Get(':companyId/services')
   getPublicServices(
     @Param('companyId', ParseUUIDPipe) companyId: string,
@@ -521,6 +546,12 @@ export class ClinicPublicController {
 @Controller('patient')
 export class PatientPrescriptionsController {
   constructor(private readonly clinicService: ClinicService) {}
+
+  @Get('visits')
+  @UseGuards(JwtAuthGuard)
+  getMyVisits(@ClientId() userId: string) {
+    return this.clinicService.getMyVisits(userId);
+  }
 
   @Get('prescriptions')
   @UseGuards(JwtAuthGuard)
