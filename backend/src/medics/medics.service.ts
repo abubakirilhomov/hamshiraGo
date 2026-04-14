@@ -121,7 +121,7 @@ export class MedicsService {
         // Fallback: insert only base columns
         const rows = await this.medicRepo.query(
           `INSERT INTO medics (phone, name, "passwordHash", "experienceYears")
-           VALUES ($1, $2, $3, $4) RETURNING *`,
+           VALUES ($1, $2, $3, $4) RETURNING id, phone, name, "experienceYears", "createdAt", "updatedAt"`,
           [dto.phone, dto.name, passwordHash, dto.experienceYears ?? 0],
         );
         saved = this.medicRepo.create(rows[0] as Partial<Medic>);
@@ -667,29 +667,31 @@ export class MedicsService {
   ): Promise<WithdrawalRequest> {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
-    // Check for existing pending request
-    const pending = await this.withdrawalRepo.findOne({
-      where: { medicId, status: 'PENDING' },
-    });
-    if (pending)
-      throw new BadRequestException('You already have a pending withdrawal request');
+    return this.medicRepo.manager.transaction(async (manager) => {
+      // Check for existing pending request (inside transaction)
+      const pending = await manager.findOne(WithdrawalRequest, {
+        where: { medicId, status: 'PENDING' as const },
+      });
+      if (pending)
+        throw new BadRequestException('You already have a pending withdrawal request');
 
-    // Verify sufficient balance (pessimistic lock)
-    const medic = await this.medicRepo.findOne({
-      where: { id: medicId },
-      lock: { mode: 'pessimistic_read' },
-    });
-    if (!medic) throw new NotFoundException('Medic not found');
-    if (Number(medic.balance) < amount)
-      throw new BadRequestException('Insufficient balance');
+      // Verify sufficient balance with pessimistic write lock
+      const medic = await manager.findOne(Medic, {
+        where: { id: medicId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!medic) throw new NotFoundException('Medic not found');
+      if (Number(medic.balance) < amount)
+        throw new BadRequestException('Insufficient balance');
 
-    const request = this.withdrawalRepo.create({
-      medicId,
-      amount,
-      cardNumber: cardNumber || null,
-      status: 'PENDING',
+      const request = manager.create(WithdrawalRequest, {
+        medicId,
+        amount,
+        cardNumber: cardNumber || null,
+        status: 'PENDING',
+      });
+      return manager.save(WithdrawalRequest, request);
     });
-    return this.withdrawalRepo.save(request);
   }
 
   /** Admin: list withdrawal requests with medic info */

@@ -224,6 +224,10 @@ function RootLayoutNav() {
           router.push(`/prescription?id=${data.prescriptionId}`);
         } else if (data.type === 'nps') {
           router.push('/nps');
+        } else if ((data.type === 'new_consultation' || data.type === 'consultation_accepted') && data.consultationId) {
+          router.push('/consultations');
+        } else if (data.type === 'video_call' && data.consultationId) {
+          router.push(`/video-call?consultationId=${data.consultationId}`);
         }
       },
     );
@@ -248,6 +252,10 @@ function RootLayoutNav() {
         router.push(`/prescription?id=${data.prescriptionId}`);
       } else if (data.type === 'nps') {
         router.push('/nps');
+      } else if ((data.type === 'new_consultation' || data.type === 'consultation_accepted') && data.consultationId) {
+        router.push('/consultations');
+      } else if (data.type === 'video_call' && data.consultationId) {
+        router.push(`/video-call?consultationId=${data.consultationId}`);
       }
     });
   }, []);

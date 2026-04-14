@@ -317,6 +317,11 @@ export class PaymeService {
     payment.reason = reason ?? null;
     await this.paymentRepo.save(payment);
 
+    // Revert consultation paymentStatus if this was a consultation payment
+    if (payment.consultationId) {
+      await this.consultationRepo.update(payment.consultationId, { paymentStatus: 'unpaid' });
+    }
+
     return this.rpcOk({
       transaction: payment.id,
       cancel_time: payment.cancelTime.getTime(),

@@ -115,7 +115,7 @@ export default function ConsultationsScreen() {
       await apiFetch(`/consultations/${consultationId}/rate`, {
         token,
         method: 'POST',
-        body: { rating: stars, comment: comment.trim() || undefined },
+        body: JSON.stringify({ rating: stars, comment: comment.trim() || undefined }),
       });
       setConsultations((prev) =>
         prev.map((c) => c.id === consultationId ? { ...c, clientRating: stars, clientComment: comment.trim() || null } : c),

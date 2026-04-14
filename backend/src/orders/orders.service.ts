@@ -432,6 +432,18 @@ export class OrdersService {
     }
     // Cancel any active dispatch search
     this.dispatchService.cancelDispatch(orderId).catch(() => {});
+
+    // Refund platform fee to medic if order was accepted (commission was deducted)
+    if (order.medicId && order.platformFee && order.platformFee > 0) {
+      this.dataSource
+        .createQueryBuilder()
+        .update(Medic)
+        .set({ balance: () => `balance + ${Number(order.platformFee)}` })
+        .where('id = :id', { id: order.medicId })
+        .execute()
+        .catch((err) => this.logger.error(`Failed to refund medic commission: ${err.message}`));
+    }
+
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
     this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.CANCELED)).catch((err) => console.error('Notify error:', err));
@@ -535,6 +547,7 @@ export class OrdersService {
       }
       if (order.medicId) {
         await manager.increment(Medic, { id: order.medicId }, 'earnings', earnings);
+        await manager.increment(Medic, { id: order.medicId }, 'balance', earnings);
       }
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
@@ -551,6 +564,27 @@ export class OrdersService {
     this.loyaltyService.awardPoints(clientId, id, netPrice).catch((err) =>
       this.logger.error('Loyalty award failed:', err),
     );
+
+    // Record in payment ledger (same as medic path)
+    if (order.medicId) {
+      this.paymentLedgerService
+        .record({
+          orderId: order.id,
+          medicId: order.medicId,
+          amount: earnings,
+          type: 'EARNING',
+          description: `Order ${order.id.slice(0, 8)} — ${order.serviceTitle ?? 'service'}`,
+        })
+        .catch((err) => this.logger.warn('Ledger EARNING record failed', err));
+      this.paymentLedgerService
+        .record({
+          orderId: order.id,
+          amount: safeNumber(order.platformFee),
+          type: 'COMMISSION',
+          description: `Commission for order ${order.id.slice(0, 8)}`,
+        })
+        .catch((err) => this.logger.warn('Ledger COMMISSION record failed', err));
+    }
 
     return doneOrder;
   }
@@ -846,6 +880,7 @@ export class OrdersService {
           throw new BadRequestException('ORDER_STATUS_CHANGED_RETRY');
         }
         await manager.increment(Medic, { id: medicId }, 'earnings', earnings);
+        await manager.increment(Medic, { id: medicId }, 'balance', earnings);
       });
 
       // Record in payment ledger (fire-and-forget)
@@ -867,6 +902,14 @@ export class OrdersService {
           description: `Commission for order ${order.id.slice(0, 8)}`,
         })
         .catch((err) => this.logger.warn('Ledger COMMISSION record failed', err));
+
+      // Referral bonus + loyalty (same as client DONE path)
+      this.applyReferralBonusIfEligible(order.clientId).catch((err) =>
+        this.logger.error('Referral bonus error:', err),
+      );
+      this.loyaltyService.awardPoints(order.clientId, orderId, netPrice).catch((err) =>
+        this.logger.error('Loyalty award failed:', err),
+      );
     } else {
       // Atomic: only succeeds if status hasn't changed since we read it
       const result = await this.orderRepo.update(

@@ -21,7 +21,7 @@ export class UsersService {
       if (this.isMissingColumnError(err)) {
         // Fallback: insert only base columns that definitely exist on Railway
         const rows = await this.userRepo.query(
-          `INSERT INTO users (phone, "passwordHash", name) VALUES ($1, $2, $3) RETURNING *`,
+          `INSERT INTO users (phone, "passwordHash", name) VALUES ($1, $2, $3) RETURNING id, phone, name, "created_at", "updated_at"`,
           [data.phone, data.passwordHash, data.name],
         );
         return this.userRepo.create(rows[0] as Partial<User>);
@@ -219,7 +219,8 @@ export class UsersService {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
 
-    const anonPhone = `deleted_${userId.slice(0, 8)}`;
+    // Use full UUID to prevent collision on unique phone index
+    const anonPhone = `deleted_${userId}`;
 
     await this.dataSource.transaction(async (manager) => {
       // 1. Anonymize user data
@@ -241,6 +242,17 @@ export class UsersService {
         );
       } catch (err) {
         this.logger.warn(`Failed to cancel active orders: ${err}`);
+      }
+
+      // 3. Cancel active consultations (PENDING/ACTIVE)
+      try {
+        await manager.query(
+          `UPDATE consultations SET status = 'CANCELED'
+           WHERE "clientId" = $1 AND status NOT IN ('COMPLETED', 'CANCELED')`,
+          [userId],
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cancel active consultations: ${err}`);
       }
 
       // 3. Hard-delete medical data

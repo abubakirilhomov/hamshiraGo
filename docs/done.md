@@ -1,5 +1,23 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-15
+
+### Security / Logic Audit Fixes
+
+- **[backend]** AUDIT-FIX-1: doctorAcceptConsultation() теперь проверяет paymentStatus перед принятием (price > 0 requires 'paid') (`backend/src/consultations/consultations.service.ts`)
+- **[backend]** AUDIT-FIX-2: doctorCompleteConsultation() теперь начисляет doctor.balance и doctor.earnings при оплаченной консультации (`backend/src/consultations/consultations.service.ts`)
+- **[backend]** AUDIT-FIX-3: cancelConsultation() теперь сбрасывает paymentStatus в 'unpaid', отменяет ClinicAppointment, декрементирует consultationCount (`backend/src/consultations/consultations.service.ts`)
+- **[backend]** AUDIT-FIX-4: Payme cancelTransaction и Click cancel теперь сбрасывают consultation.paymentStatus в 'unpaid' (`backend/src/payments/`)
+- **[backend]** AUDIT-FIX-5: cancelOrder() теперь возвращает platformFee в medic.balance при отмене (`backend/src/orders/orders.service.ts`)
+- **[backend]** AUDIT-FIX-6: Order DONE (оба пути — client и medic) теперь начисляет medic.balance наряду с earnings (`backend/src/orders/orders.service.ts`)
+- **[backend]** AUDIT-FIX-8: GET /consultations/:id теперь проверяет ownership (clientId или doctorId) (`backend/src/consultations/consultations.controller.ts`)
+- **[backend]** AUDIT-FIX-9: createWithdrawalRequest() обёрнут в transaction с pessimistic_write lock (`backend/src/withdrawals/withdrawals.service.ts`)
+- **[backend]** AUDIT-FIX-10: Click complete() обёрнут в transaction с pessimistic_write lock (`backend/src/payments/click.service.ts`)
+- **[backend]** AUDIT-FIX-11: Создан RateConsultationDto с class-validator (IsInt, Min/Max, MaxLength) (`backend/src/consultations/dto/`)
+- **[mobile]** AUDIT-FIX-12: Исправлен JSON.stringify для body в rating API call (`mobile/`)
+- **[backend]** AUDIT-FIX-13: deleteAccount теперь отменяет активные consultations (PENDING/ACTIVE) (`backend/src/auth/auth.service.ts`)
+- **[backend]** AUDIT-FIX-14: deleteAccount phone anonymization использует full UUID (без коллизий) (`backend/src/auth/auth.service.ts`)
+
 ## 2026-04-14
 
 ### Абубакир — BIZ-BE-1..4, BIZ-MOB-1..2, UX-BE-1..2, PUSH-BE-1..3, UX-CLIENT-1, MED-FIX

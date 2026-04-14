@@ -29,6 +29,7 @@ import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
+import { RateConsultationDto } from './dto/rate-consultation.dto';
 import { ConfirmPrescriptionDto } from './dto/confirm-prescription.dto';
 import { CreateLeadFromChatDto } from './dto/create-lead-from-chat.dto';
 import { UsersService } from '../users/users.service';
@@ -219,11 +220,14 @@ export class ConsultationsController {
     return this.consultationsService.getMyConsultations(userId, p, l);
   }
 
-  /** Get consultation detail with messages */
+  /** Get consultation detail with messages (ownership check) */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  getConsultation(@Param('id', ParseUUIDPipe) id: string) {
-    return this.consultationsService.getConsultation(id);
+  getConsultation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() clientId: string,
+  ) {
+    return this.consultationsService.getConsultation(id, clientId);
   }
 
   /* ------------------------------------------------------------------ */
@@ -470,13 +474,13 @@ export class ConsultationsController {
   rateDoctor(
     @Param('id', ParseUUIDPipe) id: string,
     @ClientId() clientId: string,
-    @Body() body: { rating: number; comment?: string },
+    @Body() dto: RateConsultationDto,
   ) {
     return this.consultationsService.rateConsultation(
       id,
       clientId,
-      body.rating,
-      body.comment,
+      dto.rating,
+      dto.comment,
     );
   }
 

@@ -21,6 +21,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { CommonModule } from '../common/common.module';
 import { DoctorsModule } from '../doctors/doctors.module';
 import { ClinicModule } from '../clinic/clinic.module';
+import { AppSettingsModule } from '../app-settings/app-settings.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ClinicModule } from '../clinic/clinic.module';
     CommonModule,
     forwardRef(() => DoctorsModule),
     forwardRef(() => ClinicModule),
+    AppSettingsModule,
   ],
   controllers: [ConsultationsController],
   providers: [ConsultationsService, AiAgentService, VideoService, SalomatAuditService],

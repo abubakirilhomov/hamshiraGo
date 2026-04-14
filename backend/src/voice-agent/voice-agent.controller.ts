@@ -14,6 +14,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -64,7 +65,9 @@ export class VoiceAgentController {
   // ── STT ──────────────────────────────────────────────────────────────────
 
   @Post('transcribe')
-  @UseGuards(OptionalJwtGuard)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({ summary: 'Transcribe audio to text (Groq Whisper)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -98,11 +101,13 @@ export class VoiceAgentController {
   // ── Chat ─────────────────────────────────────────────────────────────────
 
   @Post('chat')
-  @UseGuards(OptionalJwtGuard)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @ApiOperation({ summary: 'Send message to voice AI agent' })
   async chat(
     @Body() dto: VoiceChatDto,
-    @OptionalClientId() clientId: string | null,
+    @ClientId() clientId: string,
   ) {
     return this.voiceAgentService.chat(
       dto.sessionId ?? null,
@@ -115,7 +120,9 @@ export class VoiceAgentController {
   // ── TTS ──────────────────────────────────────────────────────────────────
 
   @Post('synthesize')
-  @UseGuards(OptionalJwtGuard)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({ summary: 'Text-to-speech (OpenAI TTS-1)' })
   async synthesize(
     @Body() dto: VoiceSynthesizeDto,

@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
+import { Consultation } from '../../consultations/entities/consultation.entity';
 
 export type PaymentProvider = 'payme' | 'click';
 export type PaymentStatus = 'pending' | 'paid' | 'cancelled' | 'failed';
@@ -64,4 +65,8 @@ export class Payment {
   @ManyToOne(() => Order, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'orderId' })
   order!: Order | null;
+
+  @ManyToOne(() => Consultation, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'consultationId' })
+  consultation!: Consultation | null;
 }

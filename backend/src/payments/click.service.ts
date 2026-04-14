@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Payment } from './entities/payment.entity';
@@ -43,6 +43,7 @@ export class ClickService {
     @InjectRepository(Consultation)
     private consultationRepo: Repository<Consultation>,
     private config: ConfigService,
+    private dataSource: DataSource,
   ) {}
 
   buildClickUrl(entityId: string, amountUzs: number, type: 'order' | 'consultation' = 'order'): string {
@@ -147,41 +148,61 @@ export class ClickService {
       return { error: -3, error_note: 'Action not found' };
     }
 
-    // Find payment by prepare id
-    const payment = await this.paymentRepo.findOne({ where: { id: dto.merchant_prepare_id, provider: 'click' } });
-    if (!payment) {
-      return { error: -6, error_note: 'Transaction does not exist' };
-    }
+    // Use transaction with pessimistic lock to prevent double-complete
+    return this.dataSource.transaction(async (manager) => {
+      const payment = await manager
+        .createQueryBuilder(Payment, 'p')
+        .setLock('pessimistic_write')
+        .where('p.id = :id', { id: dto.merchant_prepare_id })
+        .andWhere('p.provider = :provider', { provider: 'click' })
+        .getOne();
 
-    if (payment.providerTransactionId !== dto.click_trans_id) {
-      return { error: -6, error_note: 'Transaction does not exist' };
-    }
+      if (!payment) {
+        return { error: -6, error_note: 'Transaction does not exist' };
+      }
 
-    if (parseInt(dto.error) < 0) {
-      // Click cancelled payment
-      payment.status = 'cancelled';
-      payment.providerState = -1;
-      payment.cancelTime = new Date();
-      await this.paymentRepo.save(payment);
-      return { error: 0, error_note: 'Success' };
-    }
+      if (payment.providerTransactionId !== dto.click_trans_id) {
+        return { error: -6, error_note: 'Transaction does not exist' };
+      }
 
-    payment.status = 'paid';
-    payment.providerState = 2;
-    payment.performTime = new Date();
-    await this.paymentRepo.save(payment);
+      if (parseInt(dto.error) < 0) {
+        payment.status = 'cancelled';
+        payment.providerState = -1;
+        payment.cancelTime = new Date();
+        await manager.save(Payment, payment);
 
-    // Mark consultation as paid if applicable
-    if (payment.consultationId) {
-      await this.consultationRepo.update(payment.consultationId, { paymentStatus: 'paid' });
-    }
+        if (payment.consultationId) {
+          await manager.update(Consultation, payment.consultationId, { paymentStatus: 'unpaid' });
+        }
+        return { error: 0, error_note: 'Success' };
+      }
 
-    return {
-      error: 0,
-      error_note: 'Success',
-      click_trans_id: dto.click_trans_id,
-      merchant_trans_id: dto.merchant_trans_id,
-      merchant_confirm_id: payment.id,
-    };
+      if (payment.providerState === 2) {
+        return {
+          error: 0,
+          error_note: 'Already paid',
+          click_trans_id: dto.click_trans_id,
+          merchant_trans_id: dto.merchant_trans_id,
+          merchant_confirm_id: payment.id,
+        };
+      }
+
+      payment.status = 'paid';
+      payment.providerState = 2;
+      payment.performTime = new Date();
+      await manager.save(Payment, payment);
+
+      if (payment.consultationId) {
+        await manager.update(Consultation, payment.consultationId, { paymentStatus: 'paid' });
+      }
+
+      return {
+        error: 0,
+        error_note: 'Success',
+        click_trans_id: dto.click_trans_id,
+        merchant_trans_id: dto.merchant_trans_id,
+        merchant_confirm_id: payment.id,
+      };
+    });
   }
 }

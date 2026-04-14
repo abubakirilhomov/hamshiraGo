@@ -24,11 +24,12 @@ import { CreateOrderDto } from '../orders/dto/create-order.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 import { DoctorsService } from '../doctors/doctors.service';
 import { AiAgentService } from './ai-agent.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { ClinicAppointment } from '../clinic/entities/clinic-appointment.entity';
 import { CompanyUser } from '../clinic/entities/company-user.entity';
 
-/** Platform commission rate for consultations (15%) */
-const PLATFORM_FEE_RATE = 0.15;
+/** Default consultation commission rate (15%) — overridden by AppSettings.consultationCommissionRate */
+const DEFAULT_CONSULTATION_FEE_RATE = 0.15;
 
 /** Prescription expiry period in days */
 const PRESCRIPTION_EXPIRY_DAYS = 7;
@@ -62,6 +63,7 @@ export class ConsultationsService {
     @Inject(forwardRef(() => DoctorsService))
     private readonly doctorsSlotService: DoctorsService,
     private readonly aiAgentService: AiAgentService,
+    private readonly appSettingsService: AppSettingsService,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -144,7 +146,15 @@ export class ConsultationsService {
     }
 
     const price = doctor.pricePerConsultation;
-    const platformFee = Math.round(price * PLATFORM_FEE_RATE);
+    // Use configurable rate from settings, fallback to 15%
+    let feeRate = DEFAULT_CONSULTATION_FEE_RATE;
+    try {
+      const settings = await this.appSettingsService.get();
+      if ((settings as any).consultationCommissionRate != null) {
+        feeRate = Number((settings as any).consultationCommissionRate) / 100;
+      }
+    } catch { /* use default */ }
+    const platformFee = Math.round(price * feeRate);
 
     const consultation = this.consultationRepo.create({
       clientId,
@@ -271,11 +281,38 @@ export class ConsultationsService {
       throw new BadRequestException('CONSULTATION_ALREADY_CANCELED');
     }
 
+    // Revert payment status if was paid
+    const wasPaid = consultation.paymentStatus === 'paid';
     consultation.status = 'CANCELED';
+    if (wasPaid) {
+      consultation.paymentStatus = 'unpaid';
+    }
     const saved = await this.consultationRepo.save(consultation);
 
     // Release any booked slot
     await this.doctorsSlotService.releaseSlot(consultationId);
+
+    // Cancel associated ClinicAppointment if exists
+    this.appointmentRepo
+      .createQueryBuilder()
+      .update()
+      .set({ status: 'CANCELLED' })
+      .where('"doctorId" = :doctorId AND "patientId" = :clientId AND status = :status', {
+        doctorId: consultation.doctorId,
+        clientId: consultation.clientId,
+        status: 'SCHEDULED',
+      })
+      .execute()
+      .catch((err) => this.logger.warn(`Failed to cancel clinic appointment: ${err.message}`));
+
+    // Decrement doctor's consultation count
+    this.doctorRepo
+      .createQueryBuilder()
+      .update(Doctor)
+      .set({ consultationCount: () => 'GREATEST("consultationCount" - 1, 0)' })
+      .where('id = :id', { id: consultation.doctorId })
+      .execute()
+      .catch(() => {});
 
     return saved;
   }
@@ -297,12 +334,16 @@ export class ConsultationsService {
   }
 
   /** Get a single consultation with chat messages */
-  async getConsultation(id: string): Promise<Consultation & { messages: ChatMessage[] }> {
+  async getConsultation(id: string, requesterId?: string): Promise<Consultation & { messages: ChatMessage[] }> {
     const consultation = await this.consultationRepo.findOne({
       where: { id },
     });
     if (!consultation) {
       throw new NotFoundException('CONSULTATION_NOT_FOUND');
+    }
+    // Ownership check: only the client or the assigned doctor can view
+    if (requesterId && consultation.clientId !== requesterId && consultation.doctorId !== requesterId) {
+      throw new ForbiddenException('NOT_YOUR_CONSULTATION');
     }
 
     let messages: ChatMessage[] = [];
@@ -570,6 +611,10 @@ export class ConsultationsService {
     if (consultation.status !== 'PENDING')
       throw new BadRequestException('CONSULTATION_ALREADY_PROCESSED');
 
+    // Require payment before doctor can accept (skip for free consultations)
+    if (consultation.price > 0 && consultation.paymentStatus !== 'paid')
+      throw new BadRequestException('CONSULTATION_NOT_PAID');
+
     consultation.status = 'ACTIVE';
     const saved = await this.consultationRepo.save(consultation);
 
@@ -651,6 +696,23 @@ export class ConsultationsService {
     consultation.status = 'COMPLETED';
     consultation.doctorNotes = dto.doctorNotes ?? null;
     const saved = await this.consultationRepo.save(consultation);
+
+    // Credit doctor earnings (fire-and-forget)
+    if (consultation.paymentStatus === 'paid') {
+      const doctorEarnings = consultation.price - consultation.platformFee;
+      this.doctorRepo
+        .createQueryBuilder()
+        .update(Doctor)
+        .set({
+          balance: () => `balance + ${doctorEarnings}`,
+          earnings: () => `earnings + ${doctorEarnings}`,
+        })
+        .where('id = :id', { id: doctorId })
+        .execute()
+        .catch((err) =>
+          this.logger.error(`Failed to credit doctor earnings: ${err.message}`),
+        );
+    }
 
     // If a service was prescribed, create a prescription for the client
     if (dto.createOrderServiceId) {
