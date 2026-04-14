@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Building2, MapPin, Phone, X, Users } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Search, Building2, MapPin, Phone, X, Users, List, Map } from "lucide-react";
+import type { ClinicMapMarker } from "@/components/ClinicsMap";
+
+const ClinicsMap = dynamic(() => import("@/components/ClinicsMap"), { ssr: false });
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
 
@@ -15,7 +19,11 @@ interface PublicClinic {
   phone: string;
   specializations: string[];
   doctorsCount: number;
+  lat: number | null;
+  lng: number | null;
 }
+
+type ViewMode = "list" | "map";
 
 const AVATAR_COLORS = [
   { bg: "linear-gradient(135deg, #0d9488, #0f766e)", color: "#fff" },
@@ -41,6 +49,7 @@ export default function ClinicsPage() {
   const [error, setError] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +82,13 @@ export default function ClinicsPage() {
         c.specializations.some((s) => s.toLowerCase().includes(q)),
     );
   }, [search, clinics]);
+
+  const mapClinics = useMemo<ClinicMapMarker[]>(() =>
+    filtered
+      .filter((c) => c.lat != null && c.lng != null)
+      .map((c) => ({ id: c.id, name: c.name, address: c.address, phone: c.phone, lat: c.lat!, lng: c.lng! })),
+    [filtered]
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0fdfa", paddingBottom: 48, fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -216,13 +232,33 @@ export default function ClinicsPage() {
           </div>
         ) : (
           <>
-            {/* Result count */}
+            {/* Result count + view toggle */}
             <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <p style={{ fontSize: 12, color: "#94a3b8", margin: 0, letterSpacing: "0.5px", textTransform: "uppercase", fontWeight: 600 }}>
                 {search.trim()
                   ? `${filtered.length} из ${clinics.length} клиник`
                   : `${filtered.length} клиник`}
               </p>
+              <div style={{ display: "flex", background: "#f1f5f9", borderRadius: 10, padding: 3, gap: 2 }}>
+                {([["list", List, "Список"], ["map", Map, "Карта"]] as [ViewMode, React.ElementType, string][]).map(([mode, Icon, label]) => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+                      fontSize: 12, fontWeight: 600,
+                      background: viewMode === mode ? "#fff" : "transparent",
+                      color: viewMode === mode ? "#0d9488" : "#94a3b8",
+                      boxShadow: viewMode === mode ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <Icon size={13} />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {filtered.length === 0 ? (
@@ -255,6 +291,17 @@ export default function ClinicsPage() {
                   </button>
                 )}
               </div>
+            ) : viewMode === "map" ? (
+              <div>
+                {mapClinics.length === 0 ? (
+                  <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "40px 24px", textAlign: "center" }}>
+                    <Map size={32} color="#cbd5e1" style={{ marginBottom: 12 }} />
+                    <p style={{ fontSize: 14, color: "#94a3b8" }}>Нет клиник с координатами для отображения на карте</p>
+                  </div>
+                ) : (
+                  <ClinicsMap clinics={mapClinics} onSelectClinic={(id) => router.push(`/clinics/${id}`)} />
+                )}
+              </div>
             ) : (
               <div style={{
                 display: "grid",
@@ -265,6 +312,7 @@ export default function ClinicsPage() {
                   const av = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   const sc = SPEC_COLORS[idx % SPEC_COLORS.length];
                   const isHovered = hoveredId === clinic.id;
+                  const hasCoords = clinic.lat != null && clinic.lng != null;
                   return (
                     <div
                       key={clinic.id}
@@ -356,6 +404,38 @@ export default function ClinicsPage() {
                           </div>
                         )}
                       </div>
+
+                      {/* Navigation buttons */}
+                      {hasCoords && (
+                        <div style={{ padding: "0 20px 12px", display: "flex", gap: 6 }}>
+                          <a
+                            href={`https://yandex.uz/maps/?ll=${clinic.lng},${clinic.lat}&z=16&pt=${clinic.lng},${clinic.lat},pm2rdm`}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              flex: 1, textAlign: "center", padding: "6px 8px",
+                              borderRadius: 8, fontSize: 11, fontWeight: 700,
+                              background: "#fff1ee", color: "#fc3f1d",
+                              textDecoration: "none", border: "1px solid #fecdc7",
+                            }}
+                          >
+                            Яндекс Карты
+                          </a>
+                          <a
+                            href={`https://www.google.com/maps?q=${clinic.lat},${clinic.lng}`}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              flex: 1, textAlign: "center", padding: "6px 8px",
+                              borderRadius: 8, fontSize: 11, fontWeight: 700,
+                              background: "#eff6ff", color: "#2563eb",
+                              textDecoration: "none", border: "1px solid #bfdbfe",
+                            }}
+                          >
+                            Google Maps
+                          </a>
+                        </div>
+                      )}
 
                       {/* Divider */}
                       <div style={{ height: 1, background: "#f1f5f9", margin: "0 20px" }} />

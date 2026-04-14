@@ -1,5 +1,16 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-14 (web: UX-CLIN-1 — страница клиник с Leaflet картой)
+
+- **[feat]** `web/components/ClinicsMap.tsx` — Leaflet map компонент для клиник. Маркеры с кастомной иконкой, popup с названием, адресом, телефоном и кнопками Яндекс/Google Maps. fitBounds для нескольких клиник.
+- **[feat]** `web/app/clinics/page.tsx` — List/Map toggle в result count. Режим карты: `ClinicsMap` через dynamic import (SSR:false). Режим списка: кнопки "Яндекс Карты" и "Google Maps" в карточке (только если есть координаты). Интерфейс `PublicClinic` дополнен `lat`/`lng`.
+
+## 2026-04-14 (web-medic: fix — doctor login redirect loop)
+
+- **[fix]** `web-medic/app/auth/page.tsx` — залогиненный врач редиректится на `/doctor/consultations` вместо `/` (ранее попадал в 401-петлю на медик-дашборде).
+- **[fix]** `web-medic/app/page.tsx` — добавлен ранний редирект врача на `/doctor/consultations` в медик-дашборде.
+- **[test]** `tests/web-medic/doctor-auth.spec.ts` — Playwright-тесты редиректов после логина.
+
 ## 2026-04-14 (web-medic: BIZ-CLIN-3 — кнопка вывода средств в wallet)
 
 - **[feat]** `web-medic/lib/api.ts` — добавлен `medicApi.wallet.requestWithdrawal(amount, cardNumber)` → POST `/medics/me/withdrawal-request` (ожидает BIZ-BE-2).
