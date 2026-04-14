@@ -37,6 +37,8 @@
 
 ### Диёр — Admin
 
+- [ ] **UX-ADM-1** — 🟠 MEDIUM — В списках медиков (`/medics`) и врачей (`/doctors`): добавить аватарку. Если фото есть — показать `<img>`, если нет — круг с первой буквой имени (цвет генерировать из имени через hash). Аналогично таблице пользователей — `admin/src/pages/Medics.tsx`, `admin/src/pages/Doctors.tsx`
+
 - [ ] **UX-CLIN-2** — 🟡 HIGH — Admin форма клиники: пикер координат. Leaflet карта (уже в проекте) — клик устанавливает `lat`/`lng`. Кнопка "Моё местоположение" (`navigator.geolocation`). Поля `lat`/`lng` уже есть в entity — `admin/src/pages/Companies.tsx`
 - [ ] **UX-DOC-2** — 🟡 HIGH — Admin форма врача: пикер координат (кабинет/клиника на карте) аналогично UX-CLIN-2 — `admin/src/pages/Doctors.tsx`
 
@@ -85,6 +87,22 @@
 - [ ] **ENV-5** — 🟠 MEDIUM — `TELEGRAM_ADMIN_CHAT_ID` не задан → Telegram-уведомления администратору не приходят
 - [ ] **ENV-6** — 🟠 MEDIUM — `ENCRYPTION_KEY` (≥32 символа) не задан → шифрование медицинских данных отключено, данные хранятся открытым текстом
 - [ ] **ENV-7** — 🟡 LOW — `OSRM_URL` не задан → маршрутизация для медиков на карте не работает
+
+---
+
+## 📲 PWA — установка на главный экран (аудит 2026-04-14)
+
+> `InstallPrompt` подключён и SW есть, но три вещи ломают установку прямо сейчас.
+
+### Диёр — Web
+
+- [ ] **PWA-1** — 🔴 CRITICAL — `manifest.ts` указывает иконки на `/icon` — маршрут не существует. PWA-иконка на главном экране будет пустой. Исправить на `/icon.svg` (192×192 и 512×512) или создать `web/app/icon.tsx` Next.js route — `web/app/manifest.ts`
+
+- [ ] **PWA-2** — 🔴 HIGH — iOS Safari не поддерживает `beforeinstallprompt` — пользователи iPhone ничего не видят. Нужно: определять iOS (`/iPad|iPhone|iPod/.test(navigator.userAgent)`), показывать отдельную инструкцию "Нажмите Share → Добавить на экран «Домой»" со стрелкой вниз и иконкой Share — `web/components/InstallPrompt.tsx`
+
+- [ ] **PWA-3** — 🟠 MEDIUM — Dismiss в `InstallPrompt` навсегда (`pwa-install-dismissed: 1`). Заменить на снуз 7 дней (как в `PushPermissionPrompt`) — `web/components/InstallPrompt.tsx`
+
+- [ ] **PWA-4** — 🟠 MEDIUM — В `UX-LAND-1` (лендинг) кнопка "Использовать веб-версию" должна вести на `https://app.hamshirago.uz` и после входа автоматически показывать `InstallPrompt` — связать с `UX-LAND-1`
 
 ---
 
