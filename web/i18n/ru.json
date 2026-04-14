@@ -36,7 +36,9 @@
     "loginBtn": "Войти",
     "registerBtn": "Зарегистрироваться",
     "noAccount": "Нет аккаунта?",
-    "hasAccount": "Уже есть аккаунт?"
+    "hasAccount": "Уже есть аккаунт?",
+    "referralLabel": "Реферальный код (необязательно)",
+    "referralPlaceholder": "AB12CD34"
   },
   "home": {
     "search": "Поиск услуг...",

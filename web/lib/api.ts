@@ -76,10 +76,10 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ phone, password }),
       }),
-    register: (name: string, phone: string, password: string) =>
+    register: (name: string, phone: string, password: string, referredByCode?: string) =>
       request<AuthResponse>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ name, phone, password }),
+        body: JSON.stringify({ name, phone, password, ...(referredByCode ? { referredByCode } : {}) }),
       }),
     updateProfile: (name: string) =>
       request<{ id: string; phone: string; name: string }>("/auth/profile", {
@@ -629,6 +629,7 @@ export function reportClientError(message: string, stack?: string): void {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      appType: "web",
       message,
       stack,
       url: typeof window !== "undefined" ? window.location.href : undefined,

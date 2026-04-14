@@ -5,8 +5,13 @@ import { subscribeWebPush } from "@/lib/webPush";
 
 export default function WebPushInit() {
   useEffect(() => {
-    // Запускаем только если клиент залогинен
-    if (localStorage.getItem("token")) {
+    // Авто-подписываемся только если разрешение уже выдано ранее
+    // (новых пользователей ведёт PushPermissionPrompt)
+    if (
+      localStorage.getItem("token") &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
       subscribeWebPush();
     }
   }, []);

@@ -44,10 +44,7 @@ function ConfirmForm() {
   useEffect(() => {
     api.orders.list()
       .then((orders) => {
-        const arr = Array.isArray(orders) ? orders
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          : Array.isArray((orders as any)?.data) ? (orders as any).data : [];
-        if (arr.length === 0) setDiscount(Math.round(price * 0.1));
+        if (orders.length === 0) setDiscount(Math.round(price * 0.1));
       })
       .catch(() => setDiscountError(true))
       .finally(() => setCheckingDiscount(false));

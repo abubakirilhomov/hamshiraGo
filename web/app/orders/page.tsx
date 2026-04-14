@@ -130,10 +130,20 @@ export default function OrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const subscribedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
-    orders.filter((o) => !["DONE", "CANCELED"].includes(o.status)).forEach((o) => socket.emit("subscribe_order", o.id));
+    orders
+      .filter((o) => !["DONE", "CANCELED"].includes(o.status) && !subscribedRef.current.has(o.id))
+      .forEach((o) => {
+        socket.emit("subscribe_order", o.id);
+        subscribedRef.current.add(o.id);
+      });
+    // cleanup subscriptions for finished orders
+    orders
+      .filter((o) => ["DONE", "CANCELED"].includes(o.status) && subscribedRef.current.has(o.id))
+      .forEach((o) => { subscribedRef.current.delete(o.id); });
   }, [orders]);
 
   const active = orders.filter((o) => !["DONE", "CANCELED"].includes(o.status));

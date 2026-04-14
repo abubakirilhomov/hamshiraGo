@@ -65,6 +65,19 @@
 - **[fix]** WM-BUG-3 — React hydration error #418 на дашборде: `greeting` вычисляется в `useEffect` вместо рендера (SSR/CSR time mismatch) — `web-medic/app/page.tsx`
 - **[deploy]** Push clinic portal + bugfixes на Railway (commits 656b300, 44274fe)
 
+## 2026-04-11 (Admin Analytics fix + Web redesign + URL update)
+
+- **[fix]** Analytics.tsx — добавлен `useMemo` с try/catch вокруг всех вычислений, null-guard для `serviceTitle` (`|| "Неизвестная услуга"`), `Number(o.priceAmount) || 0` и `Number(o.platformFee) || 0` для безопасных числовых операций, guard `res?.data` в while loop, `loadError` state с кнопкой retry — `admin/src/pages/Analytics.tsx`
+- **[fix]** globals.css — CSS parse error исправлен: `@import url(fonts...)` перенесён ДО `@import "tailwindcss"` — `web/app/globals.css`
+- **[fix]** web/app/page.tsx — hydration mismatch исправлен: заменён `window.location.pathname` на `usePathname()` из next/navigation в bottom nav — `web/app/page.tsx`
+- **[config]** Все фронтенды (11 файлов) — backend URL обновлён с `739a` на `0a65.up.railway.app` — `web/`, `web-medic/`, `admin/`
+- **[redesign]** web/app/prescriptions/page.tsx — Stitch Editorial Serenity, mat-icons, pill badges
+- **[redesign]** web/app/prescriptions/[id]/page.tsx — GPS section, address form, bottom-sheet modals
+- **[redesign]** web/app/consultations/page.tsx — video_call mat-icon, consult-card, notes modal
+- **[redesign]** web/app/salomat/page.tsx — streaming preserved, teal header, 103 emergency, RecommendationCards
+- **[redesign]** web/app/voice-agent/page.tsx — arrow_back mat-icon, info banner
+- **[redesign]** web/app/video-call/[id]/page.tsx — LiveKit preserved, mat-icons mic/cam/call/person
+
 ## 2026-04-11
 
 - **[audit]** Комплексный Playwright-аудит web-medic app (medic.hamshirago.uz) — скрипты `tests/scripts/web-medic-audit.js`, `tests/scripts/web-medic-deep-audit.js`. Выявлены: баг onboarding-redirect (подтверждён), баг UI-логина (phone-маска), React hydration error #418 на дашборде, баг отсутствия кнопки вывода средств. Все 7 страниц прошли без 4xx/5xx ошибок при авторизованном запросе. Logout работает корректно.
@@ -105,6 +118,84 @@
 ## 2026-04-09
 
 - **[SAL-D-3]** Web-medic: добавлен блок "Salomat AI — Краткое резюме" в `web-medic/app/doctor/consultation/[id]/page.tsx` — teal-карточка с Bot иконкой, скрывается если `salomatSummary` пустой; добавлено поле `salomatSummary` в тип `Consultation` в `web-medic/lib/api.ts`
+
+## 2026-04-05 (Medic App — Clinical Sanctuary Redesign)
+
+- **[medic]** Redesign auth.tsx — light bg, medkit icon, tonal inputs (no borders), +998 phone prefix, gradient pill CTA, YOKI divider, ghost secondary button, useSafeAreaInsets — `medic/app/auth.tsx`
+- **[medic]** Redesign onboarding.tsx — editorial style, pill dots pagination, gradient pill CTA, skip link top-right, useSafeAreaInsets — `medic/app/onboarding.tsx`
+- **[medic]** Redesign language-picker.tsx — light bg, medkit icon, UZ/RU cards with radio buttons, gradient pill CTA, useSafeAreaInsets — `medic/app/language-picker.tsx`
+- **[medic]** Redesign (tabs)/index.tsx — custom header with bell icon, service icon in teal circle, gradient accept button, empty state with icon, useSafeAreaInsets — `medic/app/(tabs)/index.tsx`
+- **[medic]** Redesign (tabs)/my-orders.tsx — header, filter pills (Faol/Tugatilgan), status badges with semantic colors, no borders, useSafeAreaInsets — `medic/app/(tabs)/my-orders.tsx`
+- **[medic]** Redesign (tabs)/profile.tsx — earnings gradient card, menu items in grouped card, language toggle pills, no borders, useSafeAreaInsets — `medic/app/(tabs)/profile.tsx`
+- **[medic]** Redesign (tabs)/_layout.tsx — white bg, no top border, whisper Shadow.lg, height 85, paddingBottom 20, headerShown: false — `medic/app/(tabs)/_layout.tsx`
+- **[design]** All screens: Manrope for headlines/buttons, Inter for body/labels, pill buttons (borderRadius 9999), whisper shadows (4% opacity), tonal bg shifts instead of 1px borders, Theme tokens throughout
+
+## 2026-04-05 (Medic Sub-screens -- Clinical Sanctuary Redesign)
+
+- **[medic]** Redesign order/[id].tsx -- custom header (back + "Buyurtma" + order ID), service card with icon, status stepper (teal dots), photo cards 120x120, tonal surfaces, gradient modal close, useSafeAreaInsets -- `medic/app/order/[id].tsx`
+- **[medic]** Redesign order/chat.tsx -- teal gradient header with avatar + online dot, medic bubbles #006860 right / client #f2f4f6 left, tonal input + send circle, useSafeAreaInsets -- `medic/app/order/chat.tsx`
+- **[medic]** Fix order/chat.tsx -- useSocket -> useSharedSocket, toast.show -> showToast (pre-existing bugs) -- `medic/app/order/chat.tsx`
+- **[medic]** Redesign verification.tsx -- back + "Verifikatsiya" header, status badge (amber/green/red tonal), 120x120 photo upload cards, rejection reason card, "Yuborish" gradient pill CTA, useSafeAreaInsets -- `medic/app/verification.tsx`
+- **[medic]** Redesign work-zone.tsx -- back + "Ish zonasi" header, teal circle overlay on map, tonal status row, "Saqlash" gradient pill CTA, tonal clear button, useSafeAreaInsets -- `medic/app/work-zone.tsx`
+- **[medic]** Update schedule.tsx -- Typography spread tokens, Fonts tokens, Shadow.sm on day cards, surfaceContainerLow on hour buttons -- `medic/app/schedule.tsx`
+- **[medic]** Redesign reviews.tsx -- back + "Sharhlar" header, average rating display card, review cards with avatar circle + stars + date, useSafeAreaInsets -- `medic/app/reviews.tsx`
+- **[medic]** Redesign (doctor-tabs)/index.tsx -- "Konsultatsiyalar" Manrope_700Bold header, verify banner with tonal bg, symptoms + client info cards, accept/decline gradient pills, useSafeAreaInsets -- `medic/app/(doctor-tabs)/index.tsx`
+- **[medic]** Redesign (doctor-tabs)/my-patients.tsx -- "Bemorlarim" header, patient cards with status badges, section titles, tonal surfaces, useSafeAreaInsets -- `medic/app/(doctor-tabs)/my-patients.tsx`
+- **[medic]** Redesign (doctor-tabs)/profile.tsx -- specialization card with icon, stats row, tonal surfaces, pill buttons, telegram card, schedule menu, pill language toggle, tonal logout, useSafeAreaInsets -- `medic/app/(doctor-tabs)/profile.tsx`
+- **[medic]** Redesign doctor-consultation/[id].tsx -- back + "Konsultatsiya" header, symptoms card, video call gradient pill, tonal notes textarea, "Yakunlash" gradient pill CTA, useSafeAreaInsets -- `medic/app/doctor-consultation/[id].tsx`
+
+## 2026-04-05 (Salomat Lead, S3 Storage, Voice Logging)
+
+- **[backend]** `POST /consultations/ai-chat/create-lead` -- new endpoint to create clinic lead from Salomat AI recommendation (mobile collects patientName/phone, sends with clinicId) -- `backend/src/consultations/consultations.controller.ts`, `backend/src/consultations/dto/create-lead-from-chat.dto.ts`
+- **[backend]** ClinicModule imported in ConsultationsModule (forwardRef) to enable lead creation from AI chat flow -- `backend/src/consultations/consultations.module.ts`
+- **[backend]** Voice session completion logging -- log line with sessionId, recommendation, specialization, exchangeCount when session reaches COMPLETED status -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** S3Service (Backblaze B2 / MinIO compatible) -- upload, delete, getPresignedUrl -- registered in CommonModule (global), graceful fallback when S3 not configured -- `backend/src/common/s3.service.ts`, `backend/src/common/common.module.ts`
+- **[backend]** S3 env vars added to .env.example (S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET)
+- **[backend]** Installed @aws-sdk/client-s3 + @aws-sdk/s3-request-presigner
+
+## 2026-04-05 (Redis Cache + BullMQ Job Queues)
+
+- **[backend]** Redis caching via @nestjs/cache-manager with in-memory fallback when REDIS_URL is not set -- `backend/src/app.module.ts`
+- **[backend]** BullMQ job queues (push-notifications, telegram-messages) conditionally registered when REDIS_URL exists -- `backend/src/app.module.ts`
+- **[backend]** AppSettingsService migrated from manual in-memory cache to NestJS CacheManager (works with Redis or in-memory) -- `backend/src/app-settings/app-settings.service.ts`
+- **[backend]** QueueService abstraction with @Optional() injection, isQueueAvailable flag, retry with exponential backoff -- `backend/src/common/queue.service.ts`
+- **[backend]** PushProcessor (BullMQ worker for push-notifications queue) -- `backend/src/realtime/push.processor.ts`
+- **[backend]** TelegramProcessor (BullMQ worker for telegram-messages queue) -- `backend/src/realtime/telegram.processor.ts`
+- **[backend]** QueueService registered in CommonModule (global), processors in RealtimeModule (conditional) -- `backend/src/common/common.module.ts`, `backend/src/realtime/realtime.module.ts`
+- **[backend]** REDIS_URL added to .env.example -- `backend/.env.example`
+
+## 2026-04-05 (httpOnly Cookie Auth + OpenAI TTS)
+
+- **[backend]** httpOnly cookie auth: POST /auth/login/cookie, POST /auth/logout/cookie endpoints -- `backend/src/auth/auth.controller.ts`
+- **[backend]** JWT strategy updated to extract token from cookies (fallback after Bearer header) -- `backend/src/auth/strategies/jwt.strategy.ts`
+- **[backend]** cookie-parser middleware added to bootstrap -- `backend/src/main.ts`
+- **[backend]** OpenAI TTS-1 integration in voice-agent synthesize() (requires OPENAI_API_KEY) -- `backend/src/voice-agent/voice-agent.service.ts`
+- **[backend]** TTS endpoint updated to stream audio/mpeg response -- `backend/src/voice-agent/voice-agent.controller.ts`
+
+## 2026-04-05 (Push Segmentation + Payments Ledger)
+
+- **[backend]** AdminModule created with PushCampaignService, PaymentLedgerService -- `backend/src/admin/admin.module.ts`
+- **[backend]** PaymentLedger entity (payment_ledger table) with orderId, consultationId, medicId, doctorId, companyId, amount, type, description -- `backend/src/admin/entities/payment-ledger.entity.ts`
+- **[backend]** PushCampaignService: segmented push (all, new_7d, inactive_30d, tier_gold) with batch sending -- `backend/src/admin/push-campaign.service.ts`
+- **[backend]** PushCampaignDto with class-validator -- `backend/src/admin/dto/push-campaign.dto.ts`
+- **[backend]** PaymentLedgerService: record(), findAll() with filters/pagination, getSummary() -- `backend/src/admin/payment-ledger.service.ts`
+- **[backend]** POST /admin/push-campaign endpoint (AdminGuard) -- `backend/src/app.controller.ts`
+- **[backend]** GET /admin/ledger endpoint with type/medicId/doctorId/companyId/from/to filters -- `backend/src/app.controller.ts`
+- **[backend]** GET /admin/ledger/summary?days=30 endpoint -- `backend/src/app.controller.ts`
+- **[backend]** Ledger wired into order completion: EARNING + COMMISSION recorded on DONE status -- `backend/src/orders/orders.service.ts`
+
+## 2026-04-05 (V6 Clinic Platform Stage 4 — Stats, Prescriptions, Patient History)
+
+- **[backend]** CLIN-BE-10: Room stats endpoint GET /clinic/stats/rooms (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-11: Service stats endpoint GET /clinic/stats/services (CEO only) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-12: Admin company stats GET /admin/companies/:id/stats -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-13: Patient visit history GET /clinic/patients/:id/history (CEO+Reception) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-14: ClinicPrescription entity (clinic_prescriptions table) -- `backend/src/clinic/entities/clinic-prescription.entity.ts`
+- **[backend]** CLIN-BE-14: CreatePrescriptionDto -- `backend/src/clinic/dto/create-prescription.dto.ts`
+- **[backend]** CLIN-BE-14: POST /clinic/appointments/:id/prescription (all clinic roles) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-15: PatientPrescriptionsController: GET /patient/prescriptions, GET /patient/prescriptions/:id (client JWT auth) -- `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- **[backend]** CLIN-BE-15: ClinicPrescription + PatientPrescriptionsController registered in ClinicModule -- `backend/src/clinic/clinic.module.ts`
+
 ## 2026-04-05 (V6 Clinic Platform Stage 3 — Salomat Leads, Commission, WebSocket)
 
 - **[backend]** CLIN-BE-6: SalomatLead entity (salomat_leads table) -- `backend/src/clinic/entities/salomat-lead.entity.ts`

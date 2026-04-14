@@ -5,6 +5,167 @@
 > **Полный аудит проведён 2026-03-28** — backend (41), mobile (25), medic (26).
 > **Аудит багов 2026-04-04** — mobile (28 issues), admin (40+ issues).
 > **Playwright-аудит web-medic 2026-04-11** — 4 бага найдено, см. ниже.
+> **Аудит бизнес-модели 2026-04-13** — 9 критических/высоких пробелов, см. ниже.
+> **Аудит UX 2026-04-14** — 6 задач по Salomat AI, клиники, врачи.
+
+---
+
+## 📋 UX-задачи (аудит 2026-04-14)
+
+### Диёр — Web
+
+- [ ] **UX-I18N-1** — 🔴 HIGH — i18n: добавить переводы (ru/uz) на все страницы без локализации. Приоритет: 1) главная, заказы, location, confirm; 2) профиль, медкарта, salomat; 3) избранное, реферал, отзывы. Компоненты: SplashScreen, InstallPrompt, PushPermissionPrompt, VoiceAssistant — `web/i18n/ru.json`, `web/i18n/uz.json`, все страницы из списка
+
+- [ ] **UX-WEB-1** — 🟡 HIGH — Salomat AI: сохранять историю чата в `localStorage`. При возврате на страницу — восстанавливать диалог. Добавить кнопку "Очистить чат" — `web/app/salomat/page.tsx`
+- [ ] **UX-WEB-2** — 🟡 HIGH — Salomat AI: адаптивный layout для десктопа. Сейчас `maxWidth: 480` — узкая мобильная колонка. На ≥768px: двухколоночный layout (инфо-панель слева, чат справа) — `web/app/salomat/page.tsx`
+- [ ] **UX-WEB-3** — 🟡 HIGH — Salomat AI: голосовой ввод внутри чата. Кнопка микрофона рядом с полем ввода — запись → STT → отправка как текст. Использовать готовый `VoiceAssistant` компонент — `web/app/salomat/page.tsx`, `web/components/VoiceAssistant.tsx`
+
+### Абубакир — Backend
+
+- [ ] **UX-BE-2** — 🔴 CRITICAL — Логика назначения консультации: если врач принадлежит клинике → назначает CEO этой клиники (через `/clinic/appointments`); если врач независимый → назначает супер-админ (через `/consultations/admin/:id`). Сейчас все консультации падают в общую очередь без разделения — `backend/src/consultations/consultations.service.ts`, `backend/src/clinic/clinic.service.ts`
+
+- [ ] **UX-BE-1** — 🟡 HIGH — Salomat AI: инжектировать список активных врачей компании в system prompt. AI должен знать имена, специализации, цены врачей и рекомендовать конкретного — `backend/src/consultations/`, `backend/src/voice-agent/voice-agent.service.ts`
+
+### Диёр — Web (после UX-BE-1)
+
+- [ ] **UX-WEB-4** — 🟡 HIGH — Salomat AI: карточка рекомендации показывает конкретного врача (фото, имя, специализация) с кнопкой "Записаться к [имя]" — `web/app/salomat/page.tsx`
+
+### Жафар — Web
+
+- [ ] **UX-CLIN-1** — 🟡 HIGH — Страница клиник `/clinics`: два режима — список + карта (Leaflet). Каждая карточка клиники показывает: название, адрес, телефон, кнопки "Открыть в Яндекс Картах" и "Открыть в Google Maps" (deep link по координатам). На карте маркеры клиник, клик → попап с телефоном и кнопками навигации. Реальные данные после BIZ-BE-4 — `web/app/clinics/page.tsx`
+- [ ] **UX-DOC-1** — 🟡 HIGH — Страница врачей в web `/doctors`: реальные данные + карточки с фото, специализацией, ценой, рейтингом, кнопкой "Записаться" — `web/app/doctors/page.tsx`
+
+### Диёр — Admin
+
+- [ ] **UX-CLIN-2** — 🟡 HIGH — Admin форма клиники: пикер координат. Leaflet карта (уже в проекте) — клик устанавливает `lat`/`lng`. Кнопка "Моё местоположение" (`navigator.geolocation`). Поля `lat`/`lng` уже есть в entity — `admin/src/pages/Companies.tsx`
+- [ ] **UX-DOC-2** — 🟡 HIGH — Admin форма врача: пикер координат (кабинет/клиника на карте) аналогично UX-CLIN-2 — `admin/src/pages/Doctors.tsx`
+
+---
+
+## 🔴 CRITICAL — Бизнес-модель (аудит 2026-04-13)
+
+### Абубакир — Backend + Mobile
+
+- [ ] **BIZ-BE-1** — 🔴 CRITICAL — Оплата консультации: нет payment flow при бронировании врача. Добавить `POST /payments/consultation/:id/initiate` (Payme/Click). `doctor.pricePerConsultation` есть, но клиент получает консультацию бесплатно — `backend/src/consultations/`, `backend/src/payments/`
+- [ ] **BIZ-BE-2** — 🔴 CRITICAL — Медик: вывод средств — нет endpoint `POST /medics/me/withdrawal-request` и нет admin-endpoint для одобрения/отклонения выплат. Медик не может вывести баланс — `backend/src/medics/`
+- [ ] **BIZ-BE-3** — 🔴 CRITICAL — Рейтинг врача после консультации: нет `POST /consultations/:id/rate`. `doctor.rating` в БД есть, но никогда не обновляется — `backend/src/consultations/`
+- [ ] **BIZ-BE-4** — 🟡 HIGH — Публичный `GET /companies` (без AdminGuard) — нужен для страницы клиник на web/. Сейчас только `/admin/companies` с AdminGuard — `backend/src/clinic/clinic.controller.ts`
+- [ ] **BIZ-MOB-1** — 🔴 CRITICAL — Mobile: UI оплаты консультации (после BIZ-BE-1) — `mobile/app/consultation.tsx`
+- [ ] **BIZ-MOB-2** — 🔴 CRITICAL — Mobile: UI рейтинга врача после консультации (после BIZ-BE-3) — `mobile/app/consultations.tsx`
+
+### Жафар — Clinic + Web-Medic
+
+- [ ] **BIZ-CLIN-1** — 🟡 HIGH — Clinic BookingModal: онлайн-оплата через Payme/Click. Тип `ONLINE` выбирается но ничего не происходит — `web-medic/components/clinic/BookingModal.tsx`
+- [ ] **BIZ-CLIN-2** — 🟢 MEDIUM — Медик онлайн/офлайн toggle в web-medic. Медик через браузер не может переключить статус — `web-medic/app/page.tsx` (dashboard)
+- [ ] **BIZ-CLIN-3** — 🔴 CRITICAL — Медик: кнопка вывода средств в wallet. WM-BUG-4 — страница `/wallet` есть, но нет кнопки "Запросить выплату" (после BIZ-BE-2) — `web-medic/app/wallet/page.tsx`
+
+### Диёр — Web + Admin
+
+- [ ] **BIZ-WEB-1** — 🔴 CRITICAL — Web: UI рейтинга врача после консультации (COMPLETED). Нет кнопки "Оставить отзыв" (после BIZ-BE-3) — `web/app/consultations/page.tsx`
+- [x] **BIZ-WEB-2** — DONE 2026-04-13 — Реферальный код при web-регистрации — `web/app/auth/page.tsx`
+- [ ] **BIZ-WEB-3** — 🟡 HIGH — Реальные данные на странице клиник (после BIZ-BE-4) — `web/app/clinics/page.tsx`, `web/app/clinics/[id]/page.tsx`
+- [ ] **BIZ-WEB-4** — 🟡 HIGH — Web: UI оплаты консультации (после BIZ-BE-1). Нет payment step при бронировании врача — `web/app/consultation/page.tsx`
+- [x] **BIZ-WEB-5** — DONE (уже было реализовано) — `web/app/courses/page.tsx`
+- [x] **BIZ-WEB-6** — DONE 2026-04-13 — Push permission UI — `web/components/PushPermissionPrompt.tsx`
+- [x] **BIZ-ADM-1** — DONE 2026-04-13 — Admin: страница управления выплатами — `admin/src/pages/Payouts.tsx` (ждёт BIZ-BE-2 для данных)
+
+---
+
+## ⚙️ DevOps / Railway ENV — аудит 2026-04-14
+
+### Срочно поправить
+
+- [ ] **ENV-1** — 🔴 CRITICAL — `NODE_ENV="development"` на Railway → Click IP-whitelist отключён (риск мошенничества), stacktrace'ы видны в ответах. Поменять на `"production"` — Railway → backend → Variables
+
+### Отсутствующие переменные
+
+- [ ] **ENV-2** — 🔴 HIGH — `OPENAI_API_KEY` не задан → Voice Agent TTS (озвучка ответов) не работает, только текст — Railway → backend → Variables
+- [ ] **ENV-3** — 🟠 HIGH — `PAYME_MERCHANT_ID` + `PAYME_MERCHANT_KEY` не заданы → оплата через Payme недоступна
+- [ ] **ENV-4** — 🟠 HIGH — `CLICK_MERCHANT_ID` + `CLICK_SERVICE_ID` + `CLICK_SECRET_KEY` не заданы → оплата через Click недоступна
+- [ ] **ENV-5** — 🟠 MEDIUM — `TELEGRAM_ADMIN_CHAT_ID` не задан → Telegram-уведомления администратору не приходят
+- [ ] **ENV-6** — 🟠 MEDIUM — `ENCRYPTION_KEY` (≥32 символа) не задан → шифрование медицинских данных отключено, данные хранятся открытым текстом
+- [ ] **ENV-7** — 🟡 LOW — `OSRM_URL` не задан → маршрутизация для медиков на карте не работает
+
+---
+
+## 🔔 Push-уведомления — полный охват (аудит 2026-04-14)
+
+### Абубакир — Backend
+
+- [ ] **PUSH-BE-1** — 🔴 HIGH — Добавить тип `'doctor'` в `WebPushService`. Сейчас поддерживаются только `'client'` и `'medic'`. Добавить `POST /doctors/web-push-subscription` и `DELETE /doctors/web-push-subscription` — `backend/src/realtime/web-push.service.ts`, `backend/src/doctors/doctors.controller.ts`
+- [ ] **PUSH-BE-2** — 🔴 HIGH — Слать web push врачу при новой консультации (`PENDING`). Сейчас только Socket.IO (`emitNewConsultation`), пуш не отправляется — `backend/src/consultations/consultations.service.ts`
+- [ ] **PUSH-BE-3** — 🟠 MEDIUM — Слать web push клинике (CEO) при новом лиде от Salomat AI. Сейчас только Telegram — `backend/src/clinic/clinic.service.ts`
+
+### Жафар — Web-Medic (врач)
+
+- [ ] **PUSH-WM-1** — 🔴 HIGH — Врачи: добавить web push подписку. `WebPushInit` в web-medic шлёт на `/medics/web-push-subscription` — нужен отдельный `/doctors/web-push-subscription` (после PUSH-BE-1). Добавить `PushPermissionPrompt` для врачей — `web-medic/lib/webPush.ts`, `web-medic/components/WebPushInit.tsx`
+- [ ] **PUSH-WM-2** — 🟠 MEDIUM — Медики: заменить авто-запрос разрешения при входе на `PushPermissionPrompt` (как у клиента — через 3с после загрузки). Сейчас `subscribeWebPush()` вызывается сразу → браузер спрашивает разрешение без контекста — `web-medic/components/WebPushInit.tsx`
+
+---
+
+## ⚡ Реактивный профиль — мгновенное обновление без рендера (аудит 2026-04-14)
+
+> Сейчас профиль пишет в `localStorage`, но хедер и другие компоненты читают оттуда только при первом монтировании. После сохранения изменений интерфейс не обновляется пока не перезагрузить страницу.
+> Решение: глобальный React Context для каждого типа пользователя. Все компоненты подписываются на контекст — обновление в одном месте = мгновенное отражение везде.
+
+### Диёр — Web (клиент)
+
+- [ ] **UX-RT-1** — 🔴 HIGH — Создать `web/context/UserContext.tsx`: глобальное состояние клиента (`id`, `name`, `phone`, `avatarUrl`). Обернуть `layout.tsx`. Хедер главной страницы (инициалы), страница профиля — подписать на контекст. При сохранении профиля → `setUser()` → всё обновляется мгновенно без перезагрузки — `web/context/UserContext.tsx`, `web/app/layout.tsx`, `web/app/profile/page.tsx`, `web/app/page.tsx`
+
+### Жафар — Web-Medic (врач + клиника)
+
+- [ ] **UX-RT-2** — 🔴 HIGH — Создать `web-medic/context/DoctorContext.tsx`: глобальное состояние врача (`name`, `specialization`, `verificationStatus`, `pricePerConsultation`, `avatarUrl`). Сайдбар, хедер, страница профиля — подписать на контекст. Сохранение профиля → `setDoctor()` → имя в сайдбаре меняется мгновенно — `web-medic/context/DoctorContext.tsx`, `web-medic/components/DoctorSidebar.tsx`, `web-medic/app/doctor/profile/page.tsx`
+
+- [ ] **UX-RT-3** — 🟠 HIGH — Создать `web-medic/context/ClinicContext.tsx`: глобальное состояние клиники (`name`, `logoUrl`, `isVerified`). CEO при обновлении данных клиники видит изменения в хедере/сайдбаре мгновенно — `web-medic/context/ClinicContext.tsx`, `web-medic/components/Sidebar.tsx`, `web-medic/app/clinic/settings/page.tsx`
+
+---
+
+## 🌐 Лендинг + Web — Download Flow (аудит 2026-04-14)
+
+### Диёр — Landing
+
+- [ ] **UX-LAND-1** — 🔴 HIGH — Кнопки "App Store" и "Google Play" в Hero ведут на `#download`. Нужно заменить на модалку/экран с двумя вариантами: **"Скачать приложение"** (ссылки на App Store / Google Play) и **"Использовать веб-версию"** (переход на `https://app.hamshirago.uz`). Клиент должен сам выбирать — `landing/components/Hero.tsx`
+
+### Диёр — Web
+
+- [ ] **UX-LAND-2** — 🟠 MEDIUM — На главной странице web-приложения добавить ненавязчивый баннер/плашку "Доступно мобильное приложение" с кнопками App Store / Google Play. Показывать только на мобильных устройствах (`userAgent` или `window.innerWidth < 768`) и только если пользователь ещё не скачал (снуз в `localStorage`) — `web/app/page.tsx` или отдельный компонент `web/components/AppDownloadBanner.tsx`
+
+---
+
+## 👤 Клиентский опыт — Web (аудит 2026-04-14)
+
+> Задачи со стороны пользователя: что мешает нормально пользоваться продуктом.
+
+### Диёр — Web
+
+- [ ] **UX-CLIENT-1** — 🔴 CRITICAL — Нет удаления аккаунта. Обязательно для App Store / Google Play и GDPR. Добавить кнопку в профиль + `DELETE /auth/account` на бэкенде — `web/app/profile/page.tsx`, `backend/src/auth/`
+- [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
+- [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
+- [ ] **UX-CLIENT-4** — 🟠 HIGH — Нет онбординга для нового пользователя на web. Клиент после регистрации оказывается на главной без объяснений что это и как заказать — `web/app/onboarding/` (добавить шаги: как работает сервис, первый заказ)
+- [ ] **UX-CLIENT-5** — 🟠 MEDIUM — Видеозвонок: страница `/video-call` есть, но нет кнопки входа в звонок из карточки консультации. Клиент не знает как войти — `web/app/consultations/page.tsx`, `web/app/video-call/page.tsx`
+- [ ] **UX-CLIENT-6** — 🟠 MEDIUM — Рецепт: после получения рецепта от врача непонятен следующий шаг. Нет CTA "Оформить заказ по рецепту" — `web/app/prescriptions/page.tsx`
+- [ ] **UX-CLIENT-7** — 🟡 MEDIUM — Профиль: нельзя изменить номер телефона и нет аватара. Только имя редактируется — `web/app/profile/page.tsx`
+
+---
+
+## 🏥 Партнёрский опыт — Web-Medic (аудит 2026-04-14)
+
+> Задачи со стороны клиник и врачей: что мешает нормально работать с платформой.
+
+### Жафар — Web-Medic (клиники)
+
+- [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
+- [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
+- [ ] **UX-PARTNER-3** — 🟠 HIGH — Медик онлайн/офлайн: нет переключателя в дашборде web-medic. Медик через браузер не может сменить статус доступности — `web-medic/app/page.tsx`
+- [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
+- [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
+
+### Жафар — Web-Medic (врачи)
+
+- [ ] **UX-PARTNER-6** — 🔴 HIGH — Профиль врача неполный: нет поля "цена за консультацию" (`pricePerConsultation`). Врач не может установить свою цену через интерфейс — `web-medic/app/doctor/profile/page.tsx`
+- [ ] **UX-PARTNER-7** — 🟠 HIGH — Нет push/Telegram-уведомления врачу о новой консультации. Врач узнаёт только если сам зайдёт в `/consultations` — `web-medic/app/doctor/consultations/page.tsx` + backend
+- [ ] **UX-PARTNER-8** — 🟠 MEDIUM — Расписание: нет шаблонов повторяющихся слотов. Врач каждый день вручную создаёт одни и те же слоты (напр. Пн–Пт 09:00–17:00 каждые 30 мин) — `web-medic/app/doctor/schedule/page.tsx`
+- [ ] **UX-PARTNER-9** — 🟡 MEDIUM — Профиль врача: нет поля "О себе / Биография". Клиент на web видит только имя и специализацию без описания опыта — `web-medic/app/doctor/profile/page.tsx`, `web/app/doctors/page.tsx`
 
 ---
 

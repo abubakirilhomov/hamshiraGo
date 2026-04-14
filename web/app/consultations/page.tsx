@@ -24,6 +24,7 @@ export default function ConsultationsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [notesModal, setNotesModal] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,7 +39,10 @@ export default function ConsultationsPage() {
       setConsultations((prev) => append ? [...prev, ...res.data] : res.data);
       setPage(res.page);
       setTotalPages(res.totalPages);
-    } catch {}
+      setFetchError(null);
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : "Ошибка загрузки");
+    }
     finally { setLoading(false); setLoadingMore(false); }
   }, []);
 
@@ -49,6 +53,19 @@ export default function ConsultationsPage() {
       <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid #eceef0", borderTopColor: "#00685f", animation: "spin 0.8s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#f7f9fb", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ background: "#fff", borderRadius: 20, padding: "32px 24px", maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+          <p style={{ fontSize: 14, color: "#dc2626", marginBottom: 16 }}>{fetchError}</p>
+          <button onClick={() => fetchConsultations(1, false)} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+            Повторить
+          </button>
+        </div>
       </div>
     );
   }
@@ -112,8 +129,8 @@ export default function ConsultationsPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <span style={{ fontSize: 12, color: "#bcc9c6" }}>{formatDate(item.createdAt)}</span>
-                  {(item as any).price && (
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#00685f" }}>{(item as any).price.toLocaleString("ru-RU")} сум</span>
+                  {item.doctor?.pricePerConsultation != null && (
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#00685f" }}>{item.doctor.pricePerConsultation.toLocaleString("ru-RU")} сум</span>
                   )}
                 </div>
 

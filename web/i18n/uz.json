@@ -36,7 +36,9 @@
     "loginBtn": "Kirish",
     "registerBtn": "Ro'yxatdan o'tish",
     "noAccount": "Hisobingiz yo'qmi?",
-    "hasAccount": "Hisobingiz bormi?"
+    "hasAccount": "Hisobingiz bormi?",
+    "referralLabel": "Referal kodi (ixtiyoriy)",
+    "referralPlaceholder": "AB12CD34"
   },
   "home": {
     "search": "Xizmatlarni qidirish...",
