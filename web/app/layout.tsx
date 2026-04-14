@@ -52,9 +52,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-        <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link rel="preconnect" href={API_HOST} />
         <link rel="dns-prefetch" href={API_HOST} />
         <link rel="preconnect" href="https://res.cloudinary.com" />
