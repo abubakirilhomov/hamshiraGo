@@ -1,5 +1,43 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-14 (web-medic: BIZ-CLIN-3 — кнопка вывода средств в wallet)
+
+- **[feat]** `web-medic/lib/api.ts` — добавлен `medicApi.wallet.requestWithdrawal(amount, cardNumber)` → POST `/medics/me/withdrawal-request` (ожидает BIZ-BE-2).
+- **[feat]** `web-medic/app/wallet/page.tsx` — кнопка "Запросить выплату" в header (disabled если баланс = 0). При нажатии — модалка с полями суммы и номера карты, обработка ошибок, success-экран после отправки. При ошибке "Ошибка сервера" показывает понятное сообщение "Функция вывода пока недоступна".
+
+## 2026-04-14 (web-medic: PUSH-WM-2 — PushPermissionPrompt для медиков)
+
+- **[feat]** `web-medic/components/PushPermissionPrompt.tsx` — создан bottom-sheet промпт (аналог web/). Показывается через 3с если: браузер поддерживает пуши, разрешение в состоянии `default`, медик залогинен, не откладывал 7 дней.
+- **[refactor]** `web-medic/components/WebPushInit.tsx` — удалён авто-вызов `subscribeWebPush()`. Компонент оставлен как заглушка для совместимости импортов.
+- **[feat]** `web-medic/app/layout.tsx` — добавлен `<PushPermissionPrompt />` в корневой layout.
+
+## 2026-04-14 (web-medic + backend: BIZ-CLIN-2 / UX-PARTNER-3 — онлайн/офлайн toggle для врача)
+
+- **[feat]** `backend/src/doctors/dto/update-doctor-profile.dto.ts` — добавлено поле `isOnline?: boolean` с валидацией `@IsBoolean()`
+- **[feat]** `backend/src/doctors/doctors.service.ts` — `updateProfile()` теперь обрабатывает `isOnline`
+- **[feat]** `web-medic/lib/api.ts` — добавлен `doctorApi.auth.setOnline(isOnline)` (PATCH `/doctors/profile`)
+- **[feat]** `web-medic/app/doctor/consultations/page.tsx` — добавлена кнопка Онлайн/Офлайн в header. Использует `useDoctor()` контекст — после toggle обновляется мгновенно везде.
+
+## 2026-04-14 (web-medic: UX-PARTNER-6 + UX-PARTNER-9 — поля профиля врача)
+
+- **[feat]** `web-medic/lib/api.ts` — добавлены поля `pricePerConsultation: number | null` и `bio: string | null` в интерфейс `DoctorProfile`; добавлены `pricePerConsultation?: number` и `bio?: string` в `RegisterDoctorDto` (используется при PATCH `/doctors/profile`).
+- **[feat]** `web-medic/app/doctor/profile/page.tsx` — добавлены инпут "Цена за консультацию (сум)" (type=number, целые UZS) и textarea "О себе" в форму редактирования; оба поля отображаются в режиме просмотра; при сохранении передаются в `doctorApi.auth.updateProfile()` и `setDoctor()` через DoctorContext.
+- **[test]** `tests/web-medic/doctor-profile.spec.ts` — Playwright-тесты: загрузка страницы, наличие полей в edit-режиме, числовой ввод цены, отображение в display-режиме.
+
+## 2026-04-14 (web-medic: UX-RT-3 — ClinicContext глобальное состояние клиники)
+
+- **[feat]** `web-medic/context/ClinicContext.tsx` — создан `ClinicProvider` и хук `useClinic()`. Тип `ClinicState`: `{ id, name, logoUrl, isVerified, phone, address }`. При маунте читает кешированный профиль из localStorage (SSR-safe), затем делает запрос `clinicApi.company.get()`. `setClinic()` одновременно обновляет state и localStorage (ключ `clinic_company`) для persist.
+- **[refactor]** `web-medic/app/clinic/layout.tsx` — импортирован `ClinicProvider` и `useClinic`. Весь layout для аутентифицированных страниц обёрнут в `<ClinicProvider>`. `SidebarInner` подписан на `useClinic()`: показывает название клиники вместо хардкода «HamshiraGo» и логотип из `clinic.logoUrl` (если есть) вместо иконки `Building2`.
+- **[refactor]** `web-medic/app/clinic/settings/page.tsx` — импортирован `useClinic`. `handleSaveCompany()` после успешного ответа API вызывает `setClinic(updated)` — сайдбар обновляет название и логотип мгновенно, без перезагрузки страницы.
+
+## 2026-04-14 (web-medic: UX-RT-2 — DoctorContext глобальное состояние врача)
+
+- **[feat]** `web-medic/context/DoctorContext.tsx` — создан `DoctorProvider` и хук `useDoctor()`. При маунте читает кешированный профиль из localStorage (SSR-safe), затем делает запрос `doctorApi.auth.me()`. `setDoctor()` одновременно обновляет state и localStorage для persist.
+- **[refactor]** `web-medic/components/DashboardLayout.tsx` — при `isDoctor === true` оборачивает дерево в `DoctorProvider`, так что `DoctorSidebar` и все дочерние страницы `/doctor/*` автоматически получают контекст.
+- **[refactor]** `web-medic/components/DoctorSidebar.tsx` — убран локальный `useState` + `useEffect` с собственным fetch. Теперь использует `useDoctor()` из контекста; имя и специализация в сайдбаре обновляются мгновенно при `setDoctor()` без перезагрузки.
+- **[refactor]** `web-medic/app/doctor/profile/page.tsx` — подключён `useDoctor()`. При загрузке использует doctor из контекста (если уже есть — скипает лоадер). `handleSave()` вызывает `setDoctor(updated)` вместо прямой записи в localStorage — сайдбар обновляется сразу после сохранения.
+- **[fix]** `web-medic/app/clinic/layout.tsx` — исправлена TS-ошибка `role!` (pre-existing: Type 'ClinicRole | null' not assignable to 'ClinicRole', при этом runtime null невозможен из-за early returns выше).
+
 ## 2026-04-14 (web-medic: reception page — full UI/UX redesign)
 
 - **[feat]** `web-medic/app/clinic/reception/page.tsx` — полный редизайн страницы регистратуры без изменения API-логики, состояния и calendar-view. (1) Заголовок: "Приём пациентов" bold 20px + дата справа (день, месяц, год), кнопка "+ Записать" teal с иконкой Plus, minHeight 44px, hover #0f766e. (2) Pill-переключатель "Список/Календарь": border-radius 99px, teal активный, серый неактивный, 150ms transition. (3) Stat-strip: 3 карточки — amber (#fffbeb / #fde68a), blue (#eff6ff / #bfdbfe), green (#f0fdf4 / #bbf7d0), число 30px fontWeight 900, minHeight 80px. (4) Appointment cards: borderLeft 4px цвет по статусу (STATUS_ACCENT), time column 52px с teal 15px bold + Clock icon, divider 1px, User icon + имя bold + Phone icon + номер, status pill border-radius 99px, Check In кнопка 32px solid teal; hover: border teal + teal box-shadow, 150ms ease. (5) Shimmer skeleton (gradient 200% animation) вместо plain pulse для карточек. (6) AI Leads sidebar: header "Новые лиды AI" + red count pill, каждая карточка — имя + time-ago, tel: ссылка с teal Phone icon, notes truncated, "Записать" кнопка purple outline с hover-fill, empty state: Bot icon + текст. `timeAgo()` helper добавлен. Импорты иконок обновлены (Bot, Phone, Plus, Clock, User, CalendarPlus).

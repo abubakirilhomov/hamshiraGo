@@ -132,6 +132,7 @@ export class DoctorsService {
     if (dto.specialization !== undefined) doctor.specialization = dto.specialization;
     if (dto.bio !== undefined) doctor.bio = dto.bio;
     if (dto.pricePerConsultation !== undefined) doctor.pricePerConsultation = dto.pricePerConsultation;
+    if (dto.isOnline !== undefined) doctor.isOnline = dto.isOnline;
 
     return this.doctorRepo.save(doctor);
   }

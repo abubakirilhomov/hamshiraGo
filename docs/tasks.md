@@ -56,8 +56,8 @@
 ### Жафар — Clinic + Web-Medic
 
 - [ ] **BIZ-CLIN-1** — 🟡 HIGH — Clinic BookingModal: онлайн-оплата через Payme/Click. Тип `ONLINE` выбирается но ничего не происходит — `web-medic/components/clinic/BookingModal.tsx`
-- [ ] **BIZ-CLIN-2** — 🟢 MEDIUM — Медик онлайн/офлайн toggle в web-medic. Медик через браузер не может переключить статус — `web-medic/app/page.tsx` (dashboard)
-- [ ] **BIZ-CLIN-3** — 🔴 CRITICAL — Медик: кнопка вывода средств в wallet. WM-BUG-4 — страница `/wallet` есть, но нет кнопки "Запросить выплату" (после BIZ-BE-2) — `web-medic/app/wallet/page.tsx`
+- [x] **BIZ-CLIN-2** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача в web-medic: кнопка в header консультаций, backend DTO + service обновлены — `web-medic/app/doctor/consultations/page.tsx`, `backend/src/doctors/`
+- [x] **BIZ-CLIN-3** — DONE 2026-04-14 (Жафар) — Кнопка "Запросить выплату" + модалка с суммой и номером карты добавлены в wallet. UI готов, ждёт backend BIZ-BE-2 — `web-medic/app/wallet/page.tsx`, `web-medic/lib/api.ts`
 
 ### Диёр — Web + Admin
 
@@ -99,7 +99,7 @@
 ### Жафар — Web-Medic (врач)
 
 - [ ] **PUSH-WM-1** — 🔴 HIGH — Врачи: добавить web push подписку. `WebPushInit` в web-medic шлёт на `/medics/web-push-subscription` — нужен отдельный `/doctors/web-push-subscription` (после PUSH-BE-1). Добавить `PushPermissionPrompt` для врачей — `web-medic/lib/webPush.ts`, `web-medic/components/WebPushInit.tsx`
-- [ ] **PUSH-WM-2** — 🟠 MEDIUM — Медики: заменить авто-запрос разрешения при входе на `PushPermissionPrompt` (как у клиента — через 3с после загрузки). Сейчас `subscribeWebPush()` вызывается сразу → браузер спрашивает разрешение без контекста — `web-medic/components/WebPushInit.tsx`
+- [x] **PUSH-WM-2** — DONE 2026-04-14 (Жафар) — Медики: заменён авто-запрос на `PushPermissionPrompt` (bottom-sheet через 3с) — `web-medic/components/WebPushInit.tsx`, `web-medic/components/PushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 
 ---
 
@@ -114,9 +114,6 @@
 
 ### Жафар — Web-Medic (врач + клиника)
 
-- [ ] **UX-RT-2** — 🔴 HIGH — Создать `web-medic/context/DoctorContext.tsx`: глобальное состояние врача (`name`, `specialization`, `verificationStatus`, `pricePerConsultation`, `avatarUrl`). Сайдбар, хедер, страница профиля — подписать на контекст. Сохранение профиля → `setDoctor()` → имя в сайдбаре меняется мгновенно — `web-medic/context/DoctorContext.tsx`, `web-medic/components/DoctorSidebar.tsx`, `web-medic/app/doctor/profile/page.tsx`
-
-- [ ] **UX-RT-3** — 🟠 HIGH — Создать `web-medic/context/ClinicContext.tsx`: глобальное состояние клиники (`name`, `logoUrl`, `isVerified`). CEO при обновлении данных клиники видит изменения в хедере/сайдбаре мгновенно — `web-medic/context/ClinicContext.tsx`, `web-medic/components/Sidebar.tsx`, `web-medic/app/clinic/settings/page.tsx`
 
 ---
 
@@ -156,16 +153,16 @@
 
 - [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
 - [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
-- [ ] **UX-PARTNER-3** — 🟠 HIGH — Медик онлайн/офлайн: нет переключателя в дашборде web-medic. Медик через браузер не может сменить статус доступности — `web-medic/app/page.tsx`
+- [x] **UX-PARTNER-3** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача — решено вместе с BIZ-CLIN-2
 - [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
 - [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
 
 ### Жафар — Web-Medic (врачи)
 
-- [ ] **UX-PARTNER-6** — 🔴 HIGH — Профиль врача неполный: нет поля "цена за консультацию" (`pricePerConsultation`). Врач не может установить свою цену через интерфейс — `web-medic/app/doctor/profile/page.tsx`
+- [x] **UX-PARTNER-6** — DONE 2026-04-14 (Жафар) — Профиль врача: поля `pricePerConsultation` + `bio` добавлены в форму и display — `web-medic/app/doctor/profile/page.tsx`, `web-medic/lib/api.ts`
 - [ ] **UX-PARTNER-7** — 🟠 HIGH — Нет push/Telegram-уведомления врачу о новой консультации. Врач узнаёт только если сам зайдёт в `/consultations` — `web-medic/app/doctor/consultations/page.tsx` + backend
 - [ ] **UX-PARTNER-8** — 🟠 MEDIUM — Расписание: нет шаблонов повторяющихся слотов. Врач каждый день вручную создаёт одни и те же слоты (напр. Пн–Пт 09:00–17:00 каждые 30 мин) — `web-medic/app/doctor/schedule/page.tsx`
-- [ ] **UX-PARTNER-9** — 🟡 MEDIUM — Профиль врача: нет поля "О себе / Биография". Клиент на web видит только имя и специализацию без описания опыта — `web-medic/app/doctor/profile/page.tsx`, `web/app/doctors/page.tsx`
+- [x] **UX-PARTNER-9** — DONE 2026-04-14 (Жафар) — Профиль врача: поле "О себе / Биография" добавлено вместе с UX-PARTNER-6 — `web-medic/app/doctor/profile/page.tsx`
 
 ---
 
