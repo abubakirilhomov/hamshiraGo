@@ -33,7 +33,7 @@
 ### Жафар — Web
 
 - [x] **UX-CLIN-1** — DONE 2026-04-14 (Жафар) — Страница клиник: List/Map toggle, Leaflet карта с маркерами и popup, кнопки Яндекс/Google Maps на карточках — `web/app/clinics/page.tsx`, `web/components/ClinicsMap.tsx`
-- [ ] **UX-DOC-1** — 🟡 HIGH — Страница врачей в web `/doctors`: реальные данные + карточки с фото, специализацией, ценой, рейтингом, кнопкой "Записаться" — `web/app/doctors/page.tsx`
+- [x] **UX-DOC-1** — DONE 2026-04-14 (Жафар) — Страница врачей: реальные данные, фото, рейтинг, цена, кнопка "Записаться" + inline-поиск по имени/специализации — `web/app/doctors/page.tsx`
 
 ### Диёр — Admin
 

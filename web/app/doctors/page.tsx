@@ -15,6 +15,7 @@ function DoctorsContent() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
 
   const fetchDoctors = useCallback(async () => {
     setLoading(true);
@@ -57,8 +58,23 @@ function DoctorsContent() {
             <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Врачи</p>
             <div style={{ width: 36 }} />
           </div>
+              <div style={{ marginTop: 14, position: "relative" }}>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск по имени или специализации..."
+              style={{
+                width: "100%", height: 44, borderRadius: 12,
+                border: "none", padding: "0 16px 0 40px",
+                fontSize: 14, outline: "none", boxSizing: "border-box",
+                background: "rgba(255,255,255,0.15)",
+                color: "#fff", fontFamily: "inherit",
+              }}
+            />
+            <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔍</span>
+          </div>
           {specParam && (
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 8, textAlign: "center" }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 6 }}>
               Специализация: {specParam}
             </p>
           )}
@@ -86,7 +102,13 @@ function DoctorsContent() {
           </div>
         )}
 
-        {!loading && doctors.map((doctor) => (
+        {!loading && doctors
+          .filter((d) => {
+            if (!search.trim()) return true;
+            const q = search.toLowerCase();
+            return d.name.toLowerCase().includes(q) || (d.specialization ?? "").toLowerCase().includes(q);
+          })
+          .map((doctor) => (
           <div key={doctor.id} style={{ background: "#fff", borderRadius: 16, padding: "16px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9" }}>
             <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
               {/* Photo */}
