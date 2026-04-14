@@ -14,6 +14,8 @@
 
 ### Диёр — Web
 
+- [ ] **UX-I18N-1** — 🔴 HIGH — i18n: добавить переводы (ru/uz) на все страницы без локализации. Приоритет: 1) главная, заказы, location, confirm; 2) профиль, медкарта, salomat; 3) избранное, реферал, отзывы. Компоненты: SplashScreen, InstallPrompt, PushPermissionPrompt, VoiceAssistant — `web/i18n/ru.json`, `web/i18n/uz.json`, все страницы из списка
+
 - [ ] **UX-WEB-1** — 🟡 HIGH — Salomat AI: сохранять историю чата в `localStorage`. При возврате на страницу — восстанавливать диалог. Добавить кнопку "Очистить чат" — `web/app/salomat/page.tsx`
 - [ ] **UX-WEB-2** — 🟡 HIGH — Salomat AI: адаптивный layout для десктопа. Сейчас `maxWidth: 480` — узкая мобильная колонка. На ≥768px: двухколоночный layout (инфо-панель слева, чат справа) — `web/app/salomat/page.tsx`
 - [ ] **UX-WEB-3** — 🟡 HIGH — Salomat AI: голосовой ввод внутри чата. Кнопка микрофона рядом с полем ввода — запись → STT → отправка как текст. Использовать готовый `VoiceAssistant` компонент — `web/app/salomat/page.tsx`, `web/components/VoiceAssistant.tsx`
