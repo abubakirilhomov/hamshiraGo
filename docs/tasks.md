@@ -26,11 +26,14 @@
 
 - [ ] **UX-WEB-4** — 🟡 HIGH — Salomat AI: карточка рекомендации показывает конкретного врача (фото, имя, специализация) с кнопкой "Записаться к [имя]" — `web/app/salomat/page.tsx`
 
-### Жафар — Web + Admin
+### Жафар — Web
 
 - [ ] **UX-CLIN-1** — 🟡 HIGH — Страница клиник `/clinics`: добавить режим карты (Leaflet). Два таба: список + карта. На карте маркеры всех клиник, клик → попап с кнопкой "Подробнее". Реальные данные после BIZ-BE-4 — `web/app/clinics/page.tsx`
-- [ ] **UX-CLIN-2** — 🟡 HIGH — Admin форма клиники: пикер координат. Leaflet карта (уже в проекте) — клик устанавливает `lat`/`lng`. Кнопка "Моё местоположение" (`navigator.geolocation`). Поля `lat`/`lng` уже есть в entity — `admin/src/pages/Companies.tsx`
 - [ ] **UX-DOC-1** — 🟡 HIGH — Страница врачей в web `/doctors`: реальные данные + карточки с фото, специализацией, ценой, рейтингом, кнопкой "Записаться" — `web/app/doctors/page.tsx`
+
+### Диёр — Admin
+
+- [ ] **UX-CLIN-2** — 🟡 HIGH — Admin форма клиники: пикер координат. Leaflet карта (уже в проекте) — клик устанавливает `lat`/`lng`. Кнопка "Моё местоположение" (`navigator.geolocation`). Поля `lat`/`lng` уже есть в entity — `admin/src/pages/Companies.tsx`
 - [ ] **UX-DOC-2** — 🟡 HIGH — Admin форма врача: пикер координат (кабинет/клиника на карте) аналогично UX-CLIN-2 — `admin/src/pages/Doctors.tsx`
 
 ---
