@@ -1,5 +1,13 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-13 (Диёр — BIZ-WEB-2, BIZ-WEB-5, BIZ-WEB-6, BIZ-ADM-1, logo fixes)
+
+- **[feat]** BIZ-ADM-1 — Admin страница выплат медикам: таблица заявок на вывод, фильтр по статусу (PENDING/APPROVED/DECLINED), кнопки "Одобрить" / "Отклонить" с диалогом причины, stat-карточки, типы и API функции добавлены в `api.ts`. Ждёт BIZ-BE-2 — `admin/src/pages/Payouts.tsx`, `admin/src/lib/api.ts`, `admin/src/App.tsx`, `admin/src/components/AdminSidebar.tsx`
+- **[fix]** Лого: admin sidebar/header заменены с Stethoscope-иконки на `logo.png`; favicon admin → `logo.png`; web SplashScreen и favicon → `icon.svg` (убрана "Врачебный портал" из web клиента) — `admin/src/components/AdminSidebar.tsx`, `AdminLayout.tsx`, `index.html`; `web/components/SplashScreen.tsx`, `web/app/layout.tsx`
+- **[feat]** BIZ-WEB-5 — Курсы лечения уже были реализованы — `web/app/courses/page.tsx`
+- **[feat]** BIZ-WEB-6 — Push permission UX: создан `PushPermissionPrompt` — bottom sheet с объяснением пользы уведомлений, кнопками "Включить" / "Позже". Показывается через 3 сек после входа если `Notification.permission === "default"`. "Позже" откладывает на 7 дней (localStorage). `WebPushInit` обновлён — больше не дёргает `requestPermission` автоматически, только переподписывает уже разрешённых пользователей — `web/components/PushPermissionPrompt.tsx`, `web/components/WebPushInit.tsx`, `web/app/layout.tsx`
+- **[feat]** BIZ-WEB-2 — Реферальный код при web-регистрации: поле `referredByCode` добавлено в форму (только при режиме "register"), ввод автоматически uppercase + только A-Z0-9 + max 10 символов. `api.auth.register()` обновлён — принимает опциональный `referredByCode`. Переводы добавлены в `ru.json` и `uz.json` — `web/app/auth/page.tsx`, `web/lib/api.ts`, `web/i18n/ru.json`, `web/i18n/uz.json`
+
 ## 2026-04-12 (Диёр — web bugs + admin analytics)
 
 - **[fix]** admin/Analytics.tsx — добавлен `useMemo` с try/catch вокруг всех вычислений; null-guard `serviceTitle || "Неизвестная услуга"`; `Number(o.priceAmount) || 0` и `Number(o.platformFee) || 0`; guard `res?.data` в while loop; `loadError` state с кнопкой retry — предотвращает краш ErrorBoundary

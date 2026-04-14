@@ -5,6 +5,36 @@
 > **Полный аудит проведён 2026-03-28** — backend (41), mobile (25), medic (26).
 > **Аудит багов 2026-04-04** — mobile (28 issues), admin (40+ issues).
 > **Playwright-аудит web-medic 2026-04-11** — 4 бага найдено, см. ниже.
+> **Аудит бизнес-модели 2026-04-13** — 9 критических/высоких пробелов, см. ниже.
+
+---
+
+## 🔴 CRITICAL — Бизнес-модель (аудит 2026-04-13)
+
+### Абубакир — Backend + Mobile
+
+- [ ] **BIZ-BE-1** — 🔴 CRITICAL — Оплата консультации: нет payment flow при бронировании врача. Добавить `POST /payments/consultation/:id/initiate` (Payme/Click). `doctor.pricePerConsultation` есть, но клиент получает консультацию бесплатно — `backend/src/consultations/`, `backend/src/payments/`
+- [ ] **BIZ-BE-2** — 🔴 CRITICAL — Медик: вывод средств — нет endpoint `POST /medics/me/withdrawal-request` и нет admin-endpoint для одобрения/отклонения выплат. Медик не может вывести баланс — `backend/src/medics/`
+- [ ] **BIZ-BE-3** — 🔴 CRITICAL — Рейтинг врача после консультации: нет `POST /consultations/:id/rate`. `doctor.rating` в БД есть, но никогда не обновляется — `backend/src/consultations/`
+- [ ] **BIZ-BE-4** — 🟡 HIGH — Публичный `GET /companies` (без AdminGuard) — нужен для страницы клиник на web/. Сейчас только `/admin/companies` с AdminGuard — `backend/src/clinic/clinic.controller.ts`
+- [ ] **BIZ-MOB-1** — 🔴 CRITICAL — Mobile: UI оплаты консультации (после BIZ-BE-1) — `mobile/app/consultation.tsx`
+- [ ] **BIZ-MOB-2** — 🔴 CRITICAL — Mobile: UI рейтинга врача после консультации (после BIZ-BE-3) — `mobile/app/consultations.tsx`
+
+### Жафар — Clinic + Web-Medic
+
+- [ ] **BIZ-CLIN-1** — 🟡 HIGH — Clinic BookingModal: онлайн-оплата через Payme/Click. Тип `ONLINE` выбирается но ничего не происходит — `web-medic/components/clinic/BookingModal.tsx`
+- [ ] **BIZ-CLIN-2** — 🟢 MEDIUM — Медик онлайн/офлайн toggle в web-medic. Медик через браузер не может переключить статус — `web-medic/app/page.tsx` (dashboard)
+- [ ] **BIZ-CLIN-3** — 🔴 CRITICAL — Медик: кнопка вывода средств в wallet. WM-BUG-4 — страница `/wallet` есть, но нет кнопки "Запросить выплату" (после BIZ-BE-2) — `web-medic/app/wallet/page.tsx`
+
+### Диёр — Web + Admin
+
+- [ ] **BIZ-WEB-1** — 🔴 CRITICAL — Web: UI рейтинга врача после консультации (COMPLETED). Нет кнопки "Оставить отзыв" (после BIZ-BE-3) — `web/app/consultations/page.tsx`
+- [x] **BIZ-WEB-2** — DONE 2026-04-13 — Реферальный код при web-регистрации — `web/app/auth/page.tsx`
+- [ ] **BIZ-WEB-3** — 🟡 HIGH — Реальные данные на странице клиник (после BIZ-BE-4) — `web/app/clinics/page.tsx`, `web/app/clinics/[id]/page.tsx`
+- [ ] **BIZ-WEB-4** — 🟡 HIGH — Web: UI оплаты консультации (после BIZ-BE-1). Нет payment step при бронировании врача — `web/app/consultation/page.tsx`
+- [x] **BIZ-WEB-5** — DONE (уже было реализовано) — `web/app/courses/page.tsx`
+- [x] **BIZ-WEB-6** — DONE 2026-04-13 — Push permission UI — `web/components/PushPermissionPrompt.tsx`
+- [x] **BIZ-ADM-1** — DONE 2026-04-13 — Admin: страница управления выплатами — `admin/src/pages/Payouts.tsx` (ждёт BIZ-BE-2 для данных)
 
 ---
 

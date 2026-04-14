@@ -32,6 +32,7 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function AuthPage() {
 
   function switchMode(m: Mode) {
     impact("light");
-    setMode(m); setError(""); setName(""); setPassword(""); setShowPassword(false);
+    setMode(m); setError(""); setName(""); setPassword(""); setReferralCode(""); setShowPassword(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,7 +61,7 @@ export default function AuthPage() {
     try {
       const res = mode === "login"
         ? await api.auth.login(rawPhone, password)
-        : await api.auth.register(name, rawPhone, password);
+        : await api.auth.register(name, rawPhone, password, referralCode.trim() || undefined);
       localStorage.setItem("token", res.access_token);
       localStorage.setItem("user", JSON.stringify(res.user));
       subscribeWebPush();
@@ -229,6 +230,21 @@ export default function AuthPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Referral code */}
+              {mode === "register" && (
+                <div style={{ animation:"fadeIn 200ms ease" }}>
+                  <label style={{ fontSize:12, fontWeight:600, color:"#6d7a77", marginBottom:6, display:"block" }}>{t("auth.referralLabel")}</label>
+                  <div style={{ position:"relative" }}>
+                    <span className="mat-icon" style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:20, color: focused==="referral" ? "#00685f" : "#bcc9c6", transition:"color 150ms" }}>card_giftcard</span>
+                    <input type="text" value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10))}
+                      onFocus={() => setFocused("referral")} onBlur={() => setFocused(null)}
+                      placeholder={t("auth.referralPlaceholder")}
+                      style={inputStyle("referral")} />
+                  </div>
+                </div>
+              )}
 
               {/* Error */}
               {error && (
