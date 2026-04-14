@@ -4,18 +4,18 @@
 
 ### Абубакир — BIZ-BE-1..4, BIZ-MOB-1..2, UX-BE-1..2, PUSH-BE-1..3, UX-CLIENT-1, MED-FIX
 
-- **[backend]** BIZ-BE-1 — Оплата консультации через Payme/Click: расширен Payment entity (consultationId nullable), добавлены `POST /payments/consultation/:id/initiate` и `GET /payments/consultation/:id/status`, обновлены webhook handlers Payme и Click для consultation_id, добавлен `paymentStatus` в consultation entity
-- **[backend]** BIZ-BE-2 — Вывод средств медика: WithdrawalRequest entity, `POST /medics/me/withdrawal-request` (MedicAuthGuard), admin endpoints approve/decline с pessimistic lock
-- **[backend]** BIZ-BE-3 — Рейтинг врача после консультации: `POST /consultations/:id/rate`, пересчёт doctor.rating через AVG
-- **[backend]** BIZ-BE-4 — Публичный `GET /companies` без auth
-- **[backend]** UX-BE-1 — Salomat AI: инжектирован список врачей в system prompt
-- **[backend]** UX-BE-2 — Логика назначения консультации: врач клиники → ClinicAppointment + уведомление CEO
-- **[backend]** PUSH-BE-1 — WebPushService: типы 'doctor' и 'clinic', POST/DELETE /doctors/web-push-subscription
+- **[backend]** BIZ-BE-1 — Оплата консультации через Payme/Click
+- **[backend]** BIZ-BE-2 — Вывод средств медика (WithdrawalRequest + admin approve/decline)
+- **[backend]** BIZ-BE-3 — Рейтинг врача после консультации (POST /consultations/:id/rate)
+- **[backend]** BIZ-BE-4 — Публичный GET /companies без auth
+- **[backend]** UX-BE-1 — Salomat AI: список врачей в system prompt
+- **[backend]** UX-BE-2 — Назначение консультации клинике (ClinicAppointment + CEO notification)
+- **[backend]** PUSH-BE-1 — WebPushService: типы 'doctor'/'clinic', endpoints для врачей
 - **[backend]** PUSH-BE-2 — Web push врачу при новой консультации
-- **[backend]** PUSH-BE-3 — Web push клинике при новом лиде от Salomat AI
-- **[backend]** UX-CLIENT-1 — DELETE /auth/account: soft-delete + anonymize PII + cleanup
-- **[mobile]** BIZ-MOB-1 — Mobile UI оплаты консультации (Payme/Click via WebBrowser)
-- **[mobile]** BIZ-MOB-2 — Mobile UI рейтинга врача (inline stars + comment)
+- **[backend]** PUSH-BE-3 — Web push клинике при новом лиде
+- **[backend]** UX-CLIENT-1 — DELETE /auth/account: soft-delete + anonymize + cleanup
+- **[mobile]** BIZ-MOB-1 — UI оплаты консультации (Payme/Click via WebBrowser)
+- **[mobile]** BIZ-MOB-2 — UI рейтинга врача (inline stars + comment)
 - **[medic]** MED-FIX — Убран дублирующийся +998 из phonePlaceholder
 
 ### Диёр — web: UX-DOC-1, UX-CLIN-1

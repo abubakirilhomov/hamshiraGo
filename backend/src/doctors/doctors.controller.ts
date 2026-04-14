@@ -5,6 +5,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -32,6 +33,8 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 import { CloudinaryService } from '../common/cloudinary.service';
 import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { PushTokenDto } from '../common/dto/push-token.dto';
+import { WebPushSubscriptionDto } from '../common/dto/web-push-subscription.dto';
+import { WebPushService } from '../realtime/web-push.service';
 import { CreateSlotsDto } from './dto/create-slots.dto';
 
 @ApiTags('doctors')
@@ -40,6 +43,7 @@ export class DoctorsController {
   constructor(
     private readonly doctorsService: DoctorsService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly webPushService: WebPushService,
   ) {}
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -87,6 +91,37 @@ export class DoctorsController {
   @ApiBearerAuth()
   async savePushToken(@DoctorId() doctorId: string, @Body() body: PushTokenDto) {
     if (body?.token) await this.doctorsService.savePushToken(doctorId, body.token);
+  }
+
+  // ── Web Push ──────────────────────────────────────────────────────────────
+
+  @Post('web-push-subscription')
+  @UseGuards(DoctorAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save doctor web push subscription' })
+  async saveWebPushSubscription(
+    @DoctorId() doctorId: string,
+    @Body() body: WebPushSubscriptionDto,
+    @Headers('user-agent') userAgent?: string,
+  ) {
+    await this.webPushService.saveSubscription({
+      subscriberType: 'doctor',
+      subscriberId: doctorId,
+      endpoint: body.endpoint,
+      p256dh: body.keys.p256dh,
+      auth: body.keys.auth,
+      userAgent,
+    });
+  }
+
+  @Delete('web-push-subscription')
+  @UseGuards(DoctorAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove doctor web push subscription' })
+  async deleteWebPushSubscription(@Body() body: { endpoint: string }) {
+    if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
   }
 
   // ── Telegram chat_id ──────────────────────────────────────────────────────

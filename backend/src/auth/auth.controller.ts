@@ -173,6 +173,17 @@ export class AuthController {
     if (body?.endpoint) await this.webPushService.removeSubscription(body.endpoint);
   }
 
+  // ── Account Deletion ──────────────────────────────────────────────────────
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete own account (soft-delete + anonymize)' })
+  async deleteAccount(@ClientId() clientId: string) {
+    await this.usersService.deleteAccount(clientId);
+  }
+
   // ── Admin ─────────────────────────────────────────────────────────────────
 
   /**

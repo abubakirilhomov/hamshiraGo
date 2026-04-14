@@ -19,7 +19,7 @@ export interface WebPushPayload {
 }
 
 export interface SaveSubscriptionDto {
-  subscriberType: 'client' | 'medic';
+  subscriberType: 'client' | 'medic' | 'doctor' | 'clinic';
   subscriberId: string;
   endpoint: string;
   p256dh: string;
@@ -92,7 +92,7 @@ export class WebPushService implements OnModuleInit {
 
   /** Send to all web subscriptions of a specific user/medic */
   async sendToSubscriber(
-    subscriberType: 'client' | 'medic',
+    subscriberType: 'client' | 'medic' | 'doctor' | 'clinic',
     subscriberId: string,
     payload: WebPushPayload,
   ): Promise<void> {
@@ -138,7 +138,7 @@ export class WebPushService implements OnModuleInit {
 
   /** Broadcast to all subscriptions of a given type (e.g. all medics) */
   async broadcast(
-    subscriberType: 'client' | 'medic',
+    subscriberType: 'client' | 'medic' | 'doctor' | 'clinic',
     payload: WebPushPayload,
   ): Promise<void> {
     if (!this.config.get('VAPID_PUBLIC_KEY')) return;

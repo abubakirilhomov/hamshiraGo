@@ -24,6 +24,8 @@ import { CreateOrderDto } from '../orders/dto/create-order.dto';
 import { CompleteConsultationDto } from './dto/complete-consultation.dto';
 import { DoctorsService } from '../doctors/doctors.service';
 import { AiAgentService } from './ai-agent.service';
+import { ClinicAppointment } from '../clinic/entities/clinic-appointment.entity';
+import { CompanyUser } from '../clinic/entities/company-user.entity';
 
 /** Platform commission rate for consultations (15%) */
 const PLATFORM_FEE_RATE = 0.15;
@@ -44,6 +46,10 @@ export class ConsultationsService {
     private readonly chatMessageRepo: Repository<ChatMessage>,
     @InjectRepository(Prescription)
     private readonly prescriptionRepo: Repository<Prescription>,
+    @InjectRepository(ClinicAppointment)
+    private readonly appointmentRepo: Repository<ClinicAppointment>,
+    @InjectRepository(CompanyUser)
+    private readonly companyUserRepo: Repository<CompanyUser>,
     @Inject(forwardRef(() => OrdersService))
     private readonly ordersService: OrdersService,
     private readonly servicesService: ServicesService,
@@ -201,6 +207,22 @@ export class ConsultationsService {
         doctor.telegramChatId,
         `🩺 <b>Новая консультация!</b>\n\n${saved.symptoms ?? 'Пациент ожидает'}\n💰 ${saved.price.toLocaleString('ru-RU')} UZS`,
       ).catch(() => {});
+    }
+
+    // Web push to doctor (fire-and-forget)
+    this.webPushService.sendToSubscriber('doctor', doctorId, {
+      title: 'Новая консультация',
+      body: saved.symptoms
+        ? `Симптомы: ${saved.symptoms.slice(0, 100)}`
+        : 'Новый пациент ожидает',
+      data: { type: 'new_consultation', consultationId: saved.id },
+    }).catch(() => {});
+
+    // If doctor belongs to a clinic — create appointment + notify CEO
+    if (doctor.companyId) {
+      this.createClinicAppointment(doctor.companyId, doctorId, clientId, saved).catch(
+        (err) => this.logger.warn(`Failed to create clinic appointment: ${err.message}`),
+      );
     }
 
     return this.consultationRepo.findOne({
@@ -659,6 +681,74 @@ export class ConsultationsService {
     chatId: string,
   ): Promise<void> {
     await this.doctorRepo.update(doctorId, { telegramChatId: chatId });
+  }
+
+  // ── Clinic Appointment (for clinic-affiliated doctors) ───────────────────
+
+  /**
+   * When a doctor belongs to a clinic, create a ClinicAppointment and notify the CEO.
+   */
+  private async createClinicAppointment(
+    companyId: string,
+    doctorId: string,
+    clientId: string,
+    consultation: Consultation,
+  ): Promise<void> {
+    // Get patient info
+    const client = await this.usersService.findById(clientId);
+    const patientName = client?.name ?? 'Пациент';
+    const patientPhone = client?.phone ?? '';
+
+    // Create appointment in clinic system
+    const now = new Date();
+    const appointment = this.appointmentRepo.create({
+      companyId,
+      doctorId,
+      patientName,
+      patientPhone,
+      patientId: clientId,
+      date: now.toISOString().slice(0, 10),
+      time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
+      status: 'SCHEDULED',
+      source: 'ONLINE',
+      notes: consultation.symptoms ?? null,
+    });
+    await this.appointmentRepo.save(appointment);
+
+    // Find CEO of the clinic
+    const ceo = await this.companyUserRepo.findOne({
+      where: { companyId, role: 'CEO' },
+    });
+
+    // Notify clinic via Socket.IO
+    this.gateway.server
+      .to(`clinic:${companyId}`)
+      .emit('new_appointment', {
+        appointmentId: appointment.id,
+        consultationId: consultation.id,
+        doctorId,
+        patientName,
+        source: 'ONLINE',
+      });
+
+    // Web push to clinic CEO
+    this.webPushService
+      .sendToSubscriber('clinic', companyId, {
+        title: 'Новая онлайн-запись',
+        body: `${patientName} записался к врачу (онлайн-консультация)`,
+        data: { type: 'new_appointment', appointmentId: appointment.id },
+      })
+      .catch(() => {});
+
+    // Telegram to CEO if linked
+    if (ceo && (ceo as any).telegramChatId) {
+      this.telegramService
+        .sendMessage(
+          (ceo as any).telegramChatId,
+          `📋 <b>Новая онлайн-запись!</b>\n\nПациент: ${patientName}\nТелефон: ${patientPhone}\nСимптомы: ${consultation.symptoms ?? '—'}`,
+        )
+        .catch(() => {});
+    }
   }
 
   // ── Doctor Rating ────────────────────────────────────────────────────────

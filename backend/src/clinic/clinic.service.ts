@@ -36,6 +36,7 @@ import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
 import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { PushNotificationsService } from '../realtime/push-notifications.service';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
+import { WebPushService } from '../realtime/web-push.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -68,6 +69,7 @@ export class ClinicService {
     private readonly pushService: PushNotificationsService,
     @Inject(forwardRef(() => OrderEventsGateway))
     private readonly gateway: OrderEventsGateway,
+    private readonly webPushService: WebPushService,
   ) {}
 
   // ── Registration ──────────────────────────────────────────────────────
@@ -764,6 +766,15 @@ export class ClinicService {
       patientName: dto.patientName,
       specialization: dto.specialization ?? null,
     });
+
+    // Web push to clinic (CEO/reception browsers)
+    this.webPushService
+      .sendToSubscriber('clinic', dto.clinicId, {
+        title: 'Yangi bemor (Salomat AI)',
+        body: `${dto.patientName} — ${dto.specialization || 'Konsultatsiya'}`,
+        data: { type: 'new_lead', leadId: saved.id },
+      })
+      .catch(() => {});
 
     this.logger.log(`Lead created id=${saved.id} clinic=${dto.clinicId}`);
     return saved;

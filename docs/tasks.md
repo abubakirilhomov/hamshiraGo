@@ -22,7 +22,7 @@
 
 ### Абубакир — Backend
 
-- [ ] **UX-BE-2** — 🔴 CRITICAL — Логика назначения консультации: если врач принадлежит клинике → назначает CEO этой клиники (через `/clinic/appointments`); если врач независимый → назначает супер-админ (через `/consultations/admin/:id`). Сейчас все консультации падают в общую очередь без разделения — `backend/src/consultations/consultations.service.ts`, `backend/src/clinic/clinic.service.ts`
+- [x] **UX-BE-2** — DONE 2026-04-14 — Логика назначения консультации: если врач принадлежит клинике → ClinicAppointment с source='ONLINE' + уведомление CEO; независимый врач — без изменений — `backend/src/consultations/consultations.service.ts`, `consultations.module.ts`
 
 - [x] **UX-BE-1** — DONE 2026-04-14 — Salomat AI: инжектировать список активных врачей компании в system prompt. AI должен знать имена, специализации, цены врачей и рекомендовать конкретного — `backend/src/consultations/`, `backend/src/voice-agent/voice-agent.service.ts`
 
@@ -110,9 +110,9 @@
 
 ### Абубакир — Backend
 
-- [ ] **PUSH-BE-1** — 🔴 HIGH — Добавить тип `'doctor'` в `WebPushService`. Сейчас поддерживаются только `'client'` и `'medic'`. Добавить `POST /doctors/web-push-subscription` и `DELETE /doctors/web-push-subscription` — `backend/src/realtime/web-push.service.ts`, `backend/src/doctors/doctors.controller.ts`
-- [ ] **PUSH-BE-2** — 🔴 HIGH — Слать web push врачу при новой консультации (`PENDING`). Сейчас только Socket.IO (`emitNewConsultation`), пуш не отправляется — `backend/src/consultations/consultations.service.ts`
-- [ ] **PUSH-BE-3** — 🟠 MEDIUM — Слать web push клинике (CEO) при новом лиде от Salomat AI. Сейчас только Telegram — `backend/src/clinic/clinic.service.ts`
+- [x] **PUSH-BE-1** — DONE 2026-04-14 — Расширен WebPushService: типы 'doctor' и 'clinic'. Добавлены POST/DELETE `/doctors/web-push-subscription` — `backend/src/realtime/web-push.service.ts`, `backend/src/doctors/doctors.controller.ts`, `doctors.module.ts`
+- [x] **PUSH-BE-2** — DONE 2026-04-14 — Web push врачу при новой консультации (PENDING) — `backend/src/consultations/consultations.service.ts`
+- [x] **PUSH-BE-3** — DONE 2026-04-14 — Web push клинике при новом лиде от Salomat AI — `backend/src/clinic/clinic.service.ts`
 
 ### Жафар — Web-Medic (врач)
 
@@ -153,7 +153,7 @@
 
 ### Диёр — Web
 
-- [ ] **UX-CLIENT-1** — 🔴 CRITICAL — Нет удаления аккаунта. Обязательно для App Store / Google Play и GDPR. Добавить кнопку в профиль + `DELETE /auth/account` на бэкенде — `web/app/profile/page.tsx`, `backend/src/auth/`
+- [x] **UX-CLIENT-1** — DONE 2026-04-14 — Удаление аккаунта: `DELETE /auth/account` (soft-delete + anonymize PII + hard-delete medical card/favorites/push) — `backend/src/auth/auth.controller.ts`, `backend/src/users/users.service.ts`, `backend/src/users/entities/user.entity.ts`
 - [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
 - [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
 - [ ] **UX-CLIENT-4** — 🟠 HIGH — Нет онбординга для нового пользователя на web. Клиент после регистрации оказывается на главной без объяснений что это и как заказать — `web/app/onboarding/` (добавить шаги: как работает сервис, первый заказ)

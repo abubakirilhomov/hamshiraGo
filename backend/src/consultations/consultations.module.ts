@@ -7,6 +7,8 @@ import { Consultation } from './entities/consultation.entity';
 import { ChatMessage } from './entities/chat-message.entity';
 import { Prescription } from './entities/prescription.entity';
 import { SalomatAuditLog } from './entities/salomat-audit-log.entity';
+import { ClinicAppointment } from '../clinic/entities/clinic-appointment.entity';
+import { CompanyUser } from '../clinic/entities/company-user.entity';
 import { ConsultationsService } from './consultations.service';
 import { AiAgentService } from './ai-agent.service';
 import { VideoService } from './video.service';
@@ -22,7 +24,7 @@ import { ClinicModule } from '../clinic/clinic.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Doctor, Consultation, ChatMessage, Prescription, SalomatAuditLog]),
+    TypeOrmModule.forFeature([Doctor, Consultation, ChatMessage, Prescription, SalomatAuditLog, ClinicAppointment, CompanyUser]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

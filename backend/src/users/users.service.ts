@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(data: { phone: string; passwordHash: string; name: string | null; referredBy?: string | null }): Promise<User> {
@@ -201,5 +204,73 @@ export class UsersService {
       page: Math.max(page, 1),
       totalPages: Math.ceil(total / take),
     };
+  }
+
+  // ── Account Deletion (GDPR / App Store compliance) ───────────────────
+
+  /**
+   * Soft-delete a user account:
+   * 1. Anonymize PII (phone, name, tokens)
+   * 2. Cancel active orders
+   * 3. Hard-delete medical card, favorites, push subscriptions
+   * 4. Soft-delete the user record
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    const anonPhone = `deleted_${userId.slice(0, 8)}`;
+
+    await this.dataSource.transaction(async (manager) => {
+      // 1. Anonymize user data
+      await manager.update(User, userId, {
+        phone: anonPhone,
+        name: null,
+        pushToken: null,
+        telegramChatId: null,
+        referralCode: null,
+        isBlocked: true,
+      });
+
+      // 2. Cancel active orders
+      try {
+        await manager.query(
+          `UPDATE orders SET status = 'CANCELED', "cancelReason" = 'Account deleted'
+           WHERE "clientId" = $1 AND status NOT IN ('DONE', 'CANCELED')`,
+          [userId],
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to cancel active orders: ${err}`);
+      }
+
+      // 3. Hard-delete medical data
+      try {
+        await manager.query(`DELETE FROM medical_cards WHERE "userId" = $1`, [userId]);
+      } catch (err) {
+        this.logger.warn(`Failed to delete medical card: ${err}`);
+      }
+
+      // 4. Hard-delete favorites
+      try {
+        await manager.query(`DELETE FROM favorite_medics WHERE "userId" = $1`, [userId]);
+      } catch (err) {
+        this.logger.warn(`Failed to delete favorites: ${err}`);
+      }
+
+      // 5. Hard-delete push subscriptions
+      try {
+        await manager.query(
+          `DELETE FROM web_push_subscriptions WHERE "subscriberType" = 'client' AND "subscriberId" = $1`,
+          [userId],
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to delete push subscriptions: ${err}`);
+      }
+
+      // 6. Soft-delete user
+      await manager.softDelete(User, userId);
+    });
+
+    this.logger.log(`Account deleted (soft) for user=${userId}`);
   }
 }

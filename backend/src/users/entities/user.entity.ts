@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
   Index,
 } from 'typeorm';
@@ -59,6 +60,10 @@ export class User {
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  /** Soft-delete timestamp (account deletion for GDPR/App Store compliance) */
+  @DeleteDateColumn({ nullable: true })
+  deletedAt!: Date | null;
 
   @OneToMany(() => Order, (order) => order.client)
   orders!: Order[];

@@ -7,6 +7,7 @@ import { DoctorSlot } from './entities/doctor-slot.entity';
 import { DoctorsService } from './doctors.service';
 import { DoctorsController } from './doctors.controller';
 import { CommonModule } from '../common/common.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CommonModule } from '../common/common.module';
     }),
     ConfigModule,
     CommonModule,
+    RealtimeModule,
   ],
   controllers: [DoctorsController],
   providers: [DoctorsService],
