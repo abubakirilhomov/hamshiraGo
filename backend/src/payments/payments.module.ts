@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Payment } from './entities/payment.entity';
 import { Order } from '../orders/entities/order.entity';
+import { Consultation } from '../consultations/entities/consultation.entity';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
 import { PaymeService } from './payme.service';
@@ -11,7 +12,7 @@ import { ClickService } from './click.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Order]),
+    TypeOrmModule.forFeature([Payment, Order, Consultation]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

@@ -1,6 +1,26 @@
 # HamshiraGo --- Выполненные задачи
 
-## 2026-04-14 (web: UX-DOC-1 — страница врачей с поиском)
+## 2026-04-14
+
+### Абубакир — BIZ-BE-1..4, BIZ-MOB-1..2, UX-BE-1..2, PUSH-BE-1..3, UX-CLIENT-1, MED-FIX
+
+- **[backend]** BIZ-BE-1 — Оплата консультации через Payme/Click: расширен Payment entity (consultationId nullable), добавлены `POST /payments/consultation/:id/initiate` и `GET /payments/consultation/:id/status`, обновлены webhook handlers Payme и Click для consultation_id, добавлен `paymentStatus` в consultation entity
+- **[backend]** BIZ-BE-2 — Вывод средств медика: WithdrawalRequest entity, `POST /medics/me/withdrawal-request` (MedicAuthGuard), admin endpoints approve/decline с pessimistic lock
+- **[backend]** BIZ-BE-3 — Рейтинг врача после консультации: `POST /consultations/:id/rate`, пересчёт doctor.rating через AVG
+- **[backend]** BIZ-BE-4 — Публичный `GET /companies` без auth
+- **[backend]** UX-BE-1 — Salomat AI: инжектирован список врачей в system prompt
+- **[backend]** UX-BE-2 — Логика назначения консультации: врач клиники → ClinicAppointment + уведомление CEO
+- **[backend]** PUSH-BE-1 — WebPushService: типы 'doctor' и 'clinic', POST/DELETE /doctors/web-push-subscription
+- **[backend]** PUSH-BE-2 — Web push врачу при новой консультации
+- **[backend]** PUSH-BE-3 — Web push клинике при новом лиде от Salomat AI
+- **[backend]** UX-CLIENT-1 — DELETE /auth/account: soft-delete + anonymize PII + cleanup
+- **[mobile]** BIZ-MOB-1 — Mobile UI оплаты консультации (Payme/Click via WebBrowser)
+- **[mobile]** BIZ-MOB-2 — Mobile UI рейтинга врача (inline stars + comment)
+- **[medic]** MED-FIX — Убран дублирующийся +998 из phonePlaceholder
+
+### Диёр — web: UX-DOC-1, UX-CLIN-1
+
+## 2026-04-13 (Диёр — BIZ-WEB-2, BIZ-WEB-5, BIZ-WEB-6, BIZ-ADM-1, logo fixes)
 
 - **[feat]** `web/app/doctors/page.tsx` — добавлен поиск по имени/специализации прямо на странице (inline filter поверх реальных данных API). Страница уже имела фото, рейтинг, цену, кнопку "Записаться".
 

@@ -194,6 +194,22 @@ export class MedicsController {
     await this.medicsService.saveProfilePhotoUrl(medicId, url);
   }
 
+  // ── Withdrawal ────────────────────────────────────────────────────────────
+
+  @Post('me/withdrawal-request')
+  @UseGuards(MedicAuthGuard)
+  @ApiOperation({ summary: 'Request balance withdrawal' })
+  createWithdrawalRequest(
+    @MedicId() medicId: string,
+    @Body() body: { amount: number; cardNumber?: string },
+  ) {
+    return this.medicsService.createWithdrawalRequest(
+      medicId,
+      body.amount,
+      body.cardNumber,
+    );
+  }
+
   // ── Admin endpoints ───────────────────────────────────────────────────────
 
   /** List all medics with PENDING verification — for operator dashboard */
@@ -265,6 +281,31 @@ export class MedicsController {
       throw new BadRequestException('AMOUNT_POSITIVE');
     }
     await this.medicsService.addBalance(id, amount);
+  }
+
+  // ── Admin: Withdrawal management ─────────────────────────────────────────
+
+  @Get('admin/withdrawal-requests')
+  @UseGuards(AdminGuard)
+  getWithdrawalRequests(@Query('status') status?: string) {
+    return this.medicsService.getWithdrawalRequests(
+      status as 'PENDING' | 'APPROVED' | 'DECLINED' | undefined,
+    );
+  }
+
+  @Post('admin/withdrawal-requests/:id/approve')
+  @UseGuards(AdminGuard)
+  approveWithdrawal(@Param('id') id: string) {
+    return this.medicsService.approveWithdrawal(id);
+  }
+
+  @Post('admin/withdrawal-requests/:id/decline')
+  @UseGuards(AdminGuard)
+  declineWithdrawal(
+    @Param('id') id: string,
+    @Body() body: { adminNote?: string },
+  ) {
+    return this.medicsService.declineWithdrawal(id, body.adminNote);
   }
 
   // ── Push token (Expo) ────────────────────────────────────────────────────

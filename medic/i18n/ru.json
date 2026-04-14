@@ -8,7 +8,7 @@
     "login": "Войти",
     "register": "Регистрация",
     "phone": "Телефон",
-    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "phonePlaceholder": "XX XXX-XX-XX",
     "password": "Пароль",
     "passwordPlaceholder": "Минимум 6 символов",
     "name": "Имя",

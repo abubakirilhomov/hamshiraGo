@@ -3,12 +3,14 @@ import {
   Alert,
   Pressable,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList } from 'react-native';
 import { router } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Themed';
@@ -40,6 +42,8 @@ interface Consultation {
   createdOrderId: string | null;
   price: number;
   platformFee: number;
+  clientRating: number | null;
+  clientComment: string | null;
   createdAt: string;
 }
 
@@ -97,6 +101,34 @@ export default function ConsultationsScreen() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Rating state
+  const [ratingId, setRatingId] = useState<string | null>(null);
+  const [stars, setStars] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+
+  const submitRating = useCallback(async (consultationId: string) => {
+    if (!token || stars === 0) return;
+    setSubmittingRating(true);
+    try {
+      await apiFetch(`/consultations/${consultationId}/rate`, {
+        token,
+        method: 'POST',
+        body: { rating: stars, comment: comment.trim() || undefined },
+      });
+      setConsultations((prev) =>
+        prev.map((c) => c.id === consultationId ? { ...c, clientRating: stars, clientComment: comment.trim() || null } : c),
+      );
+      setRatingId(null);
+      setStars(0);
+      setComment('');
+    } catch {
+      Alert.alert('Xatolik', "Bahoni yuborib bo'lmadi");
+    } finally {
+      setSubmittingRating(false);
+    }
+  }, [token, stars, comment]);
 
   const fetchConsultations = useCallback(
     async (pageNum: number, append: boolean) => {
@@ -225,6 +257,57 @@ export default function ConsultationsScreen() {
               <Text style={styles.notesLinkText}>Xulosani ko'rish</Text>
               <FontAwesome name="chevron-right" size={11} color={Theme.primary} />
             </Pressable>
+          )}
+
+          {/* Rating section for completed consultations */}
+          {item.status === 'COMPLETED' && item.clientRating == null && ratingId !== item.id && (
+            <Pressable
+              style={({ pressed }) => [styles.rateBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => { setRatingId(item.id); setStars(0); setComment(''); }}
+            >
+              <FontAwesome name="star" size={14} color={Theme.primary} />
+              <Text style={styles.rateBtnText}>Shifokorni baholang</Text>
+            </Pressable>
+          )}
+
+          {item.status === 'COMPLETED' && item.clientRating != null && (
+            <View style={styles.ratedRow}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <FontAwesome key={s} name={s <= item.clientRating! ? 'star' : 'star-o'} size={14} color={s <= item.clientRating! ? '#f59e0b' : Theme.border} />
+              ))}
+              <Text style={styles.ratedText}>Baholangan</Text>
+            </View>
+          )}
+
+          {ratingId === item.id && (
+            <View style={styles.ratingCard}>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Pressable key={s} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setStars(s); }}>
+                    <FontAwesome name={s <= stars ? 'star' : 'star-o'} size={32} color={s <= stars ? '#f59e0b' : Theme.border} />
+                  </Pressable>
+                ))}
+              </View>
+              <TextInput
+                style={styles.commentInput}
+                value={comment}
+                onChangeText={setComment}
+                placeholder="Izoh (ixtiyoriy)"
+                placeholderTextColor={Theme.textTertiary}
+                multiline
+                maxLength={500}
+              />
+              <Pressable
+                style={[styles.submitRatingBtn, stars === 0 && { backgroundColor: Theme.border }]}
+                onPress={() => submitRating(item.id)}
+                disabled={submittingRating || stars === 0}
+              >
+                {submittingRating
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={styles.submitRatingText}>{stars === 0 ? 'Baho tanlang' : `Yuborish (${stars} ★)`}</Text>
+                }
+              </Pressable>
+            </View>
           )}
 
           {/* Active: call button */}
@@ -468,6 +551,66 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.manropeSb,
     color: '#fff',
     fontSize: 14,
+  },
+
+  /* Rating */
+  rateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Theme.primaryLight,
+    paddingVertical: 10,
+    borderRadius: Radius.sm,
+  },
+  rateBtnText: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 13,
+    color: Theme.primary,
+  },
+  ratedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratedText: {
+    fontFamily: Fonts.inter,
+    fontSize: 12,
+    color: Theme.textTertiary,
+    marginLeft: 6,
+  },
+  ratingCard: {
+    gap: 12,
+    padding: 12,
+    backgroundColor: Theme.surfaceContainerLow,
+    borderRadius: Radius.md,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.md,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: Theme.border,
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    color: Theme.text,
+    minHeight: 56,
+    textAlignVertical: 'top',
+    backgroundColor: Theme.surface,
+  },
+  submitRatingBtn: {
+    backgroundColor: Theme.primary,
+    borderRadius: Radius.md,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  submitRatingText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 
   /* Empty state */

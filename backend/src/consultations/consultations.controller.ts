@@ -462,6 +462,24 @@ export class ConsultationsController {
     );
   }
 
+  // ── Client: Rate doctor ──────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/rate')
+  @HttpCode(HttpStatus.OK)
+  rateDoctor(
+    @Param('id', ParseUUIDPipe) id: string,
+    @ClientId() clientId: string,
+    @Body() body: { rating: number; comment?: string },
+  ) {
+    return this.consultationsService.rateConsultation(
+      id,
+      clientId,
+      body.rating,
+      body.comment,
+    );
+  }
+
   /* ------------------------------------------------------------------ */
   /*  Private helpers                                                    */
   /* ------------------------------------------------------------------ */

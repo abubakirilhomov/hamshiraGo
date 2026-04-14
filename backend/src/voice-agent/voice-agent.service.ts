@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { VoiceSession } from './entities/voice-session.entity';
 import { ServicesService } from '../services/services.service';
+import { Doctor } from '../consultations/entities/doctor.entity';
 
 @Injectable()
 export class VoiceAgentService {
@@ -25,6 +26,8 @@ export class VoiceAgentService {
   constructor(
     @InjectRepository(VoiceSession)
     private readonly sessionRepo: Repository<VoiceSession>,
+    @InjectRepository(Doctor)
+    private readonly doctorRepo: Repository<Doctor>,
     private readonly configService: ConfigService,
     private readonly servicesService: ServicesService,
   ) {
@@ -425,6 +428,22 @@ export class VoiceAgentService {
     // Determine if this is first message (greeting in Uzbek)
     // The caller can pass lang='uz' for first message greeting context
 
+    // Load active doctors for recommendations
+    let doctorsText = '';
+    try {
+      const doctors = await this.doctorRepo.find({
+        where: { isActive: true, verificationStatus: 'APPROVED' },
+        order: { rating: 'DESC' },
+        take: 20,
+        select: ['name', 'specialization', 'pricePerConsultation', 'rating', 'ratingCount'],
+      });
+      if (doctors.length > 0) {
+        doctorsText = doctors
+          .map((d) => `- ${d.name} (${d.specialization}) — ${d.pricePerConsultation} UZS, рейтинг ${d.rating}/5`)
+          .join('\n');
+      }
+    } catch { /* ignore */ }
+
     return `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
 
 ПРАВИЛА ЯЗЫКА:
@@ -436,12 +455,18 @@ export class VoiceAgentService {
 ${this.salomatPrompt}
 
 Доступные услуги медсестёр:
-${servicesText}
+${servicesText}${doctorsText ? `
+
+Доступные врачи для онлайн-консультации:
+${doctorsText}
+
+Когда рекомендуешь врача, называй КОНКРЕТНОГО врача из списка по имени и специализации.` : ''}
 
 ФОРМАТ РЕКОМЕНДАЦИИ (после 2-5 обменов):
 Если нужен врач:
 РЕКОМЕНДАЦИЯ: DOCTOR
 СПЕЦИАЛИЗАЦИЯ: [тип специалиста]
+ВРАЧ: [имя конкретного врача из списка, если подходит]
 
 Если нужна медсестра на дом:
 РЕКОМЕНДАЦИЯ: NURSE

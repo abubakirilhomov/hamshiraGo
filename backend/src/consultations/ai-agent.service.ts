@@ -1,9 +1,12 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import Anthropic from '@anthropic-ai/sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SalomatAuditService } from './salomat-audit.service';
+import { Doctor } from './entities/doctor.entity';
 
 export interface PatientContext {
   name?: string;
@@ -31,6 +34,8 @@ export class AiAgentService {
   constructor(
     private readonly configService: ConfigService,
     private readonly salomatAuditService: SalomatAuditService,
+    @InjectRepository(Doctor)
+    private readonly doctorRepo: Repository<Doctor>,
   ) {
     const apiKey = this.configService.get<string>('ANTHROPIC_API_KEY');
     this.client = new Anthropic({ apiKey: apiKey || 'dummy-key' });
@@ -83,17 +88,40 @@ export class AiAgentService {
     entry.count++;
   }
 
+  /** Load active approved doctors, top-20 by rating */
+  private async loadDoctorsText(): Promise<string> {
+    try {
+      const doctors = await this.doctorRepo.find({
+        where: { isActive: true, verificationStatus: 'APPROVED' },
+        order: { rating: 'DESC' },
+        take: 20,
+        select: ['id', 'name', 'specialization', 'pricePerConsultation', 'rating', 'ratingCount'],
+      });
+      if (doctors.length === 0) return '';
+      return doctors
+        .map(
+          (d) =>
+            `- ${d.name} (${d.specialization}) — ${d.pricePerConsultation} UZS, рейтинг ${d.rating}/5 (${d.ratingCount || 0} отзывов)`,
+        )
+        .join('\n');
+    } catch {
+      return '';
+    }
+  }
+
   /**
    * Build the full system prompt, optionally including patient context.
    */
-  private buildSystemPrompt(
+  private async buildSystemPrompt(
     isFirstMessage: boolean,
     patientContext?: PatientContext,
     lang: string = 'ru',
-  ): string {
+  ): Promise<string> {
     const langInstruction = lang === 'uz'
       ? `ЯЗЫК ОТВЕТА: O'ZBEK TILIDA JAVOB BER. Har doim o'zbek tilida (lotin alifbosida) javob ber. Hech qachon rus tilida javob berma. Bemorning tili: O'ZBEKCHA.`
       : `ЯЗЫК ОТВЕТА: РУССКИЙ. Всегда отвечай на русском языке. Даже если знаешь узбекский — отвечай на русском. Язык пациента: РУССКИЙ.`;
+
+    const doctorsText = await this.loadDoctorsText();
 
     let prompt = `Ты — Salomat, AI-помощник сервиса HamshiraGo. Ты НЕ врач.
 
@@ -101,12 +129,18 @@ ${langInstruction}
 Не смешивай языки в одном ответе. Не используй эмодзи.
 
 БАЗА ЗНАНИЙ:
-${this.salomatPrompt}
+${this.salomatPrompt}${doctorsText ? `
+
+Доступные врачи для онлайн-консультации:
+${doctorsText}
+
+Когда рекомендуешь врача, называй КОНКРЕТНОГО врача из списка выше по имени, специализации и цене.` : ''}
 
 ФОРМАТ РЕКОМЕНДАЦИИ (когда собрано достаточно информации):
 Если нужен врач:
 РЕКОМЕНДАЦИЯ: DOCTOR
 СПЕЦИАЛИЗАЦИЯ: [тип специалиста]
+ВРАЧ: [имя конкретного врача из списка, если подходит]
 КРАТКОЕ ОПИСАНИЕ: [2-3 предложения о симптомах]
 
 Если нужна медсестра на дом:
@@ -152,7 +186,7 @@ ${this.salomatPrompt}
     this.checkRateLimit(userId);
 
     const isFirstMessage = messages.length <= 1;
-    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext, lang);
+    const systemPrompt = await this.buildSystemPrompt(isFirstMessage, patientContext, lang);
 
     try {
       const response = await this.client.messages.create({
@@ -198,7 +232,7 @@ ${this.salomatPrompt}
     }
 
     const isFirstMessage = messages.length <= 1;
-    const systemPrompt = this.buildSystemPrompt(isFirstMessage, patientContext, lang);
+    const systemPrompt = await this.buildSystemPrompt(isFirstMessage, patientContext, lang);
 
     const stream = await this.client.messages.stream({
       model: 'claude-haiku-4-5-20251001',

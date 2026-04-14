@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatus } from '../orders/entities/order-status.enum';
+import { Consultation } from '../consultations/entities/consultation.entity';
 
 // Payme error codes
 const ERR_OBJECT_NOT_FOUND = -32504;
@@ -24,6 +25,8 @@ export class PaymeService {
     private paymentRepo: Repository<Payment>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
+    @InjectRepository(Consultation)
+    private consultationRepo: Repository<Consultation>,
     private config: ConfigService,
     private dataSource: DataSource,
   ) {}
@@ -61,11 +64,12 @@ export class PaymeService {
     return parts[0] === 185 && parts[1] === 8 && parts[2] === 212;
   }
 
-  /** Build Payme checkout URL */
-  buildPaymeUrl(orderId: string, amountUzs: number): string {
+  /** Build Payme checkout URL for orders or consultations */
+  buildPaymeUrl(entityId: string, amountUzs: number, type: 'order' | 'consultation' = 'order'): string {
     const merchantId = this.config.get<string>('PAYME_MERCHANT_ID', '');
     const tiyin = amountUzs * 100;
-    const raw = `m=${merchantId};ac.order_id=${orderId};a=${tiyin}`;
+    const accountField = type === 'consultation' ? 'consultation_id' : 'order_id';
+    const raw = `m=${merchantId};ac.${accountField}=${entityId};a=${tiyin}`;
     const encoded = Buffer.from(raw).toString('base64');
     const base = this.config.get<string>('PAYME_TEST_MODE', 'true') === 'true'
       ? 'https://checkout.test.paycom.uz'
@@ -108,6 +112,26 @@ export class PaymeService {
     return this.orderRepo.findOne({ where: { id: orderId } });
   }
 
+  private async findConsultation(id: unknown): Promise<Consultation | null> {
+    if (typeof id !== 'string') return null;
+    return this.consultationRepo.findOne({ where: { id } });
+  }
+
+  /** Resolve account object to either order or consultation */
+  private resolveAccount(account: Record<string, unknown> | undefined): {
+    type: 'order' | 'consultation';
+    entityId: string;
+  } | null {
+    if (!account) return null;
+    if (account['consultation_id']) {
+      return { type: 'consultation', entityId: String(account['consultation_id']) };
+    }
+    if (account['order_id']) {
+      return { type: 'order', entityId: String(account['order_id']) };
+    }
+    return null;
+  }
+
   private async findPaymentByProviderTxId(id: string): Promise<Payment | null> {
     return this.paymentRepo.findOne({ where: { providerTransactionId: id, provider: 'payme' } });
   }
@@ -121,29 +145,36 @@ export class PaymeService {
 
   private async checkPerformTransaction(params: Record<string, unknown>) {
     const account = params['account'] as Record<string, unknown> | undefined;
-    const orderId = account?.['order_id'];
     const amountTiyin = params['amount'] as number | undefined;
-
-    const order = await this.findOrder(orderId);
-    if (!order) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Order not found');
-    if (order.status === OrderStatus.CANCELED) return this.rpcError(ERR_CANNOT_PERFORM, 'Order is cancelled');
-
     const amountUzs = this.tiyinToUzs(amountTiyin ?? 0);
-    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
-    if (amountUzs !== netPrice) {
-      return this.rpcError(ERR_WRONG_AMOUNT, 'Wrong amount');
+
+    const resolved = this.resolveAccount(account);
+    if (!resolved) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Account not found');
+
+    if (resolved.type === 'consultation') {
+      const consultation = await this.findConsultation(resolved.entityId);
+      if (!consultation) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Consultation not found');
+      if (consultation.status === 'CANCELED') return this.rpcError(ERR_CANNOT_PERFORM, 'Consultation is cancelled');
+      if (amountUzs !== consultation.price) return this.rpcError(ERR_WRONG_AMOUNT, 'Wrong amount');
+      const existing = await this.paymentRepo.findOne({ where: { consultationId: consultation.id, provider: 'payme', status: 'paid' } });
+      if (existing) return this.rpcError(ERR_ALREADY_PAID, 'Already paid');
+      return this.rpcOk({ allow: true });
     }
 
+    // Order payment
+    const order = await this.findOrder(resolved.entityId);
+    if (!order) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Order not found');
+    if (order.status === OrderStatus.CANCELED) return this.rpcError(ERR_CANNOT_PERFORM, 'Order is cancelled');
+    const netPrice = (order.priceAmount ?? 0) - (order.discountAmount ?? 0);
+    if (amountUzs !== netPrice) return this.rpcError(ERR_WRONG_AMOUNT, 'Wrong amount');
     const existing = await this.paymentRepo.findOne({ where: { orderId: order.id, provider: 'payme', status: 'paid' } });
     if (existing) return this.rpcError(ERR_ALREADY_PAID, 'Order already paid');
-
     return this.rpcOk({ allow: true });
   }
 
   private async createTransaction(params: Record<string, unknown>) {
     const id = params['id'] as string | undefined;
     const account = params['account'] as Record<string, unknown> | undefined;
-    const orderId = account?.['order_id'];
     const amountTiyin = params['amount'] as number | undefined;
     const time = params['time'] as number | undefined;
 
@@ -160,20 +191,40 @@ export class PaymeService {
       });
     }
 
-    const order = await this.findOrder(orderId);
-    if (!order) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Order not found');
-    if (order.status === OrderStatus.CANCELED) return this.rpcError(ERR_CANNOT_PERFORM, 'Order is cancelled');
-
+    const resolved = this.resolveAccount(account);
+    if (!resolved) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Account not found');
     const amountUzs = this.tiyinToUzs(amountTiyin ?? 0);
 
-    payment = this.paymentRepo.create({
-      orderId: order.id,
-      provider: 'payme',
-      status: 'pending',
-      amount: amountUzs,
-      providerTransactionId: id,
-      providerState: 1,
-    });
+    if (resolved.type === 'consultation') {
+      const consultation = await this.findConsultation(resolved.entityId);
+      if (!consultation) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Consultation not found');
+      if (consultation.status === 'CANCELED') return this.rpcError(ERR_CANNOT_PERFORM, 'Consultation is cancelled');
+
+      payment = this.paymentRepo.create({
+        consultationId: consultation.id,
+        orderId: null,
+        provider: 'payme',
+        status: 'pending',
+        amount: amountUzs,
+        providerTransactionId: id,
+        providerState: 1,
+      });
+    } else {
+      const order = await this.findOrder(resolved.entityId);
+      if (!order) return this.rpcError(ERR_ORDER_NOT_FOUND, 'Order not found');
+      if (order.status === OrderStatus.CANCELED) return this.rpcError(ERR_CANNOT_PERFORM, 'Order is cancelled');
+
+      payment = this.paymentRepo.create({
+        orderId: order.id,
+        consultationId: null,
+        provider: 'payme',
+        status: 'pending',
+        amount: amountUzs,
+        providerTransactionId: id,
+        providerState: 1,
+      });
+    }
+
     if (time) {
       payment.createdAt = new Date(time);
     }
@@ -210,10 +261,11 @@ export class PaymeService {
         });
       }
 
-      // Re-check that no other 'paid' payment exists for this order (belt-and-suspenders)
-      const existingPaid = await manager.findOne(Payment, {
-        where: { orderId: payment.orderId, provider: 'payme', status: 'paid' as PaymentStatus },
-      });
+      // Re-check that no other 'paid' payment exists for this order/consultation (belt-and-suspenders)
+      const paidWhere = payment.consultationId
+        ? { consultationId: payment.consultationId, provider: 'payme' as const, status: 'paid' as PaymentStatus }
+        : { orderId: payment.orderId!, provider: 'payme' as const, status: 'paid' as PaymentStatus };
+      const existingPaid = await manager.findOne(Payment, { where: paidWhere });
       if (existingPaid) {
         return this.rpcOk({
           transaction: existingPaid.id,
@@ -226,6 +278,11 @@ export class PaymeService {
       payment.providerState = 2;
       payment.performTime = new Date();
       await manager.save(Payment, payment);
+
+      // Mark consultation as paid if applicable
+      if (payment.consultationId) {
+        await manager.update(Consultation, payment.consultationId, { paymentStatus: 'paid' });
+      }
 
       return this.rpcOk({
         transaction: payment.id,
@@ -301,7 +358,9 @@ export class PaymeService {
       id: p.providerTransactionId,
       time: p.createdAt.getTime(),
       amount: p.amount * 100,
-      account: { order_id: p.orderId },
+      account: p.consultationId
+        ? { consultation_id: p.consultationId }
+        : { order_id: p.orderId },
       create_time: p.createdAt.getTime(),
       perform_time: p.performTime ? p.performTime.getTime() : 0,
       cancel_time: p.cancelTime ? p.cancelTime.getTime() : 0,

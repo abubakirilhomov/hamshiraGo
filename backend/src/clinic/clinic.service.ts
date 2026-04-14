@@ -258,6 +258,50 @@ export class ClinicService {
     return { data, total, page, limit };
   }
 
+  /** Public list: only active & verified companies, safe fields only */
+  async findPublicCompanies(city?: string, page = 1, limit = 20) {
+    const qb = this.companyRepo
+      .createQueryBuilder('c')
+      .select([
+        'c.id',
+        'c.name',
+        'c.phone',
+        'c.address',
+        'c.city',
+        'c.lat',
+        'c.lng',
+        'c.logoUrl',
+        'c.licenseNumber',
+        'c.createdAt',
+      ])
+      .where('c.isActive = true')
+      .andWhere('c.isVerified = true');
+
+    if (city) {
+      qb.andWhere('c.city = :city', { city });
+    }
+
+    qb.orderBy('c.name', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
+  }
+
+  /** Public single company by ID (only if active & verified) */
+  async getPublicCompany(companyId: string) {
+    const company = await this.companyRepo.findOne({
+      where: { id: companyId, isActive: true, isVerified: true },
+      select: [
+        'id', 'name', 'phone', 'address', 'city',
+        'lat', 'lng', 'logoUrl', 'licenseNumber', 'createdAt',
+      ],
+    });
+    if (!company) throw new NotFoundException('COMPANY_NOT_FOUND');
+    return company;
+  }
+
   async verifyCompany(id: string, isVerified: boolean) {
     const company = await this.companyRepo.findOne({ where: { id } });
     if (!company) throw new NotFoundException('COMPANY_NOT_FOUND');

@@ -47,6 +47,36 @@ export class PaymentsController {
     return this.paymentsService.getPaymentStatus(orderId);
   }
 
+  // ── Consultation payments ─────────────────────────────────────────────
+
+  @Post('consultation/:consultationId/initiate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Initiate payment for a consultation' })
+  async initiateConsultationPayment(
+    @Param('consultationId') consultationId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id;
+    await this.paymentsService.verifyConsultationOwnership(consultationId, userId);
+    return this.paymentsService.initiateConsultationPayment(consultationId);
+  }
+
+  @Get('consultation/:consultationId/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment status for a consultation' })
+  async getConsultationPaymentStatus(
+    @Param('consultationId') consultationId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user?.id;
+    await this.paymentsService.verifyConsultationOwnership(consultationId, userId);
+    return this.paymentsService.getConsultationPaymentStatus(consultationId);
+  }
+
+  // ── Webhooks ──────────────────────────────────────────────────────────
+
   @Post('payme')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Payme JSON-RPC webhook (Basic auth + IP whitelist)' })

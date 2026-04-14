@@ -8,7 +8,7 @@
     "login": "Kirish",
     "register": "Ro'yxatdan o'tish",
     "phone": "Telefon",
-    "phonePlaceholder": "+998 XX XXX-XX-XX",
+    "phonePlaceholder": "XX XXX-XX-XX",
     "password": "Parol",
     "passwordPlaceholder": "Kamida 6 belgi",
     "name": "Ism",

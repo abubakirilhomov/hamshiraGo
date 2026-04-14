@@ -24,7 +24,7 @@
 
 - [ ] **UX-BE-2** — 🔴 CRITICAL — Логика назначения консультации: если врач принадлежит клинике → назначает CEO этой клиники (через `/clinic/appointments`); если врач независимый → назначает супер-админ (через `/consultations/admin/:id`). Сейчас все консультации падают в общую очередь без разделения — `backend/src/consultations/consultations.service.ts`, `backend/src/clinic/clinic.service.ts`
 
-- [ ] **UX-BE-1** — 🟡 HIGH — Salomat AI: инжектировать список активных врачей компании в system prompt. AI должен знать имена, специализации, цены врачей и рекомендовать конкретного — `backend/src/consultations/`, `backend/src/voice-agent/voice-agent.service.ts`
+- [x] **UX-BE-1** — DONE 2026-04-14 — Salomat AI: инжектировать список активных врачей компании в system prompt. AI должен знать имена, специализации, цены врачей и рекомендовать конкретного — `backend/src/consultations/`, `backend/src/voice-agent/voice-agent.service.ts`
 
 ### Диёр — Web (после UX-BE-1)
 
@@ -48,12 +48,12 @@
 
 ### Абубакир — Backend + Mobile
 
-- [ ] **BIZ-BE-1** — 🔴 CRITICAL — Оплата консультации: нет payment flow при бронировании врача. Добавить `POST /payments/consultation/:id/initiate` (Payme/Click). `doctor.pricePerConsultation` есть, но клиент получает консультацию бесплатно — `backend/src/consultations/`, `backend/src/payments/`
-- [ ] **BIZ-BE-2** — 🔴 CRITICAL — Медик: вывод средств — нет endpoint `POST /medics/me/withdrawal-request` и нет admin-endpoint для одобрения/отклонения выплат. Медик не может вывести баланс — `backend/src/medics/`
-- [ ] **BIZ-BE-3** — 🔴 CRITICAL — Рейтинг врача после консультации: нет `POST /consultations/:id/rate`. `doctor.rating` в БД есть, но никогда не обновляется — `backend/src/consultations/`
-- [ ] **BIZ-BE-4** — 🟡 HIGH — Публичный `GET /companies` (без AdminGuard) — нужен для страницы клиник на web/. Сейчас только `/admin/companies` с AdminGuard — `backend/src/clinic/clinic.controller.ts`
-- [ ] **BIZ-MOB-1** — 🔴 CRITICAL — Mobile: UI оплаты консультации (после BIZ-BE-1) — `mobile/app/consultation.tsx`
-- [ ] **BIZ-MOB-2** — 🔴 CRITICAL — Mobile: UI рейтинга врача после консультации (после BIZ-BE-3) — `mobile/app/consultations.tsx`
+- [x] **BIZ-BE-1** — DONE 2026-04-14 — Оплата консультации: добавлен payment flow при бронировании врача. `POST /payments/consultation/:id/initiate` (Payme/Click), webhook handlers обновлены — `backend/src/payments/`, `consultation.entity.ts`
+- [x] **BIZ-BE-2** — DONE 2026-04-14 — Медик: вывод средств — WithdrawalRequest entity, `POST /medics/me/withdrawal-request`, admin approve/decline с pessimistic lock — `backend/src/medics/`
+- [x] **BIZ-BE-3** — DONE 2026-04-14 — Рейтинг врача после консультации: `POST /consultations/:id/rate`, пересчёт doctor.rating через AVG — `backend/src/consultations/`
+- [x] **BIZ-BE-4** — DONE 2026-04-14 — Публичный `GET /companies` и `GET /companies/:id` без auth, фильтр по city — `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
+- [x] **BIZ-MOB-1** — DONE 2026-04-14 — Mobile: UI оплаты консультации (Payme/Click выбор + expo-web-browser) — `mobile/app/consultation.tsx`
+- [x] **BIZ-MOB-2** — DONE 2026-04-14 — Mobile: UI рейтинга врача (звёзды + комментарий для COMPLETED консультаций) — `mobile/app/consultations.tsx`
 
 ### Жафар — Clinic + Web-Medic
 

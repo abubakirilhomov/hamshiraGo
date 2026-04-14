@@ -19,8 +19,13 @@ export class Payment {
   id!: string;
 
   @Index()
-  @Column({ type: 'uuid' })
-  orderId!: string;
+  @Column({ type: 'uuid', nullable: true })
+  orderId!: string | null;
+
+  /** Consultation ID (for doctor consultation payments) */
+  @Index()
+  @Column({ type: 'uuid', nullable: true, default: null })
+  consultationId!: string | null;
 
   @Column({ type: 'varchar', length: 10 })
   provider!: PaymentProvider;
@@ -56,7 +61,7 @@ export class Payment {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @ManyToOne(() => Order, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'orderId' })
-  order!: Order;
+  order!: Order | null;
 }

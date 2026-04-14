@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { Text } from '@/components/Themed';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
@@ -159,8 +161,49 @@ export default function ConsultationScreen() {
         body: JSON.stringify(body),
       });
 
-      showToast(t('consultation.booked'), 'success');
-      router.replace('/consultations');
+      // Initiate payment if price > 0
+      if (res.price > 0) {
+        try {
+          const paymentRes = await apiFetch<{ paymeUrl: string; clickUrl: string }>(`/payments/consultation/${res.id}/initiate`, {
+            method: 'POST',
+            token,
+          });
+
+          // Let user choose payment method
+          Alert.alert(
+            "To'lov usulini tanlang",
+            `Konsultatsiya narxi: ${res.price.toLocaleString()} so'm`,
+            [
+              {
+                text: 'Payme',
+                onPress: async () => {
+                  await WebBrowser.openBrowserAsync(paymentRes.paymeUrl);
+                  router.replace('/consultations');
+                },
+              },
+              {
+                text: 'Click',
+                onPress: async () => {
+                  await WebBrowser.openBrowserAsync(paymentRes.clickUrl);
+                  router.replace('/consultations');
+                },
+              },
+              {
+                text: "Keyinroq to'lash",
+                style: 'cancel',
+                onPress: () => router.replace('/consultations'),
+              },
+            ],
+          );
+        } catch {
+          // Payment initiation failed but consultation is created
+          showToast(t('consultation.booked'), 'success');
+          router.replace('/consultations');
+        }
+      } else {
+        showToast(t('consultation.booked'), 'success');
+        router.replace('/consultations');
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : t('common.error');
       showToast(msg, 'error');

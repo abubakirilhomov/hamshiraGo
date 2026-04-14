@@ -50,6 +50,9 @@ export class Doctor {
   @Column({ type: 'int', default: 0 })
   consultationCount!: number;
 
+  @Column({ type: 'int', default: 0, nullable: true })
+  ratingCount!: number;
+
   @Exclude()
   @Column({ type: 'varchar', length: 255, nullable: true, default: null })
   passwordHash!: string | null;

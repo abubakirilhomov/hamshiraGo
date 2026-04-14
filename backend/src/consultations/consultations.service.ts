@@ -660,4 +660,60 @@ export class ConsultationsService {
   ): Promise<void> {
     await this.doctorRepo.update(doctorId, { telegramChatId: chatId });
   }
+
+  // ── Doctor Rating ────────────────────────────────────────────────────────
+
+  /**
+   * Rate a doctor after a completed consultation.
+   * Recalculates the doctor's average rating across all consultations.
+   */
+  async rateConsultation(
+    consultationId: string,
+    clientId: string,
+    rating: number,
+    comment?: string,
+  ): Promise<Consultation> {
+    const consultation = await this.consultationRepo.findOne({
+      where: { id: consultationId },
+    });
+    if (!consultation) throw new NotFoundException('Consultation not found');
+    if (consultation.clientId !== clientId)
+      throw new ForbiddenException('Not your consultation');
+    if (consultation.status !== 'COMPLETED')
+      throw new BadRequestException('Consultation is not completed');
+    if (consultation.clientRating !== null)
+      throw new BadRequestException('Already rated');
+    if (rating < 1 || rating > 5)
+      throw new BadRequestException('Rating must be between 1 and 5');
+
+    consultation.clientRating = rating;
+    consultation.clientComment = comment?.trim() || null;
+    await this.consultationRepo.save(consultation);
+
+    // Recalculate doctor's average rating
+    this.recalculateDoctorRating(consultation.doctorId).catch((err) =>
+      this.logger.error(`Failed to recalculate doctor rating: ${err.message}`),
+    );
+
+    return consultation;
+  }
+
+  /** Recalculate doctor.rating and doctor.ratingCount from all rated consultations */
+  private async recalculateDoctorRating(doctorId: string): Promise<void> {
+    const result = await this.consultationRepo
+      .createQueryBuilder('c')
+      .select('AVG(c.clientRating)', 'avg')
+      .addSelect('COUNT(c.clientRating)', 'cnt')
+      .where('c.doctorId = :doctorId', { doctorId })
+      .andWhere('c.clientRating IS NOT NULL')
+      .getRawOne();
+
+    const avg = result?.avg ? parseFloat(Number(result.avg).toFixed(1)) : 0;
+    const cnt = result?.cnt ? parseInt(result.cnt, 10) : 0;
+
+    await this.doctorRepo.update(doctorId, {
+      rating: avg,
+      ratingCount: cnt,
+    });
+  }
 }

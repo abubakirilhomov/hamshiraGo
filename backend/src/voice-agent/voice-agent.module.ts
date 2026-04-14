@@ -4,13 +4,14 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { VoiceSession } from './entities/voice-session.entity';
+import { Doctor } from '../consultations/entities/doctor.entity';
 import { VoiceAgentService } from './voice-agent.service';
 import { VoiceAgentController } from './voice-agent.controller';
 import { ServicesModule } from '../services/services.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([VoiceSession]),
+    TypeOrmModule.forFeature([VoiceSession, Doctor]),
     ConfigModule,
     ServicesModule,
     JwtModule.registerAsync({

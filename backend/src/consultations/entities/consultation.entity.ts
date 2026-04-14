@@ -65,6 +65,18 @@ export class Consultation {
   @Column({ type: 'varchar', length: 20, nullable: true, default: null })
   videoStatus!: 'CALLING' | 'ACTIVE' | 'ENDED' | null;
 
+  /** Client's rating for the doctor (1-5), set after COMPLETED */
+  @Column({ type: 'smallint', nullable: true, default: null })
+  clientRating!: number | null;
+
+  /** Client's comment about the doctor */
+  @Column({ type: 'varchar', length: 500, nullable: true, default: null })
+  clientComment!: string | null;
+
+  /** Payment status */
+  @Column({ type: 'varchar', length: 10, nullable: true, default: 'unpaid' })
+  paymentStatus!: 'unpaid' | 'paid' | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

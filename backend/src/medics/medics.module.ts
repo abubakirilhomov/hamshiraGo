@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Medic } from './entities/medic.entity';
 import { MedicSchedule } from './entities/medic-schedule.entity';
+import { WithdrawalRequest } from './entities/withdrawal-request.entity';
 import { Order } from '../orders/entities/order.entity';
 import { MedicsService } from './medics.service';
 import { MedicsController } from './medics.controller';
@@ -11,7 +12,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Medic, MedicSchedule, Order]),
+    TypeOrmModule.forFeature([Medic, MedicSchedule, WithdrawalRequest, Order]),
     forwardRef(() => RealtimeModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],

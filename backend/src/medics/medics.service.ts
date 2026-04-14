@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Medic } from './entities/medic.entity';
 import { MedicSchedule } from './entities/medic-schedule.entity';
+import { WithdrawalRequest, WithdrawalStatus } from './entities/withdrawal-request.entity';
 import { VerificationStatus } from './entities/verification-status.enum';
 import { RegisterMedicDto } from './dto/register-medic.dto';
 import { LoginMedicDto } from './dto/login-medic.dto';
@@ -33,6 +34,8 @@ export class MedicsService {
     private medicRepo: Repository<Medic>,
     @InjectRepository(MedicSchedule)
     private readonly scheduleRepo: Repository<MedicSchedule>,
+    @InjectRepository(WithdrawalRequest)
+    private readonly withdrawalRepo: Repository<WithdrawalRequest>,
     @InjectRepository(Order)
     private orderRepo: Repository<Order>,
     private jwtService: JwtService,
@@ -652,5 +655,99 @@ export class MedicsService {
     return schedules.some(
       (s) => tashkentHour >= s.startHour && tashkentHour < s.endHour,
     );
+  }
+
+  // ── Withdrawal Requests ────────────────────────────────────────────────
+
+  /** Medic creates a withdrawal request */
+  async createWithdrawalRequest(
+    medicId: string,
+    amount: number,
+    cardNumber?: string,
+  ): Promise<WithdrawalRequest> {
+    if (amount <= 0) throw new BadRequestException('Amount must be positive');
+
+    // Check for existing pending request
+    const pending = await this.withdrawalRepo.findOne({
+      where: { medicId, status: 'PENDING' },
+    });
+    if (pending)
+      throw new BadRequestException('You already have a pending withdrawal request');
+
+    // Verify sufficient balance (pessimistic lock)
+    const medic = await this.medicRepo.findOne({
+      where: { id: medicId },
+      lock: { mode: 'pessimistic_read' },
+    });
+    if (!medic) throw new NotFoundException('Medic not found');
+    if (Number(medic.balance) < amount)
+      throw new BadRequestException('Insufficient balance');
+
+    const request = this.withdrawalRepo.create({
+      medicId,
+      amount,
+      cardNumber: cardNumber || null,
+      status: 'PENDING',
+    });
+    return this.withdrawalRepo.save(request);
+  }
+
+  /** Admin: list withdrawal requests with medic info */
+  async getWithdrawalRequests(status?: WithdrawalStatus) {
+    const qb = this.withdrawalRepo
+      .createQueryBuilder('wr')
+      .leftJoin(Medic, 'm', 'm.id = wr.medicId')
+      .addSelect(['m.name', 'm.phone'])
+      .orderBy('wr.createdAt', 'DESC');
+
+    if (status) {
+      qb.where('wr.status = :status', { status });
+    }
+
+    const rows = await qb.getRawAndEntities();
+
+    return rows.entities.map((wr, i) => ({
+      ...wr,
+      medicName: rows.raw[i]?.m_name || null,
+      medicPhone: rows.raw[i]?.m_phone || null,
+    }));
+  }
+
+  /** Admin: approve withdrawal — deduct balance */
+  async approveWithdrawal(id: string): Promise<WithdrawalRequest> {
+    const wr = await this.withdrawalRepo.findOne({ where: { id } });
+    if (!wr) throw new NotFoundException('Withdrawal request not found');
+    if (wr.status !== 'PENDING')
+      throw new BadRequestException('Request is not pending');
+
+    // Deduct balance with pessimistic lock
+    const medic = await this.medicRepo.findOne({
+      where: { id: wr.medicId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!medic) throw new NotFoundException('Medic not found');
+    if (Number(medic.balance) < wr.amount)
+      throw new BadRequestException('Medic has insufficient balance');
+
+    medic.balance = Number(medic.balance) - wr.amount;
+    await this.medicRepo.save(medic);
+
+    wr.status = 'APPROVED';
+    return this.withdrawalRepo.save(wr);
+  }
+
+  /** Admin: decline withdrawal */
+  async declineWithdrawal(
+    id: string,
+    adminNote?: string,
+  ): Promise<WithdrawalRequest> {
+    const wr = await this.withdrawalRepo.findOne({ where: { id } });
+    if (!wr) throw new NotFoundException('Withdrawal request not found');
+    if (wr.status !== 'PENDING')
+      throw new BadRequestException('Request is not pending');
+
+    wr.status = 'DECLINED';
+    wr.adminNote = adminNote || null;
+    return this.withdrawalRepo.save(wr);
   }
 }
