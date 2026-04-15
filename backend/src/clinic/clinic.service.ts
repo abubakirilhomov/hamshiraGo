@@ -37,6 +37,7 @@ import { CreatePrescriptionDto } from './dto/create-prescription.dto';
 import { PushNotificationsService } from '../realtime/push-notifications.service';
 import { OrderEventsGateway } from '../realtime/order-events.gateway';
 import { WebPushService } from '../realtime/web-push.service';
+import { TelegramService } from '../common/telegram.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -70,6 +71,7 @@ export class ClinicService {
     @Inject(forwardRef(() => OrderEventsGateway))
     private readonly gateway: OrderEventsGateway,
     private readonly webPushService: WebPushService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   // ── Registration ──────────────────────────────────────────────────────
@@ -143,6 +145,11 @@ export class ClinicService {
     });
     if (!user) throw new NotFoundException('STAFF_NOT_FOUND');
     return { user: this.sanitizeUser(user), company: user.company };
+  }
+
+  async saveTelegramChatId(userId: string, chatId: string) {
+    await this.userRepo.update({ id: userId }, { telegramChatId: chatId });
+    return { ok: true };
   }
 
   // ── Staff CRUD ────────────────────────────────────────────────────────
@@ -775,6 +782,25 @@ export class ClinicService {
         data: { type: 'new_lead', leadId: saved.id },
       })
       .catch(() => {});
+
+    // Telegram notification to CEO + RECEPTION staff with telegramChatId
+    const staffWithTg = await this.userRepo.find({
+      where: { companyId: dto.clinicId, isActive: true },
+      select: ['telegramChatId', 'role'],
+    });
+    const tgChatIds = staffWithTg
+      .filter((s) => s.telegramChatId && ['CEO', 'RECEPTION'].includes(s.role))
+      .map((s) => s.telegramChatId as string);
+
+    if (tgChatIds.length) {
+      const spec = dto.specialization ? ` · ${dto.specialization}` : '';
+      const text =
+        `🔔 <b>Новый лид от Salomat AI</b>\n\n` +
+        `👤 <b>${dto.patientName}</b>${spec}\n` +
+        `📞 ${dto.patientPhone}\n` +
+        (dto.aiSummary ? `\n💬 ${dto.aiSummary.slice(0, 200)}` : '');
+      this.telegramService.broadcastToAll(tgChatIds, text);
+    }
 
     this.logger.log(`Lead created id=${saved.id} clinic=${dto.clinicId}`);
     return saved;

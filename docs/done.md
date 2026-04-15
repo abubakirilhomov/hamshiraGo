@@ -47,11 +47,9 @@
 
 ## 2026-04-15
 
-### Silent Error Catch Fixes
+### Абубакир — Security / Logic Audit Fixes
 
 - **[mobile]** fix: handleFavoriteToggle in track.tsx now shows error toast instead of silently swallowing failures (`mobile/app/order/track.tsx`)
-
-### Security / Logic Audit Fixes
 
 - **[backend]** AUDIT-FIX-1: doctorAcceptConsultation() теперь проверяет paymentStatus перед принятием (price > 0 requires 'paid') (`backend/src/consultations/consultations.service.ts`)
 - **[backend]** AUDIT-FIX-2: doctorCompleteConsultation() теперь начисляет doctor.balance и doctor.earnings при оплаченной консультации (`backend/src/consultations/consultations.service.ts`)
@@ -66,6 +64,16 @@
 - **[mobile]** AUDIT-FIX-12: Исправлен JSON.stringify для body в rating API call (`mobile/`)
 - **[backend]** AUDIT-FIX-13: deleteAccount теперь отменяет активные consultations (PENDING/ACTIVE) (`backend/src/auth/auth.service.ts`)
 - **[backend]** AUDIT-FIX-14: deleteAccount phone anonymization использует full UUID (без коллизий) (`backend/src/auth/auth.service.ts`)
+
+### Жафар — web-medic
+
+- **[feat]** PUSH-WM-1 — `subscribeWebPushDoctor()` + `unsubscribeWebPushDoctor()` в `webPush.ts` (endpoint `/doctors/web-push-subscription`); `DoctorPushPermissionPrompt.tsx` (bottom-sheet через 3с для врачей); подключён в `doctor/layout.tsx`
+- **[feat]** UX-PARTNER-7 — Socket.IO `new_consultation` listener в `/doctor/consultations/page.tsx`: авто-join `doctor:{id}` room через JWT, toast-уведомление + авто-reload pending при новой консультации
+- **[feat]** UX-PARTNER-8 — шаблоны повторяющихся слотов: 4 быстрых шаблона, кастомный конфигуратор (дни недели + время + интервал + диапазон дней), bulk-создание — `web-medic/app/doctor/schedule/page.tsx`
+- **[feat]** UX-PARTNER-5 — кнопка "Экспорт" с CSV (записи, лиды, помесячная статистика) — `web-medic/app/clinic/dashboard/page.tsx`
+- **[feat]** UX-PARTNER-4 — OnboardingChecklist для клиники: 4 шага, прогресс-бар, автопроверка — `web-medic/app/clinic/dashboard/page.tsx`
+- **[feat]** UX-PARTNER-2 — Telegram-уведомления о лидах: `telegramChatId` в CompanyUser, `PATCH /clinic/me/telegram-chat-id`, broadcast CEO+RECEPTION — `backend/src/clinic/`, `web-medic/app/clinic/settings/page.tsx`
+- **[fix]** Hydration mismatch — `DashboardLayout.tsx`, `DoctorContext.tsx`, `doctor/profile/page.tsx`
 
 ## 2026-04-14
 

@@ -50,6 +50,9 @@ export class CompanyUser {
   @Column({ type: 'varchar', nullable: true })
   pushToken!: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  telegramChatId!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

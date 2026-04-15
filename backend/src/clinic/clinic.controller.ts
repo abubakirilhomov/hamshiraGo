@@ -67,6 +67,14 @@ export class ClinicAuthController {
 export class ClinicController {
   constructor(private readonly clinicService: ClinicService) {}
 
+  @Patch('me/telegram-chat-id')
+  saveTelegramChatId(
+    @ClinicUser() user: ClinicUserPayload,
+    @Body() body: { chatId: string },
+  ) {
+    return this.clinicService.saveTelegramChatId(user.userId, body.chatId);
+  }
+
   @Get('company')
   getCompany(@ClinicUser() user: ClinicUserPayload) {
     return this.clinicService.getCompany(user.companyId);

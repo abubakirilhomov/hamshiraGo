@@ -22,6 +22,8 @@
 
 ### Абубакир — Backend
 
+- [ ] **SEC-BE-1** — 🔴 HIGH — `DoctorAuthGuard`: не проверяет `verificationStatus` и `isBlocked` — отклонённый/заблокированный врач может войти и принимать консультации — `backend/src/auth/guards/doctor-auth.guard.ts`, `backend/src/doctors/doctors.service.ts`
+
 - [x] **UX-BE-2** — DONE 2026-04-14 — Логика назначения консультации: если врач принадлежит клинике → ClinicAppointment с source='ONLINE' + уведомление CEO; независимый врач — без изменений — `backend/src/consultations/consultations.service.ts`, `consultations.module.ts`
 
 - [x] **UX-BE-1** — DONE 2026-04-14 — Salomat AI: инжектировать список активных врачей компании в system prompt. AI должен знать имена, специализации, цены врачей и рекомендовать конкретного — `backend/src/consultations/`, `backend/src/voice-agent/voice-agent.service.ts`
@@ -117,7 +119,7 @@
 
 ### Жафар — Web-Medic (врач)
 
-- [ ] **PUSH-WM-1** — 🔴 HIGH — Врачи: добавить web push подписку. `WebPushInit` в web-medic шлёт на `/medics/web-push-subscription` — нужен отдельный `/doctors/web-push-subscription` (после PUSH-BE-1). Добавить `PushPermissionPrompt` для врачей — `web-medic/lib/webPush.ts`, `web-medic/components/WebPushInit.tsx`
+- [x] **PUSH-WM-1** — DONE 2026-04-15 (Жафар) — Врачи: `subscribeWebPushDoctor()` добавлен в `webPush.ts`, `DoctorPushPermissionPrompt` создан, подключён в `doctor/layout.tsx` — `web-medic/lib/webPush.ts`, `web-medic/components/DoctorPushPermissionPrompt.tsx`, `web-medic/app/doctor/layout.tsx`
 - [x] **PUSH-WM-2** — DONE 2026-04-14 (Жафар) — Медики: заменён авто-запрос на `PushPermissionPrompt` (bottom-sheet через 3с) — `web-medic/components/WebPushInit.tsx`, `web-medic/components/PushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 
 ---
@@ -171,17 +173,17 @@
 ### Жафар — Web-Medic (клиники)
 
 - [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
-- [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
+- [x] **UX-PARTNER-2** — DONE 2026-04-15 (Жафар) — Telegram-уведомления о лидах: добавлен `telegramChatId` в `CompanyUser`, `PATCH /clinic/me/telegram-chat-id`, `createLead` шлёт в Telegram CEO+RECEPTION, UI подключения в Settings — `backend/src/clinic/`, `web-medic/app/clinic/settings/page.tsx`
 - [x] **UX-PARTNER-3** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача — решено вместе с BIZ-CLIN-2
 - [ ] **UX-PARTNER-10** — 🔴 HIGH — Страница управления услугами клиники `/clinic/services`. CEO должен самостоятельно создавать, редактировать и деактивировать услуги (название, цена, описание). Бекенд готов: `POST/GET/PATCH/DELETE /clinic/services` за `ClinicRoleGuard('CEO')` — `web-medic/app/clinic/services/page.tsx` (новая страница)
-- [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
-- [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
+- [x] **UX-PARTNER-4** — DONE 2026-04-15 (Жафар) — Онбординг для новой клиники: чеклист 4 шагов с прогресс-баром, автопроверка профиля/персонала/кабинетов, закрывается через localStorage — `web-medic/app/clinic/dashboard/page.tsx`
+- [x] **UX-PARTNER-5** — DONE 2026-04-15 (Жафар) — Clinic dashboard: кнопка "Экспорт" с выпадающим меню → CSV экспорт записей (сегодня), лидов (до 500), помесячной статистики — `web-medic/app/clinic/dashboard/page.tsx`
 
 ### Жафар — Web-Medic (врачи)
 
 - [x] **UX-PARTNER-6** — DONE 2026-04-14 (Жафар) — Профиль врача: поля `pricePerConsultation` + `bio` добавлены в форму и display — `web-medic/app/doctor/profile/page.tsx`, `web-medic/lib/api.ts`
-- [ ] **UX-PARTNER-7** — 🟠 HIGH — Нет push/Telegram-уведомления врачу о новой консультации. Врач узнаёт только если сам зайдёт в `/consultations` — `web-medic/app/doctor/consultations/page.tsx` + backend
-- [ ] **UX-PARTNER-8** — 🟠 MEDIUM — Расписание: нет шаблонов повторяющихся слотов. Врач каждый день вручную создаёт одни и те же слоты (напр. Пн–Пт 09:00–17:00 каждые 30 мин) — `web-medic/app/doctor/schedule/page.tsx`
+- [x] **UX-PARTNER-7** — DONE 2026-04-15 (Жафар) — Real-time уведомления врачу: Socket.IO `new_consultation` listener + toast + авто-reload pending — `web-medic/app/doctor/consultations/page.tsx`
+- [x] **UX-PARTNER-8** — DONE 2026-04-15 (Жафар) — Шаблоны слотов уже реализованы: QUICK_TEMPLATES, кастомный день-пикер, интервал, диапазон дней, handleApplyTemplate — `web-medic/app/doctor/schedule/page.tsx`
 - [x] **UX-PARTNER-9** — DONE 2026-04-14 (Жафар) — Профиль врача: поле "О себе / Биография" добавлено вместе с UX-PARTNER-6 — `web-medic/app/doctor/profile/page.tsx`
 
 ---
