@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { api, Service, formatPrice, checkNps } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
+import { useUser } from "@/context/UserContext";
 
 const CATEGORY_ICONS: Record<string, string> = {
   "Уколы": "vaccines", "Инъекции": "vaccines",
@@ -24,10 +25,10 @@ export default function HomePage() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
+  const { user } = useUser();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [userInitials, setUserInitials] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -43,16 +44,6 @@ export default function HomePage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth"); return; }
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        const u = JSON.parse(stored) as { name?: string | null; phone?: string };
-        const initials = u.name
-          ? u.name.trim().split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
-          : (u.phone ?? "").slice(-2);
-        setUserInitials(initials);
-      }
-    } catch { /* ignore */ }
     loadServices();
     try {
       if (!sessionStorage.getItem("nps_shown")) {
@@ -133,7 +124,9 @@ export default function HomePage() {
               color: "#fff", fontSize: 13, fontWeight: 800,
               boxShadow: "0 2px 8px rgba(0,104,95,0.25)",
             }}>
-              {userInitials || <span className="mat-icon" style={{ fontSize: 16 }}>person</span>}
+              {user?.name
+                ? user.name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+                : user?.phone?.slice(-2) || <span className="mat-icon" style={{ fontSize: 16 }}>person</span>}
             </button>
           </div>
         </div>

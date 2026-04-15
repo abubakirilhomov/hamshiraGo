@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform, useScroll } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useMotionValue, useSpring, useTransform, useScroll, AnimatePresence } from "framer-motion";
 import { useLang } from "@/context/LangContext";
 
 /* ── Magnetic hook ───────────────────────────────────── */
 function useMag(str=0.28) {
-  const ref = useRef<HTMLAnchorElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const x = useMotionValue(0), y = useMotionValue(0);
   const sx = useSpring(x,{stiffness:300,damping:20}), sy = useSpring(y,{stiffness:300,damping:20});
   return {
@@ -87,10 +87,79 @@ function Phone() {
   );
 }
 
+/* ── Download Modal ──────────────────────────────────── */
+function DownloadModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang();
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(6px)" }}
+    >
+      <motion.div
+        initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+        transition={{ type: "spring", damping: 28, stiffness: 320 }}
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: "var(--card-bg,#fff)", borderRadius: "28px 28px 0 0", padding: "32px 24px 48px", width: "100%", maxWidth: 480, boxShadow: "0 -20px 60px rgba(0,0,0,0.2)" }}
+      >
+        {/* Handle */}
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(0,0,0,0.12)", margin: "0 auto 28px" }} />
+
+        <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary,#0f172a)", fontFamily: "inherit", marginBottom: 6, textAlign: "center" }}>
+          {t.download?.modalTitle ?? "Выберите способ"}
+        </p>
+        <p style={{ fontSize: 14, color: "var(--text-3,#64748b)", textAlign: "center", marginBottom: 28, lineHeight: 1.5 }}>
+          {t.download?.modalSubtitle ?? "Скачайте приложение или используйте веб-версию"}
+        </p>
+
+        {/* Web версия — primary */}
+        <a href="https://app.hamshirago.uz?from=landing" target="_blank" rel="noopener noreferrer"
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderRadius: 18, background: "linear-gradient(135deg,#0d9488,#0891b2)", marginBottom: 12, textDecoration: "none", boxShadow: "0 8px 24px rgba(13,148,136,0.3)" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0 }}>{t.download?.webTitle ?? "Веб-версия"}</p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0 }}>{t.download?.webSub ?? "Открыть в браузере — без установки"}</p>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+
+        {/* App Store */}
+        <a href="#" onClick={(e) => e.preventDefault()}
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: 18, background: "var(--bg2,#f8fafc)", border: "1.5px solid var(--card-border,#e2e8f0)", marginBottom: 10, textDecoration: "none", opacity: 0.6, cursor: "not-allowed" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 814 1000" fill="#fff"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.6-49.8 188.4-49.8zM518.1 163.4c-35.3 41.6-98.1 71.9-158.2 71.9-8.3 0-16.6-.9-24.9-2.6C361.1 127.4 441.2 58 508.2 17c38.5-23.9 101.9-43.3 158.2-43.3 1.3 0 2.6 0 3.9.1-2.6 66.3-38.5 131.9-52.2 143.6z"/></svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary,#0f172a)", margin: 0 }}>App Store</p>
+            <p style={{ fontSize: 12, color: "var(--text-4,#94a3b8)", margin: 0 }}>{t.download?.appStore?.sub ?? "Скоро"}</p>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4,#94a3b8)", background: "var(--card-border,#e2e8f0)", padding: "3px 8px", borderRadius: 6 }}>Скоро</span>
+        </a>
+
+        {/* Google Play */}
+        <a href="#" onClick={(e) => e.preventDefault()}
+          style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderRadius: 18, background: "var(--bg2,#f8fafc)", border: "1.5px solid var(--card-border,#e2e8f0)", textDecoration: "none", opacity: 0.6, cursor: "not-allowed" }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fff", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24"><path d="M3 20.5L14 12 3 3.5V20.5Z" fill="#4CAF50"/><path d="M14 12L3 3.5L16.5 8.75L14 12Z" fill="#1976D2"/><path d="M14 12L3 20.5L16.5 15.25L14 12Z" fill="#FF5722"/><path d="M16.5 8.75L14 12L16.5 15.25L21 12L16.5 8.75Z" fill="#FFC107"/></svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: "var(--text-primary,#0f172a)", margin: 0 }}>Google Play</p>
+            <p style={{ fontSize: 12, color: "var(--text-4,#94a3b8)", margin: 0 }}>{t.download?.googlePlay?.sub ?? "Скоро"}</p>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-4,#94a3b8)", background: "var(--card-border,#e2e8f0)", padding: "3px 8px", borderRadius: 6 }}>Скоро</span>
+        </a>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ── Hero ────────────────────────────────────────────── */
 export default function Hero() {
   const { t } = useLang();
   const sRef = useRef<HTMLElement>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   // Mouse → normalized [-0.5, 0.5]
   const mx = useMotionValue(0), my = useMotionValue(0);
@@ -195,7 +264,8 @@ export default function Hero() {
 
                 {/* Store buttons row */}
                 <div className="flex flex-wrap gap-3">
-                <motion.a ref={b1.ref} href="#download" style={{x:b1.sx,y:b1.sy,background:"var(--text-primary)",boxShadow:"0 8px 32px var(--shadow),0 2px 8px rgba(0,0,0,0.2)",color:"var(--bg2)"}}
+                <motion.button ref={b1.ref} onClick={() => setShowDownloadModal(true)}
+                  style={{x:b1.sx,y:b1.sy,background:"var(--text-primary)",boxShadow:"0 8px 32px var(--shadow),0 2px 8px rgba(0,0,0,0.2)",color:"var(--bg2)",border:"none",cursor:"pointer"}}
                   onMouseMove={b1.onMouseMove} onMouseLeave={b1.onMouseLeave}
                   className="flex items-center gap-3 px-6 py-4 rounded-2xl font-bold">
                   <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 814 1000" fill="currentColor">
@@ -205,10 +275,10 @@ export default function Hero() {
                     <p style={{fontSize:10,opacity:0.5,fontWeight:400,lineHeight:1}}>{t.download.appStore.sub}</p>
                     <p style={{fontSize:15,fontWeight:900,lineHeight:1.3}}>App Store</p>
                   </div>
-                </motion.a>
+                </motion.button>
 
-                <motion.a ref={b2.ref} href="#download"
-                  style={{x:b2.sx,y:b2.sy,background:"var(--card-bg)",border:"1px solid var(--card-border-strong)",backdropFilter:"blur(16px)",color:"var(--text-primary)"}}
+                <motion.button ref={b2.ref} onClick={() => setShowDownloadModal(true)}
+                  style={{x:b2.sx,y:b2.sy,background:"var(--card-bg)",border:"1px solid var(--card-border-strong)",backdropFilter:"blur(16px)",color:"var(--text-primary)",cursor:"pointer"}}
                   onMouseMove={b2.onMouseMove} onMouseLeave={b2.onMouseLeave}
                   className="flex items-center gap-3 px-6 py-4 rounded-2xl font-bold">
                   <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
@@ -221,7 +291,7 @@ export default function Hero() {
                     <p style={{fontSize:10,opacity:0.5,fontWeight:400,lineHeight:1}}>{t.download.googlePlay.sub}</p>
                     <p style={{fontSize:15,fontWeight:900,lineHeight:1.3}}>Google Play</p>
                   </div>
-                </motion.a>
+                </motion.button>
                 </div>
               </motion.div>
 
@@ -275,6 +345,10 @@ export default function Hero() {
         <motion.div animate={{y:[0,10,0]}} transition={{duration:1.8,repeat:Infinity}}
           style={{width:1,height:40,background:"linear-gradient(to bottom, rgba(13,148,136,0.5), transparent)"}}/>
       </motion.div>
+
+      <AnimatePresence>
+        {showDownloadModal && <DownloadModal onClose={() => setShowDownloadModal(false)} />}
+      </AnimatePresence>
     </section>
   );
 }

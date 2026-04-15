@@ -10,9 +10,12 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISS_KEY = "pwa-install-dismissed-at";
 const DISMISS_DAYS = 7;
+const FROM_LANDING_KEY = "pwa-from-landing";
 
 function isDismissed() {
   if (typeof window === "undefined") return false;
+  // If came from landing — override dismiss snooze
+  if (localStorage.getItem(FROM_LANDING_KEY)) return false;
   const val = localStorage.getItem(DISMISS_KEY);
   if (!val) return false;
   return Date.now() - Number(val) < DISMISS_DAYS * 24 * 60 * 60 * 1000;
@@ -36,13 +39,26 @@ export default function InstallPrompt() {
   const [showIos, setShowIos] = useState(false);
 
   useEffect(() => {
+    // Check if came from landing page
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "landing") {
+      localStorage.setItem(FROM_LANDING_KEY, "1");
+      // Clean up URL param without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("from");
+      window.history.replaceState({}, "", url.toString());
+    }
+
     // Already installed or dismissed recently — don't show
     if (isInStandaloneMode() || isDismissed()) return;
 
-    // iOS: show manual instruction after 2s
+    const fromLanding = !!localStorage.getItem(FROM_LANDING_KEY);
+
+    // iOS: show manual instruction — immediately if from landing, else after 2s
     if (isIos()) {
-      const t = setTimeout(() => setShowIos(true), 2000);
-      return () => clearTimeout(t);
+      const delay = fromLanding ? 500 : 2000;
+      const timer = setTimeout(() => setShowIos(true), delay);
+      return () => clearTimeout(timer);
     }
 
     // Android/Chrome: wait for beforeinstallprompt
@@ -57,6 +73,7 @@ export default function InstallPrompt() {
 
   function dismiss() {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    localStorage.removeItem(FROM_LANDING_KEY);
     setShowAndroid(false);
     setShowIos(false);
   }
@@ -65,6 +82,7 @@ export default function InstallPrompt() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    localStorage.removeItem(FROM_LANDING_KEY);
     if (outcome === "accepted") {
       setDeferredPrompt(null);
       setShowAndroid(false);

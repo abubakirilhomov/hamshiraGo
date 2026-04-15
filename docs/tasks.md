@@ -16,9 +16,9 @@
 
 - [x] **UX-I18N-1** — DONE 2026-04-14 — i18n: добавлены переводы (ru/uz) на 12 страниц (consultations, consultation, prescriptions, loyalty, subscriptions, salomat, doctors, clinics, voice-agent, video-call, ai-chat, onboarding) и 4 компонента (VoiceAssistant, InstallPrompt, PushPermissionPrompt). Новые секции в ru.json и uz.json — `web/i18n/ru.json`, `web/i18n/uz.json`
 
-- [ ] **UX-WEB-1** — 🟡 HIGH — Salomat AI: сохранять историю чата в `localStorage`. При возврате на страницу — восстанавливать диалог. Добавить кнопку "Очистить чат" — `web/app/salomat/page.tsx`
-- [ ] **UX-WEB-2** — 🟡 HIGH — Salomat AI: адаптивный layout для десктопа. Сейчас `maxWidth: 480` — узкая мобильная колонка. На ≥768px: двухколоночный layout (инфо-панель слева, чат справа) — `web/app/salomat/page.tsx`
-- [ ] **UX-WEB-3** — 🟡 HIGH — Salomat AI: голосовой ввод внутри чата. Кнопка микрофона рядом с полем ввода — запись → STT → отправка как текст. Использовать готовый `VoiceAssistant` компонент — `web/app/salomat/page.tsx`, `web/components/VoiceAssistant.tsx`
+- [x] **UX-WEB-1** — DONE 2026-04-15 — Salomat AI: история чата сохраняется в `localStorage`, восстанавливается при возврате. Кнопка "Очистить" в хедере (видна только если есть сообщения) — `web/app/salomat/page.tsx`
+- [x] **UX-WEB-2** — DONE 2026-04-15 — Salomat AI: двухколоночный layout на ≥768px. Слева (320px): описание AI, примеры вопросов, экстренный звонок 103. Справа: чат. На мобильном — без изменений — `web/app/salomat/page.tsx`
+- [x] **UX-WEB-3** — DONE 2026-04-15 — Salomat AI: кнопка микрофона в поле ввода. Запись → `voiceAgentApi.transcribe()` → текст в поле. Красная рамка textarea + пульс при записи, спиннер при транскрибации — `web/app/salomat/page.tsx`
 
 ### Абубакир — Backend
 
@@ -37,10 +37,10 @@
 
 ### Диёр — Admin
 
-- [ ] **UX-ADM-1** — 🟠 MEDIUM — В списках медиков (`/medics`) и врачей (`/doctors`): добавить аватарку. Если фото есть — показать `<img>`, если нет — круг с первой буквой имени (цвет генерировать из имени через hash). Аналогично таблице пользователей — `admin/src/pages/Medics.tsx`, `admin/src/pages/Doctors.tsx`
+- [x] **UX-ADM-1** — DONE 2026-04-15 — Аватарки в таблицах медиков и врачей. Фото → `<img>`, нет фото → круг с первой буквой имени, цвет из `hashColor(name)` (8 цветов по hash). Медики: `facePhotoUrl`, Врачи: `photoUrl` — `admin/src/pages/Medics.tsx`, `admin/src/pages/Doctors.tsx`
 
-- [ ] **UX-CLIN-2** — 🟡 HIGH — Admin форма клиники: пикер координат. Leaflet карта (уже в проекте) — клик устанавливает `lat`/`lng`. Кнопка "Моё местоположение" (`navigator.geolocation`). Поля `lat`/`lng` уже есть в entity — `admin/src/pages/Companies.tsx`
-- [ ] **UX-DOC-2** — 🟡 HIGH — Admin форма врача: пикер координат (кабинет/клиника на карте) аналогично UX-CLIN-2 — `admin/src/pages/Doctors.tsx`
+- [x] **UX-CLIN-2** — DONE 2026-04-15 — Admin форма клиники: MapPicker компонент (Leaflet, клик → `lat`/`lng`, кнопка геолокации, ручной ввод). `lat`/`lng` добавлены в `CreateCompanyDto` — `admin/src/components/MapPicker.tsx`, `admin/src/pages/Companies.tsx`
+- [x] **UX-DOC-2** — DONE 2026-04-15 — Admin форма врача: MapPicker аналогично UX-CLIN-2. `lat`/`lng` добавлены в `DoctorFormData` — `admin/src/pages/Doctors.tsx`
 
 ---
 
@@ -102,9 +102,9 @@
 
 - [x] **PWA-2** — DONE 2026-04-14 — iOS Safari: инструкция "Share → На экран Домой" с двумя шагами. Android: баннер с кнопкой "Установить". Dismiss — снуз 7 дней — `web/components/InstallPrompt.tsx`
 
-- [ ] **PWA-3** — 🟠 MEDIUM — Dismiss в `InstallPrompt` навсегда (`pwa-install-dismissed: 1`). Заменить на снуз 7 дней (как в `PushPermissionPrompt`) — `web/components/InstallPrompt.tsx`
+- [x] **PWA-3** — DONE (уже реализовано) — `DISMISS_KEY = "pwa-install-dismissed-at"` хранит timestamp, `DISMISS_DAYS = 7` — снуз 7 дней уже работает — `web/components/InstallPrompt.tsx`
 
-- [ ] **PWA-4** — 🟠 MEDIUM — В `UX-LAND-1` (лендинг) кнопка "Использовать веб-версию" должна вести на `https://app.hamshirago.uz` и после входа автоматически показывать `InstallPrompt` — связать с `UX-LAND-1`
+- [x] **PWA-4** — DONE 2026-04-15 — Landing "Веб-версия" → `?from=landing`. InstallPrompt читает параметр, ставит флаг `pwa-from-landing`, игнорирует снуз, показывает prompt через 0.5с (iOS) или при `beforeinstallprompt` (Android). Флаг очищается после dismiss/install — `landing/components/Hero.tsx`, `web/components/InstallPrompt.tsx`
 
 ---
 
@@ -130,7 +130,7 @@
 
 ### Диёр — Web (клиент)
 
-- [ ] **UX-RT-1** — 🔴 HIGH — Создать `web/context/UserContext.tsx`: глобальное состояние клиента (`id`, `name`, `phone`, `avatarUrl`). Обернуть `layout.tsx`. Хедер главной страницы (инициалы), страница профиля — подписать на контекст. При сохранении профиля → `setUser()` → всё обновляется мгновенно без перезагрузки — `web/context/UserContext.tsx`, `web/app/layout.tsx`, `web/app/profile/page.tsx`, `web/app/page.tsx`
+- [x] **UX-RT-1** — DONE 2026-04-15 — UserContext: создан `web/context/UserContext.tsx`, подключён в `layout.tsx`. Профиль и главная страница читают из контекста — имя/инициалы обновляются мгновенно без перезагрузки — `web/context/UserContext.tsx`, `web/app/layout.tsx`, `web/app/profile/page.tsx`, `web/app/page.tsx`
 
 ### Жафар — Web-Medic (врач + клиника)
 
@@ -144,7 +144,7 @@
 
 ### Диёр — Landing
 
-- [ ] **UX-LAND-1** — 🔴 HIGH — Кнопки "App Store" и "Google Play" в Hero ведут на `#download`. Нужно заменить на модалку/экран с двумя вариантами: **"Скачать приложение"** (ссылки на App Store / Google Play) и **"Использовать веб-версию"** (переход на `https://app.hamshirago.uz`). Клиент должен сам выбирать — `landing/components/Hero.tsx`
+- [x] **UX-LAND-1** — DONE 2026-04-15 — Download modal: кнопки App Store/Google Play открывают модалку с выбором. Веб-версия → `https://app.hamshirago.uz`. App Store/Google Play — "Скоро" (задисейблены). Анимация через Framer Motion AnimatePresence — `landing/components/Hero.tsx`
 
 ### Диёр — Web
 
@@ -161,10 +161,10 @@
 - [x] **UX-CLIENT-1** — DONE 2026-04-15 — Удаление аккаунта: `DELETE /auth/account` (backend), кнопка + модалка подтверждения в профиле (web) — `web/app/profile/page.tsx`, `backend/src/auth/auth.controller.ts`, `backend/src/users/users.service.ts`
 - [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
 - [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
-- [ ] **UX-CLIENT-4** — 🟠 HIGH — Нет онбординга для нового пользователя на web. Клиент после регистрации оказывается на главной без объяснений что это и как заказать — `web/app/onboarding/` (добавить шаги: как работает сервис, первый заказ)
+- [x] **UX-CLIENT-4** — DONE 2026-04-15 — Онбординг: 4 слайда (сервис, как заказать, трекинг, безопасность) с нумерованными чипами-шагами. После регистрации → `/onboarding` → `/`. Логин → сразу `/`. Исправлен баг: auth больше не редиректит на онбординг до регистрации — `web/app/onboarding/page.tsx`, `web/app/auth/page.tsx`
 - [ ] **UX-CLIENT-5** — 🟠 MEDIUM — Видеозвонок: страница `/video-call` есть, но нет кнопки входа в звонок из карточки консультации. Клиент не знает как войти — `web/app/consultations/page.tsx`, `web/app/video-call/page.tsx`
 - [ ] **UX-CLIENT-6** — 🟠 MEDIUM — Рецепт: после получения рецепта от врача непонятен следующий шаг. Нет CTA "Оформить заказ по рецепту" — `web/app/prescriptions/page.tsx`
-- [ ] **UX-CLIENT-7** — 🟡 MEDIUM — Профиль: нельзя изменить номер телефона и нет аватара. Только имя редактируется — `web/app/profile/page.tsx`
+- [x] **UX-CLIENT-7** — DONE 2026-04-15 — Профиль: аватар (выбор фото с устройства, хранится в localStorage), кнопка-карандаш на аватаре. Телефон — кнопка "Поддержка" (смена номера через backend не поддерживается) — `web/app/profile/page.tsx`
 
 ---
 

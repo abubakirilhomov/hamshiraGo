@@ -7,6 +7,7 @@ import SplashScreen from "@/components/SplashScreen";
 import OfflineBanner from "@/components/OfflineBanner";
 import InstallPrompt from "@/components/InstallPrompt";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { UserProvider } from "@/context/UserContext";
 import GlobalErrorHandler from "@/components/GlobalErrorHandler";
 
 const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app").replace(/\/$/, "");
@@ -63,15 +64,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <LanguageProvider>
-          <GlobalErrorHandler />
-          <OfflineBanner />
-          <InstallPrompt />
-          <SplashScreen />
-          <WebPushInit />
-          <PushPermissionPrompt />
-          <TelegramProvider>
-            {children}
-          </TelegramProvider>
+          <UserProvider>
+            <GlobalErrorHandler />
+            <OfflineBanner />
+            <InstallPrompt />
+            <SplashScreen />
+            <WebPushInit />
+            <PushPermissionPrompt />
+            <TelegramProvider>
+              {children}
+            </TelegramProvider>
+          </UserProvider>
         </LanguageProvider>
       </body>
     </html>
