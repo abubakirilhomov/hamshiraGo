@@ -35,6 +35,9 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -70,6 +73,21 @@ export default function ProfilePage() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     router.push("/auth");
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      await api.auth.deleteAccount();
+      unsubscribeWebPush();
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.push("/auth");
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : "Ошибка удаления");
+      setDeleteLoading(false);
+    }
   }
 
   if (!user) {
@@ -220,6 +238,18 @@ export default function ProfilePage() {
             <span className="mat-icon" style={{ fontSize: 18 }}>logout</span>
             {t("profile.logout")}
           </button>
+
+          {/* Delete account */}
+          <button onClick={() => { setDeleteError(""); setDeleteModal(true); }} style={{
+            width: "100%", background: "transparent", color: "#9ca3af",
+            border: "none", borderRadius: 16, padding: "12px 24px",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            marginTop: 4,
+          }}>
+            <span className="mat-icon" style={{ fontSize: 15 }}>delete_forever</span>
+            Удалить аккаунт
+          </button>
         </div>
 
         {/* ── Edit name modal ── */}
@@ -253,6 +283,39 @@ export default function ProfilePage() {
                   style={{ flex: 1, background: editLoading || !editName.trim() ? "#eceef0" : "linear-gradient(135deg,#00685f,#008378)", color: editLoading || !editName.trim() ? "#bcc9c6" : "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: editLoading || !editName.trim() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   {editLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
                   {editLoading ? "Сохраняем..." : "Сохранить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Delete account modal ── */}
+        {deleteModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(25,28,30,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)", animation: "fadeIn 150ms ease" }}>
+            <div style={{ background: "#fff", borderRadius: 24, padding: 28, width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ ...iconWrap("#fef2f2", "#ef4444") }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#ef4444" }}>delete_forever</span>
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Удалить аккаунт?</p>
+              </div>
+              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20, lineHeight: 1.5 }}>
+                Все ваши данные, заказы и история будут удалены безвозвратно. Это действие нельзя отменить.
+              </p>
+              {deleteError && (
+                <div style={{ background: "#fef2f2", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#ef4444", fontWeight: 500 }}>
+                  <span className="mat-icon" style={{ fontSize: 16 }}>error</span>
+                  {deleteError}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setDeleteModal(false)} style={{ flex: 1, background: "#f2f4f6", color: "#6d7a77", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                  Отмена
+                </button>
+                <button onClick={handleDeleteAccount} disabled={deleteLoading}
+                  style={{ flex: 1, background: deleteLoading ? "#eceef0" : "#ef4444", color: deleteLoading ? "#bcc9c6" : "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: deleteLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {deleteLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                  {deleteLoading ? "Удаляем..." : "Удалить"}
                 </button>
               </div>
             </div>

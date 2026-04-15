@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app";
 const DISCLAIMER_KEY = "salomat_disclaimer_accepted";
@@ -27,6 +28,7 @@ interface Message {
 // ── Disclaimer modal ──────────────────────────────────────────────────────────
 
 function DisclaimerModal({ onAccept }: { onAccept: () => void }) {
+  const { t } = useTranslation();
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: 480 }}>
@@ -36,12 +38,12 @@ function DisclaimerModal({ onAccept }: { onAccept: () => void }) {
           </div>
           <div>
             <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: 0 }}>Salomat AI</p>
-            <p style={{ fontSize: 12, color: "#6d7a77", margin: 0 }}>Медицинский ассистент</p>
+            <p style={{ fontSize: 12, color: "#6d7a77", margin: 0 }}>{t("salomat.assistantTitle")}</p>
           </div>
         </div>
 
         <p style={{ fontSize: 14, color: "#3d4947", lineHeight: 1.6, marginBottom: 16 }}>
-          <strong>Важно:</strong> Salomat AI — информационный помощник и не является заменой консультации врача.
+          <strong>{t("salomat.disclaimerImportant")}</strong> Salomat AI — информационный помощник и не является заменой консультации врача.
           Все рекомендации носят ориентировочный характер. При угрозе жизни немедленно звоните <strong>103</strong>.
         </p>
 
@@ -56,7 +58,7 @@ function DisclaimerModal({ onAccept }: { onAccept: () => void }) {
           border: "none", borderRadius: 16, padding: "16px", fontSize: 15, fontWeight: 700,
           cursor: "pointer", boxShadow: "0 6px 18px rgba(0,104,95,0.25)",
         }}>
-          Понятно, начать
+          {t("salomat.disclaimerAccept")}
         </button>
       </div>
     </div>
@@ -112,6 +114,7 @@ function RecommendationCard({
   onDoctor: () => void;
   onNurse: () => void;
 }) {
+  const { t } = useTranslation();
   if (!rec) return null;
 
   if (rec.type === "doctor") {
@@ -119,7 +122,7 @@ function RecommendationCard({
       <div style={{ background: "#fff", border: "1.5px solid #dbeafe", borderRadius: 16, padding: "14px 16px", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
           <span className="mat-icon" style={{ fontSize: 16, color: "#2563eb" }}>stethoscope</span>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#1d4ed8", margin: 0 }}>Рекомендуем врача</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#1d4ed8", margin: 0 }}>{t("salomat.recommDoc")}</p>
         </div>
         <p style={{ fontSize: 13, color: "#3d4947", margin: "0 0 12px" }}>
           {rec.specialization}{rec.summary ? ` — ${rec.summary}` : ""}
@@ -128,7 +131,7 @@ function RecommendationCard({
           width: "100%", background: "linear-gradient(135deg,#2563eb,#3b82f6)", color: "#fff",
           border: "none", borderRadius: 12, padding: "11px", fontSize: 14, fontWeight: 700, cursor: "pointer",
         }}>
-          Записаться к врачу
+          {t("salomat.bookDoctor")}
         </button>
       </div>
     );
@@ -138,14 +141,14 @@ function RecommendationCard({
     <div style={{ background: "#fff", border: "1.5px solid #c2ebe3", borderRadius: 16, padding: "14px 16px", marginBottom: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
         <span className="mat-icon" style={{ fontSize: 16, color: "#00685f", fontVariationSettings: "'FILL' 1" }}>medical_services</span>
-        <p style={{ fontSize: 13, fontWeight: 700, color: "#00685f", margin: 0 }}>Рекомендуем медсестру</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: "#00685f", margin: 0 }}>{t("salomat.recommNurse")}</p>
       </div>
-      <p style={{ fontSize: 13, color: "#3d4947", margin: "0 0 12px" }}>Медсестра поможет с процедурой на дому</p>
+      <p style={{ fontSize: 13, color: "#3d4947", margin: "0 0 12px" }}>{t("salomat.nurseHelp")}</p>
       <button onClick={onNurse} style={{
         width: "100%", background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff",
         border: "none", borderRadius: 12, padding: "11px", fontSize: 14, fontWeight: 700, cursor: "pointer",
       }}>
-        Вызвать медсестру
+        {t("salomat.callNurse")}
       </button>
     </div>
   );
@@ -155,6 +158,7 @@ function RecommendationCard({
 
 export default function SalomatPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -307,7 +311,7 @@ export default function SalomatPage() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: 0 }}>Salomat AI</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", margin: 0 }}>Медицинский ассистент</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", margin: 0 }}>{t("salomat.assistantTitle")}</p>
             </div>
             <a href="tel:103" style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(239,68,68,0.85)", borderRadius: 10, padding: "6px 10px", textDecoration: "none" }}>
               <span className="mat-icon" style={{ fontSize: 14, color: "#fff", fontVariationSettings: "'FILL' 1" }}>call</span>
@@ -324,14 +328,14 @@ export default function SalomatPage() {
                 <div style={{ width: 76, height: 76, borderRadius: 22, margin: "0 auto 16px", background: "linear-gradient(135deg,#00685f,#008378)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(0,104,95,0.25)" }}>
                   <span className="mat-icon" style={{ fontSize: 38, color: "#fff", fontVariationSettings: "'FILL' 1" }}>health_and_safety</span>
                 </div>
-                <p style={{ fontSize: 20, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: "0 0 8px" }}>Привет! Я Salomat</p>
+                <p style={{ fontSize: 20, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: "0 0 8px" }}>{t("salomat.greetTitle")}</p>
                 <p style={{ fontSize: 14, color: "#6d7a77", margin: 0, lineHeight: 1.6 }}>
                   Опишите симптомы, и я помогу понять,<br />к какому специалисту обратиться
                 </p>
               </div>
 
               <p style={{ fontSize: 11, fontWeight: 700, color: "#bcc9c6", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Примеры вопросов
+                {t("salomat.examplesLabel")}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {CHIPS.map((chip) => (
@@ -370,7 +374,7 @@ export default function SalomatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Опишите симптомы..."
+              placeholder={t("salomat.placeholder")}
               rows={1}
               disabled={loading}
               style={{

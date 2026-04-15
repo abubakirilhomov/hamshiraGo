@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { consultationsApi, AiChatMessage as ChatMessage } from "@/lib/api";
 
 interface DisplayMessage {
@@ -13,12 +14,13 @@ interface DisplayMessage {
 
 export default function AiChatPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [inputFocused, setInputFocused] = useState(false);
 
   const [messages, setMessages] = useState<DisplayMessage[]>([
-    { id: "greeting", role: "assistant", content: "Здравствуйте! Я медицинский ИИ-ассистент HamshiraGo. Опишите ваши симптомы, и я помогу разобраться — при необходимости порекомендую специалиста." },
+    { id: "greeting", role: "assistant", content: "..." },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,8 @@ export default function AiChatPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/auth"); return; }
-  }, [router]);
+    setMessages([{ id: "greeting", role: "assistant", content: t("aiChat.greeting") }]);
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -50,7 +53,7 @@ export default function AiChatPage() {
       apiMessages.current.push({ role: "assistant", content: res.reply });
       setMessages((prev) => [...prev, { id: String(++idCounter.current), role: "assistant", content: res.reply, recommendation: res.recommendation }]);
     } catch {
-      setMessages((prev) => [...prev, { id: String(++idCounter.current), role: "assistant", content: "Извините, сервис временно недоступен. Попробуйте позже." }]);
+      setMessages((prev) => [...prev, { id: String(++idCounter.current), role: "assistant", content: t("aiChat.unavailable") }]);
     } finally {
       setLoading(false);
       scrollToBottom();
@@ -88,10 +91,10 @@ export default function AiChatPage() {
                   <span className="mat-icon" style={{ fontSize: 22, color: "#fff", fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
                 </div>
                 <div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", lineHeight: 1.2 }}>ИИ-ассистент</p>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", lineHeight: 1.2 }}>{t("aiChat.title")}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#89f5e7" }} />
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>Медицинская консультация</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>{t("aiChat.subtitle")}</p>
                   </div>
                 </div>
               </div>
@@ -133,7 +136,7 @@ export default function AiChatPage() {
                   <div style={{ marginTop: 10, marginLeft: 42, maxWidth: "78%", background: "#fff", borderRadius: 18, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", border: "1.5px solid rgba(0,104,95,0.12)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                       <span className="mat-icon" style={{ fontSize: 16, color: "#00685f" }}>stethoscope</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#00685f", textTransform: "uppercase", letterSpacing: 0.6 }}>Рекомендация</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#00685f", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("aiChat.recommend")}</span>
                     </div>
                     <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 6 }}>
                       {msg.recommendation.specialization}
@@ -143,7 +146,7 @@ export default function AiChatPage() {
                       onClick={() => router.push(`/doctors?spec=${encodeURIComponent(msg.recommendation!.specialization)}&symptoms=${encodeURIComponent(symptoms)}`)}
                       style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 12, padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(0,104,95,0.2)" }}>
                       <span className="mat-icon" style={{ fontSize: 15, fontVariationSettings: "'FILL' 1" }}>search</span>
-                      Найти врача
+                      {t("aiChat.findDoctor")}
                     </button>
                   </div>
                 )}
@@ -176,7 +179,7 @@ export default function AiChatPage() {
               onKeyDown={handleKeyDown}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
-              placeholder="Опишите симптомы..."
+              placeholder={t("aiChat.placeholder")}
               disabled={loading}
               rows={1}
               maxLength={1000}

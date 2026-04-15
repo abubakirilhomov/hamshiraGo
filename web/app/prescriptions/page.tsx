@@ -2,14 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getMyPrescriptions, Prescription } from "@/lib/api";
-
-const STATUS_CONFIG: Record<Prescription["status"], { color: string; bg: string; label: string }> = {
-  PENDING:   { color: "#d97706", bg: "#fef3c7", label: "Ожидает" },
-  CONFIRMED: { color: "#2563eb", bg: "#dbeafe", label: "Подтверждён" },
-  CANCELED:  { color: "#dc2626", bg: "#fee2e2", label: "Отменён" },
-  EXPIRED:   { color: "#6b7280", bg: "#f3f4f6", label: "Истёк" },
-};
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -18,6 +12,15 @@ function formatDate(iso: string) {
 
 export default function PrescriptionsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const STATUS_CONFIG: Record<Prescription["status"], { color: string; bg: string; label: string }> = {
+    PENDING:   { color: "#d97706", bg: "#fef3c7", label: t("prescriptions.statusPending") },
+    CONFIRMED: { color: "#2563eb", bg: "#dbeafe", label: t("prescriptions.statusConfirmed") },
+    CANCELED:  { color: "#dc2626", bg: "#fee2e2", label: t("prescriptions.statusCanceled") },
+    EXPIRED:   { color: "#6b7280", bg: "#f3f4f6", label: t("prescriptions.statusExpired") },
+  };
+
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -76,7 +79,7 @@ export default function PrescriptionsPage() {
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span className="mat-icon" style={{ fontSize: 22, color: "rgba(255,255,255,0.9)", fontVariationSettings: "'FILL' 1" }}>medication</span>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Мои рецепты</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t("prescriptions.title")}</p>
             </div>
           </div>
         </div>
@@ -88,8 +91,8 @@ export default function PrescriptionsPage() {
               <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#f2f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                 <span className="mat-icon" style={{ fontSize: 34, color: "#bcc9c6" }}>description</span>
               </div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }}>Рецептов пока нет</p>
-              <p style={{ fontSize: 14, color: "#6d7a77" }}>Здесь появятся рецепты от врачей</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }}>{t("prescriptions.empty")}</p>
+              <p style={{ fontSize: 14, color: "#6d7a77" }}>{t("prescriptions.emptyHint")}</p>
             </div>
           )}
 
@@ -112,7 +115,7 @@ export default function PrescriptionsPage() {
                     background: expired ? "#f2f4f6" : st.bg, color: expired ? "#6d7a77" : st.color,
                     fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 999, whiteSpace: "nowrap",
                   }}>
-                    {expired ? "Истёк" : st.label}
+                    {expired ? t("prescriptions.expired") : st.label}
                   </span>
                 </div>
 
@@ -121,14 +124,14 @@ export default function PrescriptionsPage() {
                 )}
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#bcc9c6" }}>Выписан: {formatDate(item.createdAt)}</span>
-                  <span style={{ fontSize: 12, color: "#bcc9c6" }}>До: {formatDate(item.expiresAt)}</span>
+                  <span style={{ fontSize: 12, color: "#bcc9c6" }}>{t("prescriptions.issuedAt")}: {formatDate(item.createdAt)}</span>
+                  <span style={{ fontSize: 12, color: "#bcc9c6" }}>{t("prescriptions.validUntil")}: {formatDate(item.expiresAt)}</span>
                 </div>
 
                 {item.status === "PENDING" && !expired && (
                   <div style={{ marginTop: 10, background: "#f0fdf9", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 }}>
                     <span className="mat-icon" style={{ fontSize: 14, color: "#00685f" }}>touch_app</span>
-                    <p style={{ fontSize: 12, color: "#00685f", fontWeight: 600 }}>Нажмите, чтобы подтвердить заказ</p>
+                    <p style={{ fontSize: 12, color: "#00685f", fontWeight: 600 }}>{t("prescriptions.confirmTap")}</p>
                   </div>
                 )}
               </div>
@@ -141,7 +144,7 @@ export default function PrescriptionsPage() {
               disabled={loadingMore}
               style={{ width: "100%", background: "transparent", border: "1.5px solid #eceef0", borderRadius: 14, padding: "14px", fontSize: 14, color: "#00685f", fontWeight: 700, cursor: "pointer" }}
             >
-              {loadingMore ? "Загружаем..." : "Загрузить ещё"}
+              {loadingMore ? t("prescriptions.loading") : t("prescriptions.loadMore")}
             </button>
           )}
         </div>

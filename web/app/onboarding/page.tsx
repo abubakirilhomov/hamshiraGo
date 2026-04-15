@@ -2,34 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-const SLIDES = [
-  {
-    icon: "stethoscope",
-    color: "#00685f",
-    bg: "#c2ebe3",
-    title: "Врач на дом",
-    desc: "Вызовите медика в любое удобное место — домой, в офис или на улицу",
-  },
-  {
-    icon: "location_on",
-    color: "#0284c7",
-    bg: "#dbeafe",
-    title: "Отслеживайте медика",
-    desc: "Смотрите в реальном времени, где находится специалист на карте",
-  },
-  {
-    icon: "star",
-    color: "#d97706",
-    bg: "#fef3c7",
-    title: "Только лучшие",
-    desc: "Проверенные медики с реальными отзывами и оценками клиентов",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(0);
+
+  const SLIDES = [
+    { icon: "stethoscope", color: "#00685f", bg: "#c2ebe3", title: t("onboarding.slide1title"), desc: t("onboarding.slide1desc") },
+    { icon: "location_on", color: "#0284c7", bg: "#dbeafe", title: t("onboarding.slide2title"), desc: t("onboarding.slide2desc") },
+    { icon: "star", color: "#d97706", bg: "#fef3c7", title: t("onboarding.slide3title"), desc: t("onboarding.slide3desc") },
+  ];
 
   function finish() {
     localStorage.setItem("onboarding_completed", "true");
@@ -60,7 +44,7 @@ export default function OnboardingPage() {
           <span style={{ fontSize: 18, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>HamshiraGo</span>
           <button onClick={finish} style={{ display: "flex", alignItems: "center", gap: 5, background: "#f2f4f6", border: "none", color: "#6d7a77", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: "7px 14px", borderRadius: 999 }}>
             <span className="mat-icon" style={{ fontSize: 14 }}>close</span>
-            Пропустить
+            {t("onboarding.skip")}
           </button>
         </div>
 
@@ -96,7 +80,7 @@ export default function OnboardingPage() {
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             boxShadow: "0 6px 20px rgba(0,104,95,0.28)",
           }}>
-            {current < SLIDES.length - 1 ? "Далее" : "Начать"}
+            {current < SLIDES.length - 1 ? t("onboarding.next") : t("onboarding.start")}
             <span className="mat-icon" style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}>arrow_forward</span>
           </button>
         </div>

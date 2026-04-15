@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Search, Building2, MapPin, Star, ChevronRight } from "lucide-react";
 
 // Mock clinic data — will be replaced with real API when public endpoint is available
@@ -77,6 +78,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ClinicsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -103,8 +105,8 @@ export default function ClinicsPage() {
         padding: "24px 20px 32px",
       }}>
         <div style={{ maxWidth: 720, margin: "auto" }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>Клиники</h1>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", margin: "0 0 20px" }}>Найдите подходящую клинику</p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>{t("clinics.title")}</h1>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", margin: "0 0 20px" }}>{t("clinics.subtitle")}</p>
 
           {/* Search */}
           <div style={{ position: "relative" }}>
@@ -122,7 +124,7 @@ export default function ClinicsPage() {
               }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск по названию, адресу, специализации..."
+              placeholder={t("clinics.searchPlaceholder")}
             />
           </div>
         </div>
@@ -136,8 +138,8 @@ export default function ClinicsPage() {
         {filtered.length === 0 ? (
           <div style={{ ...card, padding: 60, textAlign: "center" }}>
             <Building2 size={40} color="#cbd5e1" style={{ marginBottom: 12 }} />
-            <p style={{ color: "#94a3b8", fontSize: 14 }}>Клиники не найдены</p>
-            <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 4 }}>Попробуйте изменить запрос</p>
+            <p style={{ color: "#94a3b8", fontSize: 14 }}>{t("clinics.notFound")}</p>
+            <p style={{ color: "#cbd5e1", fontSize: 13, marginTop: 4 }}>{t("clinics.tryChange")}</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -192,7 +194,7 @@ export default function ClinicsPage() {
                           </span>
                         ))}
                         <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "#f8fafc", color: "#94a3b8" }}>
-                          {clinic.doctorsCount} врачей
+                          {clinic.doctorsCount} {t("clinics.doctorsWord")}
                         </span>
                       </div>
                     </div>

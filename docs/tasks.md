@@ -14,7 +14,7 @@
 
 ### Диёр — Web
 
-- [ ] **UX-I18N-1** — 🔴 HIGH — i18n: добавить переводы (ru/uz) на все страницы без локализации. Приоритет: 1) главная, заказы, location, confirm; 2) профиль, медкарта, salomat; 3) избранное, реферал, отзывы. Компоненты: SplashScreen, InstallPrompt, PushPermissionPrompt, VoiceAssistant — `web/i18n/ru.json`, `web/i18n/uz.json`, все страницы из списка
+- [x] **UX-I18N-1** — DONE 2026-04-14 — i18n: добавлены переводы (ru/uz) на 12 страниц (consultations, consultation, prescriptions, loyalty, subscriptions, salomat, doctors, clinics, voice-agent, video-call, ai-chat, onboarding) и 4 компонента (VoiceAssistant, InstallPrompt, PushPermissionPrompt). Новые секции в ru.json и uz.json — `web/i18n/ru.json`, `web/i18n/uz.json`
 
 - [ ] **UX-WEB-1** — 🟡 HIGH — Salomat AI: сохранять историю чата в `localStorage`. При возврате на страницу — восстанавливать диалог. Добавить кнопку "Очистить чат" — `web/app/salomat/page.tsx`
 - [ ] **UX-WEB-2** — 🟡 HIGH — Salomat AI: адаптивный layout для десктопа. Сейчас `maxWidth: 480` — узкая мобильная колонка. На ≥768px: двухколоночный layout (инфо-панель слева, чат справа) — `web/app/salomat/page.tsx`
@@ -47,6 +47,8 @@
 ## 🔴 CRITICAL — Бизнес-модель (аудит 2026-04-13)
 
 ### Абубакир — Backend + Mobile
+
+- [ ] **BIZ-BE-5** — 🟡 HIGH — Ценовой диапазон операции: только врач и CEO клиники могут задавать `priceMin` и `priceMax` для операции (например 300 000 – 450 000 UZS). После завершения операции (статус `DONE`) врач вводит итоговую `finalPrice` (например 350 000) — валидация: должна быть в пределах `[priceMin, priceMax]`. Добавить поля `price_min`, `price_max`, `final_price` в таблицу услуг/операций. Endpoint `PATCH /orders/:id/final-price` — доступ только для врача-исполнителя и CEO клиники. Guard проверяет роль (`DOCTOR` | `CLINIC_CEO`) — `backend/src/doctors/`, `backend/src/orders/`, `backend/src/clinic/`
 
 - [ ] **BIZ-BE-1** — 🔴 CRITICAL — Оплата консультации: нет payment flow при бронировании врача. Добавить `POST /payments/consultation/:id/initiate` (Payme/Click). `doctor.pricePerConsultation` есть, но клиент получает консультацию бесплатно — `backend/src/consultations/`, `backend/src/payments/`
 - [ ] **BIZ-BE-2** — 🔴 CRITICAL — Медик: вывод средств — нет endpoint `POST /medics/me/withdrawal-request` и нет admin-endpoint для одобрения/отклонения выплат. Медик не может вывести баланс — `backend/src/medics/`
@@ -96,9 +98,9 @@
 
 ### Диёр — Web
 
-- [ ] **PWA-1** — 🔴 CRITICAL — `manifest.ts` указывает иконки на `/icon` — маршрут не существует. PWA-иконка на главном экране будет пустой. Исправить на `/icon.svg` (192×192 и 512×512) или создать `web/app/icon.tsx` Next.js route — `web/app/manifest.ts`
+- [x] **PWA-1** — DONE 2026-04-14 — `manifest.ts` иконки исправлены с `/icon` на `/logo.png` — `web/app/manifest.ts`
 
-- [ ] **PWA-2** — 🔴 HIGH — iOS Safari не поддерживает `beforeinstallprompt` — пользователи iPhone ничего не видят. Нужно: определять iOS (`/iPad|iPhone|iPod/.test(navigator.userAgent)`), показывать отдельную инструкцию "Нажмите Share → Добавить на экран «Домой»" со стрелкой вниз и иконкой Share — `web/components/InstallPrompt.tsx`
+- [x] **PWA-2** — DONE 2026-04-14 — iOS Safari: инструкция "Share → На экран Домой" с двумя шагами. Android: баннер с кнопкой "Установить". Dismiss — снуз 7 дней — `web/components/InstallPrompt.tsx`
 
 - [ ] **PWA-3** — 🟠 MEDIUM — Dismiss в `InstallPrompt` навсегда (`pwa-install-dismissed: 1`). Заменить на снуз 7 дней (как в `PushPermissionPrompt`) — `web/components/InstallPrompt.tsx`
 
@@ -156,7 +158,7 @@
 
 ### Диёр — Web
 
-- [ ] **UX-CLIENT-1** — 🔴 CRITICAL — Нет удаления аккаунта. Обязательно для App Store / Google Play и GDPR. Добавить кнопку в профиль + `DELETE /auth/account` на бэкенде — `web/app/profile/page.tsx`, `backend/src/auth/`
+- [x] **UX-CLIENT-1** — DONE 2026-04-15 — Удаление аккаунта: `DELETE /auth/account` (backend), кнопка + модалка подтверждения в профиле (web) — `web/app/profile/page.tsx`, `backend/src/auth/auth.controller.ts`, `backend/src/users/users.service.ts`
 - [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
 - [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
 - [ ] **UX-CLIENT-4** — 🟠 HIGH — Нет онбординга для нового пользователя на web. Клиент после регистрации оказывается на главной без объяснений что это и как заказать — `web/app/onboarding/` (добавить шаги: как работает сервис, первый заказ)
@@ -175,6 +177,8 @@
 - [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
 - [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
 - [ ] **UX-PARTNER-3** — 🟠 HIGH — Медик онлайн/офлайн: нет переключателя в дашборде web-medic. Медик через браузер не может сменить статус доступности — `web-medic/app/page.tsx`
+- [ ] **UX-PARTNER-10** — 🔴 HIGH — Страница управления услугами клиники `/clinic/services`. CEO должен самостоятельно создавать, редактировать и деактивировать услуги (название, цена, описание). Бекенд готов: `POST/GET/PATCH/DELETE /clinic/services` за `ClinicRoleGuard('CEO')` — `web-medic/app/clinic/services/page.tsx` (новая страница)
+
 - [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
 - [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
 

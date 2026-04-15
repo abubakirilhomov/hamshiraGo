@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getSubscriptionTiers, getMySubscription, purchaseSubscription, cancelSubscription, SubscriptionTier, Subscription } from "@/lib/api";
 
 function formatPrice(n: number) { return n.toLocaleString("ru-RU"); }
@@ -12,6 +13,7 @@ function formatDate(iso: string) {
 
 export default function SubscriptionsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -84,7 +86,7 @@ export default function SubscriptionsPage() {
               <button onClick={() => router.push("/profile")} style={{ background: "rgba(255,255,255,0.18)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
                 <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
               </button>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Подписки</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t("subscriptions.title")}</p>
               <div style={{ width: 38 }} />
             </div>
           </div>
@@ -101,14 +103,14 @@ export default function SubscriptionsPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 16, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{activeSub.tier.name}</p>
-                  <span style={{ background: "#c2ebe3", color: "#00685f", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999 }}>Активна</span>
+                  <span style={{ background: "#c2ebe3", color: "#00685f", fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999 }}>{t("subscriptions.active")}</span>
                 </div>
                 <p style={{ fontSize: 15, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{formatPrice(activeSub.tier.price)} сум</p>
               </div>
 
               <div style={{ background: "#f7f9fb", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, color: "#6d7a77" }}>Использовано заказов</span>
+                  <span style={{ fontSize: 13, color: "#6d7a77" }}>{t("subscriptions.ordersUsed")}</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#191c1e" }}>{activeSub.ordersUsed} / {activeSub.tier.maxOrders}</span>
                 </div>
                 <div style={{ height: 8, background: "#eceef0", borderRadius: 999, overflow: "hidden" }}>
@@ -129,13 +131,13 @@ export default function SubscriptionsPage() {
 
               <button onClick={() => setConfirmCancel(true)}
                 style={{ width: "100%", background: "transparent", border: "1.5px solid #ef4444", color: "#ef4444", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                Отменить подписку
+                {t("subscriptions.cancelBtn")}
               </button>
             </div>
           )}
 
           {/* Section label */}
-          <p style={{ fontSize: 11, fontWeight: 700, color: "#bcc9c6", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 4 }}>Тарифы</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#bcc9c6", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 4 }}>{t("subscriptions.tiersLabel")}</p>
 
           {/* Tiers */}
           {tiers.map((tier, idx) => {
@@ -146,7 +148,7 @@ export default function SubscriptionsPage() {
 
                 {isPopular && !isCurrent && (
                   <div style={{ position: "absolute", top: -10, right: 18, background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 999, letterSpacing: "0.3px" }}>
-                    Популярный
+                    {t("subscriptions.popular")}
                   </div>
                 )}
 
@@ -154,7 +156,7 @@ export default function SubscriptionsPage() {
                   <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{tier.name}</p>
                   <div style={{ textAlign: "right" }}>
                     <p style={{ fontSize: 18, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{formatPrice(tier.price)}</p>
-                    <p style={{ fontSize: 11, color: "#bcc9c6" }}>сум/мес</p>
+                    <p style={{ fontSize: 11, color: "#bcc9c6" }}>{t("subscriptions.perMonth")}</p>
                   </div>
                 </div>
 
@@ -180,7 +182,7 @@ export default function SubscriptionsPage() {
                 {isCurrent ? (
                   <div style={{ background: "#c2ebe3", borderRadius: 12, padding: "12px", textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                     <span className="mat-icon" style={{ fontSize: 16, color: "#00685f", fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#00685f" }}>Текущий тариф</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#00685f" }}>{t("subscriptions.currentTier")}</span>
                   </div>
                 ) : (
                   <button onClick={() => { setConfirmTier(tier); setError(""); }}
@@ -193,7 +195,7 @@ export default function SubscriptionsPage() {
                       cursor: activeSub ? "not-allowed" : "pointer",
                       boxShadow: activeSub ? "none" : "0 4px 14px rgba(0,104,95,0.22)",
                     }}>
-                    {activeSub ? "Уже есть подписка" : "Подключить"}
+                    {activeSub ? t("subscriptions.hasSubscription") : t("subscriptions.connect")}
                   </button>
                 )}
               </div>
@@ -203,7 +205,7 @@ export default function SubscriptionsPage() {
           {tiers.length === 0 && (
             <div style={{ textAlign: "center", padding: "44px 0" }}>
               <span className="mat-icon" style={{ fontSize: 44, color: "#eceef0", display: "block", marginBottom: 10 }}>layers</span>
-              <p style={{ fontSize: 14, color: "#bcc9c6" }}>Тарифы не найдены</p>
+              <p style={{ fontSize: 14, color: "#bcc9c6" }}>{t("subscriptions.noTiers")}</p>
             </div>
           )}
         </div>
@@ -216,7 +218,7 @@ export default function SubscriptionsPage() {
                 <div style={{ width: 52, height: 52, borderRadius: 16, background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                   <span className="mat-icon" style={{ fontSize: 26, color: "#00685f", fontVariationSettings: "'FILL' 1" }}>layers</span>
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 6 }}>Подключить подписку</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 6 }}>{t("subscriptions.subscribeTitle")}</p>
                 <p style={{ fontSize: 14, color: "#6d7a77" }}>
                   <strong style={{ color: "#191c1e" }}>{confirmTier.name}</strong> — {formatPrice(confirmTier.price)} сум/мес
                 </p>
@@ -229,11 +231,11 @@ export default function SubscriptionsPage() {
               )}
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setConfirmTier(null)} style={{ flex: 1, background: "#f2f4f6", color: "#6d7a77", border: "none", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                  Отмена
+                  {t("subscriptions.cancel")}
                 </button>
                 <button onClick={handlePurchase} disabled={actionLoading} style={{ flex: 1, background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: actionLoading ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   {actionLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
-                  {actionLoading ? "..." : "Подключить"}
+                  {actionLoading ? "..." : t("subscriptions.connect")}
                 </button>
               </div>
             </div>
@@ -248,8 +250,8 @@ export default function SubscriptionsPage() {
                 <div style={{ width: 52, height: 52, borderRadius: 16, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                   <span className="mat-icon" style={{ fontSize: 26, color: "#ef4444", fontVariationSettings: "'FILL' 1" }}>cancel</span>
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 6 }}>Отменить подписку?</p>
-                <p style={{ fontSize: 14, color: "#6d7a77", lineHeight: 1.5 }}>Скидки перестанут применяться после отмены.</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 6 }}>{t("subscriptions.cancelTitle")}</p>
+                <p style={{ fontSize: 14, color: "#6d7a77", lineHeight: 1.5 }}>{t("subscriptions.cancelWarning")}</p>
               </div>
               {error && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fef2f2", borderRadius: 12, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#ef4444", fontWeight: 600 }}>
@@ -259,11 +261,11 @@ export default function SubscriptionsPage() {
               )}
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setConfirmCancel(false)} style={{ flex: 1, background: "#f2f4f6", color: "#6d7a77", border: "none", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                  Назад
+                  {t("subscriptions.back")}
                 </button>
                 <button onClick={handleCancel} disabled={actionLoading} style={{ flex: 1, background: "#ef4444", color: "#fff", border: "none", borderRadius: 14, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: actionLoading ? 0.75 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   {actionLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
-                  {actionLoading ? "..." : "Отменить"}
+                  {actionLoading ? "..." : t("subscriptions.cancelBtn")}
                 </button>
               </div>
             </div>

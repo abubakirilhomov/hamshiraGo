@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import VoiceAssistant from "@/components/VoiceAssistant";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function VoiceAgentPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -34,8 +36,8 @@ export default function VoiceAgentPage() {
                 <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
               </button>
               <div style={{ textAlign: "center" }}>
-                <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: 0 }}>Голосовой ассистент</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0 }}>AI врач-консультант</p>
+                <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", margin: 0 }}>{t("voiceAgent.title")}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", margin: 0 }}>{t("voiceAgent.subtitle")}</p>
               </div>
               <div style={{ width: 38 }} />
             </div>
@@ -51,10 +53,10 @@ export default function VoiceAgentPage() {
             </div>
             <div>
               <p style={{ fontSize: 13, fontWeight: 700, color: "#191c1e", margin: "0 0 2px", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                Как пользоваться
+                {t("voiceAgent.howTitle")}
               </p>
               <p style={{ fontSize: 12, color: "#6d7a77", margin: 0, lineHeight: 1.5 }}>
-                Опишите симптомы голосом. AI оценит жалобы и порекомендует — обратиться к врачу или вызвать медсестру.
+                {t("voiceAgent.howDesc")}
               </p>
             </div>
           </div>

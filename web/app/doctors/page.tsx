@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { FaArrowLeft, FaStar, FaUserMd } from "react-icons/fa";
 import { getDoctors, Doctor } from "@/lib/api";
 
 function DoctorsContent() {
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const specParam = searchParams.get("spec") ?? "";
   const symptomsParam = searchParams.get("symptoms") ?? "";
@@ -23,7 +25,7 @@ function DoctorsContent() {
       const data = await getDoctors(specParam || undefined);
       setDoctors(data.filter((d) => d.isActive));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки");
+      setError(e instanceof Error ? e.message : t("consultations.loadError"));
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ function DoctorsContent() {
             >
               <FaArrowLeft size={15} />
             </button>
-            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Врачи</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{t("doctors.title")}</p>
             <div style={{ width: 36 }} />
           </div>
           {specParam && (
@@ -75,14 +77,14 @@ function DoctorsContent() {
         {error && (
           <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 12, padding: "16px", textAlign: "center" }}>
             <p style={{ fontSize: 14, color: "#dc2626", marginBottom: 10 }}>{error}</p>
-            <button onClick={fetchDoctors} style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Повторить</button>
+            <button onClick={fetchDoctors} style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{t("doctors.retry")}</button>
           </div>
         )}
 
         {!loading && !error && doctors.length === 0 && (
           <div style={{ textAlign: "center", padding: "60px 20px" }}>
             <FaUserMd size={48} color="#cbd5e1" style={{ marginBottom: 12 }} />
-            <p style={{ fontSize: 15, color: "#94a3b8" }}>Врачи не найдены</p>
+            <p style={{ fontSize: 15, color: "#94a3b8" }}>{t("doctors.notFound")}</p>
           </div>
         )}
 
@@ -106,7 +108,7 @@ function DoctorsContent() {
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <FaStar size={12} color="#f59e0b" />
                   <span style={{ fontSize: 13, color: "#64748b" }}>
-                    {(doctor.rating ?? 0).toFixed(1)} ({doctor.consultationCount ?? 0} консультаций)
+                    {(doctor.rating ?? 0).toFixed(1)} ({doctor.consultationCount ?? 0} {t("doctors.consultations")})
                   </span>
                 </div>
               </div>
@@ -124,7 +126,7 @@ function DoctorsContent() {
                 onClick={() => handleBook(doctor)}
                 style={{ background: "#0d9488", color: "#fff", border: "none", borderRadius: 10, padding: "9px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}
               >
-                Записаться
+                {t("doctors.book")}
               </button>
             </div>
           </div>

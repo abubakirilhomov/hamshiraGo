@@ -1,5 +1,12 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-14 (Диёр — UX-I18N-1, PWA-2)
+
+- **[feat]** UX-I18N-1 — i18n добавлен на 12 страниц и 4 компонента: consultations, consultation, prescriptions, loyalty, subscriptions, salomat, doctors, clinics, voice-agent, video-call, ai-chat, onboarding + VoiceAssistant, InstallPrompt, PushPermissionPrompt. Новые секции в ru.json и uz.json — `web/i18n/ru.json`, `web/i18n/uz.json`
+- **[feat]** PWA-2 — InstallPrompt полностью переписан: iOS (bottom sheet, 2 шага Share→Add to Home) + Android (баннер, кнопка Install). Dismiss → снуз 7 дней. Везде logo.png — `web/components/InstallPrompt.tsx`
+- **[fix]** manifest.ts иконки: `/icon` → `/logo.png` — `web/app/manifest.ts`
+- **[fix]** Везде удалены icon.svg и заменены на logo.png (admin, web-medic, web) — удалены файлы svg
+
 ## 2026-04-13 (Диёр — BIZ-WEB-2, BIZ-WEB-5, BIZ-WEB-6, BIZ-ADM-1, logo fixes)
 
 - **[feat]** BIZ-ADM-1 — Admin страница выплат медикам: таблица заявок на вывод, фильтр по статусу (PENDING/APPROVED/DECLINED), кнопки "Одобрить" / "Отклонить" с диалогом причины, stat-карточки, типы и API функции добавлены в `api.ts`. Ждёт BIZ-BE-2 — `admin/src/pages/Payouts.tsx`, `admin/src/lib/api.ts`, `admin/src/App.tsx`, `admin/src/components/AdminSidebar.tsx`
