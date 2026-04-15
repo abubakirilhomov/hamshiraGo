@@ -21,6 +21,7 @@ export class AppController {
   }
 
   @Get('health/detailed')
+  @UseGuards(AdminGuard)
   async healthDetailed() {
     const checks: Record<string, { status: string; latency?: number; error?: string }> = {};
 

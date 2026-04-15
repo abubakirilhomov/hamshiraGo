@@ -43,7 +43,7 @@ export class AuthController {
 
   @Post('register')
   @UseGuards(IpThrottlerGuard)
-  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiOperation({ summary: 'Регистрация клиента' })
   @ApiResponse({ status: 201, description: 'Клиент зарегистрирован, возвращает access_token' })
   @ApiResponse({ status: 409, description: 'Телефон уже зарегистрирован' })

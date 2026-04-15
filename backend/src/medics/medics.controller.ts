@@ -55,7 +55,7 @@ export class MedicsController {
 
   @Post('register')
   @UseGuards(IpThrottlerGuard)
-  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiOperation({ summary: 'Регистрация медика' })
   @ApiResponse({ status: 201, description: 'Медик зарегистрирован' })
   register(@Body() dto: RegisterMedicDto) {

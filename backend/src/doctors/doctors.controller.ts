@@ -50,7 +50,7 @@ export class DoctorsController {
 
   @Post('register')
   @UseGuards(IpThrottlerGuard)
-  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiOperation({ summary: 'Register a doctor' })
   register(@Body() dto: RegisterDoctorDto) {
     return this.doctorsService.register(dto);

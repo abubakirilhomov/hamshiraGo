@@ -149,9 +149,11 @@ export class VoiceAgentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get voice session by ID' })
-  async getSession(@Param('id') id: string) {
+  async getSession(@Param('id') id: string, @ClientId() clientId: string) {
     const session = await this.voiceAgentService.getSession(id);
     if (!session) throw new BadRequestException('VOICE_SESSION_NOT_FOUND');
+    if (session.clientId && session.clientId !== clientId)
+      throw new BadRequestException('NOT_YOUR_SESSION');
     return session;
   }
 
@@ -160,7 +162,10 @@ export class VoiceAgentController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete voice session' })
-  async deleteSession(@Param('id') id: string) {
+  async deleteSession(@Param('id') id: string, @ClientId() clientId: string) {
+    const session = await this.voiceAgentService.getSession(id);
+    if (session && session.clientId && session.clientId !== clientId)
+      throw new BadRequestException('NOT_YOUR_SESSION');
     await this.voiceAgentService.deleteSession(id);
   }
 

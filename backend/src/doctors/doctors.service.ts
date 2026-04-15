@@ -197,6 +197,7 @@ export class DoctorsService {
       where: { verificationStatus: 'PENDING' },
       select: ['id', 'name', 'phone', 'specialization', 'facePhotoUrl', 'licensePhotoUrl', 'createdAt'],
       order: { createdAt: 'ASC' },
+      take: 100,
     });
   }
 

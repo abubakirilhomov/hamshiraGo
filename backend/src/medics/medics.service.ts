@@ -657,6 +657,45 @@ export class MedicsService {
     );
   }
 
+  /** Batch: check which medics are available now (single query instead of N) */
+  async filterAvailableMedicsNow(medicIds: string[]): Promise<Set<string>> {
+    if (!medicIds.length) return new Set();
+
+    const now = new Date();
+    const tashkentOffsetHours = 5;
+    const utcHour = now.getUTCHours();
+    const tashkentHour = (utcHour + tashkentOffsetHours) % 24;
+    let tashkentDay = now.getUTCDay();
+    if (utcHour + tashkentOffsetHours >= 24) {
+      tashkentDay = (tashkentDay + 1) % 7;
+    }
+
+    // Load all schedule entries for these medics on today's day
+    const schedules = await this.scheduleRepo.find({
+      where: { medicId: In(medicIds), dayOfWeek: tashkentDay, isActive: true },
+    });
+
+    // Group by medicId
+    const byMedic = new Map<string, typeof schedules>();
+    for (const s of schedules) {
+      const arr = byMedic.get(s.medicId) ?? [];
+      arr.push(s);
+      byMedic.set(s.medicId, arr);
+    }
+
+    const available = new Set<string>();
+    for (const id of medicIds) {
+      const slots = byMedic.get(id);
+      if (!slots || !slots.length) {
+        // No schedule = always available
+        available.add(id);
+      } else if (slots.some((s) => tashkentHour >= s.startHour && tashkentHour < s.endHour)) {
+        available.add(id);
+      }
+    }
+    return available;
+  }
+
   // ── Withdrawal Requests ────────────────────────────────────────────────
 
   /** Medic creates a withdrawal request */
@@ -706,6 +745,8 @@ export class MedicsService {
       qb.where('wr.status = :status', { status });
     }
 
+    qb.take(100);
+
     const rows = await qb.getRawAndEntities();
 
     return rows.entities.map((wr, i) => ({
@@ -715,27 +756,28 @@ export class MedicsService {
     }));
   }
 
-  /** Admin: approve withdrawal — deduct balance */
+  /** Admin: approve withdrawal — deduct balance (inside transaction) */
   async approveWithdrawal(id: string): Promise<WithdrawalRequest> {
-    const wr = await this.withdrawalRepo.findOne({ where: { id } });
-    if (!wr) throw new NotFoundException('Withdrawal request not found');
-    if (wr.status !== 'PENDING')
-      throw new BadRequestException('Request is not pending');
+    return this.medicRepo.manager.transaction(async (manager) => {
+      const wr = await manager.findOne(WithdrawalRequest, { where: { id } });
+      if (!wr) throw new NotFoundException('Withdrawal request not found');
+      if (wr.status !== 'PENDING')
+        throw new BadRequestException('Request is not pending');
 
-    // Deduct balance with pessimistic lock
-    const medic = await this.medicRepo.findOne({
-      where: { id: wr.medicId },
-      lock: { mode: 'pessimistic_write' },
+      const medic = await manager.findOne(Medic, {
+        where: { id: wr.medicId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!medic) throw new NotFoundException('Medic not found');
+      if (Number(medic.balance) < wr.amount)
+        throw new BadRequestException('Medic has insufficient balance');
+
+      medic.balance = Number(medic.balance) - wr.amount;
+      await manager.save(Medic, medic);
+
+      wr.status = 'APPROVED';
+      return manager.save(WithdrawalRequest, wr);
     });
-    if (!medic) throw new NotFoundException('Medic not found');
-    if (Number(medic.balance) < wr.amount)
-      throw new BadRequestException('Medic has insufficient balance');
-
-    medic.balance = Number(medic.balance) - wr.amount;
-    await this.medicRepo.save(medic);
-
-    wr.status = 'APPROVED';
-    return this.withdrawalRepo.save(wr);
   }
 
   /** Admin: decline withdrawal */

@@ -39,10 +39,10 @@ interface CreateForm {
 
 const EMPTY_FORM: CreateForm = { title: '', totalProcedures: '', intervalDays: '', nextDate: '' };
 
-const STATUS_CONFIG: Record<TreatmentCourse['status'], { bg: string; text: string; label: string }> = {
-  ACTIVE:    { bg: Theme.warningContainer,  text: '#92400E', label: 'JARAYONDA' },
-  COMPLETED: { bg: Theme.successContainer,  text: '#065F46', label: 'YAKUNLANGAN' },
-  CANCELED:  { bg: Theme.errorContainer,    text: '#991B1B', label: 'BEKOR QILINGAN' },
+const STATUS_CONFIG: Record<TreatmentCourse['status'], { bg: string; text: string; i18nKey: string }> = {
+  ACTIVE:    { bg: Theme.warningContainer,  text: '#92400E', i18nKey: 'courses.statusActive' },
+  COMPLETED: { bg: Theme.successContainer,  text: '#065F46', i18nKey: 'courses.statusDone' },
+  CANCELED:  { bg: Theme.errorContainer,    text: '#991B1B', i18nKey: 'courses.statusCanceled' },
 };
 
 export default function CoursesScreen() {
@@ -163,7 +163,7 @@ export default function CoursesScreen() {
           </View>
           <View style={[styles.statusPill, { backgroundColor: statusCfg.bg }]}>
             <Text style={[styles.statusText, { color: statusCfg.text }]}>
-              {statusCfg.label}
+              {t(statusCfg.i18nKey)}
             </Text>
           </View>
         </View>
@@ -174,17 +174,17 @@ export default function CoursesScreen() {
             <View style={[styles.progressFill, { width: `${pct * 100}%` as any }]} />
           </View>
           <Text style={styles.progressCount}>
-            {item.completedProcedures}/{item.totalProcedures} muolaja
+            {item.completedProcedures}/{item.totalProcedures} {t('courses.procedureCount')}
           </Text>
         </View>
         <Text style={styles.progressPercent}>
-          {Math.round(pct * 100)}% tugallandi
+          {Math.round(pct * 100)}% {t('courses.percentDone')}
         </Text>
 
         {/* Next session */}
         {item.nextDate && item.status === 'ACTIVE' && (
           <View style={styles.nextSession}>
-            <Text style={styles.nextLabel}>NAVBATDAGI SEANS</Text>
+            <Text style={styles.nextLabel}>{t('courses.nextSession')}</Text>
             <View style={styles.nextRow}>
               <FontAwesome name="calendar" size={12} color={Theme.textSecondary} />
               <Text style={styles.nextDate}>

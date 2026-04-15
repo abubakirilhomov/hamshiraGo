@@ -446,7 +446,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.CANCELED);
     const updated = await this.findOne(orderId);
-    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.CANCELED)).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.CANCELED)).catch((err) => this.logger.warn(`Notify error: ${err}`));
     // Notify medic with cancellation reason
     if (updated.medicId) {
       const medic = await this.medicsService.findById(updated.medicId);
@@ -552,8 +552,8 @@ export class OrdersService {
     });
     this.orderEventsGateway.emitOrderStatus(id, OrderStatus.DONE);
     const doneOrder = await this.findOne(id);
-    this.notifyWithRetry(() => this.notifyClient(doneOrder, OrderStatus.DONE)).catch((err) => console.error('Notify error:', err));
-    this.notifyWithRetry(() => this.notifyMedic(doneOrder, OrderStatus.DONE)).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(doneOrder, OrderStatus.DONE)).catch((err) => this.logger.warn(`Notify error: ${err}`));
+    this.notifyWithRetry(() => this.notifyMedic(doneOrder, OrderStatus.DONE)).catch((err) => this.logger.warn(`Notify error: ${err}`));
 
     // Referral bonus: check if this is the referred user's first DONE order
     this.applyReferralBonusIfEligible(clientId).catch((err) =>
@@ -831,7 +831,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, OrderStatus.ACCEPTED);
     const updated = await this.findOne(orderId);
-    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.ACCEPTED)).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, OrderStatus.ACCEPTED)).catch((err) => this.logger.warn(`Notify error: ${err}`));
     return updated;
   }
 
@@ -923,7 +923,7 @@ export class OrdersService {
 
     this.orderEventsGateway.emitOrderStatus(orderId, status, medicId);
     const updated = await this.findOne(orderId);
-    this.notifyWithRetry(() => this.notifyClient(updated, status)).catch((err) => console.error('Notify error:', err));
+    this.notifyWithRetry(() => this.notifyClient(updated, status)).catch((err) => this.logger.warn(`Notify error: ${err}`));
     return updated;
   }
 

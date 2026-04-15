@@ -119,7 +119,7 @@ export class ReviewsService {
 
     // 8. Recalculate average rating asynchronously (don't block the response)
     this.recalcAverageRating(targetId, dto.targetRole).catch((err) => {
-      console.error('[ReviewsService] recalcAverageRating error:', err);
+      this.logger.error(`recalcAverageRating error: ${err}`);
     });
 
     return saved;
@@ -166,7 +166,7 @@ export class ReviewsService {
           .execute();
       } catch (err) {
         // Column doesn't exist yet — safe to ignore until migration adds it
-        console.warn('[ReviewsService] users.averageRating column not ready, skipping update');
+        this.logger.warn('users.averageRating column not ready, skipping update');
       }
     }
   }

@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 
 @Entity('chat_messages')
+@Index(['orderId', 'createdAt'])
+@Index(['consultationId', 'createdAt'])
 export class ChatMessage {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

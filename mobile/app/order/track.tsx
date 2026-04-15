@@ -206,8 +206,8 @@ export default function TrackOrderScreen() {
         setIsFavorite(true);
         showToast(t('favorites.added'), 'success');
       }
-    } catch {
-      // silently ignore
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : t('common.error'), 'error');
     } finally {
       setFavoriteLoading(false);
     }

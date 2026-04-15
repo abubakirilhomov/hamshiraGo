@@ -2,6 +2,10 @@
 
 ## 2026-04-15
 
+### Silent Error Catch Fixes
+
+- **[mobile]** fix: handleFavoriteToggle in track.tsx now shows error toast instead of silently swallowing failures (`mobile/app/order/track.tsx`)
+
 ### Security / Logic Audit Fixes
 
 - **[backend]** AUDIT-FIX-1: doctorAcceptConsultation() теперь проверяет paymentStatus перед принятием (price > 0 requires 'paid') (`backend/src/consultations/consultations.service.ts`)

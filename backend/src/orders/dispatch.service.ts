@@ -367,14 +367,11 @@ export class DispatchService implements OnApplicationBootstrap {
 
     if (!geofenced.length) return null;
 
-    // Schedule filter: exclude medics outside working hours
-    const scheduleChecked = await Promise.all(
-      geofenced.map(async (m) => ({
-        medic: m,
-        available: await this.medicsService.isMedicAvailableNow(m.id),
-      })),
+    // Schedule filter: exclude medics outside working hours (single batch query)
+    const availableSet = await this.medicsService.filterAvailableMedicsNow(
+      geofenced.map((m) => m.id),
     );
-    const candidates = scheduleChecked.filter((s) => s.available).map((s) => s.medic);
+    const candidates = geofenced.filter((m) => availableSet.has(m.id));
 
     if (!candidates.length) return null;
 

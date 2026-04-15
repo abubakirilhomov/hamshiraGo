@@ -13,6 +13,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 
 import { ClinicService } from './clinic.service';
+import { IpThrottlerGuard } from '../common/guards/ip-throttler.guard';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { LoginClinicDto } from './dto/login-clinic.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -39,13 +40,15 @@ export class ClinicAuthController {
   constructor(private readonly clinicService: ClinicService) {}
 
   @Post('register')
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @UseGuards(IpThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   register(@Body() dto: CreateCompanyDto) {
     return this.clinicService.createCompany(dto);
   }
 
   @Post('login')
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @UseGuards(IpThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   login(@Body() dto: LoginClinicDto) {
     return this.clinicService.loginClinic(dto);
   }
