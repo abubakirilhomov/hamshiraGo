@@ -2,6 +2,19 @@
 
 ## 2026-04-16
 
+- **[fix]** U3/auth — web-medic: `clinicApi.ts` 401 handler заменён на `window.location.replace` + never-resolving Promise (было `window.location.href` + `throw`), убрана история в стеке браузера
+- **[fix]** U3/auth — web-medic: `api.ts` 401 handler добавлены исключения для `/doctors/login` и `/doctors/register`, добавлена очистка `localStorage('doctor')`; доктор при неверном пароле теперь видит ошибку вместо перезагрузки страницы
+- **[perf]** Parallel — web-medic: schedule/page.tsx до 28 последовательных запросов слотов → `Promise.allSettled` (параллельно)
+- **[perf]** Parallel — web-medic: consultations/page.tsx `pending()` теперь параллелен с `my(1,100)` через `Promise.all`
+- **[fix]** Hydration — web + web-medic: `LanguageContext.tsx` исправлен SSR/client mismatch i18next singleton; `useState` lazy initializer синхронно сбрасывает `i18n.language` напрямую (не через async `changeLanguage`)
+- **[fix]** C1 — web: `subscribedRef` объявлен до useEffect-ов (было после — temporal dead zone в cleanup)
+- **[fix]** C2 — web: profile/page.tsx аватар сжимается до 128×128 JPEG на canvas перед сохранением в localStorage; убран `user!` non-null assertion
+- **[fix]** C3 — web-medic: DoctorContext/ClinicContext `.catch(() => {})` → проверяет отсутствие токена и редиректит на /auth
+- **[fix]** C4 — web: orders/[id]/page.tsx удалены мёртвый код `canConfirmDone`, `handleConfirmDone`, `confirming` и весь JSX-блок кнопки (была `canConfirmDone=false`)
+- **[fix]** C5 — web: orders/page.tsx цена = `priceAmount + urgentFee - discountAmount`
+- **[fix]** U1 — web: orders/[id]/page.tsx `confirm()` → custom modal, `alert()` → inline red banner
+- **[fix]** U2 — web: salomat/page.tsx `QuotaExceededError` обработан: trim до 10 сообщений, жёлтый баннер предупреждения
+- **[fix]** P1 — admin: UserSupport.tsx debounce stale closure исправлен через отдельный `inputValue` + `search` state
 - **[fix]** BUG-28 — WebSocket cleanup: emit `unsubscribe_order` для всех активных подписок перед disconnect при размонтировании (`web/app/orders/page.tsx`)
 - **[fix]** BUG-29 — Убрана кнопка "Подтвердить выполнение" у клиента: `canConfirmDone=false`, статус DONE выставляет только медик (`web/app/orders/[id]/page.tsx`)
 
