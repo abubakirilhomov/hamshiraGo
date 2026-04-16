@@ -121,7 +121,7 @@
 
 ### Жафар — Web-Medic (врач)
 
-- [ ] **PUSH-WM-1** — 🔴 HIGH — Врачи: добавить web push подписку. `WebPushInit` в web-medic шлёт на `/medics/web-push-subscription` — нужен отдельный `/doctors/web-push-subscription` (после PUSH-BE-1). Добавить `PushPermissionPrompt` для врачей — `web-medic/lib/webPush.ts`, `web-medic/components/WebPushInit.tsx`
+- [x] **PUSH-WM-1** — DONE 2026-04-16 — Врачи: `subscribeWebPushDoctor()` в webPush.ts (шлёт на `/doctors/web-push-subscription`), `DoctorPushPermissionPrompt.tsx` (bottom-sheet через 3с, только user_role=doctor), подключён в root layout — `web-medic/lib/webPush.ts`, `web-medic/components/DoctorPushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 - [x] **PUSH-WM-2** — DONE 2026-04-14 (Жафар) — Медики: заменён авто-запрос на `PushPermissionPrompt` (bottom-sheet через 3с) — `web-medic/components/WebPushInit.tsx`, `web-medic/components/PushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 
 ---
