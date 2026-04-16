@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { voiceAgentApi, VoiceChatResponse } from "@/lib/api";
 
 type State = "idle" | "recording" | "processing" | "speaking" | "result";
@@ -18,6 +19,7 @@ interface VoiceAssistantProps {
 
 export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [state, setState] = useState<State>("idle");
   const [messages, setMessages] = useState<Message[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
       mediaRecorderRef.current = mr;
       setState("recording");
     } catch {
-      setError("Нет доступа к микрофону");
+      setError(t("voiceAssistant.noMic"));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -202,11 +204,11 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
 
       {/* State label */}
       <p style={{ fontSize: 14, color: "#64748b", fontWeight: 500, margin: 0 }}>
-        {state === "idle" && (messages.length === 0 ? "Нажмите, чтобы говорить" : "Говорите снова")}
-        {state === "recording" && "Говорите... (нажмите чтобы остановить)"}
-        {state === "processing" && "Обрабатываю..."}
-        {state === "speaking" && "Слушайте ответ..."}
-        {state === "result" && "Готово!"}
+        {state === "idle" && (messages.length === 0 ? t("voiceAssistant.tapToSpeak") : t("voiceAssistant.speakAgain"))}
+        {state === "recording" && t("voiceAssistant.recording")}
+        {state === "processing" && t("voiceAssistant.processing")}
+        {state === "speaking" && t("voiceAssistant.speaking")}
+        {state === "result" && t("voiceAssistant.done")}
       </p>
 
       {error && (
@@ -221,12 +223,12 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
           padding: "18px 20px", boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
         }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
-            Рекомендация
+            {t("voiceAssistant.recommend")}
           </p>
           <p style={{ fontSize: 15, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>
             {lastResponse.recommendation === "DOCTOR"
-              ? `Обратитесь к врачу${lastResponse.suggestedSpecialization ? ` (${lastResponse.suggestedSpecialization})` : ""}`
-              : "Вызвать медсестру на дом"}
+              ? `${t("voiceAssistant.seeDoctor")}${lastResponse.suggestedSpecialization ? ` (${lastResponse.suggestedSpecialization})` : ""}`
+              : t("voiceAssistant.callNurseHome")}
           </p>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             {lastResponse.recommendation === "DOCTOR" ? (
@@ -238,7 +240,7 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
                   padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}
               >
-                Выбрать врача
+                {t("voiceAssistant.pickDoctor")}
               </button>
             ) : (
               <button
@@ -249,7 +251,7 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
                   padding: "12px", fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}
               >
-                Вызвать медсестру
+                {t("voiceAssistant.callNurse")}
               </button>
             )}
             {onClose && (
@@ -260,7 +262,7 @@ export default function VoiceAssistant({ lang = "ru", onClose }: VoiceAssistantP
                   borderRadius: 10, padding: "12px 16px", fontSize: 14, cursor: "pointer",
                 }}
               >
-                Закрыть
+                {t("voiceAssistant.close")}
               </button>
             )}
           </div>

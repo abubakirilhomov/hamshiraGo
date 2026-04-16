@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { FaArrowLeft, FaStar, FaUserMd, FaCheckCircle, FaMoneyBillWave, FaInfoCircle } from "react-icons/fa";
 import { getDoctorById, createConsultation, Doctor } from "@/lib/api";
 import SlotPicker from "@/components/SlotPicker";
 
 function ConsultationContent() {
   const router = useRouter();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const doctorId = searchParams.get("doctorId") ?? "";
   const symptoms = searchParams.get("symptoms") ?? "";
@@ -24,7 +26,7 @@ function ConsultationContent() {
     try {
       setDoctor(await getDoctorById(doctorId));
     } catch {
-      setError("Не удалось загрузить данные врача");
+      setError(t("consultation.doctorNotFound"));
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ function ConsultationContent() {
   if (!doctor) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
-        <p style={{ color: "#dc2626" }}>{error || "Врач не найден"}</p>
+        <p style={{ color: "#dc2626" }}>{error || t("consultation.doctorNotFound")}</p>
       </div>
     );
   }
@@ -78,7 +80,7 @@ function ConsultationContent() {
             <button onClick={() => router.back()} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
               <FaArrowLeft size={15} />
             </button>
-            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>Запись к врачу</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{t("consultation.title")}</p>
             <div style={{ width: 36 }} />
           </div>
         </div>
@@ -114,7 +116,7 @@ function ConsultationContent() {
         {/* Symptoms */}
         {symptoms && (
           <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 14, padding: "14px 16px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Ваши симптомы</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>{t("consultation.yourSymptoms")}</p>
             <p style={{ fontSize: 14, color: "#1e40af", lineHeight: 1.5 }}>{symptoms}</p>
           </div>
         )}
@@ -124,12 +126,12 @@ function ConsultationContent() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <FaMoneyBillWave size={15} color="#0d9488" />
             <span style={{ fontSize: 16, fontWeight: 700, color: "#0d9488" }}>
-              Стоимость: {doctor.pricePerConsultation.toLocaleString("ru-RU")} сум
+              {t("consultation.cost")}: {doctor.pricePerConsultation.toLocaleString("ru-RU")} {t("common.sum")}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <FaInfoCircle size={14} color="#94a3b8" />
-            <span style={{ fontSize: 13, color: "#94a3b8" }}>Комиссия платформы: {platformFee.toLocaleString("ru-RU")} сум (15%)</span>
+            <span style={{ fontSize: 13, color: "#94a3b8" }}>{t("consultation.platformFee")}: {platformFee.toLocaleString("ru-RU")} {t("common.sum")}</span>
           </div>
         </div>
 
@@ -142,7 +144,7 @@ function ConsultationContent() {
           />
           {selectedSlotId && (
             <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdfa", borderRadius: 8, fontSize: 13, color: "#0d9488", fontWeight: 600 }}>
-              ✓ Слот выбран
+              {t("consultation.slotSelected")}
             </div>
           )}
         </div>
@@ -160,7 +162,7 @@ function ConsultationContent() {
           style={{ background: submitting ? "#94a3b8" : "#0d9488", color: "#fff", border: "none", borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
         >
           <FaCheckCircle size={16} />
-          {submitting ? "Записываем..." : "Подтвердить запись"}
+          {submitting ? t("consultation.confirming") : t("consultation.confirm")}
         </button>
       </div>
 

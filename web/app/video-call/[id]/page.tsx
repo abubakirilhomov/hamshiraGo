@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   LiveKitRoom,
   useTracks,
@@ -13,6 +14,7 @@ import { Track } from "livekit-client";
 import { initiateCall, endCall } from "@/lib/api";
 
 function VideoCallUI({ consultationId, onEnd }: { consultationId: string; onEnd: () => void }) {
+  const { t } = useTranslation();
   const { localParticipant } = useLocalParticipant();
   const participants = useParticipants();
   const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare]);
@@ -57,7 +59,7 @@ function VideoCallUI({ consultationId, onEnd }: { consultationId: string; onEnd:
               <div style={{ width: 100, height: 100, borderRadius: "50%", background: "#1a2332", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 40px rgba(0,104,95,0.3)" }}>
                 <span className="mat-icon" style={{ fontSize: 48, color: "#3d5a6e", fontVariationSettings: "'FILL' 1" }}>person</span>
               </div>
-              <p style={{ color: "#6d7a77", fontSize: 15 }}>Ожидание врача...</p>
+              <p style={{ color: "#6d7a77", fontSize: 15 }}>{t("videoCall.waiting")}</p>
             </div>
           )}
 
@@ -115,6 +117,7 @@ function VideoCallUI({ consultationId, onEnd }: { consultationId: string; onEnd:
 
 export default function VideoCallPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const consultationId = params.id;
 
@@ -135,7 +138,7 @@ export default function VideoCallPage() {
         setLivekitToken(data.token);
         setServerUrl(data.serverUrl);
       })
-      .catch((e: Error) => setError(e.message || "Не удалось подключиться"))
+      .catch((e: Error) => setError(e.message || t("videoCall.connectionError")))
       .finally(() => setLoading(false));
   }, [consultationId, router]);
 
@@ -148,7 +151,7 @@ export default function VideoCallPage() {
       <div style={{ position: "fixed", inset: 0, background: "#0a0f14", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid #1a2332", borderTopColor: "#00685f", animation: "spin 0.8s linear infinite" }} />
-        <p style={{ color: "#6d7a77", fontSize: 15 }}>Подключение...</p>
+        <p style={{ color: "#6d7a77", fontSize: 15 }}>{t("videoCall.connecting")}</p>
       </div>
     );
   }
@@ -156,9 +159,9 @@ export default function VideoCallPage() {
   if (error || !livekitToken || !serverUrl) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "#0a0f14", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        <p style={{ color: "#ef4444", fontSize: 15 }}>{error || "Ошибка подключения"}</p>
+        <p style={{ color: "#ef4444", fontSize: 15 }}>{error || t("videoCall.connectionError")}</p>
         <button onClick={() => router.back()} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-          Назад
+          {t("videoCall.back")}
         </button>
       </div>
     );

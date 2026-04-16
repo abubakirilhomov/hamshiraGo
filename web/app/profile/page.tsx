@@ -1,17 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { unsubscribeWebPush } from "@/lib/webPush";
 import { api } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/context/LanguageContext";
-
-interface UserInfo {
-  id: string;
-  phone: string;
-  name: string | null;
-}
+import { useUser } from "@/context/UserContext";
 
 const MENU_ITEMS = [
   { icon: "favorite", label_key: "favorites.myMedics", sub_key: "favorites.myMedicsDescription", path: "/favorites" },
@@ -30,25 +25,35 @@ export default function ProfilePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
-  const [user, setUser] = useState<UserInfo | null>(null);
+  const { user, setUser } = useUser();
   const [editModal, setEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) { router.push("/auth"); return; }
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        setUser(JSON.parse(stored) as UserInfo);
-      } else {
-        const payload = JSON.parse(atob(token.split(".")[1])) as { sub?: string; phone?: string };
-        setUser({ id: payload.sub ?? "", phone: payload.phone ?? "", name: null });
-      }
-    } catch { router.push("/auth"); }
+    if (!token) { router.push("/auth"); }
+    const savedAvatar = localStorage.getItem("user_avatar");
+    if (savedAvatar) setAvatarUrl(savedAvatar);
   }, [router]);
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setAvatarUrl(result);
+      localStorage.setItem("user_avatar", result);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleSaveName() {
     if (!editName.trim()) return;
@@ -56,9 +61,7 @@ export default function ProfilePage() {
     setEditError("");
     try {
       const updated = await api.auth.updateProfile(editName.trim());
-      const newUser = { ...user!, name: updated.name };
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
+      setUser({ ...user!, name: updated.name });
       setEditModal(false);
     } catch (e: unknown) {
       setEditError(e instanceof Error ? e.message : "Ошибка сохранения");
@@ -68,8 +71,23 @@ export default function ProfilePage() {
   function handleLogout() {
     unsubscribeWebPush();
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    setUser(null);
     router.push("/auth");
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      await api.auth.deleteAccount();
+      unsubscribeWebPush();
+      localStorage.removeItem("token");
+      setUser(null);
+      router.push("/auth");
+    } catch (e: unknown) {
+      setDeleteError(e instanceof Error ? e.message : "Ошибка удаления");
+      setDeleteLoading(false);
+    }
   }
 
   if (!user) {
@@ -123,8 +141,19 @@ export default function ProfilePage() {
 
             {/* Avatar + name */}
             <div style={{ textAlign: "center" }}>
-              <div style={{ width: 84, height: 84, borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "3px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 30, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", backdropFilter: "blur(4px)" }}>
-                {initials || <span className="mat-icon" style={{ fontSize: 36, color: "#fff" }}>person</span>}
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: "none" }} />
+              <div style={{ position: "relative", width: 84, margin: "0 auto 12px", display: "inline-block" }}>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ width: 84, height: 84, borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "3px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", backdropFilter: "blur(4px)", cursor: "pointer", overflow: "hidden" }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (initials || <span className="mat-icon" style={{ fontSize: 36, color: "#fff" }}>person</span>)
+                  }
+                </div>
+                <button onClick={() => fileInputRef.current?.click()} style={{ position: "absolute", bottom: 0, right: 0, width: 26, height: 26, borderRadius: "50%", background: "#fff", border: "2px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <span className="mat-icon" style={{ fontSize: 13, color: "#00685f" }}>photo_camera</span>
+                </button>
               </div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4, letterSpacing: "-0.3px" }}>
                 {user.name ?? t("profile.user")}
@@ -159,10 +188,14 @@ export default function ProfilePage() {
               <div style={iconWrap("#c2ebe3","#00685f")}>
                 <span className="mat-icon" style={{ fontSize: 18, color: "#00685f" }}>phone</span>
               </div>
-              <div>
+              <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 11, color: "#bcc9c6", fontWeight: 600, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.4px" }}>{t("profile.phone")}</p>
                 <p style={{ fontSize: 15, fontWeight: 700, color: "#191c1e" }}>{user.phone}</p>
               </div>
+              <a href="mailto:support@hamshirago.uz" style={{ background: "#f2f4f6", border: "none", borderRadius: 10, padding: "7px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, color: "#6d7a77", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                <span className="mat-icon" style={{ fontSize: 14 }}>support_agent</span>
+                Поддержка
+              </a>
             </div>
           </div>
 
@@ -220,6 +253,18 @@ export default function ProfilePage() {
             <span className="mat-icon" style={{ fontSize: 18 }}>logout</span>
             {t("profile.logout")}
           </button>
+
+          {/* Delete account */}
+          <button onClick={() => { setDeleteError(""); setDeleteModal(true); }} style={{
+            width: "100%", background: "transparent", color: "#9ca3af",
+            border: "none", borderRadius: 16, padding: "12px 24px",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            marginTop: 4,
+          }}>
+            <span className="mat-icon" style={{ fontSize: 15 }}>delete_forever</span>
+            Удалить аккаунт
+          </button>
         </div>
 
         {/* ── Edit name modal ── */}
@@ -253,6 +298,39 @@ export default function ProfilePage() {
                   style={{ flex: 1, background: editLoading || !editName.trim() ? "#eceef0" : "linear-gradient(135deg,#00685f,#008378)", color: editLoading || !editName.trim() ? "#bcc9c6" : "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: editLoading || !editName.trim() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   {editLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
                   {editLoading ? "Сохраняем..." : "Сохранить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Delete account modal ── */}
+        {deleteModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(25,28,30,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)", animation: "fadeIn 150ms ease" }}>
+            <div style={{ background: "#fff", borderRadius: 24, padding: 28, width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ ...iconWrap("#fef2f2", "#ef4444") }}>
+                  <span className="mat-icon" style={{ fontSize: 18, color: "#ef4444" }}>delete_forever</span>
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Удалить аккаунт?</p>
+              </div>
+              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20, lineHeight: 1.5 }}>
+                Все ваши данные, заказы и история будут удалены безвозвратно. Это действие нельзя отменить.
+              </p>
+              {deleteError && (
+                <div style={{ background: "#fef2f2", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#ef4444", fontWeight: 500 }}>
+                  <span className="mat-icon" style={{ fontSize: 16 }}>error</span>
+                  {deleteError}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setDeleteModal(false)} style={{ flex: 1, background: "#f2f4f6", color: "#6d7a77", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                  Отмена
+                </button>
+                <button onClick={handleDeleteAccount} disabled={deleteLoading}
+                  style={{ flex: 1, background: deleteLoading ? "#eceef0" : "#ef4444", color: deleteLoading ? "#bcc9c6" : "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 14, fontWeight: 700, cursor: deleteLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {deleteLoading && <span className="mat-icon" style={{ fontSize: 16, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
+                  {deleteLoading ? "Удаляем..." : "Удалить"}
                 </button>
               </div>
             </div>

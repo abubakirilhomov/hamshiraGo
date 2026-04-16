@@ -2,14 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getMyConsultations, Consultation } from "@/lib/api";
-
-const STATUS_CONFIG: Record<Consultation["status"], { color: string; bg: string; label: string }> = {
-  PENDING:   { color: "#d97706", bg: "#fef3c7", label: "Ожидает" },
-  ACTIVE:    { color: "#2563eb", bg: "#dbeafe", label: "Активна" },
-  COMPLETED: { color: "#16a34a", bg: "#dcfce7", label: "Завершена" },
-  CANCELED:  { color: "#dc2626", bg: "#fee2e2", label: "Отменена" },
-};
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -18,6 +12,15 @@ function formatDate(iso: string) {
 
 export default function ConsultationsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const STATUS_CONFIG: Record<Consultation["status"], { color: string; bg: string; label: string }> = {
+    PENDING:   { color: "#d97706", bg: "#fef3c7", label: t("consultations.statusPending") },
+    ACTIVE:    { color: "#2563eb", bg: "#dbeafe", label: t("consultations.statusActive") },
+    COMPLETED: { color: "#16a34a", bg: "#dcfce7", label: t("consultations.statusCompleted") },
+    CANCELED:  { color: "#dc2626", bg: "#fee2e2", label: t("consultations.statusCanceled") },
+  };
+
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -41,7 +44,7 @@ export default function ConsultationsPage() {
       setTotalPages(res.totalPages);
       setFetchError(null);
     } catch (e) {
-      setFetchError(e instanceof Error ? e.message : "Ошибка загрузки");
+      setFetchError(e instanceof Error ? e.message : t("consultations.loadError"));
     }
     finally { setLoading(false); setLoadingMore(false); }
   }, []);
@@ -63,7 +66,7 @@ export default function ConsultationsPage() {
         <div style={{ background: "#fff", borderRadius: 20, padding: "32px 24px", maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
           <p style={{ fontSize: 14, color: "#dc2626", marginBottom: 16 }}>{fetchError}</p>
           <button onClick={() => fetchConsultations(1, false)} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-            Повторить
+            {t("common.retry")}
           </button>
         </div>
       </div>
@@ -95,7 +98,7 @@ export default function ConsultationsPage() {
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span className="mat-icon" style={{ fontSize: 22, color: "rgba(255,255,255,0.9)", fontVariationSettings: "'FILL' 1" }}>video_call</span>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Мои консультации</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t("consultations.title")}</p>
             </div>
           </div>
         </div>
@@ -107,10 +110,10 @@ export default function ConsultationsPage() {
               <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#f2f4f6", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
                 <span className="mat-icon" style={{ fontSize: 34, color: "#bcc9c6" }}>calendar_month</span>
               </div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }}>Консультаций пока нет</p>
-              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20 }}>Запишитесь к врачу прямо сейчас</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }}>{t("consultations.empty")}</p>
+              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20 }}>{t("consultations.bookNow")}</p>
               <button onClick={() => router.push("/doctors")} style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "12px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(0,104,95,0.25)" }}>
-                Найти врача
+                {t("consultations.findDoctor")}
               </button>
             </div>
           )}
@@ -143,7 +146,7 @@ export default function ConsultationsPage() {
                       boxShadow: "0 3px 10px rgba(0,104,95,0.2)",
                     }}>
                       <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>video_call</span>
-                      Видеозвонок
+                      {t("consultations.videoCall")}
                     </button>
                   )}
                   {item.doctorNotes && (
@@ -153,7 +156,7 @@ export default function ConsultationsPage() {
                       padding: "9px 14px", fontSize: 12, fontWeight: 700, color: "#6d7a77", cursor: "pointer",
                     }}>
                       <span className="mat-icon" style={{ fontSize: 14 }}>description</span>
-                      Заметки врача
+                      {t("consultations.doctorNotes")}
                     </button>
                   )}
                 </div>
@@ -166,7 +169,7 @@ export default function ConsultationsPage() {
               width: "100%", background: "transparent", border: "1.5px solid #eceef0",
               borderRadius: 14, padding: "14px", fontSize: 14, color: "#00685f", fontWeight: 700, cursor: "pointer",
             }}>
-              {loadingMore ? "Загружаем..." : "Загрузить ещё"}
+              {loadingMore ? t("consultations.loading") : t("consultations.loadMore")}
             </button>
           )}
         </div>
@@ -176,10 +179,10 @@ export default function ConsultationsPage() {
       {notesModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
           <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: 600, animation: "slideUp 250ms ease" }}>
-            <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }}>Заметки врача</p>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }}>{t("consultations.doctorNotes")}</p>
             <p style={{ fontSize: 14, color: "#3d4947", lineHeight: 1.6, marginBottom: 20 }}>{notesModal}</p>
             <button onClick={() => setNotesModal(null)} style={{ width: "100%", background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-              Закрыть
+              {t("common.close")}
             </button>
           </div>
         </div>

@@ -27,6 +27,24 @@
 - **[mobile]** M4 — WS disconnect indicator: yellow "Connecting..." instead of hiding (`mobile/`)
 - **[docs]** COMPETITIVE_ANALYSIS.md — competitive analysis (OVI.uz, Practo, Halodoc, Vezeeta) (`docs/COMPETITIVE_ANALYSIS.md`)
 
+### Диёр — 13 UX задач (web/admin/landing)
+
+- **[feat]** UX-RT-1 — `web/context/UserContext.tsx`: глобальный стейт клиента, UserProvider в layout
+- **[feat]** UX-WEB-1 — Salomat AI: история чата в localStorage, кнопка "Очистить"
+- **[feat]** UX-WEB-2 — Salomat AI: двухколоночный layout ≥768px
+- **[feat]** UX-WEB-3 — Salomat AI: голосовой ввод (MediaRecorder → STT → текст)
+- **[feat]** UX-LAND-1 — Landing Hero: DownloadModal (App Store / Google Play / Веб-версия)
+- **[feat]** UX-CLIENT-4 — Онбординг: 4 слайда, нумерованные шаги, finish → /
+- **[fix]** UX-CLIENT-4 — Auth: исправлен баг редиректа на онбординг до логина
+- **[feat]** UX-CLIENT-7 — Профиль: аватар (base64 localStorage), кнопка-карандаш
+- **[feat]** UX-CLIENT-1 — Профиль: кнопка + модалка удаления аккаунта (frontend)
+- **[feat]** PWA-3 — InstallPrompt: dismiss → снуз 7 дней
+- **[feat]** PWA-4 — InstallPrompt: ?from=landing флаг, показывать через 0.5с
+- **[feat]** UX-ADM-1 — Admin Medics/Doctors: letter avatars с hashColor
+- **[feat]** UX-CLIN-2 + UX-DOC-2 — Admin MapPicker компонент (Leaflet) в формах клиники и врача
+- **[feat]** UX-I18N-1 — i18n: 12 страниц и 4 компонента переведены (ru/uz)
+- **[feat]** PWA-2 — InstallPrompt: iOS инструкция, Android баннер
+
 ## 2026-04-15
 
 ### Silent Error Catch Fixes

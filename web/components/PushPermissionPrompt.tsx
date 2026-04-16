@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { subscribeWebPush } from "@/lib/webPush";
 
 const DISMISS_KEY = "push-prompt-dismissed-at";
@@ -8,6 +9,7 @@ const DISMISS_DAYS = 7;
 const SHOW_DELAY_MS = 3000;
 
 export default function PushPermissionPrompt() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -103,10 +105,10 @@ export default function PushPermissionPrompt() {
         </div>
 
         <p style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>
-          Включить уведомления
+          {t("push.title")}
         </p>
         <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.55, marginBottom: 24 }}>
-          Получайте статус заказа в реальном времени — когда медсестра выехала, прибыла и завершила визит.
+          {t("push.desc")}
         </p>
 
         <button
@@ -122,7 +124,7 @@ export default function PushPermissionPrompt() {
             transition: "opacity 150ms",
           }}
         >
-          {loading ? "Подождите..." : "Включить уведомления"}
+          {loading ? t("push.wait") : t("push.allow")}
         </button>
 
         <button
@@ -134,7 +136,7 @@ export default function PushPermissionPrompt() {
             cursor: "pointer",
           }}
         >
-          Позже
+          {t("push.later")}
         </button>
       </div>
     </>

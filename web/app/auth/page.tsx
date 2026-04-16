@@ -39,7 +39,8 @@ export default function AuthPage() {
   const [focused, setFocused] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!localStorage.getItem("onboarding_completed")) router.push("/onboarding");
+    const token = localStorage.getItem("token");
+    if (token) router.push("/");
   }, [router]);
 
   useEffect(() => {
@@ -66,7 +67,11 @@ export default function AuthPage() {
       localStorage.setItem("user", JSON.stringify(res.user));
       subscribeWebPush();
       notify("success");
-      router.push("/");
+      if (mode === "register") {
+        router.push("/onboarding");
+      } else {
+        router.push("/");
+      }
     } catch (err: unknown) {
       notify("error");
       const msg = err instanceof Error ? err.message : "";

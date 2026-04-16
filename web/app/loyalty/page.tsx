@@ -2,13 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getLoyaltyBalance, getLoyaltyHistory, redeemLoyaltyPoints, LoyaltyBalance, LoyaltyTransaction } from "@/lib/api";
-
-const TIER_CONFIG = {
-  BRONZE: { icon: "military_tech", color: "#CD7F32", bg: "#fdf6ee", label: "Бронза" },
-  SILVER: { icon: "military_tech", color: "#94A3B8", bg: "#f4f6f8", label: "Серебро" },
-  GOLD:   { icon: "military_tech", color: "#F59E0B", bg: "#fffbeb", label: "Золото" },
-} as const;
 
 const TYPE_ICONS: Record<LoyaltyTransaction["type"], string> = {
   EARNED: "arrow_upward",
@@ -29,6 +24,13 @@ const PAGE_SIZE = 20;
 
 export default function LoyaltyPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const TIER_CONFIG = {
+    BRONZE: { icon: "military_tech", color: "#CD7F32", bg: "#fdf6ee", label: t("loyalty.tierBronze") },
+    SILVER: { icon: "military_tech", color: "#94A3B8", bg: "#f4f6f8", label: t("loyalty.tierSilver") },
+    GOLD:   { icon: "military_tech", color: "#F59E0B", bg: "#fffbeb", label: t("loyalty.tierGold") },
+  } as const;
 
   const [balance, setBalance] = useState<LoyaltyBalance | null>(null);
   const [history, setHistory] = useState<LoyaltyTransaction[]>([]);
@@ -119,7 +121,7 @@ export default function LoyaltyPage() {
               <button onClick={() => router.push("/profile")} style={{ background: "rgba(255,255,255,0.18)", border: "none", borderRadius: "50%", width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)" }}>
                 <span className="mat-icon" style={{ fontSize: 20, color: "#fff" }}>arrow_back</span>
               </button>
-              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Мои бонусы</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t("loyalty.title")}</p>
               <div style={{ width: 38 }} />
             </div>
           </div>
@@ -130,7 +132,7 @@ export default function LoyaltyPage() {
           {/* Balance card */}
           <div style={{ background: "linear-gradient(145deg,#00685f 0%,#008378 60%,#005049 100%)", borderRadius: 24, padding: "28px 24px", textAlign: "center", boxShadow: "0 8px 32px rgba(0,104,95,0.3)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Ваши баллы</p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>{t("loyalty.yourPoints")}</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
               <span className="mat-icon" style={{ fontSize: 40, color: "#89f5e7", fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
               <p style={{ fontSize: 52, fontWeight: 800, color: "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-1px", lineHeight: 1 }}>
@@ -148,7 +150,7 @@ export default function LoyaltyPage() {
             <div style={{ background: "#fff", borderRadius: 20, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <p style={{ fontSize: 13, color: "#6d7a77" }}>
-                  До уровня <strong style={{ color: "#00685f" }}>{nextTierName}</strong>
+                  {t("loyalty.toNextTier")} <strong style={{ color: "#00685f" }}>{nextTierName}</strong>
                 </p>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#00685f" }}>
                   {((nextTierAt ?? 0) - points).toLocaleString("ru-RU")} баллов
@@ -169,20 +171,20 @@ export default function LoyaltyPage() {
             <button onClick={() => { setRedeemOpen(true); setRedeemError(""); setRedeemSuccess(""); }}
               style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 16, padding: "15px", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 18px rgba(0,104,95,0.25)" }}>
               <span className="mat-icon" style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}>swap_horiz</span>
-              Списать баллы на скидку
+              {t("loyalty.redeemBtn")}
             </button>
           )}
 
           {/* History */}
           <div style={{ background: "#fff", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <div style={{ padding: "16px 18px", borderBottom: "1px solid #f2f4f6" }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#bcc9c6", textTransform: "uppercase", letterSpacing: 0.6 }}>История начислений</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#bcc9c6", textTransform: "uppercase", letterSpacing: 0.6 }}>{t("loyalty.historyTitle")}</p>
             </div>
 
             {history.length === 0 && !historyLoading && (
               <div style={{ padding: "44px 20px", textAlign: "center" }}>
                 <span className="mat-icon" style={{ fontSize: 44, color: "#eceef0", display: "block", marginBottom: 10 }}>history</span>
-                <p style={{ fontSize: 14, color: "#bcc9c6" }}>История пока пуста</p>
+                <p style={{ fontSize: 14, color: "#bcc9c6" }}>{t("loyalty.historyEmpty")}</p>
               </div>
             )}
 
@@ -216,7 +218,7 @@ export default function LoyaltyPage() {
             {page < totalPages && !historyLoading && (
               <button onClick={() => fetchHistory(page + 1, true)}
                 style={{ width: "100%", padding: "14px", background: "transparent", border: "none", borderTop: "1px solid #f2f4f6", fontSize: 14, color: "#00685f", fontWeight: 700, cursor: "pointer" }}>
-                Загрузить ещё
+                {t("loyalty.loadMore")}
               </button>
             )}
           </div>
@@ -233,10 +235,10 @@ export default function LoyaltyPage() {
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: "#c2ebe3", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="mat-icon" style={{ fontSize: 20, color: "#00685f", fontVariationSettings: "'FILL' 1" }}>swap_horiz</span>
                 </div>
-                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Списать баллы</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{t("loyalty.redeemTitle")}</p>
               </div>
 
-              <p style={{ fontSize: 12, fontWeight: 700, color: "#6d7a77", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>Количество баллов</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#6d7a77", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>{t("loyalty.pointsLabel")}</p>
               <input type="number" value={redeemPoints} onChange={(e) => setRedeemPoints(e.target.value)}
                 placeholder="0" max={points}
                 style={{ width: "100%", fontSize: 28, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", border: "none", background: "#f7f9fb", borderRadius: 16, padding: "14px 16px", textAlign: "center", outline: "none", boxSizing: "border-box", boxShadow: "0 0 0 1.5px #eceef0" }}
@@ -278,11 +280,11 @@ export default function LoyaltyPage() {
               <button onClick={handleRedeem} disabled={redeemPts <= 0 || redeemPts > points || redeemLoading}
                 style={{ width: "100%", background: redeemPts <= 0 || redeemPts > points ? "#eceef0" : "linear-gradient(135deg,#00685f,#008378)", color: redeemPts <= 0 || redeemPts > points ? "#bcc9c6" : "#fff", border: "none", borderRadius: 16, padding: "15px", fontSize: 15, fontWeight: 700, cursor: redeemPts <= 0 ? "not-allowed" : "pointer", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: redeemPts > 0 && redeemPts <= points ? "0 6px 18px rgba(0,104,95,0.22)" : "none" }}>
                 {redeemLoading && <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
-                {redeemLoading ? "Списываем..." : "Подтвердить"}
+                {redeemLoading ? t("loyalty.redeeming") : t("loyalty.confirmBtn")}
               </button>
               <button onClick={() => { setRedeemOpen(false); setRedeemPoints(""); }}
                 style={{ width: "100%", background: "#f2f4f6", color: "#6d7a77", border: "none", borderRadius: 16, padding: "14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
-                Отмена
+                {t("loyalty.cancelBtn")}
               </button>
             </div>
           </div>
