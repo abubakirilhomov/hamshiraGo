@@ -334,6 +334,8 @@ export class OrdersService {
         serviceIds: allIds.length > 1 ? allIds : null,
         serviceTitles: allTitles.length > 1 ? allTitles : null,
         priceAmount: totalServicePrice,
+        priceMin: service.priceMin ?? null,
+        priceMax: service.priceMax ?? null,
         discountAmount: totalDiscount,
         isUrgent,
         urgentFee,
@@ -1169,5 +1171,57 @@ export class OrdersService {
 
   async softDelete(orderId: string): Promise<void> {
     await this.orderRepo.softDelete(orderId);
+  }
+
+  // ── Final Price (variable-price operations) ────────────────────────────
+
+  /**
+   * Set final price for a variable-price operation.
+   * Only callable by the assigned medic (doctor) or clinic CEO.
+   * Must be within priceMin-priceMax range.
+   */
+  async setFinalPrice(
+    orderId: string,
+    finalPrice: number,
+    callerId: string,
+    callerRole: string,
+  ): Promise<Order> {
+    const order = await this.findOneBasic(orderId);
+
+    // Validate order has a price range
+    if (order.priceMin == null || order.priceMax == null) {
+      throw new BadRequestException('ORDER_HAS_NO_PRICE_RANGE');
+    }
+
+    // Validate status — only after service started
+    const allowed: OrderStatus[] = [OrderStatus.SERVICE_STARTED, OrderStatus.DONE];
+    if (!allowed.includes(order.status)) {
+      throw new BadRequestException('ORDER_STATUS_NOT_ELIGIBLE');
+    }
+
+    // Validate caller is the assigned medic or has clinic role
+    if (callerRole === 'medic' && order.medicId !== callerId) {
+      throw new ForbiddenException('NOT_YOUR_ORDER');
+    }
+    // clinic role is verified by the guard — CEO can set price for any order in their clinic
+
+    // Validate range
+    if (finalPrice < order.priceMin || finalPrice > order.priceMax) {
+      throw new BadRequestException(
+        `FINAL_PRICE_OUT_OF_RANGE: must be between ${order.priceMin} and ${order.priceMax} UZS`,
+      );
+    }
+
+    // Update final price
+    order.finalPrice = finalPrice;
+
+    // Recalculate platformFee based on finalPrice (net of discount)
+    const netPrice = finalPrice + (Number(order.urgentFee) || 0) - (order.discountAmount ?? 0);
+    const appSettings = await this.appSettingsService.get();
+    const commissionRate = appSettings.commissionRate ?? 10;
+    order.platformFee = Math.round(netPrice * commissionRate / 100);
+    order.priceAmount = finalPrice;
+
+    return this.orderRepo.save(order);
   }
 }

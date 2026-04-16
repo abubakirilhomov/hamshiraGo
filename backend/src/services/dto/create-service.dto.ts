@@ -20,6 +20,16 @@ export class CreateServiceDto {
 
   @IsOptional()
   @IsInt()
+  @Min(0)
+  priceMin?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  priceMax?: number;
+
+  @IsOptional()
+  @IsInt()
   @Min(1)
   durationMinutes?: number;
 

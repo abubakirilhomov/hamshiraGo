@@ -51,6 +51,17 @@ export class Order {
   @Column({ type: 'int', default: 0, nullable: true })
   discountAmount!: number | null;
 
+  /** Price range snapshot from service catalog (for variable-price operations) */
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMin!: number | null;
+
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMax!: number | null;
+
+  /** Final price entered by doctor/CEO after operation (within priceMin-priceMax) */
+  @Column({ type: 'int', nullable: true, default: null })
+  finalPrice!: number | null;
+
   /** Platform commission (10% of net price), credited to platform account */
   @Column({ type: 'int', default: 0, nullable: true })
   platformFee!: number;
