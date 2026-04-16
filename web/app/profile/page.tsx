@@ -46,13 +46,26 @@ export default function ProfilePage() {
   function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const SIZE = 128;
+      const canvas = document.createElement("canvas");
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext("2d")!;
+      const scale = Math.max(SIZE / img.width, SIZE / img.height);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (SIZE - w) / 2, (SIZE - h) / 2, w, h);
+      URL.revokeObjectURL(objectUrl);
+      const result = canvas.toDataURL("image/jpeg", 0.8);
       setAvatarUrl(result);
-      localStorage.setItem("user_avatar", result);
+      try {
+        localStorage.setItem("user_avatar", result);
+      } catch { /* QuotaExceededError — аватар показывается но не сохраняется */ }
     };
-    reader.readAsDataURL(file);
+    img.src = objectUrl;
   }
 
   async function handleSaveName() {
@@ -61,7 +74,7 @@ export default function ProfilePage() {
     setEditError("");
     try {
       const updated = await api.auth.updateProfile(editName.trim());
-      setUser({ ...user!, name: updated.name });
+      if (user) setUser({ ...user, name: updated.name });
       setEditModal(false);
     } catch (e: unknown) {
       setEditError(e instanceof Error ? e.message : "Ошибка сохранения");
