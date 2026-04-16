@@ -264,6 +264,35 @@
 
 ## 📋 Задачи
 
+- [ ] **ARCH-1** — 🔴 CRITICAL / Долгосрочная архитектура — Микрофронтенд + Микросервисы: изолировать каждую часть проекта чтобы баг в одном модуле не ломал остальные
+
+  **Микрофронтенд (web-medic):**
+  - Обернуть каждую страницу/зону (`/clinic/*`, `/doctor/*`, `/auth`) в React `ErrorBoundary` — при крэше показывать fallback-карточку, остальные страницы работают
+  - Вынести `clinic`, `doctor`, `auth` в отдельные Next.js Route Segments с изолированными `error.tsx` и `loading.tsx` (App Router встроенная механика)
+  - Каждый сегмент (`/clinic`, `/doctor`) — отдельный `layout.tsx` с независимым провайдером данных
+  - Разделить `lib/clinicApi.ts` и `lib/api.ts` — никакого общего глобального стейта между зонами
+
+  **Микрофронтенд (web):**
+  - Добавить `app/*/error.tsx` для каждого крупного раздела (salomat, clinics, doctors, consultations)
+  - Изолировать контексты: `UserContext`, `LanguageContext` — не падать при ошибке дочернего провайдера
+
+  **Микросервисы (backend):**
+  - Выделить `clinic` модуль в отдельный NestJS микросервис (отдельный Railway сервис, порт, база)
+  - Выделить `voice-agent` / `salomat` в отдельный сервис (тяжёлые AI вызовы не блокируют основной API)
+  - Выделить `payments` в отдельный сервис (Payme/Click webhooks изолированы)
+  - Основной `backend` остаётся: auth, orders, medics, consultations
+  - Между сервисами — HTTP + очередь (Bull/Redis) для async событий
+  - API Gateway (NestJS или простой Nginx reverse proxy) — единая точка входа `/api/*`
+
+  **Порядок выполнения:**
+  1. Сначала ErrorBoundary + `error.tsx` во фронтенде (быстро, высокий эффект)
+  2. Потом изолировать контексты и API слои
+  3. Потом выделить backend сервисы (долго, требует DevOps)
+
+  — Диёр (frontend изоляция) + Абубакир (backend микросервисы)
+
+- [ ] **UX-TOAST-1** — 🟠 MEDIUM — Заменить все нативные `alert()` и `confirm()` на toast-уведомления, соответствующие стилю проекта (teal `#0d9488`, borderRadius 10, без сторонних библиотек — собственный лёгкий компонент). Затронутые файлы: `web-medic/app/clinic/finance/page.tsx` (alert при пустом CSV), `web-medic/app/clinic/settings/page.tsx` (confirm при удалении услуги), `web-medic/app/clinic/staff/page.tsx` (confirm при удалении), `web-medic/app/clinic/rooms/page.tsx` (confirm при удалении). Создать `web-medic/components/clinic/Toast.tsx` + `useToast` hook — Жафар
+
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
 - [x] **MOB-FEAT-1** — ETA display на экране трекинга заказа — `mobile/app/order/track.tsx`, `mobile/hooks/useOrderTracking.ts`
 - [x] **MED-FEAT-1** — Photo before/after в деталях заказа медика — `medic/app/order/[id].tsx`
