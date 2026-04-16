@@ -56,6 +56,8 @@
 - [x] **BIZ-MOB-2** — DONE 2026-04-14 — Mobile: UI рейтинга врача (звёзды + комментарий для COMPLETED консультаций) — `mobile/app/consultations.tsx`
 - [ ] **BIZ-BE-7** — 🔴 HIGH — Clinic login: JWT должен содержать `clinicRole` с одним из трёх значений `CEO | RECEPTION | DOCTOR`. Сейчас фронтенд читает `payload.clinicRole` через `getClinicRole()` и делает редирект: CEO → `/clinic/dashboard`, RECEPTION → `/clinic/reception`, DOCTOR → `/doctor`. Бекенд должен гарантировать что поле `clinicRole` всегда присутствует в токене при логине через `POST /clinic-auth/login`. Проверить `JwtStrategy` и `clinic-auth.service.ts` — убедиться что `clinicRole` берётся из `company_user.role` и прописывается в payload — `backend/src/clinic-auth/clinic-auth.service.ts`, `backend/src/auth/strategies/` — Абубакир
 
+- [ ] **BIZ-BE-8** — 🔴 HIGH — Единый вход для всех докторов через таб "Доктор": клинический доктор (company_user с role=DOCTOR) должен входить через `POST /doctors/login` так же как независимый доктор. Бек принимает phone+password для обоих типов, возвращает единый `DoctorAuthResponse` (`access_token` + `doctor` профиль). В профиле добавить поле `companyId` (null = независимый, string = клинический). Фронт после логина смотрит на `doctor.companyId`: если есть — показывает дашборд с его записями от клиники (`GET /clinic/appointments?doctorId=`); если null — обычный дашборд консультаций. Оба типа используют `medic_token` в localStorage и маршрут `/doctor/*` — `backend/src/doctors/`, `backend/src/clinic-auth/`, `web-medic/app/auth/page.tsx`, `web-medic/app/doctor/` — **Абубакир**
+
 - [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
 
 - [x] **BIZ-BE-5** — DONE 2026-04-16 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee
@@ -184,7 +186,7 @@
 ### Жафар — Web-Medic (врачи)
 
 - [x] **UX-PARTNER-6** — DONE 2026-04-14 (Жафар) — Профиль врача: поля `pricePerConsultation` + `bio` добавлены в форму и display — `web-medic/app/doctor/profile/page.tsx`, `web-medic/lib/api.ts`
-- [ ] **UX-PARTNER-7** — 🟠 HIGH — Нет push/Telegram-уведомления врачу о новой консультации. Врач узнаёт только если сам зайдёт в `/consultations` — `web-medic/app/doctor/consultations/page.tsx` + backend
+- [x] **UX-PARTNER-7** — DONE 2026-04-16 — Real-time уведомление врачу о новой консультации: WebSocket `new_consultation` на странице консультаций, Browser Notification API, toast — `web-medic/app/doctor/consultations/page.tsx` (backend Push/Telegram/WebSocket уже были реализованы)
 - [x] **UX-PARTNER-8** — DONE 2026-04-16 — Шаблоны расписания: сохранение в localStorage, выбор дней недели, время, интервал. "Применить на 4 нед." создаёт слоты на все совпадающие дни. Коллапсируемый блок "Шаблоны расписания" — `web-medic/app/doctor/schedule/page.tsx`
 - [x] **UX-PARTNER-9** — DONE 2026-04-14 (Жафар) — Профиль врача: поле "О себе / Биография" добавлено вместе с UX-PARTNER-6 — `web-medic/app/doctor/profile/page.tsx`
 
@@ -268,15 +270,15 @@
 
 - [ ] **ARCH-1** — 🔴 CRITICAL / Долгосрочная архитектура — Микрофронтенд + Микросервисы: изолировать каждую часть проекта чтобы баг в одном модуле не ломал остальные
 
-  **Микрофронтенд (web-medic):**
-  - Обернуть каждую страницу/зону (`/clinic/*`, `/doctor/*`, `/auth`) в React `ErrorBoundary` — при крэше показывать fallback-карточку, остальные страницы работают
-  - Вынести `clinic`, `doctor`, `auth` в отдельные Next.js Route Segments с изолированными `error.tsx` и `loading.tsx` (App Router встроенная механика)
-  - Каждый сегмент (`/clinic`, `/doctor`) — отдельный `layout.tsx` с независимым провайдером данных
+  **Микрофронтенд (web-medic):** ✅ Фаза 1+2 DONE
+  - ~~Обернуть каждую страницу/зону (`/clinic/*`, `/doctor/*`, `/auth`) в React `ErrorBoundary`~~ ✅ DONE — `ContextErrorBoundary` в clinic/layout + doctor/layout
+  - ~~Вынести `clinic`, `doctor`, `auth` в отдельные Next.js Route Segments с изолированными `error.tsx` и `loading.tsx`~~ ✅ DONE — добавлены `error.tsx` + `loading.tsx` для `/clinic`, `/doctor`, `/auth`
+  - ~~Каждый сегмент (`/clinic`, `/doctor`) — отдельный `layout.tsx` с независимым провайдером данных~~ ✅ DONE — `doctor/layout.tsx` с DoctorProvider, `clinic/layout.tsx` с ClinicProvider + ErrorBoundary
   - Разделить `lib/clinicApi.ts` и `lib/api.ts` — никакого общего глобального стейта между зонами
 
-  **Микрофронтенд (web):**
-  - Добавить `app/*/error.tsx` для каждого крупного раздела (salomat, clinics, doctors, consultations)
-  - Изолировать контексты: `UserContext`, `LanguageContext` — не падать при ошибке дочернего провайдера
+  **Микрофронтенд (web):** ✅ Фаза 1+2 DONE
+  - ~~Добавить `app/*/error.tsx` для каждого крупного раздела~~ ✅ DONE — 10 сегментов с error.tsx + loading.tsx
+  - ~~Изолировать контексты: `UserContext`, `LanguageContext` — не падать при ошибке дочернего провайдера~~ ✅ DONE — `SafeProvider` ErrorBoundary обёртка для каждого провайдера в root layout
 
   **Микросервисы (backend):**
   - Выделить `clinic` модуль в отдельный NestJS микросервис (отдельный Railway сервис, порт, база)
