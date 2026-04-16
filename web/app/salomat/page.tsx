@@ -168,10 +168,26 @@ export default function SalomatPage() {
   const [recommendation, setRecommendation] = useState<Recommendation>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  function saveChatHistory(msgs: Message[]) {
+    try {
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(msgs));
+    } catch {
+      // QuotaExceededError — обрезаем до последних 10 сообщений и пробуем снова
+      try {
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(msgs.slice(-10)));
+        setStorageWarning(true);
+      } catch {
+        // Хранилище полностью переполнено — история не сохранится
+        setStorageWarning(true);
+      }
+    }
+  }
 
   useEffect(() => {
     if (!localStorage.getItem(DISCLAIMER_KEY)) setShowDisclaimer(true);
@@ -297,7 +313,7 @@ export default function SalomatPage() {
       setMessages((prev) => {
         const next = [...prev];
         next[next.length - 1] = { role: "assistant", text: fullText, streaming: false };
-        try { localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+        saveChatHistory(next);
         return next;
       });
     } catch {
@@ -314,7 +330,7 @@ export default function SalomatPage() {
         setMessages((prev) => {
           const next = [...prev];
           next[next.length - 1] = { role: "assistant", text: data.reply ?? "Ошибка", streaming: false };
-          try { localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          saveChatHistory(next);
           return next;
         });
         if (data.recommendation?.specialization) {
@@ -324,7 +340,7 @@ export default function SalomatPage() {
         setMessages((prev) => {
           const next = [...prev];
           next[next.length - 1] = { role: "assistant", text: "Произошла ошибка. Попробуйте ещё раз.", streaming: false };
-          try { localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+          saveChatHistory(next);
           return next;
         });
       }
@@ -367,6 +383,14 @@ export default function SalomatPage() {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
 
       {showDisclaimer && <DisclaimerModal onAccept={acceptDisclaimer} />}
+
+      {storageWarning && (
+        <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 100, background: "#fef3c7", border: "1px solid #f59e0b", borderRadius: 10, padding: "10px 16px", fontSize: 13, color: "#92400e", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+          <span className="mat-icon" style={{ fontSize: 16, color: "#f59e0b" }}>warning</span>
+          {t("salomat.storageWarning", "Хранилище переполнено — часть истории чата не сохранена. Очистите чат.")}
+          <button onClick={() => setStorageWarning(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#92400e", marginLeft: 4 }}>✕</button>
+        </div>
+      )}
 
       <div className="salomat-root">
 
