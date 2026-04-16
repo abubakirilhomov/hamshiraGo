@@ -9,7 +9,7 @@
     "build:voice-agent": "nest build voice-agent",
     "build:payments": "nest build payments",
     "build:all": "nest build api && nest build clinic && nest build voice-agent && nest build payments",
-    "start": "nest start api",
+    "start": "sh docker-entrypoint.sh",
     "start:dev": "nest start api --watch",
     "start:debug": "nest start api --debug --watch",
     "start:prod": "node dist/apps/api/main.js",
