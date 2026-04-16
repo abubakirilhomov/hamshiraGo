@@ -178,14 +178,14 @@
 - [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
 - [x] **UX-PARTNER-3** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача — решено вместе с BIZ-CLIN-2
 - [x] **UX-PARTNER-10** — DONE 2026-04-16 — Страница управления услугами клиники `/clinic/services`. Создание, inline-редактирование, деактивация, фильтр по категориям, статистика. Добавлен пункт "Услуги" в sidebar (CEO only) — `web-medic/app/clinic/services/page.tsx`, `web-medic/app/clinic/layout.tsx`
-- [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
-- [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
+- [x] **UX-PARTNER-4** — DONE 2026-04-16 — Онбординг для новой клиники: чеклист 3 шагов (сотрудник, кабинет, услуга) с прогресс-баром, ссылками на нужные страницы и кнопкой "закрыть" (localStorage). Исчезает когда все шаги выполнены — `web-medic/app/clinic/dashboard/page.tsx`
+- [x] **UX-PARTNER-5** — DONE 2026-04-16 — Clinic dashboard: кнопка "Экспорт" с дропдауном — "Записи за 30 дней (CSV)" и "Лиды (CSV)". Скачивает файл с BOM для корректного отображения в Excel — `web-medic/app/clinic/dashboard/page.tsx`
 
 ### Жафар — Web-Medic (врачи)
 
 - [x] **UX-PARTNER-6** — DONE 2026-04-14 (Жафар) — Профиль врача: поля `pricePerConsultation` + `bio` добавлены в форму и display — `web-medic/app/doctor/profile/page.tsx`, `web-medic/lib/api.ts`
 - [ ] **UX-PARTNER-7** — 🟠 HIGH — Нет push/Telegram-уведомления врачу о новой консультации. Врач узнаёт только если сам зайдёт в `/consultations` — `web-medic/app/doctor/consultations/page.tsx` + backend
-- [ ] **UX-PARTNER-8** — 🟠 MEDIUM — Расписание: нет шаблонов повторяющихся слотов. Врач каждый день вручную создаёт одни и те же слоты (напр. Пн–Пт 09:00–17:00 каждые 30 мин) — `web-medic/app/doctor/schedule/page.tsx`
+- [x] **UX-PARTNER-8** — DONE 2026-04-16 — Шаблоны расписания: сохранение в localStorage, выбор дней недели, время, интервал. "Применить на 4 нед." создаёт слоты на все совпадающие дни. Коллапсируемый блок "Шаблоны расписания" — `web-medic/app/doctor/schedule/page.tsx`
 - [x] **UX-PARTNER-9** — DONE 2026-04-14 (Жафар) — Профиль врача: поле "О себе / Биография" добавлено вместе с UX-PARTNER-6 — `web-medic/app/doctor/profile/page.tsx`
 
 ---
@@ -293,7 +293,7 @@
 
   — Диёр (frontend изоляция) + Абубакир (backend микросервисы)
 
-- [ ] **UX-TOAST-1** — 🟠 MEDIUM — Заменить все нативные `alert()` и `confirm()` на toast-уведомления, соответствующие стилю проекта (teal `#0d9488`, borderRadius 10, без сторонних библиотек — собственный лёгкий компонент). Затронутые файлы: `web-medic/app/clinic/finance/page.tsx` (alert при пустом CSV), `web-medic/app/clinic/settings/page.tsx` (confirm при удалении услуги), `web-medic/app/clinic/staff/page.tsx` (confirm при удалении), `web-medic/app/clinic/rooms/page.tsx` (confirm при удалении). Создать `web-medic/components/clinic/Toast.tsx` + `useToast` hook — Жафар
+- [x] **UX-TOAST-1** — DONE 2026-04-16 — Создан `Toast.tsx` с `useToast()`, `ToastContainer`, `ConfirmDialog`. Заменены все 16 вызовов `alert()`/`confirm()` в 8 файлах: clinic/finance, settings, staff, leads, reception + doctor/schedule, consultations, consultation/[id] — `web-medic/components/clinic/Toast.tsx`
 
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
 - [x] **MOB-FEAT-1** — ETA display на экране трекинга заказа — `mobile/app/order/track.tsx`, `mobile/hooks/useOrderTracking.ts`
