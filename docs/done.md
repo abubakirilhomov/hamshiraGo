@@ -1,5 +1,32 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-16
+
+### Production readiness sprint (commit 1: 15 fixes)
+
+- **[backend]** B1 — approveWithdrawal wrapped in transaction with pessimistic_write lock (`backend/src/withdrawals/withdrawals.service.ts`)
+- **[backend]** B4 — console.error/warn replaced with structured Logger (orders, reviews) (`backend/src/orders/`, `backend/src/reviews/`)
+- **[backend]** B6 — health/detailed protected with AdminGuard (`backend/src/health/`)
+- **[backend]** B7 — take(100) safety cap on doctor pending + withdrawal requests endpoints (`backend/src/doctors/`, `backend/src/withdrawals/`)
+- **[backend]** B8 — @Index on referrals.referrerId and referredId (`backend/src/referrals/`)
+- **[backend]** B9 — composite indexes (orderId,createdAt) and (consultationId,createdAt) on chat_messages (`backend/src/chat/`)
+- **[backend]** B10 — IpThrottlerGuard on clinic register/login (`backend/src/clinics/`)
+- **[backend]** B11 — voice agent getSession/deleteSession ownership check (`backend/src/voice-agent/`)
+- **[backend]** B2 — dispatch N+1 eliminated: batch filterAvailableMedicsNow (1 query vs 50) (`backend/src/orders/`)
+- **[backend]** B13 — registration rate limit 30->5 req/min (auth, medics, doctors) (`backend/src/auth/`, `backend/src/medics/`, `backend/src/doctors/`)
+- **[mobile]** M2 — courses.tsx: 4 hardcoded UZ strings moved to i18n (`mobile/app/courses.tsx`)
+- **[mobile]** M3 — order/track.tsx: favorite toggle shows error toast instead of silent catch (`mobile/app/order/track.tsx`)
+
+### Production readiness sprint (commit 2: 7 fixes)
+
+- **[backend]** B3 — multi-service order N+1: batch getActiveServicesByIds (1 query vs N) (`backend/src/orders/`)
+- **[backend]** B12 — medic nearby: round coordinates to ~100m for privacy (`backend/src/medics/`)
+- **[backend]** B14 — referral code: crypto.randomBytes instead of Math.random (`backend/src/referrals/`)
+- **[backend]** B16 — .env.example: added SENTRY_DSN and TELEGRAM_ADMIN_CHAT_ID (`backend/.env.example`)
+- **[mobile]** M11 — cold start token validation: call /auth/me, clear stale sessions (`mobile/`)
+- **[mobile]** M4 — WS disconnect indicator: yellow "Connecting..." instead of hiding (`mobile/`)
+- **[docs]** COMPETITIVE_ANALYSIS.md — competitive analysis (OVI.uz, Practo, Halodoc, Vezeeta) (`docs/COMPETITIVE_ANALYSIS.md`)
+
 ## 2026-04-15
 
 ### Silent Error Catch Fixes
