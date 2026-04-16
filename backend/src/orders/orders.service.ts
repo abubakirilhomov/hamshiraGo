@@ -245,12 +245,14 @@ export class OrdersService {
     const allIds = [service.id];
 
     if (dto.serviceIds?.length) {
-      for (const sid of dto.serviceIds) {
-        if (sid === dto.serviceId) continue; // skip primary (already included)
-        const extra = await this.servicesService.getActiveServiceOrThrow(sid);
-        totalServicePrice += extra.price;
-        allTitles.push(extra.title);
-        allIds.push(extra.id);
+      const extraIds = dto.serviceIds.filter((sid) => sid !== dto.serviceId);
+      if (extraIds.length) {
+        const extras = await this.servicesService.getActiveServicesByIds(extraIds);
+        for (const extra of extras) {
+          totalServicePrice += extra.price;
+          allTitles.push(extra.title);
+          allIds.push(extra.id);
+        }
       }
     }
 

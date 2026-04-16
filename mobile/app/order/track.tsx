@@ -278,10 +278,12 @@ export default function TrackOrderScreen() {
           </View>
         )}
 
-        {wsConnected && isActive && (
-          <View style={trackLocalStyles.livePill}>
-            <View style={trackLocalStyles.liveDotSmall} />
-            <Text style={trackLocalStyles.liveTextSmall}>Live</Text>
+        {isActive && (
+          <View style={[trackLocalStyles.livePill, !wsConnected && { backgroundColor: '#fef3c7' }]}>
+            <View style={[trackLocalStyles.liveDotSmall, !wsConnected && { backgroundColor: '#f59e0b' }]} />
+            <Text style={[trackLocalStyles.liveTextSmall, !wsConnected && { color: '#92400e' }]}>
+              {wsConnected ? 'Live' : t('orders.wsConnecting')}
+            </Text>
           </View>
         )}
       </View>

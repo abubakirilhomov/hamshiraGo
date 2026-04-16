@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Service } from './entities/service.entity';
 import { CreateServiceDto } from './dto/create-service.dto';
 
@@ -28,6 +28,20 @@ export class ServicesService {
     const service = await this.serviceRepo.findOne({ where: { id, isActive: true } });
     if (!service) throw new NotFoundException('SERVICE_NOT_FOUND');
     return service;
+  }
+
+  /** Batch: get multiple active services by IDs (single query) */
+  async getActiveServicesByIds(ids: string[]): Promise<Service[]> {
+    if (!ids.length) return [];
+    const services = await this.serviceRepo.find({
+      where: { id: In(ids), isActive: true },
+    });
+    if (services.length !== ids.length) {
+      const found = new Set(services.map((s) => s.id));
+      const missing = ids.find((id) => !found.has(id));
+      throw new NotFoundException(`SERVICE_NOT_FOUND: ${missing}`);
+    }
+    return services;
   }
 
   // ── Admin CRUD ────────────────────────────────────────────────────────────

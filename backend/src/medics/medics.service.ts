@@ -600,6 +600,9 @@ export class MedicsService {
     return medics
       .map((m) => ({
         ...m,
+        // Round coordinates to ~100m precision for privacy
+        latitude: Math.round(Number(m.latitude!) * 1000) / 1000,
+        longitude: Math.round(Number(m.longitude!) * 1000) / 1000,
         distanceKm: haversineKm(latitude, longitude, Number(m.latitude!), Number(m.longitude!)),
       }))
       .filter(({ distanceKm }) => distanceKm <= MAX_KM)

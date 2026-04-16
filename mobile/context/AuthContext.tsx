@@ -38,7 +38,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ]);
         if (token && userJson) {
           const user = JSON.parse(userJson) as AuthUser;
-          setState({ user, token, isLoading: false });
+          // Validate token is still valid on cold start
+          try {
+            const fresh = await apiFetch<AuthUser>('/auth/me', { token });
+            setState({ user: fresh ?? user, token, isLoading: false });
+            if (fresh?.name !== user.name) {
+              await SecureStore.setItemAsync(USER_KEY, JSON.stringify(fresh));
+            }
+          } catch {
+            // Token expired/invalid — clear session
+            await SecureStore.deleteItemAsync(TOKEN_KEY);
+            await SecureStore.deleteItemAsync(USER_KEY);
+            setState({ user: null, token: null, isLoading: false });
+          }
         } else {
           setState({ user: null, token: null, isLoading: false });
         }

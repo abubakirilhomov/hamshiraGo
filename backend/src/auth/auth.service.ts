@@ -21,7 +21,7 @@ export class AuthService {
   ) {}
 
   private generateReferralCode(): string {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
+    return crypto.randomBytes(4).toString('hex').toUpperCase();
   }
 
   async registerClient(dto: RegisterClientDto) {
