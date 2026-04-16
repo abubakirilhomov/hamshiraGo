@@ -48,6 +48,9 @@ export class CompanyUser {
   doctorId!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
+  photoUrl!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
   pushToken!: string | null;
 
   @CreateDateColumn()

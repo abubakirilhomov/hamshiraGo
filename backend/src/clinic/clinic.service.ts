@@ -160,6 +160,7 @@ export class ClinicService {
       name: dto.name,
       phone: dto.phone,
       passwordHash,
+      photoUrl: dto.photoUrl ?? null,
       branchId: dto.branchId ?? null,
       doctorId: dto.doctorId ?? null,
     });

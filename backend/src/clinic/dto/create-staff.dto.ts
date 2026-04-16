@@ -21,6 +21,10 @@ export class CreateStaffDto {
   role!: 'CEO' | 'RECEPTION' | 'DOCTOR';
 
   @IsOptional()
+  @IsString()
+  photoUrl?: string;
+
+  @IsOptional()
   @IsUUID()
   branchId?: string;
 
