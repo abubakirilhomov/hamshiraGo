@@ -102,6 +102,7 @@ export default function OrdersPage() {
   const [socketOk, setSocketOk] = useState(true);
   const [tab, setTab] = useState<"ACTIVE" | "HISTORY">("ACTIVE");
   const socketRef = useRef<Socket | null>(null);
+  const subscribedRef = useRef<Set<string>>(new Set());
 
   async function loadOrders() {
     setLoading(true); setError("");
@@ -130,7 +131,6 @@ export default function OrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const subscribedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
