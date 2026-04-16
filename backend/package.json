@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "nest build api",
+    "build": "nest build api && nest build voice-agent && nest build payments && nest build clinic",
     "build:api": "nest build api",
     "build:clinic": "nest build clinic",
     "build:voice-agent": "nest build voice-agent",
