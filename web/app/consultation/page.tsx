@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { FaArrowLeft, FaStar, FaUserMd, FaCheckCircle, FaMoneyBillWave, FaInfoCircle } from "react-icons/fa";
-import { getDoctorById, createConsultation, Doctor } from "@/lib/api";
+import { getDoctorById, createConsultation, initiateConsultationPayment, Doctor, PaymentProvider } from "@/lib/api";
 import SlotPicker from "@/components/SlotPicker";
 
 function ConsultationContent() {
@@ -20,6 +20,10 @@ function ConsultationContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [payStep, setPayStep] = useState(false);
+  const [createdConsultationId, setCreatedConsultationId] = useState<string | null>(null);
+  const [payProvider, setPayProvider] = useState<PaymentProvider>("payme");
+  const [paying, setPaying] = useState(false);
 
   const fetchDoctor = useCallback(async () => {
     if (!doctorId) return;
@@ -44,11 +48,29 @@ function ConsultationContent() {
     setSubmitting(true);
     setError("");
     try {
-      await createConsultation(doctorId, symptoms || undefined, selectedSlotId || undefined);
-      router.push("/consultations");
+      const consultation = await createConsultation(doctorId, symptoms || undefined, selectedSlotId || undefined);
+      if (doctor && doctor.pricePerConsultation > 0) {
+        setCreatedConsultationId(consultation.id);
+        setPayStep(true);
+        setSubmitting(false);
+      } else {
+        router.push("/consultations");
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка");
       setSubmitting(false);
+    }
+  }
+
+  async function handlePay() {
+    if (!createdConsultationId || paying) return;
+    setPaying(true);
+    try {
+      const res = await initiateConsultationPayment(createdConsultationId, payProvider);
+      window.location.href = res.paymentUrl;
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка оплаты");
+      setPaying(false);
     }
   }
 
@@ -155,15 +177,51 @@ function ConsultationContent() {
           </div>
         )}
 
-        {/* Confirm */}
-        <button
-          onClick={handleConfirm}
-          disabled={submitting}
-          style={{ background: submitting ? "#94a3b8" : "#0d9488", color: "#fff", border: "none", borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-        >
-          <FaCheckCircle size={16} />
-          {submitting ? t("consultation.confirming") : t("consultation.confirm")}
-        </button>
+        {/* Payment step */}
+        {payStep ? (
+          <div style={{ background: "#fff", borderRadius: 16, padding: "20px 18px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{t("consultation.payTitle")}</p>
+            <p style={{ fontSize: 13, color: "#64748b" }}>{t("consultation.payInfo")}</p>
+            <div style={{ display: "flex", gap: 10 }}>
+              {(["payme", "click"] as PaymentProvider[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPayProvider(p)}
+                  style={{
+                    flex: 1, padding: "12px", borderRadius: 12, border: payProvider === p ? "2px solid #0d9488" : "1.5px solid #e2e8f0",
+                    background: payProvider === p ? "#f0fdfa" : "#fff", fontWeight: 700, fontSize: 14,
+                    color: payProvider === p ? "#0d9488" : "#64748b", cursor: "pointer", textTransform: "capitalize",
+                  }}
+                >
+                  {p === "payme" ? "Payme" : "Click"}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handlePay}
+              disabled={paying}
+              style={{ background: paying ? "#94a3b8" : "#0d9488", color: "#fff", border: "none", borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 700, cursor: paying ? "not-allowed" : "pointer" }}
+            >
+              {paying ? t("consultation.paying") : `${t("consultation.payBtn")} ${doctor.pricePerConsultation.toLocaleString("ru-RU")} сум`}
+            </button>
+            <button
+              onClick={() => router.push("/consultations")}
+              style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 14, cursor: "pointer", padding: "4px" }}
+            >
+              {t("consultation.payLater")}
+            </button>
+          </div>
+        ) : (
+          /* Confirm */
+          <button
+            onClick={handleConfirm}
+            disabled={submitting}
+            style={{ background: submitting ? "#94a3b8" : "#0d9488", color: "#fff", border: "none", borderRadius: 14, padding: "16px", fontSize: 16, fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            <FaCheckCircle size={16} />
+            {submitting ? t("consultation.confirming") : t("consultation.confirm")}
+          </button>
+        )}
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

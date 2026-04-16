@@ -31,6 +31,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showAppBanner, setShowAppBanner] = useState(false);
 
   function loadServices() {
     setLoading(true);
@@ -40,6 +41,13 @@ export default function HomePage() {
       .catch((err: unknown) => setError(err instanceof Error ? err.message : t("home.errorLoad")))
       .finally(() => setLoading(false));
   }
+
+  useEffect(() => {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+    const snoozed = localStorage.getItem("app-banner-snoozed");
+    const snoozedUntil = snoozed ? parseInt(snoozed, 10) : 0;
+    if (isMobile && Date.now() > snoozedUntil) setShowAppBanner(true);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -131,6 +139,30 @@ export default function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* ── App Download Banner ── */}
+      {showAppBanner && (
+        <div style={{ background: "linear-gradient(135deg,#00685f,#008378)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+          <span className="mat-icon" style={{ fontSize: 22, color: "#fff", fontVariationSettings: "'FILL' 1", flexShrink: 0 }}>smartphone</span>
+          <p style={{ flex: 1, fontSize: 13, color: "#fff", fontWeight: 600, margin: 0 }}>
+            {language === "uz" ? "HamshiraGo ilovasini yuklab oling" : "Скачайте приложение HamshiraGo"}
+          </p>
+          <a
+            href="https://play.google.com/store/apps/details?id=com.hamshirago.client"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none" }}
+          >
+            {language === "uz" ? "Yuklab olish" : "Скачать"}
+          </a>
+          <button
+            onClick={() => { localStorage.setItem("app-banner-snoozed", String(Date.now() + 7 * 24 * 60 * 60 * 1000)); setShowAppBanner(false); }}
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "0 2px", flexShrink: 0 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ── Hero ── */}
       <section style={{ position: "relative", overflow: "hidden", padding: "40px 20px 80px" }}>

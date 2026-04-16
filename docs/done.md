@@ -2,6 +2,14 @@
 
 ## 2026-04-16
 
+### Диёр — BIZ-WEB-1/3/4, UX-CLIENT-2/3/5/6, UX-WEB-4, UX-LAND-2
+
+- **[feat]** BIZ-WEB-1 + UX-CLIENT-2 — Кнопка "Оценить врача" для COMPLETED консультаций, модалка (5 звёзд + комментарий), `rateConsultation` API — `web/app/consultations/page.tsx`, `web/lib/api.ts`
+- **[feat]** BIZ-WEB-4 + UX-CLIENT-3 — Шаг оплаты Payme/Click после создания консультации, `initiateConsultationPayment` API, кнопка "Оплатить позже" — `web/app/consultation/page.tsx`, `web/lib/api.ts`
+- **[feat]** UX-CLIENT-6 — CTA "Оформить заказ по рецепту" для PENDING рецептов → главная с prefill — `web/app/prescriptions/page.tsx`
+- **[feat]** UX-LAND-2 — Баннер "Скачай приложение" на мобильных (userAgent/innerWidth<768), снуз 7 дней — `web/app/page.tsx`
+- **[done]** BIZ-WEB-3 — клиники с реальными данными (Жафар уже сделал), UX-WEB-4 — карточка врача в Salomat (уже было), UX-CLIENT-5 — кнопка видеозвонка (уже было)
+
 ### Production readiness sprint (commit 1: 15 fixes)
 
 - **[backend]** B1 — approveWithdrawal wrapped in transaction with pessimistic_write lock (`backend/src/withdrawals/withdrawals.service.ts`)

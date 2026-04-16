@@ -28,7 +28,7 @@
 
 ### Диёр — Web (после UX-BE-1)
 
-- [ ] **UX-WEB-4** — 🟡 HIGH — Salomat AI: карточка рекомендации показывает конкретного врача (фото, имя, специализация) с кнопкой "Записаться к [имя]" — `web/app/salomat/page.tsx`
+- [x] **UX-WEB-4** — DONE 2026-04-16 — Salomat AI: карточка рекомендации врача уже была реализована (rec.type="doctor", кнопка onDoctor → /doctors) — `web/app/salomat/page.tsx`
 
 ### Жафар — Web
 
@@ -64,10 +64,10 @@
 
 ### Диёр — Web + Admin
 
-- [ ] **BIZ-WEB-1** — 🔴 CRITICAL — Web: UI рейтинга врача после консультации (COMPLETED). Нет кнопки "Оставить отзыв" (после BIZ-BE-3) — `web/app/consultations/page.tsx`
+- [x] **BIZ-WEB-1** — DONE 2026-04-16 — Web: кнопка "Оценить врача" для COMPLETED консультаций, модалка со звёздами + комментарий, `rateConsultation` API — `web/app/consultations/page.tsx`, `web/lib/api.ts`
 - [x] **BIZ-WEB-2** — DONE 2026-04-13 — Реферальный код при web-регистрации — `web/app/auth/page.tsx`
-- [ ] **BIZ-WEB-3** — 🟡 HIGH — Реальные данные на странице клиник (после BIZ-BE-4) — `web/app/clinics/page.tsx`, `web/app/clinics/[id]/page.tsx`
-- [ ] **BIZ-WEB-4** — 🟡 HIGH — Web: UI оплаты консультации (после BIZ-BE-1). Нет payment step при бронировании врача — `web/app/consultation/page.tsx`
+- [x] **BIZ-WEB-3** — DONE 2026-04-16 — Реальные данные на странице клиник — Жафар реализовал (fetch /companies) — `web/app/clinics/page.tsx`
+- [x] **BIZ-WEB-4** — DONE 2026-04-16 — Web: шаг оплаты (Payme/Click) после создания консультации, `initiateConsultationPayment` API, кнопка "Оплатить позже" — `web/app/consultation/page.tsx`, `web/lib/api.ts`
 - [x] **BIZ-WEB-5** — DONE (уже было реализовано) — `web/app/courses/page.tsx`
 - [x] **BIZ-WEB-6** — DONE 2026-04-13 — Push permission UI — `web/components/PushPermissionPrompt.tsx`
 - [x] **BIZ-ADM-1** — DONE 2026-04-13 — Admin: страница управления выплатами — `admin/src/pages/Payouts.tsx` (ждёт BIZ-BE-2 для данных)
@@ -144,7 +144,7 @@
 
 ### Диёр — Web
 
-- [ ] **UX-LAND-2** — 🟠 MEDIUM — На главной странице web-приложения добавить ненавязчивый баннер/плашку "Доступно мобильное приложение" с кнопками App Store / Google Play. Показывать только на мобильных устройствах (`userAgent` или `window.innerWidth < 768`) и только если пользователь ещё не скачал (снуз в `localStorage`) — `web/app/page.tsx` или отдельный компонент `web/components/AppDownloadBanner.tsx`
+- [x] **UX-LAND-2** — DONE 2026-04-16 — Баннер "Скачай приложение" на мобильных (userAgent + innerWidth<768). Снуз 7 дней в localStorage. Кнопка "Скачать" → Google Play, кнопка × — закрыть — `web/app/page.tsx`
 
 ---
 
@@ -155,11 +155,11 @@
 ### Диёр — Web
 
 - [x] **UX-CLIENT-1** — DONE 2026-04-15 — Удаление аккаунта: `DELETE /auth/account` (soft-delete + anonymize PII, backend), кнопка + модалка подтверждения в профиле (web) — `web/app/profile/page.tsx`, `backend/src/auth/auth.controller.ts`, `backend/src/users/users.service.ts`, `backend/src/users/entities/user.entity.ts`
-- [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
-- [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
+- [x] **UX-CLIENT-2** — DONE 2026-04-16 — Кнопка "Оценить врача" для COMPLETED (вместе с BIZ-WEB-1) — `web/app/consultations/page.tsx`
+- [x] **UX-CLIENT-3** — DONE 2026-04-16 — Цена показана, после записи → шаг оплаты Payme/Click (вместе с BIZ-WEB-4) — `web/app/consultation/page.tsx`
 - [x] **UX-CLIENT-4** — DONE 2026-04-15 — Онбординг: 4 слайда (сервис, как заказать, трекинг, безопасность) с нумерованными чипами-шагами. После регистрации → `/onboarding` → `/`. Логин → сразу `/`. Исправлен баг: auth больше не редиректит на онбординг до регистрации — `web/app/onboarding/page.tsx`, `web/app/auth/page.tsx`
-- [ ] **UX-CLIENT-5** — 🟠 MEDIUM — Видеозвонок: страница `/video-call` есть, но нет кнопки входа в звонок из карточки консультации. Клиент не знает как войти — `web/app/consultations/page.tsx`, `web/app/video-call/page.tsx`
-- [ ] **UX-CLIENT-6** — 🟠 MEDIUM — Рецепт: после получения рецепта от врача непонятен следующий шаг. Нет CTA "Оформить заказ по рецепту" — `web/app/prescriptions/page.tsx`
+- [x] **UX-CLIENT-5** — DONE 2026-04-16 — Кнопка видеозвонка из карточки консультации уже была реализована (router.push /video-call/id) — `web/app/consultations/page.tsx`
+- [x] **UX-CLIENT-6** — DONE 2026-04-16 — CTA "Оформить заказ по рецепту" для PENDING рецептов, переход на главную с prefill service — `web/app/prescriptions/page.tsx`
 - [x] **UX-CLIENT-7** — DONE 2026-04-15 — Профиль: аватар (выбор фото с устройства, хранится в localStorage), кнопка-карандаш на аватаре. Телефон — кнопка "Поддержка" (смена номера через backend не поддерживается) — `web/app/profile/page.tsx`
 
 ---
