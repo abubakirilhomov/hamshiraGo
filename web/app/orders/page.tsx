@@ -126,7 +126,7 @@ export default function OrdersPage() {
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
       if (status === "DONE" || status === "CANCELED") socket.emit("unsubscribe_order", orderId);
     });
-    return () => { socket.disconnect(); };
+    return () => { subscribedRef.current.forEach(id => socket.emit("unsubscribe_order", id)); socket.disconnect(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

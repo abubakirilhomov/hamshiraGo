@@ -343,7 +343,7 @@ export default function OrderDetailPage() {
   const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const finalPrice = order.priceAmount + (order.urgentFee ?? 0) - order.discountAmount;
   const canCancel = order.status === "CREATED";
-  const canConfirmDone = order.status === "SERVICE_STARTED";
+  const canConfirmDone = false; // BUG-29: only medic can set DONE
 
   return (
     <>
