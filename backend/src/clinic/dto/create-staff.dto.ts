@@ -3,7 +3,6 @@ import {
   IsOptional,
   IsIn,
   IsUUID,
-  Matches,
   MinLength,
 } from 'class-validator';
 
@@ -11,7 +10,7 @@ export class CreateStaffDto {
   @IsString()
   name!: string;
 
-  @Matches(/^\+998\d{9}$/, { message: 'PHONE_FORMAT_INVALID' })
+  @IsString()
   phone!: string;
 
   @IsString()
