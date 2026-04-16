@@ -1,6 +1,6 @@
 # Задачи для Диёра — HamshiraGo
 
-> Обновлено: 2026-03-08
+> Обновлено: 2026-04-16
 
 ---
 
@@ -17,16 +17,16 @@
 
 ## 🐛 Баги — web / web-medic / admin
 
-- [ ] **BUG 14** — web-medic загружает все заказы чтобы найти один по id → добавить `GET /orders/:id` запрос
-- [ ] **BUG 15** — web client передаёт лишние поля в `CreateOrderDto` → почистить payload
-- [ ] **BUG 26** — `BASE_URL` захардкожен `localhost:3000` в web и web-medic → читать из `NEXT_PUBLIC_API_URL`
-- [ ] **BUG 27** — `api.orders.list()` ожидает массив, бэкенд возвращает `{ data, total, page }` → обновить типы и обработку
-- [ ] **BUG 28** — WebSocket cleanup не эмитит `unsubscribe_order` при размонтировании (web) → добавить в `useEffect` cleanup
-- [ ] **BUG 29** — web-клиент может напрямую поставить статус `DONE` → убрать кнопку, статус должен выставлять медик
-- [ ] **BUG 30** — Dashboard считает доход только по первым 100 заказам → добавить агрегацию на бэкенде
-- [ ] **BUG 31** — Dashboard "сегодня" ограничен 100 заказами → аналогично BUG 30
-- [ ] **BUG 32** — Admin роутер проверяет только наличие токена, не его валидность → проверять JWT на бэкенде при каждом запросе
-- [ ] **BUG 33** — Admin JWT хранится в `localStorage` → уязвимость к XSS, перевести на httpOnly cookie
+- [x] **BUG 14** — web-medic загружает все заказы чтобы найти один по id → уже исправлен (medicApi.orders.get(id))
+- [x] **BUG 15** — web client передаёт лишние поля в `CreateOrderDto` → уже исправлен
+- [x] **BUG 26** — `BASE_URL` захардкожен `localhost:3000` в web и web-medic → уже исправлен
+- [x] **BUG 27** — `api.orders.list()` ожидает массив, бэкенд возвращает `{ data, total, page }` → уже исправлен
+- [x] **BUG 28** — WebSocket cleanup не эмитит `unsubscribe_order` при размонтировании (web) → исправлен 2026-04-16
+- [x] **BUG 29** — web-клиент может напрямую поставить статус `DONE` → исправлен 2026-04-16 (canConfirmDone=false)
+- [x] **BUG 30** — Dashboard считает доход только по первым 100 заказам → уже исправлен (полная пагинация)
+- [x] **BUG 31** — Dashboard "сегодня" ограничен 100 заказами → уже исправлен (while loop + totalPages)
+- [ ] **BUG 32** — Admin роутер проверяет только наличие токена, не его валидность → backend задача
+- [ ] **BUG 33** — Admin JWT хранится в `localStorage` → уязвимость к XSS, перевести на httpOnly cookie → backend задача
 
 ---
 

@@ -2,7 +2,13 @@
 
 ## 2026-04-16
 
+- **[fix]** BUG-28 — WebSocket cleanup: emit `unsubscribe_order` для всех активных подписок перед disconnect при размонтировании (`web/app/orders/page.tsx`)
+- **[fix]** BUG-29 — Убрана кнопка "Подтвердить выполнение" у клиента: `canConfirmDone=false`, статус DONE выставляет только медик (`web/app/orders/[id]/page.tsx`)
+
 - **[backend]** BIZ-BE-5 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee (`backend/src/services/entities/service.entity.ts`, `company-service.entity.ts`, `order.entity.ts`, `orders.service.ts`, `orders.controller.ts`, `create-service.dto.ts`)
+- **[feat]** UX-PARTNER-7 — Real-time уведомление врачу в web-medic о новой консультации: WebSocket подключение (`new_consultation` event), Browser Notification API, toast-уведомление. Backend Push/Telegram/WebSocket уже были реализованы ранее (`web-medic/app/doctor/consultations/page.tsx`)
+- **[arch]** ARCH-1 Фаза 1 — ErrorBoundary изоляция: добавлены `error.tsx` + `loading.tsx` для каждого route segment. **web-medic**: clinic, doctor, auth (6 файлов). **web**: salomat, clinics, doctors, consultations, consultation, orders, patient, profile, loyalty, subscriptions (20 файлов). Теперь крэш в одном разделе не ломает остальные
+- **[arch]** ARCH-1 Фаза 2 — Изоляция layout + контексты. **web-medic**: создан `doctor/layout.tsx` с DoctorProvider + `ContextErrorBoundary`, clinic/layout обёрнут в ErrorBoundary. **web**: создан `SafeProvider` ErrorBoundary, UserProvider + LanguageProvider в root layout обёрнуты в SafeProvider — крэш одного провайдера не убивает другой
 
 ### Диёр — BIZ-WEB-1/3/4, UX-CLIENT-2/3/5/6, UX-WEB-4, UX-LAND-2
 
