@@ -130,6 +130,8 @@ export default function OrderDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoritesChecked, setFavoritesChecked] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [actionError, setActionError] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -234,14 +236,16 @@ export default function OrderDetailPage() {
 
 
   async function handleCancel() {
-    if (!confirm(t("order.cancelConfirm"))) return;
+    setActionError("");
     setCanceling(true);
     try {
       await api.orders.cancel(id);
       router.push("/");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t("common.error"));
+      setActionError(err instanceof Error ? err.message : t("common.error"));
       setCanceling(false);
+    } finally {
+      setShowCancelConfirm(false);
     }
   }
 
@@ -254,7 +258,7 @@ export default function OrderDetailPage() {
       setRatingDone(true);
       setTimeout(() => router.push("/"), 1500);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t("common.error"));
+      setActionError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setRatingLoading(false);
     }
@@ -296,7 +300,7 @@ export default function OrderDetailPage() {
       const res = await api.payments.initiatePayment(order.id, provider);
       window.location.href = res.paymentUrl;
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Ошибка при создании платежа");
+      setActionError(err instanceof Error ? err.message : "Ошибка при создании платежа");
       setPaymentLoading(null);
     }
   }
@@ -637,7 +641,7 @@ export default function OrderDetailPage() {
 
           {/* Cancel */}
           {canCancel && (
-            <button onClick={handleCancel} disabled={canceling} className="btn-ghost-danger"
+            <button onClick={() => setShowCancelConfirm(true)} disabled={canceling} className="btn-ghost-danger"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: canceling ? 0.6 : 1 }}>
               {canceling
                 ? <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>
@@ -646,7 +650,35 @@ export default function OrderDetailPage() {
               {canceling ? t("order.canceling") : t("order.cancel")}
             </button>
           )}
+
+          {/* Inline action error */}
+          {actionError && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#b91c1c", display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="mat-icon" style={{ fontSize: 16 }}>error</span>
+              {actionError}
+              <button onClick={() => setActionError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#b91c1c", fontSize: 16 }}>✕</button>
+            </div>
+          )}
         </div>
+
+        {/* Cancel confirm modal */}
+        {showCancelConfirm && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(25,28,30,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: "#fff", borderRadius: 20, padding: 24, maxWidth: 340, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+              <span className="mat-icon" style={{ fontSize: 36, color: "#ef4444", display: "block", marginBottom: 12 }}>cancel</span>
+              <p style={{ fontSize: 16, fontWeight: 700, color: "#191c1e", marginBottom: 8 }}>{t("order.cancelConfirmTitle", "Отменить заказ?")}</p>
+              <p style={{ fontSize: 14, color: "#6d7a77", marginBottom: 20 }}>{t("order.cancelConfirm")}</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowCancelConfirm(false)} style={{ flex: 1, padding: "11px", background: "#f2f4f6", border: "none", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                  {t("common.back", "Назад")}
+                </button>
+                <button onClick={handleCancel} disabled={canceling} style={{ flex: 1, padding: "11px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: canceling ? 0.6 : 1 }}>
+                  {canceling ? t("order.canceling") : t("order.cancel")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Chat drawer ── */}
         {chatOpen && (
