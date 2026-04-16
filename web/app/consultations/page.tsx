@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { getMyConsultations, Consultation } from "@/lib/api";
+import { getMyConsultations, rateConsultation, Consultation } from "@/lib/api";
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -28,6 +28,11 @@ export default function ConsultationsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [notesModal, setNotesModal] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [ratingModal, setRatingModal] = useState<Consultation | null>(null);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingReview, setRatingReview] = useState("");
+  const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [ratedIds, setRatedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -50,6 +55,19 @@ export default function ConsultationsPage() {
   }, []);
 
   useEffect(() => { fetchConsultations(1, false); }, [fetchConsultations]);
+
+  async function handleRateSubmit() {
+    if (!ratingModal || ratingValue === 0) return;
+    setRatingSubmitting(true);
+    try {
+      await rateConsultation(ratingModal.id, ratingValue, ratingReview || undefined);
+      setRatedIds((prev) => new Set([...prev, ratingModal.id]));
+      setRatingModal(null);
+      setRatingValue(0);
+      setRatingReview("");
+    } catch {}
+    finally { setRatingSubmitting(false); }
+  }
 
   if (loading) {
     return (
@@ -137,7 +155,7 @@ export default function ConsultationsPage() {
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {(item.status === "PENDING" || item.status === "ACTIVE") && (
                     <button onClick={() => router.push(`/video-call/${item.id}`)} style={{
                       display: "flex", alignItems: "center", gap: 6,
@@ -148,6 +166,22 @@ export default function ConsultationsPage() {
                       <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>video_call</span>
                       {t("consultations.videoCall")}
                     </button>
+                  )}
+                  {item.status === "COMPLETED" && !ratedIds.has(item.id) && (
+                    <button onClick={() => { setRatingModal(item); setRatingValue(0); setRatingReview(""); }} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "#fffbeb", color: "#b45309",
+                      border: "1.5px solid #fde68a", borderRadius: 10, padding: "9px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    }}>
+                      <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1", color: "#f59e0b" }}>star</span>
+                      {t("consultations.rateDoctor")}
+                    </button>
+                  )}
+                  {item.status === "COMPLETED" && ratedIds.has(item.id) && (
+                    <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1", color: "#16a34a" }}>check_circle</span>
+                      {t("consultations.rateSuccess")}
+                    </span>
                   )}
                   {item.doctorNotes && (
                     <button onClick={() => setNotesModal(item.doctorNotes!)} style={{
@@ -174,6 +208,42 @@ export default function ConsultationsPage() {
           )}
         </div>
       </div>
+
+      {/* Rating modal */}
+      {ratingModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div style={{ background: "#fff", borderRadius: "24px 24px 0 0", padding: "28px 24px 40px", width: "100%", maxWidth: 600, animation: "slideUp 250ms ease" }}>
+            <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 4 }}>{t("consultations.rateTitle")}</p>
+            <p style={{ fontSize: 13, color: "#6d7a77", marginBottom: 16 }}>{ratingModal.doctor?.name}</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
+              {[1,2,3,4,5].map((s) => (
+                <button key={s} onClick={() => setRatingValue(s)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                  <span className="mat-icon" style={{ fontSize: 36, color: s <= ratingValue ? "#f59e0b" : "#e2e8f0", fontVariationSettings: s <= ratingValue ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={ratingReview}
+              onChange={(e) => setRatingReview(e.target.value)}
+              placeholder={t("consultations.ratePlaceholder")}
+              rows={3}
+              style={{ width: "100%", border: "1.5px solid #eceef0", borderRadius: 12, padding: "10px 14px", fontSize: 14, resize: "none", outline: "none", boxSizing: "border-box", marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setRatingModal(null)} style={{ flex: 1, background: "#f7f9fb", border: "none", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, color: "#6d7a77", cursor: "pointer" }}>
+                {t("common.cancel") || "Отмена"}
+              </button>
+              <button
+                onClick={handleRateSubmit}
+                disabled={ratingValue === 0 || ratingSubmitting}
+                style={{ flex: 2, background: ratingValue === 0 ? "#e2e8f0" : "linear-gradient(135deg,#00685f,#008378)", color: ratingValue === 0 ? "#9ca3af" : "#fff", border: "none", borderRadius: 14, padding: "14px", fontSize: 14, fontWeight: 700, cursor: ratingValue === 0 ? "not-allowed" : "pointer" }}
+              >
+                {ratingSubmitting ? "..." : t("consultations.rateSubmit")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notes modal */}
       {notesModal && (

@@ -24,6 +24,14 @@ export class CompanyService {
   @Column({ type: 'int' })
   price!: number; // UZS
 
+  /** Minimum price for variable-price operations (overrides Service.priceMin) */
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMin!: number | null;
+
+  /** Maximum price for variable-price operations (overrides Service.priceMax) */
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMax!: number | null;
+
   @Column({ type: 'int', nullable: true })
   durationMinutes!: number | null;
 

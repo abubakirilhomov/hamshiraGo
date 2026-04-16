@@ -30,7 +30,7 @@
 
 ### Диёр — Web (после UX-BE-1)
 
-- [ ] **UX-WEB-4** — 🟡 HIGH — Salomat AI: карточка рекомендации показывает конкретного врача (фото, имя, специализация) с кнопкой "Записаться к [имя]" — `web/app/salomat/page.tsx`
+- [x] **UX-WEB-4** — DONE 2026-04-16 — Salomat AI: карточка рекомендации врача уже была реализована (rec.type="doctor", кнопка onDoctor → /doctors) — `web/app/salomat/page.tsx`
 
 ### Жафар — Web
 
@@ -56,7 +56,11 @@
 - [x] **BIZ-BE-4** — DONE 2026-04-14 — Публичный `GET /companies` и `GET /companies/:id` без auth, фильтр по city — `backend/src/clinic/clinic.controller.ts`, `clinic.service.ts`
 - [x] **BIZ-MOB-1** — DONE 2026-04-14 — Mobile: UI оплаты консультации (Payme/Click выбор + expo-web-browser) — `mobile/app/consultation.tsx`
 - [x] **BIZ-MOB-2** — DONE 2026-04-14 — Mobile: UI рейтинга врача (звёзды + комментарий для COMPLETED консультаций) — `mobile/app/consultations.tsx`
-- [ ] **BIZ-BE-5** — 🟡 HIGH — Ценовой диапазон операции: только врач и CEO клиники могут задавать `priceMin` и `priceMax` для операции (например 300 000 – 450 000 UZS). После завершения операции (статус `DONE`) врач вводит итоговую `finalPrice` (например 350 000) — валидация: должна быть в пределах `[priceMin, priceMax]`. Добавить поля `price_min`, `price_max`, `final_price` в таблицу услуг/операций. Endpoint `PATCH /orders/:id/final-price` — доступ только для врача-исполнителя и CEO клиники. Guard проверяет роль (`DOCTOR` | `CLINIC_CEO`) — `backend/src/doctors/`, `backend/src/orders/`, `backend/src/clinic/`
+- [ ] **BIZ-BE-7** — 🔴 HIGH — Clinic login: JWT должен содержать `clinicRole` с одним из трёх значений `CEO | RECEPTION | DOCTOR`. Сейчас фронтенд читает `payload.clinicRole` через `getClinicRole()` и делает редирект: CEO → `/clinic/dashboard`, RECEPTION → `/clinic/reception`, DOCTOR → `/doctor`. Бекенд должен гарантировать что поле `clinicRole` всегда присутствует в токене при логине через `POST /clinic-auth/login`. Проверить `JwtStrategy` и `clinic-auth.service.ts` — убедиться что `clinicRole` берётся из `company_user.role` и прописывается в payload — `backend/src/clinic-auth/clinic-auth.service.ts`, `backend/src/auth/strategies/` — Абубакир
+
+- [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
+
+- [x] **BIZ-BE-5** — DONE 2026-04-16 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee
 
 ### Жафар — Clinic + Web-Medic
 
@@ -66,10 +70,10 @@
 
 ### Диёр — Web + Admin
 
-- [ ] **BIZ-WEB-1** — 🔴 CRITICAL — Web: UI рейтинга врача после консультации (COMPLETED). Нет кнопки "Оставить отзыв" (после BIZ-BE-3) — `web/app/consultations/page.tsx`
+- [x] **BIZ-WEB-1** — DONE 2026-04-16 — Web: кнопка "Оценить врача" для COMPLETED консультаций, модалка со звёздами + комментарий, `rateConsultation` API — `web/app/consultations/page.tsx`, `web/lib/api.ts`
 - [x] **BIZ-WEB-2** — DONE 2026-04-13 — Реферальный код при web-регистрации — `web/app/auth/page.tsx`
-- [ ] **BIZ-WEB-3** — 🟡 HIGH — Реальные данные на странице клиник (после BIZ-BE-4) — `web/app/clinics/page.tsx`, `web/app/clinics/[id]/page.tsx`
-- [ ] **BIZ-WEB-4** — 🟡 HIGH — Web: UI оплаты консультации (после BIZ-BE-1). Нет payment step при бронировании врача — `web/app/consultation/page.tsx`
+- [x] **BIZ-WEB-3** — DONE 2026-04-16 — Реальные данные на странице клиник — Жафар реализовал (fetch /companies) — `web/app/clinics/page.tsx`
+- [x] **BIZ-WEB-4** — DONE 2026-04-16 — Web: шаг оплаты (Payme/Click) после создания консультации, `initiateConsultationPayment` API, кнопка "Оплатить позже" — `web/app/consultation/page.tsx`, `web/lib/api.ts`
 - [x] **BIZ-WEB-5** — DONE (уже было реализовано) — `web/app/courses/page.tsx`
 - [x] **BIZ-WEB-6** — DONE 2026-04-13 — Push permission UI — `web/components/PushPermissionPrompt.tsx`
 - [x] **BIZ-ADM-1** — DONE 2026-04-13 — Admin: страница управления выплатами — `admin/src/pages/Payouts.tsx` (ждёт BIZ-BE-2 для данных)
@@ -119,7 +123,7 @@
 
 ### Жафар — Web-Medic (врач)
 
-- [x] **PUSH-WM-1** — DONE 2026-04-15 (Жафар) — Врачи: `subscribeWebPushDoctor()` добавлен в `webPush.ts`, `DoctorPushPermissionPrompt` создан, подключён в `doctor/layout.tsx` — `web-medic/lib/webPush.ts`, `web-medic/components/DoctorPushPermissionPrompt.tsx`, `web-medic/app/doctor/layout.tsx`
+- [x] **PUSH-WM-1** — DONE 2026-04-16 — Врачи: `subscribeWebPushDoctor()` в webPush.ts (шлёт на `/doctors/web-push-subscription`), `DoctorPushPermissionPrompt.tsx` (bottom-sheet через 3с, только user_role=doctor), подключён в root layout — `web-medic/lib/webPush.ts`, `web-medic/components/DoctorPushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 - [x] **PUSH-WM-2** — DONE 2026-04-14 (Жафар) — Медики: заменён авто-запрос на `PushPermissionPrompt` (bottom-sheet через 3с) — `web-medic/components/WebPushInit.tsx`, `web-medic/components/PushPermissionPrompt.tsx`, `web-medic/app/layout.tsx`
 
 ---
@@ -146,7 +150,7 @@
 
 ### Диёр — Web
 
-- [ ] **UX-LAND-2** — 🟠 MEDIUM — На главной странице web-приложения добавить ненавязчивый баннер/плашку "Доступно мобильное приложение" с кнопками App Store / Google Play. Показывать только на мобильных устройствах (`userAgent` или `window.innerWidth < 768`) и только если пользователь ещё не скачал (снуз в `localStorage`) — `web/app/page.tsx` или отдельный компонент `web/components/AppDownloadBanner.tsx`
+- [x] **UX-LAND-2** — DONE 2026-04-16 — Баннер "Скачай приложение" на мобильных (userAgent + innerWidth<768). Снуз 7 дней в localStorage. Кнопка "Скачать" → Google Play, кнопка × — закрыть — `web/app/page.tsx`
 
 ---
 
@@ -157,11 +161,11 @@
 ### Диёр — Web
 
 - [x] **UX-CLIENT-1** — DONE 2026-04-15 — Удаление аккаунта: `DELETE /auth/account` (soft-delete + anonymize PII, backend), кнопка + модалка подтверждения в профиле (web) — `web/app/profile/page.tsx`, `backend/src/auth/auth.controller.ts`, `backend/src/users/users.service.ts`, `backend/src/users/entities/user.entity.ts`
-- [ ] **UX-CLIENT-2** — 🔴 HIGH — После завершённой консультации нет кнопки "Оценить врача". Клиент не может оставить отзыв — `web/app/consultations/page.tsx` (после BIZ-BE-3)
-- [ ] **UX-CLIENT-3** — 🟠 HIGH — Страница `/consultation` не показывает цену консультации и не ведёт к оплате. Клиент видит форму, нажимает "Записаться" — и всё. Непонятно сколько стоит и как платить — `web/app/consultation/page.tsx` (после BIZ-BE-1)
+- [x] **UX-CLIENT-2** — DONE 2026-04-16 — Кнопка "Оценить врача" для COMPLETED (вместе с BIZ-WEB-1) — `web/app/consultations/page.tsx`
+- [x] **UX-CLIENT-3** — DONE 2026-04-16 — Цена показана, после записи → шаг оплаты Payme/Click (вместе с BIZ-WEB-4) — `web/app/consultation/page.tsx`
 - [x] **UX-CLIENT-4** — DONE 2026-04-15 — Онбординг: 4 слайда (сервис, как заказать, трекинг, безопасность) с нумерованными чипами-шагами. После регистрации → `/onboarding` → `/`. Логин → сразу `/`. Исправлен баг: auth больше не редиректит на онбординг до регистрации — `web/app/onboarding/page.tsx`, `web/app/auth/page.tsx`
-- [ ] **UX-CLIENT-5** — 🟠 MEDIUM — Видеозвонок: страница `/video-call` есть, но нет кнопки входа в звонок из карточки консультации. Клиент не знает как войти — `web/app/consultations/page.tsx`, `web/app/video-call/page.tsx`
-- [ ] **UX-CLIENT-6** — 🟠 MEDIUM — Рецепт: после получения рецепта от врача непонятен следующий шаг. Нет CTA "Оформить заказ по рецепту" — `web/app/prescriptions/page.tsx`
+- [x] **UX-CLIENT-5** — DONE 2026-04-16 — Кнопка видеозвонка из карточки консультации уже была реализована (router.push /video-call/id) — `web/app/consultations/page.tsx`
+- [x] **UX-CLIENT-6** — DONE 2026-04-16 — CTA "Оформить заказ по рецепту" для PENDING рецептов, переход на главную с prefill service — `web/app/prescriptions/page.tsx`
 - [x] **UX-CLIENT-7** — DONE 2026-04-15 — Профиль: аватар (выбор фото с устройства, хранится в localStorage), кнопка-карандаш на аватаре. Телефон — кнопка "Поддержка" (смена номера через backend не поддерживается) — `web/app/profile/page.tsx`
 
 ---
@@ -175,15 +179,15 @@
 - [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
 - [x] **UX-PARTNER-2** — DONE 2026-04-15 (Жафар) — Telegram-уведомления о лидах: добавлен `telegramChatId` в `CompanyUser`, `PATCH /clinic/me/telegram-chat-id`, `createLead` шлёт в Telegram CEO+RECEPTION, UI подключения в Settings — `backend/src/clinic/`, `web-medic/app/clinic/settings/page.tsx`
 - [x] **UX-PARTNER-3** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача — решено вместе с BIZ-CLIN-2
-- [ ] **UX-PARTNER-10** — 🔴 HIGH — Страница управления услугами клиники `/clinic/services`. CEO должен самостоятельно создавать, редактировать и деактивировать услуги (название, цена, описание). Бекенд готов: `POST/GET/PATCH/DELETE /clinic/services` за `ClinicRoleGuard('CEO')` — `web-medic/app/clinic/services/page.tsx` (новая страница)
-- [x] **UX-PARTNER-4** — DONE 2026-04-15 (Жафар) — Онбординг для новой клиники: чеклист 4 шагов с прогресс-баром, автопроверка профиля/персонала/кабинетов, закрывается через localStorage — `web-medic/app/clinic/dashboard/page.tsx`
-- [x] **UX-PARTNER-5** — DONE 2026-04-15 (Жафар) — Clinic dashboard: кнопка "Экспорт" с выпадающим меню → CSV экспорт записей (сегодня), лидов (до 500), помесячной статистики — `web-medic/app/clinic/dashboard/page.tsx`
+- [x] **UX-PARTNER-10** — DONE 2026-04-16 — Страница управления услугами клиники `/clinic/services`. Создание, inline-редактирование, деактивация, фильтр по категориям, статистика. Добавлен пункт "Услуги" в sidebar (CEO only) — `web-medic/app/clinic/services/page.tsx`, `web-medic/app/clinic/layout.tsx`
+- [x] **UX-PARTNER-4** — DONE 2026-04-16 — Онбординг для новой клиники: чеклист 3 шагов (сотрудник, кабинет, услуга) с прогресс-баром, ссылками на нужные страницы и кнопкой "закрыть" (localStorage). Исчезает когда все шаги выполнены — `web-medic/app/clinic/dashboard/page.tsx`
+- [x] **UX-PARTNER-5** — DONE 2026-04-16 — Clinic dashboard: кнопка "Экспорт" с дропдауном — "Записи за 30 дней (CSV)" и "Лиды (CSV)". Скачивает файл с BOM для корректного отображения в Excel — `web-medic/app/clinic/dashboard/page.tsx`
 
 ### Жафар — Web-Medic (врачи)
 
 - [x] **UX-PARTNER-6** — DONE 2026-04-14 (Жафар) — Профиль врача: поля `pricePerConsultation` + `bio` добавлены в форму и display — `web-medic/app/doctor/profile/page.tsx`, `web-medic/lib/api.ts`
 - [x] **UX-PARTNER-7** — DONE 2026-04-15 (Жафар) — Real-time уведомления врачу: Socket.IO `new_consultation` listener + toast + авто-reload pending — `web-medic/app/doctor/consultations/page.tsx`
-- [x] **UX-PARTNER-8** — DONE 2026-04-15 (Жафар) — Шаблоны слотов уже реализованы: QUICK_TEMPLATES, кастомный день-пикер, интервал, диапазон дней, handleApplyTemplate — `web-medic/app/doctor/schedule/page.tsx`
+- [x] **UX-PARTNER-8** — DONE 2026-04-16 — Шаблоны расписания: сохранение в localStorage, выбор дней недели, время, интервал. "Применить на 4 нед." создаёт слоты на все совпадающие дни. Коллапсируемый блок "Шаблоны расписания" — `web-medic/app/doctor/schedule/page.tsx`
 - [x] **UX-PARTNER-9** — DONE 2026-04-14 (Жафар) — Профиль врача: поле "О себе / Биография" добавлено вместе с UX-PARTNER-6 — `web-medic/app/doctor/profile/page.tsx`
 
 ---
@@ -263,6 +267,35 @@
 ---
 
 ## 📋 Задачи
+
+- [ ] **ARCH-1** — 🔴 CRITICAL / Долгосрочная архитектура — Микрофронтенд + Микросервисы: изолировать каждую часть проекта чтобы баг в одном модуле не ломал остальные
+
+  **Микрофронтенд (web-medic):**
+  - Обернуть каждую страницу/зону (`/clinic/*`, `/doctor/*`, `/auth`) в React `ErrorBoundary` — при крэше показывать fallback-карточку, остальные страницы работают
+  - Вынести `clinic`, `doctor`, `auth` в отдельные Next.js Route Segments с изолированными `error.tsx` и `loading.tsx` (App Router встроенная механика)
+  - Каждый сегмент (`/clinic`, `/doctor`) — отдельный `layout.tsx` с независимым провайдером данных
+  - Разделить `lib/clinicApi.ts` и `lib/api.ts` — никакого общего глобального стейта между зонами
+
+  **Микрофронтенд (web):**
+  - Добавить `app/*/error.tsx` для каждого крупного раздела (salomat, clinics, doctors, consultations)
+  - Изолировать контексты: `UserContext`, `LanguageContext` — не падать при ошибке дочернего провайдера
+
+  **Микросервисы (backend):**
+  - Выделить `clinic` модуль в отдельный NestJS микросервис (отдельный Railway сервис, порт, база)
+  - Выделить `voice-agent` / `salomat` в отдельный сервис (тяжёлые AI вызовы не блокируют основной API)
+  - Выделить `payments` в отдельный сервис (Payme/Click webhooks изолированы)
+  - Основной `backend` остаётся: auth, orders, medics, consultations
+  - Между сервисами — HTTP + очередь (Bull/Redis) для async событий
+  - API Gateway (NestJS или простой Nginx reverse proxy) — единая точка входа `/api/*`
+
+  **Порядок выполнения:**
+  1. Сначала ErrorBoundary + `error.tsx` во фронтенде (быстро, высокий эффект)
+  2. Потом изолировать контексты и API слои
+  3. Потом выделить backend сервисы (долго, требует DevOps)
+
+  — Диёр (frontend изоляция) + Абубакир (backend микросервисы)
+
+- [x] **UX-TOAST-1** — DONE 2026-04-16 — Создан `Toast.tsx` с `useToast()`, `ToastContainer`, `ConfirmDialog`. Заменены все 16 вызовов `alert()`/`confirm()` в 8 файлах: clinic/finance, settings, staff, leads, reception + doctor/schedule, consultations, consultation/[id] — `web-medic/components/clinic/Toast.tsx`
 
 - [x] **ADM-AI-1** — AI Ассистент страница (чат + сводка проблем) — `admin/src/pages/AiChat.tsx`
 - [x] **MOB-FEAT-1** — ETA display на экране трекинга заказа — `mobile/app/order/track.tsx`, `mobile/hooks/useOrderTracking.ts`

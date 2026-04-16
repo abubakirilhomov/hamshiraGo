@@ -291,7 +291,12 @@
     "statusPending": "Kutilmoqda",
     "statusActive": "Faol",
     "statusCompleted": "Yakunlandi",
-    "statusCanceled": "Bekor qilindi"
+    "statusCanceled": "Bekor qilindi",
+    "rateDoctor": "Shifokorni baholash",
+    "rateTitle": "Maslahatni baholang",
+    "ratePlaceholder": "Izoh qoldiring...",
+    "rateSubmit": "Yuborish",
+    "rateSuccess": "Baholaginiz uchun rahmat!"
   },
   "consultation": {
     "title": "Shifokorga yozilish",
@@ -301,7 +306,13 @@
     "confirm": "Yozilishni tasdiqlash",
     "confirming": "Yozilmoqda...",
     "slotSelected": "✓ Slot tanlandi",
-    "doctorNotFound": "Shifokor topilmadi"
+    "doctorNotFound": "Shifokor topilmadi",
+    "payTitle": "Maslahat to'lovi",
+    "payChoose": "To'lov usulini tanlang",
+    "payBtn": "To'lash",
+    "paying": "To'lov sahifasi ochilmoqda...",
+    "payLater": "Keyinroq to'lash",
+    "payInfo": "Siz to'lov sahifasiga yo'naltirilasiz"
   },
   "prescriptions": {
     "title": "Mening retseptlarim",
@@ -316,7 +327,8 @@
     "statusPending": "Kutilmoqda",
     "statusConfirmed": "Tasdiqlandi",
     "statusCanceled": "Bekor qilindi",
-    "statusExpired": "Muddati o'tgan"
+    "statusExpired": "Muddati o'tgan",
+    "orderByCta": "Retsept bo'yicha buyurtma berish"
   },
   "loyalty": {
     "title": "Mening bonuslarim",

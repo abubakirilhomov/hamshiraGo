@@ -647,6 +647,18 @@ export interface PaymentInitResponse {
   paymentId: string;
 }
 
+export const initiateConsultationPayment = (consultationId: string, provider: PaymentProvider) =>
+  request<PaymentInitResponse>(`/payments/consultation/${consultationId}/initiate`, {
+    method: "POST",
+    body: JSON.stringify({ provider }),
+  });
+
+export const rateConsultation = (consultationId: string, rating: number, review?: string) =>
+  request<Consultation>(`/consultations/${consultationId}/rate`, {
+    method: "POST",
+    body: JSON.stringify({ rating, review }),
+  });
+
 export interface PaymentStatusResponse {
   status: "PENDING" | "PAID" | "FAILED";
   paymentUrl?: string;

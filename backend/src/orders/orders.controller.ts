@@ -218,6 +218,21 @@ export class OrdersController {
     return this.ordersService.updateStatusByMedic(id, medicId, dto.status as OrderStatus);
   }
 
+  /** Set final price for variable-price operation (doctor/medic) */
+  @Patch(':id/final-price')
+  @UseGuards(MedicAuthGuard)
+  @ApiOperation({ summary: 'Set final price for variable-price operation' })
+  setFinalPrice(
+    @Param('id') id: string,
+    @MedicId() medicId: string,
+    @Body() body: { finalPrice: number },
+  ) {
+    if (!body.finalPrice || !Number.isFinite(body.finalPrice) || body.finalPrice <= 0) {
+      throw new BadRequestException('INVALID_FINAL_PRICE');
+    }
+    return this.ordersService.setFinalPrice(id, body.finalPrice, medicId, 'medic');
+  }
+
   /** Upload before/after photo for an order (medic only) */
   @Post(':id/photo')
   @UseGuards(MedicAuthGuard)

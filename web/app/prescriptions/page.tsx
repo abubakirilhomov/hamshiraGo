@@ -129,9 +129,18 @@ export default function PrescriptionsPage() {
                 </div>
 
                 {item.status === "PENDING" && !expired && (
-                  <div style={{ marginTop: 10, background: "#f0fdf9", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="mat-icon" style={{ fontSize: 14, color: "#00685f" }}>touch_app</span>
-                    <p style={{ fontSize: 12, color: "#00685f", fontWeight: 600 }}>{t("prescriptions.confirmTap")}</p>
+                  <div style={{ marginTop: 10, display: "flex", gap: 8, flexDirection: "column" }}>
+                    <div style={{ background: "#f0fdf9", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span className="mat-icon" style={{ fontSize: 14, color: "#00685f" }}>touch_app</span>
+                      <p style={{ fontSize: 12, color: "#00685f", fontWeight: 600 }}>{t("prescriptions.confirmTap")}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); router.push(`/?service=${encodeURIComponent(item.serviceTitle)}`); }}
+                      style={{ background: "linear-gradient(135deg,#00685f,#008378)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, boxShadow: "0 3px 10px rgba(0,104,95,0.2)" }}
+                    >
+                      <span className="mat-icon" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>shopping_cart</span>
+                      {t("prescriptions.orderByCta")}
+                    </button>
                   </div>
                 )}
               </div>

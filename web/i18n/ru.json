@@ -291,7 +291,12 @@
     "statusPending": "Ожидает",
     "statusActive": "Активна",
     "statusCompleted": "Завершена",
-    "statusCanceled": "Отменена"
+    "statusCanceled": "Отменена",
+    "rateDoctor": "Оценить врача",
+    "rateTitle": "Оцените консультацию",
+    "ratePlaceholder": "Оставьте комментарий...",
+    "rateSubmit": "Отправить",
+    "rateSuccess": "Спасибо за оценку!"
   },
   "consultation": {
     "title": "Запись к врачу",
@@ -301,7 +306,13 @@
     "confirm": "Подтвердить запись",
     "confirming": "Записываем...",
     "slotSelected": "✓ Слот выбран",
-    "doctorNotFound": "Врач не найден"
+    "doctorNotFound": "Врач не найден",
+    "payTitle": "Оплата консультации",
+    "payChoose": "Выберите способ оплаты",
+    "payBtn": "Оплатить",
+    "paying": "Открываем оплату...",
+    "payLater": "Оплатить позже",
+    "payInfo": "Вы будете перенаправлены на страницу оплаты"
   },
   "prescriptions": {
     "title": "Мои рецепты",
@@ -316,7 +327,8 @@
     "statusPending": "Ожидает",
     "statusConfirmed": "Подтверждён",
     "statusCanceled": "Отменён",
-    "statusExpired": "Истёк"
+    "statusExpired": "Истёк",
+    "orderByCta": "Оформить заказ по рецепту"
   },
   "loyalty": {
     "title": "Мои бонусы",

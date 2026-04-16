@@ -39,6 +39,14 @@ export class Service {
   @Column({ type: 'int' })
   price!: number;
 
+  /** Minimum price for variable-price operations (null = fixed price) */
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMin!: number | null;
+
+  /** Maximum price for variable-price operations */
+  @Column({ type: 'int', nullable: true, default: null })
+  priceMax!: number | null;
+
   /** Duration estimate in minutes */
   @Column({ type: 'int', nullable: true, default: null })
   durationMinutes!: number | null;

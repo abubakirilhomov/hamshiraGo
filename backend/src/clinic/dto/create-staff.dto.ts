@@ -3,7 +3,6 @@ import {
   IsOptional,
   IsIn,
   IsUUID,
-  Matches,
   MinLength,
 } from 'class-validator';
 
@@ -11,7 +10,7 @@ export class CreateStaffDto {
   @IsString()
   name!: string;
 
-  @Matches(/^\+998\d{9}$/, { message: 'PHONE_FORMAT_INVALID' })
+  @IsString()
   phone!: string;
 
   @IsString()
@@ -20,6 +19,10 @@ export class CreateStaffDto {
 
   @IsIn(['CEO', 'RECEPTION', 'DOCTOR'])
   role!: 'CEO' | 'RECEPTION' | 'DOCTOR';
+
+  @IsOptional()
+  @IsString()
+  photoUrl?: string;
 
   @IsOptional()
   @IsUUID()
