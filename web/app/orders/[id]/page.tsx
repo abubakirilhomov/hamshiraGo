@@ -114,7 +114,6 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [canceling, setCanceling] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [hoverStar, setHoverStar] = useState(0);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
@@ -233,18 +232,6 @@ export default function OrderDetailPage() {
     }
   }
 
-  async function handleConfirmDone() {
-    if (!confirm(t("order.confirmDoneConfirmMsg"))) return;
-    setConfirming(true);
-    try {
-      const updated = await api.orders.confirmDone(id);
-      setOrder(updated);
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : t("common.error"));
-    } finally {
-      setConfirming(false);
-    }
-  }
 
   async function handleCancel() {
     if (!confirm(t("order.cancelConfirm"))) return;
@@ -343,7 +330,6 @@ export default function OrderDetailPage() {
   const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
   const finalPrice = order.priceAmount + (order.urgentFee ?? 0) - order.discountAmount;
   const canCancel = order.status === "CREATED";
-  const canConfirmDone = false; // BUG-29: only medic can set DONE
 
   return (
     <>
@@ -555,20 +541,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Confirm done */}
-          {canConfirmDone && (
-            <div className="card" style={{ border: "1.5px solid rgba(0,104,95,0.2)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <span className="mat-icon" style={{ fontSize: 20, color: "#00685f" }}>task_alt</span>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "#191c1e" }}>{t("order.serviceInProgress")}</p>
-              </div>
-              <p style={{ fontSize: 13, color: "#6d7a77", marginBottom: 16, lineHeight: 1.5 }}>{t("order.confirmDoneText")}</p>
-              <button className="btn-primary" onClick={handleConfirmDone} disabled={confirming} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {confirming && <span className="mat-icon" style={{ fontSize: 18, animation: "spin 0.8s linear infinite" }}>progress_activity</span>}
-                {confirming ? t("order.confirming") : t("order.confirmDone")}
-              </button>
-            </div>
-          )}
 
           {/* Rating */}
           {order.status === "DONE" && order.medic && (
