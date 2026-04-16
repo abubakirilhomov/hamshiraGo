@@ -177,7 +177,7 @@
 - [ ] **UX-PARTNER-1** — 🔴 CRITICAL — BookingModal: тип оплаты `ONLINE` выбирается, но платёж не инициируется. Клиника принимает запись, клиент не платит — `web-medic/components/clinic/BookingModal.tsx` (после BIZ-BE решения)
 - [ ] **UX-PARTNER-2** — 🟠 HIGH — Нет уведомления клинике о новом лиде от Salomat AI. Лид приходит тихо — клиника не знает. Нужен Telegram-уведомление или email при `createLead` — `backend/src/clinic/clinic.service.ts`
 - [x] **UX-PARTNER-3** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача — решено вместе с BIZ-CLIN-2
-- [ ] **UX-PARTNER-10** — 🔴 HIGH — Страница управления услугами клиники `/clinic/services`. CEO должен самостоятельно создавать, редактировать и деактивировать услуги (название, цена, описание). Бекенд готов: `POST/GET/PATCH/DELETE /clinic/services` за `ClinicRoleGuard('CEO')` — `web-medic/app/clinic/services/page.tsx` (новая страница)
+- [x] **UX-PARTNER-10** — DONE 2026-04-16 — Страница управления услугами клиники `/clinic/services`. Создание, inline-редактирование, деактивация, фильтр по категориям, статистика. Добавлен пункт "Услуги" в sidebar (CEO only) — `web-medic/app/clinic/services/page.tsx`, `web-medic/app/clinic/layout.tsx`
 - [ ] **UX-PARTNER-4** — 🟠 MEDIUM — Нет онбординга для новой клиники. После регистрации — пустой дашборд без инструкций: как добавить врача, создать расписание, подключить сервисы — `web-medic/app/clinic/dashboard/page.tsx`
 - [ ] **UX-PARTNER-5** — 🟡 MEDIUM — Clinic dashboard: нет экспорта данных (записи, лиды) в CSV/Excel. CEO клиники не может выгрузить отчёт — `web-medic/app/clinic/dashboard/`
 
