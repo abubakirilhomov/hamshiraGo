@@ -58,7 +58,7 @@
 
 - [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
 
-- [ ] **BIZ-BE-5** — 🟡 HIGH — Ценовой диапазон операции: только врач и CEO клиники могут задавать `priceMin` и `priceMax` для операции (например 300 000 – 450 000 UZS). После завершения операции (статус `DONE`) врач вводит итоговую `finalPrice` (например 350 000) — валидация: должна быть в пределах `[priceMin, priceMax]`. Добавить поля `price_min`, `price_max`, `final_price` в таблицу услуг/операций. Endpoint `PATCH /orders/:id/final-price` — доступ только для врача-исполнителя и CEO клиники. Guard проверяет роль (`DOCTOR` | `CLINIC_CEO`) — `backend/src/doctors/`, `backend/src/orders/`, `backend/src/clinic/`
+- [x] **BIZ-BE-5** — DONE 2026-04-16 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee
 
 ### Жафар — Clinic + Web-Medic
 

@@ -2,6 +2,8 @@
 
 ## 2026-04-16
 
+- **[backend]** BIZ-BE-5 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee (`backend/src/services/entities/service.entity.ts`, `company-service.entity.ts`, `order.entity.ts`, `orders.service.ts`, `orders.controller.ts`, `create-service.dto.ts`)
+
 ### Диёр — BIZ-WEB-1/3/4, UX-CLIENT-2/3/5/6, UX-WEB-4, UX-LAND-2
 
 - **[feat]** BIZ-WEB-1 + UX-CLIENT-2 — Кнопка "Оценить врача" для COMPLETED консультаций, модалка (5 звёзд + комментарий), `rateConsultation` API — `web/app/consultations/page.tsx`, `web/lib/api.ts`
