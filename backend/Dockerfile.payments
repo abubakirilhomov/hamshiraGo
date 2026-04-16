@@ -9,23 +9,15 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Build all apps — shared image, RAILWAY_START_COMMAND selects which to run
-RUN rm -rf dist && npm run build:all
+RUN npm run build:payments
 
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nestjs && \
-    adduser --system --uid 1001 nestjs
-
+RUN addgroup --system --gid 1001 nestjs && adduser --system --uid 1001 nestjs
 COPY --from=builder --chown=nestjs:nestjs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nestjs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nestjs /app/package.json ./
-COPY --from=builder --chown=nestjs:nestjs /app/salomat-knowledge ./salomat-knowledge
-
 USER nestjs
-EXPOSE 3000
-
-# Default to API, override with RAILWAY_START_COMMAND env var per service
-CMD ["node", "dist/apps/api/main.js"]
+EXPOSE 3002
+CMD ["node", "dist/apps/payments/main.js"]
