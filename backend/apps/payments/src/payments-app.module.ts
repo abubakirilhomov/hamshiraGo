@@ -11,6 +11,7 @@ import { OrderLocation } from '@/orders/entities/order-location.entity';
 import { Consultation } from '@/consultations/entities/consultation.entity';
 import { Doctor } from '@/consultations/entities/doctor.entity';
 import { User } from '@/users/entities/user.entity';
+import { Medic } from '@/medics/entities/medic.entity';
 import { PaymentsService } from '@/payments/payments.service';
 import { PaymeService } from '@/payments/payme.service';
 import { ClickService } from '@/payments/click.service';
@@ -28,7 +29,7 @@ import { PaymentsController } from '@/payments/payments.controller';
         username: config.get('DB_USERNAME', 'postgres'),
         password: config.get('DB_PASSWORD', 'postgres'),
         database: config.get('DB_NAME', 'hamshira_go'),
-        entities: [Payment, Order, OrderLocation, Consultation, Doctor, User],
+        entities: [Payment, Order, OrderLocation, Consultation, Doctor, User, Medic],
         synchronize: true,
         ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : undefined,
       }),

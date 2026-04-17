@@ -16,6 +16,11 @@ import { ClinicAppointment } from '@/clinic/entities/clinic-appointment.entity';
 import { SalomatLead } from '@/clinic/entities/salomat-lead.entity';
 import { ClinicPrescription } from '@/clinic/entities/clinic-prescription.entity';
 import { User } from '@/users/entities/user.entity';
+import { Order } from '@/orders/entities/order.entity';
+import { OrderLocation } from '@/orders/entities/order-location.entity';
+import { Medic } from '@/medics/entities/medic.entity';
+import { Doctor } from '@/consultations/entities/doctor.entity';
+import { Consultation } from '@/consultations/entities/consultation.entity';
 import { WebPushSubscription } from '@/realtime/entities/web-push-subscription.entity';
 
 import { ClinicService } from '@/clinic/clinic.service';
@@ -53,6 +58,7 @@ class StubOrderEventsGateway {
           Company, CompanyBranch, CompanyUser, CompanyRoom, CompanyRoomDoctor,
           CompanyServiceEntity, ClinicAppointment, SalomatLead, ClinicPrescription,
           User, WebPushSubscription,
+          Order, OrderLocation, Medic, Doctor, Consultation,
         ],
         synchronize: true,
         ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : undefined,
