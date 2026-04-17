@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
+import { SimpleJwtStrategy } from '../../../libs/common/src/simple-jwt.strategy';
 
 import { Payment } from '@/payments/entities/payment.entity';
 import { Order } from '@/orders/entities/order.entity';
@@ -46,6 +46,6 @@ import { PaymentsController } from '@/payments/payments.controller';
     }),
   ],
   controllers: [PaymentsController],
-  providers: [PaymentsService, PaymeService, ClickService, JwtStrategy],
+  providers: [PaymentsService, PaymeService, ClickService, SimpleJwtStrategy],
 })
 export class PaymentsAppModule {}

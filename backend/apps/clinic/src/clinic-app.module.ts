@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
+import { SimpleJwtStrategy } from '../../../libs/common/src/simple-jwt.strategy';
 
 import { Company } from '@/clinic/entities/company.entity';
 import { CompanyBranch } from '@/clinic/entities/company-branch.entity';
@@ -87,7 +87,7 @@ class StubOrderEventsGateway {
     WebPushService,
     PushNotificationsService,
     { provide: OrderEventsGateway, useClass: StubOrderEventsGateway },
-    JwtStrategy,
+    SimpleJwtStrategy,
   ],
 })
 export class ClinicAppModule {}

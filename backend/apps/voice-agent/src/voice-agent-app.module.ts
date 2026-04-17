@@ -12,7 +12,7 @@ import { Service } from '@/services/entities/service.entity';
 import { VoiceAgentService } from '@/voice-agent/voice-agent.service';
 import { VoiceAgentController } from '@/voice-agent/voice-agent.controller';
 import { ServicesService } from '@/services/services.service';
-import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
+import { SimpleJwtStrategy } from '../../../libs/common/src/simple-jwt.strategy';
 
 @Module({
   imports: [
@@ -45,6 +45,6 @@ import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
     }),
   ],
   controllers: [VoiceAgentController],
-  providers: [VoiceAgentService, ServicesService, JwtStrategy],
+  providers: [VoiceAgentService, ServicesService, SimpleJwtStrategy],
 })
 export class VoiceAgentAppModule {}
