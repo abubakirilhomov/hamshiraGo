@@ -1,8 +1,10 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module, Injectable } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
 
 import { Company } from '@/clinic/entities/company.entity';
 import { CompanyBranch } from '@/clinic/entities/company-branch.entity';
@@ -22,11 +24,22 @@ import { ClinicController, ClinicAuthController, ClinicAdminController, ClinicPu
 import { CommonModule } from '@/common/common.module';
 import { WebPushService } from '@/realtime/web-push.service';
 import { PushNotificationsService } from '@/realtime/push-notifications.service';
+import { OrderEventsGateway } from '@/realtime/order-events.gateway';
+
+/** Stub gateway — clinic service emits events but doesn't need full WebSocket */
+@Injectable()
+class StubOrderEventsGateway {
+  server = { to: () => ({ emit: () => {} }) };
+  emitNewLead(..._args: unknown[]) {}
+  emitOrderStatus(..._args: unknown[]) {}
+  emitNewConsultation(..._args: unknown[]) {}
+}
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -69,6 +82,12 @@ import { PushNotificationsService } from '@/realtime/push-notifications.service'
     ClinicAdminLeadsController,
     PatientPrescriptionsController,
   ],
-  providers: [ClinicService, WebPushService, PushNotificationsService],
+  providers: [
+    ClinicService,
+    WebPushService,
+    PushNotificationsService,
+    { provide: OrderEventsGateway, useClass: StubOrderEventsGateway },
+    JwtStrategy,
+  ],
 })
 export class ClinicAppModule {}

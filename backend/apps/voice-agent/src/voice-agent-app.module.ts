@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 
 // Import from api source (shared via tsconfig paths)
 import { VoiceSession } from '@/voice-agent/entities/voice-session.entity';
@@ -11,11 +12,13 @@ import { Service } from '@/services/entities/service.entity';
 import { VoiceAgentService } from '@/voice-agent/voice-agent.service';
 import { VoiceAgentController } from '@/voice-agent/voice-agent.controller';
 import { ServicesService } from '@/services/services.service';
+import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -42,6 +45,6 @@ import { ServicesService } from '@/services/services.service';
     }),
   ],
   controllers: [VoiceAgentController],
-  providers: [VoiceAgentService, ServicesService],
+  providers: [VoiceAgentService, ServicesService, JwtStrategy],
 })
 export class VoiceAgentAppModule {}
