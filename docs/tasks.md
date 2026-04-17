@@ -60,7 +60,7 @@
 
 - [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
 
-- [x] **BIZ-BE-5** — DONE 2026-04-16 — Ценовой диапазон операции: priceMin/priceMax в Service + CompanyService entity, finalPrice/priceMin/priceMax в Order entity, PATCH /orders/:id/final-price endpoint (MedicAuthGuard), валидация диапазона, пересчёт platformFee
+- [x] **BIZ-BE-5** — DONE 2026-04-17 — Ценовой диапазон операции: бек (Абубакир) + фронт (Диёр). Медик вводит finalPrice при SERVICE_STARTED, валидация диапазона. Клиент видит priceMin–priceMax до завершения, finalPrice после. — `web-medic/app/order/[id]/page.tsx`, `web-medic/lib/api.ts`, `web/app/orders/page.tsx`, `web/lib/api.ts`
 
 ### Жафар — Clinic + Web-Medic
 
