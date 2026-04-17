@@ -202,6 +202,9 @@ export interface Order {
   urgentFee?: number;
   isUrgent?: boolean;
   platformFee?: number;
+  finalPrice?: number | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
   status: OrderStatus;
   cancelReason?: string | null;
   clientRating: number | null;

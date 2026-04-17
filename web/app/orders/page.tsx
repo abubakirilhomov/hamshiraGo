@@ -65,9 +65,21 @@ function OrderCard({ order, onClick, onReorder }: { order: Order; onClick: () =>
         )}
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 16, fontWeight: 800, color: "#00685f" }}>
-            {formatPrice(order.priceAmount + (order.urgentFee ?? 0) - order.discountAmount)} UZS
-          </p>
+          <div>
+            {order.finalPrice ? (
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 16, fontWeight: 800, color: "#00685f" }}>
+                {formatPrice(order.finalPrice)} UZS
+              </p>
+            ) : order.priceMin != null && order.priceMax != null ? (
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14, fontWeight: 700, color: "#00685f" }}>
+                {formatPrice(order.priceMin)} — {formatPrice(order.priceMax)} UZS
+              </p>
+            ) : (
+              <p style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 16, fontWeight: 800, color: "#00685f" }}>
+                {formatPrice(order.priceAmount + (order.urgentFee ?? 0) - order.discountAmount)} UZS
+              </p>
+            )}
+          </div>
           <p style={{ fontSize: 12, color: "#bcc9c6" }}>{dateStr}, {timeStr}</p>
         </div>
       </button>
