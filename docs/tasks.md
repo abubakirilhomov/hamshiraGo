@@ -64,7 +64,7 @@
 
 ### Жафар — Clinic + Web-Medic
 
-- [ ] **BIZ-CLIN-1** — 🟡 HIGH — Clinic BookingModal: онлайн-оплата через Payme/Click. Тип `ONLINE` выбирается но ничего не происходит — `web-medic/components/clinic/BookingModal.tsx`
+- [ ] **BIZ-CLIN-1** — 🟡 HIGH — Clinic BookingModal: онлайн-оплата через Payme/Click. **Ждёт бека.** Нужен эндпоинт `POST /payments/clinic-appointment/:id/initiate` (по аналогии с `/payments/consultation/:id/initiate`). Фронт готов добавить редирект на `paymentUrl` после создания записи — `web-medic/components/clinic/BookingModal.tsx` — **Абубакир**
 - [x] **BIZ-CLIN-2** — DONE 2026-04-14 (Жафар) — Онлайн/офлайн toggle для врача в web-medic: кнопка в header консультаций, backend DTO + service обновлены — `web-medic/app/doctor/consultations/page.tsx`, `backend/src/doctors/`
 - [x] **BIZ-CLIN-3** — DONE 2026-04-14 (Жафар) — Кнопка "Запросить выплату" + модалка с суммой и номером карты добавлены в wallet. UI готов, ждёт backend BIZ-BE-2 — `web-medic/app/wallet/page.tsx`, `web-medic/lib/api.ts`
 
