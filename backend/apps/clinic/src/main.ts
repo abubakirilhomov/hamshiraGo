@@ -11,7 +11,7 @@ async function bootstrap() {
 
   app.enableCors({ origin: true, credentials: true });
 
-  const port = process.env.CLINIC_PORT || 3003;
+  const port = process.env.PORT || process.env.CLINIC_PORT || 3003;
   await app.listen(port);
   console.log(`Clinic service running on port ${port}`);
 }

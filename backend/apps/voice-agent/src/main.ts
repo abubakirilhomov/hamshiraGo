@@ -15,7 +15,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
-  const port = process.env.VOICE_AGENT_PORT || 3001;
+  const port = process.env.PORT || process.env.VOICE_AGENT_PORT || 3001;
   await app.listen(port);
   console.log(`Voice Agent service running on :${port}`);
 }
