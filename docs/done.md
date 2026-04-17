@@ -1,5 +1,21 @@
 # HamshiraGo --- Выполненные задачи
 
+## 2026-04-17
+
+### ARCH-1 — NestJS Monorepo Microservices
+
+- **[backend]** ARCH-1.1 — Scaffold NestJS monorepo: `apps/api`, `apps/clinic`, `apps/voice-agent`, `apps/payments` + `libs/common`, `libs/database`, `libs/contracts`. Moved `src/` → `apps/api/src/`. Updated `nest-cli.json` for monorepo mode, `tsconfig.json` with path aliases
+- **[backend]** ARCH-1.2 — Shared libraries: `libs/database` re-exports all entities, `libs/common` re-exports utilities (CloudinaryService, TelegramService etc.), `libs/contracts` exports shared enums (OrderStatus, VerificationStatus)
+- **[backend]** ARCH-1.3 — Voice Agent microservice (`apps/voice-agent`): standalone NestJS app on port 3001, VoiceAgentService + ServicesService, SimpleJwtStrategy for auth. Deployed on Railway: `voice-agent-production-e01d.up.railway.app`
+- **[backend]** ARCH-1.4 — Payments microservice (`apps/payments`): standalone NestJS app on port 3002, PaymentsService + PaymeService + ClickService, all payment entities. Deployed on Railway: `payments-production-7853.up.railway.app`
+- **[backend]** ARCH-1.5 — Clinic microservice (`apps/clinic`): standalone NestJS app on port 3003, ClinicService + all clinic entities + StubOrderEventsGateway. Deployed on Railway: `clinic-production-baa2.up.railway.app`
+- **[backend]** SimpleJwtStrategy — lightweight JWT strategy for microservices (no DB user lookup, token-only validation). Located in `libs/common/src/simple-jwt.strategy.ts`
+- **[backend]** docker-entrypoint.sh — dynamic entrypoint reads APP_NAME env var to select which app to start
+- **[backend]** railway.toml — startCommand uses docker-entrypoint.sh instead of hardcoded dist/main.js
+- **[backend]** gateway/nginx.conf — reverse proxy config routing by URL path to each microservice
+- **[docs]** DEPLOY.md — full deployment guide for monolith and microservice modes
+- **[backend]** BIZ-BE-5 — Variable price range: priceMin/priceMax in Service + CompanyService, finalPrice in Order, PATCH /orders/:id/final-price endpoint
+
 ## 2026-04-16
 
 - **[fix]** U3/auth — web-medic: `clinicApi.ts` 401 handler заменён на `window.location.replace` + never-resolving Promise (было `window.location.href` + `throw`), убрана история в стеке браузера
