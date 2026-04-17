@@ -9,6 +9,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { UserProvider } from "@/context/UserContext";
 import GlobalErrorHandler from "@/components/GlobalErrorHandler";
+import SafeProvider from "@/components/SafeProvider";
 
 const API_HOST = (process.env.NEXT_PUBLIC_API_URL ?? "https://hamshirago-production-0a65.up.railway.app").replace(/\/$/, "");
 
@@ -63,19 +64,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="https://telegram.org/js/telegram-web-app.js" />
       </head>
       <body>
-        <LanguageProvider>
-          <UserProvider>
-            <GlobalErrorHandler />
-            <OfflineBanner />
-            <InstallPrompt />
-            <SplashScreen />
-            <WebPushInit />
-            <PushPermissionPrompt />
-            <TelegramProvider>
-              {children}
-            </TelegramProvider>
-          </UserProvider>
-        </LanguageProvider>
+        <SafeProvider name="LanguageProvider">
+          <LanguageProvider>
+            <SafeProvider name="UserProvider">
+              <UserProvider>
+                <GlobalErrorHandler />
+                <OfflineBanner />
+                <InstallPrompt />
+                <SplashScreen />
+                <WebPushInit />
+                <PushPermissionPrompt />
+                <TelegramProvider>
+                  {children}
+                </TelegramProvider>
+              </UserProvider>
+            </SafeProvider>
+          </LanguageProvider>
+        </SafeProvider>
       </body>
     </html>
   );
