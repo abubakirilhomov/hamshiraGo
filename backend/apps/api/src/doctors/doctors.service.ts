@@ -48,18 +48,45 @@ export class DoctorsService {
   }
 
   async login(dto: LoginDoctorDto) {
+    // Try independent doctor first
     const doctor = await this.doctorRepo.findOne({ where: { phone: dto.phone } });
-    if (!doctor) throw new UnauthorizedException('INVALID_CREDENTIALS');
-    if (!doctor.passwordHash) throw new UnauthorizedException('INVALID_CREDENTIALS');
+    if (doctor && doctor.passwordHash) {
+      const ok = await bcrypt.compare(dto.password, doctor.passwordHash);
+      if (!ok) throw new UnauthorizedException('INVALID_CREDENTIALS');
+      if (doctor.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED_CONTACT_SUPPORT');
 
-    const ok = await bcrypt.compare(dto.password, doctor.passwordHash);
-    if (!ok) throw new UnauthorizedException('INVALID_CREDENTIALS');
-    if (doctor.isBlocked) throw new ForbiddenException('ACCOUNT_BLOCKED_CONTACT_SUPPORT');
+      doctor.lastSeenAt = new Date();
+      await this.doctorRepo.update(doctor.id, { lastSeenAt: doctor.lastSeenAt });
 
-    doctor.lastSeenAt = new Date();
-    await this.doctorRepo.update(doctor.id, { lastSeenAt: doctor.lastSeenAt });
+      return this.toAuthResponse(doctor);
+    }
 
-    return this.toAuthResponse(doctor);
+    // Fallback: try clinic doctor (company_users with role=DOCTOR)
+    const rows = await this.doctorRepo.manager.query(
+      `SELECT cu.id, cu."companyId", cu.role, cu."passwordHash", cu."isActive", cu.name, cu.phone
+       FROM company_users cu WHERE cu.phone = $1 AND cu.role = 'DOCTOR' LIMIT 1`,
+      [dto.phone],
+    );
+    if (rows.length && rows[0].passwordHash) {
+      const clinicUser = rows[0];
+      const ok = await bcrypt.compare(dto.password, clinicUser.passwordHash);
+      if (!ok) throw new UnauthorizedException('INVALID_CREDENTIALS');
+      if (!clinicUser.isActive) throw new ForbiddenException('ACCOUNT_BLOCKED_CONTACT_SUPPORT');
+
+      const token = this.jwtService.sign({
+        sub: clinicUser.id,
+        role: 'clinic',
+        companyId: clinicUser.companyId,
+        clinicRole: 'DOCTOR',
+      });
+      return {
+        access_token: token,
+        doctor: { id: clinicUser.id, name: clinicUser.name, phone: clinicUser.phone },
+        loginType: 'clinic',
+      };
+    }
+
+    throw new UnauthorizedException('INVALID_CREDENTIALS');
   }
 
   private toAuthResponse(doctor: Doctor) {

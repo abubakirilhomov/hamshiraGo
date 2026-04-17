@@ -144,6 +144,9 @@ export class ConsultationsService {
     if (!doctor) {
       throw new NotFoundException('DOCTOR_NOT_FOUND_OR_INACTIVE');
     }
+    if (doctor.isBlocked) {
+      throw new ForbiddenException('DOCTOR_BLOCKED');
+    }
 
     const price = doctor.pricePerConsultation;
     // Use configurable rate from settings, fallback to 15%
@@ -610,6 +613,11 @@ export class ConsultationsService {
       throw new ForbiddenException('NOT_YOUR_CONSULTATION');
     if (consultation.status !== 'PENDING')
       throw new BadRequestException('CONSULTATION_ALREADY_PROCESSED');
+
+    // Check if doctor is blocked
+    const doctor = await this.doctorRepo.findOne({ where: { id: doctorId } });
+    if (doctor?.isBlocked)
+      throw new ForbiddenException('DOCTOR_BLOCKED');
 
     // Require payment before doctor can accept (skip for free consultations)
     if (consultation.price > 0 && consultation.paymentStatus !== 'paid')
