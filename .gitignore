@@ -56,3 +56,4 @@ medic/*.png
 
 # Stitch design files
 stitch/
+tests/test-results/

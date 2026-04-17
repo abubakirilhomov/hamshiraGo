@@ -42,24 +42,55 @@
 
 ```
 hamshiraGo-mobile/
-├── backend/          # NestJS API (Railway)
-├── mobile/           # Expo React Native — клиент
-├── medic/            # Expo React Native — медик
-├── admin/            # React/Vite — админ панель
-├── web/              # Next.js — web клиент
-├── web-medic/        # Next.js — web медик
+├── backend/                # NestJS Monorepo (Railway)
+│   ├── apps/
+│   │   ├── api/src/        ← Основной API (auth, orders, medics, consultations, doctors)
+│   │   ├── clinic/src/     ← Clinic microservice (company, appointments, staff, rooms)
+│   │   ├── voice-agent/src/← Salomat AI microservice (STT, chat, TTS)
+│   │   └── payments/src/   ← Payments microservice (Payme, Click webhooks)
+│   ├── libs/
+│   │   ├── common/src/     ← Shared utilities (CloudinaryService, TelegramService, SimpleJwtStrategy)
+│   │   ├── database/src/   ← Shared entity re-exports for cross-app access
+│   │   └── contracts/src/  ← Shared enums (OrderStatus, VerificationStatus)
+│   ├── gateway/            ← Nginx reverse proxy config
+│   ├── nest-cli.json       ← Monorepo config (4 apps + 3 libs)
+│   ├── railway.toml        ← Railway deploy config (entrypoint via APP_NAME env)
+│   ├── docker-entrypoint.sh← Dynamic entrypoint: reads APP_NAME → starts correct app
+│   └── DEPLOY.md           ← Deployment guide (monolith + microservices)
+├── mobile/                 # Expo React Native — клиент
+├── medic/                  # Expo React Native — медик
+├── admin/                  # React/Vite — админ панель
+├── web/                    # Next.js — web клиент
+├── web-medic/              # Next.js — web медик
 └── docs/
-    ├── tasks.md          ← текущие задачи (обновлять!)
-    ├── done.md           ← история выполненных задач (обновлять!)
-    ├── BACKEND_API.md    ← документация API
-    ├── WEB_PROGRESS.md   ← прогресс web приложений
-    ├── ADMIN_PANEL.md    ← документация admin панели
-    └── V0.1_MVP/         ← оригинальные требования MVP
+    ├── tasks.md            ← текущие задачи (обновлять!)
+    ├── done.md             ← история выполненных задач (обновлять!)
+    ├── BACKEND_API.md      ← документация API
+    ├── COMPETITIVE_ANALYSIS.md ← конкурентный анализ
+    ├── WEB_PROGRESS.md     ← прогресс web приложений
+    ├── ADMIN_PANEL.md      ← документация admin панели
+    └── V0.1_MVP/           ← оригинальные требования MVP
 ```
 
-### 4. Технический стек
+### 4. Микросервисы на Railway
 
-- **Backend**: NestJS + TypeORM + PostgreSQL (Railway), Socket.IO, JWT, Cloudinary, Telegram Bot
+| Сервис | Порт | Railway URL | APP_NAME |
+|--------|------|-------------|----------|
+| **API** (main) | 3000 | hamshirago-production-0a65.up.railway.app | api |
+| **Voice Agent** | 3001 | voice-agent-production-e01d.up.railway.app | voice-agent |
+| **Payments** | 3002 | payments-production-7853.up.railway.app | payments |
+| **Clinic** | 3003 | clinic-production-baa2.up.railway.app | clinic |
+
+**Важно:**
+- Все сервисы используют **одну PostgreSQL** (shared DB)
+- Все сервисы используют **одинаковый JWT_SECRET** (токены валидны везде)
+- `APP_NAME` env var определяет какой app запускается в контейнере
+- Микросервисы используют `SimpleJwtStrategy` (без DB lookup) вместо полной `JwtStrategy`
+- Код всех сервисов в одном репозитории — путь `@/*` → `apps/api/src/*`
+
+### 5. Технический стек
+
+- **Backend**: NestJS Monorepo + TypeORM + PostgreSQL (Railway), Socket.IO, JWT, Cloudinary, Telegram Bot
 - **Mobile**: Expo SDK 52, React Native, Expo Router
 - **Web**: Next.js 14 (App Router), Tailwind CSS v4
 - **Admin**: React + Vite + shadcn/ui
