@@ -93,7 +93,7 @@ export const translations = {
     },
     footer: {
       tagline: "Медицинская помощь на дому",
-      copy: "© 2025 HamshiraGo. Все права защищены.",
+      copy: "© 2026 HamshiraGo. Все права защищены.",
       links: ["Как работает", "Услуги", "Для медиков", "Контакты"],
     },
     seo: {
@@ -290,7 +290,7 @@ export const translations = {
     },
     footer: {
       tagline: "Uyda tibbiy yordam",
-      copy: "© 2025 HamshiraGo. Barcha huquqlar himoyalangan.",
+      copy: "© 2026 HamshiraGo. Barcha huquqlar himoyalangan.",
       links: ["Qanday ishlaydi", "Xizmatlar", "Hamshiralar uchun", "Aloqa"],
     },
     seo: {

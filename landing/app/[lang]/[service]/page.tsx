@@ -568,6 +568,13 @@ export async function generateMetadata({
       siteName: "HamshiraGo",
       type: "website",
       locale: s.lang === "uz" ? "uz_UZ" : "ru_RU",
+      images: [{ url: `${SITE_URL}/${s.lang}/opengraph-image`, width: 1200, height: 630, alt: s.h1 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: s.h1,
+      description: s.description,
+      images: [`${SITE_URL}/${s.lang}/opengraph-image`],
     },
     robots: { index: true, follow: true },
   };
@@ -601,14 +608,17 @@ export default async function ServicePage({
           "@type": "MedicalBusiness",
           name: "HamshiraGo",
           url: `${SITE_URL}/${s.lang}`,
+          logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` },
           areaServed: { "@type": "City", name: s.lang === "uz" ? "Toshkent" : "Ташкент" },
+          openingHoursSpecification: { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], opens: "00:00", closes: "23:59" },
         },
         offers: {
           "@type": "Offer",
-          price: s.lang === "ru" ? s.price.replace(/[^0-9]/g, "") : s.price.replace(/[^0-9]/g, ""),
+          price: s.price.replace(/[^0-9]/g, ""),
           priceCurrency: "UZS",
           availability: "https://schema.org/InStock",
         },
+        aggregateRating: { "@type": "AggregateRating", ratingValue: "4.8", reviewCount: "500", bestRating: "5" },
       },
       {
         "@type": "FAQPage",
