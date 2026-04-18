@@ -144,7 +144,10 @@ export default function ServicePage() {
             <button
               onClick={() => {
                 impact("medium");
-                router.push(`/order/location?service=${service.id}&title=${encodeURIComponent(service.title)}&price=${service.price}`);
+                const params = new URLSearchParams({ service: service.id, title: service.title, price: String(service.price) });
+                if (service.priceMin != null) params.set("priceMin", String(service.priceMin));
+                if (service.priceMax != null) params.set("priceMax", String(service.priceMax));
+                router.push(`/order/location?${params.toString()}`);
               }}
               style={{
                 width: "100%", background: "linear-gradient(135deg,#00685f,#008378)",
