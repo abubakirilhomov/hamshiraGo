@@ -81,7 +81,7 @@
 
 - [x] **BIZ-BE-8** — DONE 2026-04-18 — Единый вход для всех докторов: бек (Абубакир) — `/doctors/login` проверяет независимых и клинических докторов, возвращает `loginType:'clinic'` для клинических. Фронт (Диёр) — `auth/page.tsx` обрабатывает `loginType:'clinic'`: сохраняет `clinic_token`, редирект → `/clinic/reception` — `backend/apps/api/src/doctors/doctors.service.ts`, `web-medic/app/auth/page.tsx`
 
-- [ ] **BIZ-BE-9** — 🔴 HIGH — DOCTOR роль в клинике получает 403 при создании записи и просмотре расписания. `POST /clinic/appointments` и `GET /clinic/appointments` должны быть доступны для `clinicRole=DOCTOR`, не только CEO/RECEPTION. Воспроизводится: войти как DOCTOR через таб Клиника → страница регистратуры → кнопка "Записать пациента" → ошибка "Недостаточно прав". — `backend/apps/clinic/src/` (guards/roles) — **Абубакир**
+- [x] **BIZ-BE-9** — DONE 2026-04-18 — DOCTOR роль в клинике получает 403 при создании записи и просмотре расписания. `POST /clinic/appointments` и `GET /clinic/appointments` должны быть доступны для `clinicRole=DOCTOR`, не только CEO/RECEPTION. Воспроизводится: войти как DOCTOR через таб Клиника → страница регистратуры → кнопка "Записать пациента" → ошибка "Недостаточно прав". — `backend/apps/clinic/src/` (guards/roles) — **Абубакир**
 
 - [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
 
