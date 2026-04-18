@@ -36,7 +36,7 @@ function Phone() {
             <p style={{color:"rgba(255,255,255,0.3)",fontSize:10,fontWeight:500}}>Добро пожаловать</p>
             <p style={{color:"white",fontWeight:700,fontSize:15,letterSpacing:"-0.02em"}}>HamshiraGo</p>
           </div>
-          <img src="/logo.png" alt="HamshiraGo" style={{width:50,height:50,borderRadius:16,objectFit:"cover",boxShadow:"0 4px 12px rgba(13,148,136,0.3)"}} />
+          <img src="/logo.png" alt="HamshiraGo логотип" style={{width:50,height:50,borderRadius:16,objectFit:"cover",boxShadow:"0 4px 12px rgba(13,148,136,0.3)"}} />
         </div>
         <div style={{margin:"0 20px 16px",padding:"10px 16px",borderRadius:16,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",gap:10}}>
           <span style={{color:"rgba(255,255,255,0.25)",fontSize:14}}>🔍</span>

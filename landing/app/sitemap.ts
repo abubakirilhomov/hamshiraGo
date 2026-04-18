@@ -17,19 +17,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${SITE_URL}/ru`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
+      changeFrequency: "daily",
       priority: 1.0,
       alternates: {
-        languages: { ru: `${SITE_URL}/ru`, uz: `${SITE_URL}/uz` },
+        languages: { 
+          ru: `${SITE_URL}/ru`, 
+          uz: `${SITE_URL}/uz`,
+          "x-default": `${SITE_URL}/ru`,
+        },
       },
     },
     {
       url: `${SITE_URL}/uz`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
+      changeFrequency: "daily",
       priority: 1.0,
       alternates: {
-        languages: { ru: `${SITE_URL}/ru`, uz: `${SITE_URL}/uz` },
+        languages: { 
+          ru: `${SITE_URL}/ru`, 
+          uz: `${SITE_URL}/uz`,
+          "x-default": `${SITE_URL}/ru`,
+        },
       },
     },
   ];
