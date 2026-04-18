@@ -50,9 +50,11 @@ function LocationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const serviceId    = searchParams.get("service") ?? "";
-  const serviceTitle = searchParams.get("title")   ?? t("confirm.service");
-  const servicePrice = searchParams.get("price")   ?? "0";
+  const serviceId       = searchParams.get("service")   ?? "";
+  const serviceTitle    = searchParams.get("title")     ?? t("confirm.service");
+  const servicePrice    = searchParams.get("price")     ?? "0";
+  const servicePriceMin = searchParams.get("priceMin")  ?? "";
+  const servicePriceMax = searchParams.get("priceMax")  ?? "";
   useTelegramBackButton(() => router.back());
 
   const [address, setAddress] = useState("");
@@ -165,6 +167,8 @@ function LocationForm() {
     if (!address.trim()) { setError(t("location.enterAddress")); return; }
     if (!phone.trim())   { setError(t("location.enterPhone")); return; }
     const queryParams = new URLSearchParams({ service: serviceId, title: serviceTitle, price: servicePrice, address, floor, apartment, phone, lat: String(lat ?? 41.2995), lng: String(lng ?? 69.2401) });
+    if (servicePriceMin) queryParams.set("priceMin", servicePriceMin);
+    if (servicePriceMax) queryParams.set("priceMax", servicePriceMax);
     router.push(`/order/confirm?${queryParams.toString()}`);
   }
 

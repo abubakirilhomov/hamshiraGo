@@ -19,6 +19,9 @@ export interface OrderCardItem {
   serviceTitle: string;
   priceAmount: number;
   discountAmount: number;
+  priceMin?: number | null;
+  priceMax?: number | null;
+  finalPrice?: number | null;
   status: OrderStatus;
   cancelReason?: string | null;
   location: OrderLocation | null;
@@ -35,7 +38,11 @@ function OrderCardComponent({ order, isActive }: OrderCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const statusLabels = getStatusLabel(t);
-  const finalPrice = order.priceAmount - (order.discountAmount ?? 0);
+  const displayPrice = order.finalPrice
+    ? order.finalPrice
+    : order.priceMin && order.priceMax
+      ? null // show range instead
+      : order.priceAmount - (order.discountAmount ?? 0);
   const statusColor = STATUS_COLOR[order.status] ?? Theme.textSecondary;
   const date = new Date(order.created_at);
   const dateStr = date.toLocaleDateString('ru-RU', {
@@ -87,7 +94,12 @@ function OrderCardComponent({ order, isActive }: OrderCardProps) {
       )}
 
       <View style={styles.cardFooter}>
-        <Text style={styles.price}>{finalPrice.toLocaleString('ru-RU')} UZS</Text>
+        <Text style={styles.price}>
+          {displayPrice != null
+            ? `${displayPrice.toLocaleString('ru-RU')} UZS`
+            : `${order.priceMin!.toLocaleString('ru-RU')} – ${order.priceMax!.toLocaleString('ru-RU')} UZS`
+          }
+        </Text>
         <View style={styles.cardFooterRight}>
           <Text style={styles.date} lightColor={Theme.textSecondary} darkColor={Theme.textSecondary}>
             {dateStr}

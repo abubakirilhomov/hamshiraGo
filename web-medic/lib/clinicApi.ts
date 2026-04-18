@@ -46,7 +46,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 401 && !path.startsWith("/clinic-auth/")) {
     clearClinicSession();
-    window.location.replace("/clinic/auth");
+    window.location.replace("/auth");
     return new Promise<T>(() => {});
   }
 
@@ -161,6 +161,10 @@ export interface Appointment {
   status: AppointmentStatus;
   cancelReason?: string | null;
   createdAt: string;
+  priceMin?: number | null;
+  priceMax?: number | null;
+  finalPrice?: number | null;
+  serviceTitle?: string | null;
 }
 
 export interface CreateAppointmentDto {
@@ -572,6 +576,11 @@ export const clinicApi = {
       request<Appointment>(`/clinic/appointments/${id}/cancel`, {
         method: "PATCH",
         body: JSON.stringify({ reason }),
+      }).then(normalizeAppointment),
+    setFinalPrice: (id: string, finalPrice: number) =>
+      request<Appointment>(`/clinic/appointments/${id}/final-price`, {
+        method: "PATCH",
+        body: JSON.stringify({ finalPrice }),
       }).then(normalizeAppointment),
   },
 

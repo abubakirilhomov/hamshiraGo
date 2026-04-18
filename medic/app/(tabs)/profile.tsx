@@ -2,10 +2,12 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -55,6 +57,10 @@ export default function ProfileScreen() {
   const [logoutModal, setLogoutModal] = useState(false);
   const [tgDisconnectModal, setTgDisconnectModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [withdrawModal, setWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawCard, setWithdrawCard] = useState('');
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
   const [hasAlwaysLocation, setHasAlwaysLocation] = useState(true);
 
   useEffect(() => {
@@ -249,6 +255,28 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleWithdraw = async () => {
+    const amount = parseInt(withdrawAmount, 10);
+    if (!amount || amount <= 0) { showToast("Summani kiriting", 'error'); return; }
+    if (amount > Number(medic.balance ?? 0)) { showToast("Balans yetarli emas", 'error'); return; }
+    setWithdrawSubmitting(true);
+    try {
+      await apiFetch('/medics/me/withdrawal-request', {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ amount, cardNumber: withdrawCard.trim() || undefined }),
+      });
+      showToast("So'rov yuborildi", 'success');
+      setWithdrawModal(false);
+      setWithdrawAmount('');
+      setWithdrawCard('');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Xatolik", 'error');
+    } finally {
+      setWithdrawSubmitting(false);
+    }
+  };
+
   const handleLogout = () => setLogoutModal(true);
 
   const handleConnectTelegram = () => {
@@ -317,6 +345,57 @@ export default function ProfileScreen() {
           </View>
         </LinearGradient>
       </View>
+
+      {/* Withdraw button */}
+      {Number(medic.balance ?? 0) > 0 && (
+        <Pressable
+          style={({ pressed }) => [wdStyles.btn, pressed && { opacity: 0.85 }]}
+          onPress={() => setWithdrawModal(true)}
+        >
+          <FontAwesome name="credit-card" size={16} color="#fff" />
+          <Text style={wdStyles.btnText}>Mablag' yechish</Text>
+        </Pressable>
+      )}
+
+      {/* Withdraw modal */}
+      <Modal visible={withdrawModal} transparent animationType="fade">
+        <View style={wdStyles.overlay}>
+          <View style={wdStyles.modal}>
+            <Text style={wdStyles.title}>Mablag' yechish</Text>
+            <Text style={wdStyles.sub}>Balans: {Number(medic.balance ?? 0).toLocaleString()} UZS</Text>
+            <TextInput
+              style={wdStyles.input}
+              value={withdrawAmount}
+              onChangeText={setWithdrawAmount}
+              placeholder="Summa (UZS)"
+              placeholderTextColor={Theme.textTertiary}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={wdStyles.input}
+              value={withdrawCard}
+              onChangeText={setWithdrawCard}
+              placeholder="Karta raqami (ixtiyoriy)"
+              placeholderTextColor={Theme.textTertiary}
+              keyboardType="numeric"
+              maxLength={16}
+            />
+            <Pressable
+              style={[wdStyles.submit, withdrawSubmitting && { opacity: 0.6 }]}
+              onPress={handleWithdraw}
+              disabled={withdrawSubmitting}
+            >
+              {withdrawSubmitting
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={wdStyles.submitText}>Yuborish</Text>
+              }
+            </Pressable>
+            <Pressable onPress={() => setWithdrawModal(false)} style={wdStyles.cancel}>
+              <Text style={wdStyles.cancelText}>Bekor qilish</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Verification status card */}
       <VerificationCard
@@ -677,4 +756,31 @@ const styles = StyleSheet.create({
     fontSize: Typography.body.fontSize,
     color: Theme.error,
   },
+});
+
+const wdStyles = StyleSheet.create({
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Theme.primary,
+    borderRadius: Radius.md,
+    paddingVertical: 12,
+    marginHorizontal: Spacing.lg,
+  },
+  btnText: { color: '#fff', fontFamily: Fonts.manropeSb, fontSize: 15 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
+  modal: { backgroundColor: Theme.surface, borderRadius: Radius.lg, padding: 24, gap: 14 },
+  title: { fontFamily: Fonts.manropeBd, fontSize: 18, color: Theme.text, textAlign: 'center' },
+  sub: { fontFamily: Fonts.inter, fontSize: 14, color: Theme.textSecondary, textAlign: 'center' },
+  input: {
+    borderWidth: 1, borderColor: Theme.border, borderRadius: Radius.md,
+    padding: 12, fontSize: 16, fontFamily: Fonts.inter, color: Theme.text,
+    backgroundColor: Theme.background,
+  },
+  submit: { backgroundColor: Theme.primary, borderRadius: Radius.md, paddingVertical: 14, alignItems: 'center' },
+  submitText: { color: '#fff', fontFamily: Fonts.manropeSb, fontSize: 15 },
+  cancel: { alignItems: 'center', paddingVertical: 8 },
+  cancelText: { fontFamily: Fonts.inter, fontSize: 14, color: Theme.textSecondary },
 });

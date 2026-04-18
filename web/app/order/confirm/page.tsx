@@ -14,6 +14,9 @@ function ConfirmForm() {
   const serviceId    = params.get("service")      ?? "";
   const serviceTitle = params.get("title")        ?? t("confirm.service");
   const price        = parseInt(params.get("price") || "0", 10);
+  const priceMin     = params.get("priceMin") ? parseInt(params.get("priceMin")!, 10) : null;
+  const priceMax     = params.get("priceMax") ? parseInt(params.get("priceMax")!, 10) : null;
+  const isRangePrice = priceMin != null && priceMax != null;
   const address      = params.get("address")      ?? "";
   const floor        = params.get("floor")        ?? "";
   const apartment    = params.get("apartment")    ?? "";
@@ -122,7 +125,12 @@ function ConfirmForm() {
               </div>
               <div>
                 <p style={{ fontSize: 17, fontWeight: 800, color: "#191c1e", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{serviceTitle}</p>
-                <p style={{ fontSize: 13, color: "#6d7a77", marginTop: 2 }}>{t("confirm.serviceCost")}: {formatPrice(price)} UZS</p>
+                <p style={{ fontSize: 13, color: "#6d7a77", marginTop: 2 }}>
+                  {t("confirm.serviceCost")}:{" "}
+                  {isRangePrice
+                    ? `от ${formatPrice(priceMin!)} до ${formatPrice(priceMax!)} UZS`
+                    : `${formatPrice(price)} UZS`}
+                </p>
               </div>
             </div>
           </div>
@@ -232,7 +240,11 @@ function ConfirmForm() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 14, color: "#6d7a77" }}>{t("confirm.serviceCost")}</span>
-                <span style={{ fontSize: 14, color: "#191c1e", fontWeight: 600 }}>{formatPrice(price)} UZS</span>
+                <span style={{ fontSize: 14, color: "#191c1e", fontWeight: 600 }}>
+                  {isRangePrice
+                    ? `от ${formatPrice(priceMin!)} до ${formatPrice(priceMax!)} UZS`
+                    : `${formatPrice(price)} UZS`}
+                </span>
               </div>
 
               {checkingDiscount && (
@@ -278,9 +290,20 @@ function ConfirmForm() {
               <div style={{ height: 1, background: "#f2f4f6" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: "#191c1e" }}>{t("confirm.total")}</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                  {formatPrice(total)} UZS
-                </span>
+                {isRangePrice ? (
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                      от {formatPrice(priceMin!)} UZS
+                    </span>
+                    <p style={{ fontSize: 12, color: "#6d7a77", marginTop: 2 }}>
+                      до {formatPrice(priceMax!)} UZS — итог после операции
+                    </p>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 22, fontWeight: 800, color: "#00685f", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                    {formatPrice(total)} UZS
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -161,6 +161,8 @@ export interface Service {
   description: string;
   category: string;
   price: number;
+  priceMin?: number | null;
+  priceMax?: number | null;
   durationMinutes: number;
   isActive: boolean;
   sortOrder: number;

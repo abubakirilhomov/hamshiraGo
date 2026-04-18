@@ -7,6 +7,27 @@
 > **Playwright-аудит web-medic 2026-04-11** — 4 бага найдено, см. ниже.
 > **Аудит бизнес-модели 2026-04-13** — 9 критических/высоких пробелов, см. ниже.
 > **Аудит UX 2026-04-14** — 6 задач по Salomat AI, клиники, врачи.
+> **Integration gap анализ 2026-04-18** — 6 задач mobile/medic, см. ниже.
+
+---
+
+## 📱 Mobile + Medic — Integration Gaps (Абубакир, 2026-04-18)
+
+### Medic (Expo) — CRITICAL
+
+- [ ] **MED-GAP-1** — 🔴 CRITICAL — finalPrice UI: после завершения операции с переменной ценой медик должен ввести итоговую цену. Показать `priceMin`–`priceMax` диапазон, input для `finalPrice`, валидация range, вызов `PATCH /orders/:id/final-price { finalPrice }`. Показывать только для заказов где `priceMin` и `priceMax` заданы — `medic/app/order/[id].tsx`
+
+- [ ] **MED-GAP-2** — 🟡 HIGH — Withdrawal request: кнопка "Вывести средства" в профиле. При нажатии — модал с полями: сумма (не больше баланса), номер карты (Uzcard/Humo, опционально). Вызов `POST /medics/me/withdrawal-request { amount, cardNumber? }`. Показать статус последнего запроса — `medic/app/(tabs)/profile.tsx`
+
+### Mobile (Expo) — Клиент
+
+- [ ] **MOB-GAP-1** — 🟠 MEDIUM — Account deletion: кнопка "Удалить аккаунт" внизу профиля (красная). Alert с подтверждением "Вы уверены? Все данные будут удалены". Вызов `DELETE /auth/account`. Logout и redirect на auth. **Обязательно для App Store / Google Play** — `mobile/app/(tabs)/profile.tsx`
+
+- [ ] **MOB-GAP-2** — 🟡 MEDIUM — priceMin/priceMax display: в OrderCard и order confirm показывать "от X до Y UZS" если услуга имеет ценовой диапазон. В order track показывать finalPrice если установлен — `mobile/components/OrderCard.tsx`, `mobile/app/order/confirm.tsx`, `mobile/app/order/track.tsx`
+
+- [ ] **MOB-GAP-3** — 🟡 LOW — Companies/Clinics: экран просмотра клиник. Список из `GET /companies`, карточка (название, адрес, телефон, кнопки Яндекс/Google Maps). Опционально — web уже имеет это — `mobile/app/clinics.tsx` (новый файл)
+
+- [ ] **MOB-GAP-4** — 🟡 LOW — priceMin/priceMax в medic app: показать диапазон цен в деталях заказа если задан — `medic/app/order/[id].tsx`
 
 ---
 
@@ -58,7 +79,9 @@
 - [x] **BIZ-MOB-2** — DONE 2026-04-14 — Mobile: UI рейтинга врача (звёзды + комментарий для COMPLETED консультаций) — `mobile/app/consultations.tsx`
 - [ ] **BIZ-BE-7** — 🔴 HIGH — Clinic login: JWT должен содержать `clinicRole` с одним из трёх значений `CEO | RECEPTION | DOCTOR`. Сейчас фронтенд читает `payload.clinicRole` через `getClinicRole()` и делает редирект: CEO → `/clinic/dashboard`, RECEPTION → `/clinic/reception`, DOCTOR → `/doctor`. Бекенд должен гарантировать что поле `clinicRole` всегда присутствует в токене при логине через `POST /clinic-auth/login`. Проверить `JwtStrategy` и `clinic-auth.service.ts` — убедиться что `clinicRole` берётся из `company_user.role` и прописывается в payload — `backend/src/clinic-auth/clinic-auth.service.ts`, `backend/src/auth/strategies/` — Абубакир
 
-- [ ] **BIZ-BE-8** — 🔴 HIGH — Единый вход для всех докторов через таб "Доктор": клинический доктор (company_user с role=DOCTOR) должен входить через `POST /doctors/login` так же как независимый доктор. Бек принимает phone+password для обоих типов, возвращает единый `DoctorAuthResponse` (`access_token` + `doctor` профиль). В профиле добавить поле `companyId` (null = независимый, string = клинический). Фронт после логина смотрит на `doctor.companyId`: если есть — показывает дашборд с его записями от клиники (`GET /clinic/appointments?doctorId=`); если null — обычный дашборд консультаций. Оба типа используют `medic_token` в localStorage и маршрут `/doctor/*` — `backend/src/doctors/`, `backend/src/clinic-auth/`, `web-medic/app/auth/page.tsx`, `web-medic/app/doctor/` — **Абубакир**
+- [x] **BIZ-BE-8** — DONE 2026-04-18 — Единый вход для всех докторов: бек (Абубакир) — `/doctors/login` проверяет независимых и клинических докторов, возвращает `loginType:'clinic'` для клинических. Фронт (Диёр) — `auth/page.tsx` обрабатывает `loginType:'clinic'`: сохраняет `clinic_token`, редирект → `/clinic/reception` — `backend/apps/api/src/doctors/doctors.service.ts`, `web-medic/app/auth/page.tsx`
+
+- [x] **BIZ-BE-9** — DONE 2026-04-18 — DOCTOR роль в клинике получает 403 при создании записи и просмотре расписания. `POST /clinic/appointments` и `GET /clinic/appointments` должны быть доступны для `clinicRole=DOCTOR`, не только CEO/RECEPTION. Воспроизводится: войти как DOCTOR через таб Клиника → страница регистратуры → кнопка "Записать пациента" → ошибка "Недостаточно прав". — `backend/apps/clinic/src/` (guards/roles) — **Абубакир**
 
 - [ ] **BIZ-BE-6** — 🟡 MEDIUM — Убрать валидацию формата телефона `+998XXXXXXXXX` у сотрудников клиники: в `backend/src/clinic/dto/create-staff.dto.ts` заменить `@Matches(/^\+998\d{9}$/)` на `@IsString()` (уже сделано в коде, проверить что задеплоилось) — `backend/src/clinic/dto/create-staff.dto.ts`
 
