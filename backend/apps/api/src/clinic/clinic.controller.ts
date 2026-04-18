@@ -213,7 +213,7 @@ export class ClinicController {
   // ── Appointments (CEO + RECEPTION) ────────────────────────────────────
 
   @Post('appointments')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   createAppointment(
     @ClinicUser() user: ClinicUserPayload,
     @Body() dto: CreateAppointmentDto,
@@ -226,7 +226,7 @@ export class ClinicController {
   }
 
   @Get('appointments')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   getAppointments(
     @ClinicUser() user: ClinicUserPayload,
     @Query('date') date?: string,
@@ -241,7 +241,7 @@ export class ClinicController {
   }
 
   @Get('appointments/today')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   getTodayAppointments(@ClinicUser() user: ClinicUserPayload) {
     return this.clinicService.getTodayAppointments(user.companyId);
   }
@@ -260,7 +260,7 @@ export class ClinicController {
   }
 
   @Get('appointments/:id')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   getAppointmentById(
     @ClinicUser() user: ClinicUserPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -269,7 +269,7 @@ export class ClinicController {
   }
 
   @Patch('appointments/:id/checkin')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   checkinAppointment(
     @ClinicUser() user: ClinicUserPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -280,7 +280,7 @@ export class ClinicController {
   }
 
   @Patch('appointments/:id/status')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   updateAppointmentStatus(
     @ClinicUser() user: ClinicUserPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -294,7 +294,7 @@ export class ClinicController {
   }
 
   @Patch('appointments/:id/cancel')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   cancelAppointment(
     @ClinicUser() user: ClinicUserPayload,
     @Param('id', ParseUUIDPipe) id: string,
@@ -310,13 +310,13 @@ export class ClinicController {
   // ── Leads (CEO + RECEPTION) ──────────────────────────────────────
 
   @Get('leads/stats')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   getLeadStats(@ClinicUser() user: ClinicUserPayload) {
     return this.clinicService.getLeadStats(user.companyId);
   }
 
   @Get('leads')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   getLeads(
     @ClinicUser() user: ClinicUserPayload,
     @Query('status') status?: string,
@@ -331,7 +331,7 @@ export class ClinicController {
   }
 
   @Patch('leads/:id/status')
-  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION'))
+  @UseGuards(ClinicRoleGuard('CEO', 'RECEPTION', 'DOCTOR'))
   updateLeadStatus(
     @ClinicUser() user: ClinicUserPayload,
     @Param('id', ParseUUIDPipe) id: string,
