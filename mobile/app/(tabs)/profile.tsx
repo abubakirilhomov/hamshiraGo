@@ -17,6 +17,7 @@ import { Text } from '@/components/Themed';
 import { Theme, Fonts, Radius, Spacing, Shadow } from '@/constants/Theme';
 import { apiFetch } from '@/constants/api';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { cacheSet, cacheGetStale } from '@/utils/cache';
 import type { Language } from '@/i18n';
@@ -66,6 +67,7 @@ const TIER_LABEL: Record<string, string> = {
 
 export default function ProfileScreen() {
   const { user, token, logout } = useAuth();
+  const { showToast } = useToast();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -309,6 +311,38 @@ export default function ProfileScreen() {
           </Pressable>
         ))}
       </View>
+
+      {/* ── Delete Account ── */}
+      <Pressable
+        style={({ pressed }) => [styles.logoutRow, pressed && { opacity: 0.7 }]}
+        onPress={() => {
+          Alert.alert(
+            t('profile.deleteAccountTitle', { defaultValue: "Hisobni o'chirish" }),
+            t('profile.deleteAccountMessage', { defaultValue: "Barcha ma'lumotlar o'chiriladi. Davom etasizmi?" }),
+            [
+              { text: t('profile.cancel', { defaultValue: 'Bekor qilish' }), style: 'cancel' },
+              {
+                text: t('profile.deleteConfirm', { defaultValue: "O'chirish" }),
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    await apiFetch('/auth/account', { token, method: 'DELETE' });
+                    logout();
+                  } catch (err) {
+                    showToast(err instanceof Error ? err.message : t('common.error'), 'error');
+                  }
+                },
+              },
+            ],
+          );
+        }}
+      >
+        <View style={[styles.menuIconCircle, { backgroundColor: '#fef2f2' }]}>
+          <FontAwesome name="trash" size={16} color="#dc2626" />
+        </View>
+        <Text style={[styles.logoutText, { color: '#dc2626' }]}>{t('profile.deleteAccount', { defaultValue: "Hisobni o'chirish" })}</Text>
+        <FontAwesome name="chevron-right" size={14} color={Theme.textTertiary} />
+      </Pressable>
 
       {/* ── Logout ── */}
       <Pressable

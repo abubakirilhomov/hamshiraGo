@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -67,6 +68,8 @@ export default function OrderDetailScreen() {
   const [updating, setUpdating] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
+  const [finalPriceInput, setFinalPriceInput] = useState('');
+  const [finalPriceSubmitting, setFinalPriceSubmitting] = useState(false);
   const [medicPos, setMedicPos] = useState<{ latitude: number; longitude: number; heading: number | null } | null>(null);
   const [lastLocationSentAt, setLastLocationSentAt] = useState<string | null>(null);
   const [sentLocationCount, setSentLocationCount] = useState(0);
@@ -182,6 +185,41 @@ export default function OrderDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     updateOrderStatus((v) => setUpdating(v));
   }, [updateOrderStatus]);
+
+  const handleSetFinalPrice = useCallback(async () => {
+    if (!order || !token || finalPriceSubmitting) return;
+    const price = parseInt(finalPriceInput, 10);
+    if (!price || price <= 0) {
+      showToast("Narxni kiriting", 'error');
+      return;
+    }
+    if (order.priceMin && price < order.priceMin) {
+      showToast(`Minimal narx: ${order.priceMin.toLocaleString()} UZS`, 'error');
+      return;
+    }
+    if (order.priceMax && price > order.priceMax) {
+      showToast(`Maksimal narx: ${order.priceMax.toLocaleString()} UZS`, 'error');
+      return;
+    }
+    setFinalPriceSubmitting(true);
+    try {
+      await apiFetch(`/orders/${order.id}/final-price`, {
+        token,
+        method: 'PATCH',
+        body: JSON.stringify({ finalPrice: price }),
+      });
+      showToast("Yakuniy narx saqlandi", 'success');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Refresh order
+      const fresh = await apiFetch(`/orders/${order.id}`, { token });
+      setOrder(fresh as any);
+      setFinalPriceInput('');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Xatolik", 'error');
+    } finally {
+      setFinalPriceSubmitting(false);
+    }
+  }, [order, token, finalPriceInput, finalPriceSubmitting, showToast]);
 
   const handleOpenMedCard = useCallback(async () => {
     if (!order?.clientId) return;
@@ -370,6 +408,42 @@ export default function OrderDetailScreen() {
               {t('chat.openChat')}
             </Text>
           </Pressable>
+        )}
+
+        {/* Final price input for variable-price operations */}
+        {order.priceMin != null && order.priceMax != null && !order.finalPrice &&
+         (order.status === 'SERVICE_STARTED' || order.status === 'DONE') && (
+          <View style={fpStyles.card}>
+            <Text style={fpStyles.title}>Yakuniy narxni kiriting</Text>
+            <Text style={fpStyles.range}>
+              Diapazoni: {order.priceMin.toLocaleString()} – {order.priceMax.toLocaleString()} UZS
+            </Text>
+            <TextInput
+              style={fpStyles.input}
+              value={finalPriceInput}
+              onChangeText={setFinalPriceInput}
+              placeholder={`${order.priceMin.toLocaleString()} – ${order.priceMax.toLocaleString()}`}
+              placeholderTextColor={Theme.textTertiary}
+              keyboardType="numeric"
+            />
+            <Pressable
+              style={[fpStyles.btn, finalPriceSubmitting && { opacity: 0.6 }]}
+              onPress={handleSetFinalPrice}
+              disabled={finalPriceSubmitting}
+            >
+              {finalPriceSubmitting
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={fpStyles.btnText}>Saqlash</Text>
+              }
+            </Pressable>
+          </View>
+        )}
+
+        {order.finalPrice != null && (
+          <View style={fpStyles.card}>
+            <Text style={fpStyles.title}>Yakuniy narx</Text>
+            <Text style={fpStyles.finalPrice}>{order.finalPrice.toLocaleString()} UZS</Text>
+          </View>
         )}
 
         {/* Status + action buttons */}
@@ -879,5 +953,51 @@ const styles = StyleSheet.create({
   modalCloseBtnText: {
     ...Typography.button,
     color: Theme.textInverse,
+  },
+});
+
+const fpStyles = StyleSheet.create({
+  card: {
+    backgroundColor: Theme.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    gap: Spacing.sm,
+    ...Shadow.sm,
+  },
+  title: {
+    fontFamily: Fonts.manropeSb,
+    fontSize: 15,
+    color: Theme.text,
+  },
+  range: {
+    fontFamily: Fonts.inter,
+    fontSize: 13,
+    color: Theme.textSecondary,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Theme.border,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    fontSize: 16,
+    fontFamily: Fonts.manropeSb,
+    color: Theme.text,
+    backgroundColor: Theme.background,
+  },
+  btn: {
+    backgroundColor: Theme.primary,
+    borderRadius: Radius.md,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  btnText: {
+    color: '#fff',
+    fontFamily: Fonts.manropeSb,
+    fontSize: 15,
+  },
+  finalPrice: {
+    fontFamily: Fonts.manropeBd,
+    fontSize: 20,
+    color: Theme.primary,
   },
 });

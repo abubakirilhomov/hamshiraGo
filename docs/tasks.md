@@ -7,6 +7,27 @@
 > **Playwright-аудит web-medic 2026-04-11** — 4 бага найдено, см. ниже.
 > **Аудит бизнес-модели 2026-04-13** — 9 критических/высоких пробелов, см. ниже.
 > **Аудит UX 2026-04-14** — 6 задач по Salomat AI, клиники, врачи.
+> **Integration gap анализ 2026-04-18** — 6 задач mobile/medic, см. ниже.
+
+---
+
+## 📱 Mobile + Medic — Integration Gaps (Абубакир, 2026-04-18)
+
+### Medic (Expo) — CRITICAL
+
+- [ ] **MED-GAP-1** — 🔴 CRITICAL — finalPrice UI: после завершения операции с переменной ценой медик должен ввести итоговую цену. Показать `priceMin`–`priceMax` диапазон, input для `finalPrice`, валидация range, вызов `PATCH /orders/:id/final-price { finalPrice }`. Показывать только для заказов где `priceMin` и `priceMax` заданы — `medic/app/order/[id].tsx`
+
+- [ ] **MED-GAP-2** — 🟡 HIGH — Withdrawal request: кнопка "Вывести средства" в профиле. При нажатии — модал с полями: сумма (не больше баланса), номер карты (Uzcard/Humo, опционально). Вызов `POST /medics/me/withdrawal-request { amount, cardNumber? }`. Показать статус последнего запроса — `medic/app/(tabs)/profile.tsx`
+
+### Mobile (Expo) — Клиент
+
+- [ ] **MOB-GAP-1** — 🟠 MEDIUM — Account deletion: кнопка "Удалить аккаунт" внизу профиля (красная). Alert с подтверждением "Вы уверены? Все данные будут удалены". Вызов `DELETE /auth/account`. Logout и redirect на auth. **Обязательно для App Store / Google Play** — `mobile/app/(tabs)/profile.tsx`
+
+- [ ] **MOB-GAP-2** — 🟡 MEDIUM — priceMin/priceMax display: в OrderCard и order confirm показывать "от X до Y UZS" если услуга имеет ценовой диапазон. В order track показывать finalPrice если установлен — `mobile/components/OrderCard.tsx`, `mobile/app/order/confirm.tsx`, `mobile/app/order/track.tsx`
+
+- [ ] **MOB-GAP-3** — 🟡 LOW — Companies/Clinics: экран просмотра клиник. Список из `GET /companies`, карточка (название, адрес, телефон, кнопки Яндекс/Google Maps). Опционально — web уже имеет это — `mobile/app/clinics.tsx` (новый файл)
+
+- [ ] **MOB-GAP-4** — 🟡 LOW — priceMin/priceMax в medic app: показать диапазон цен в деталях заказа если задан — `medic/app/order/[id].tsx`
 
 ---
 
